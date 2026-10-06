@@ -1,95 +1,89 @@
-# nuScenes And Simulation Guide
+# Hướng dẫn nuScenes và mô phỏng
 
-## 1. Purpose
+## 1. Mục đích
 
-This guide gives every team member a shared mental model before implementing ingestion or simulation. It answers four questions:
+Guide này tạo shared mental model cho team trước khi implement ingestion hoặc simulation. Nó trả lời:
 
-1. What is nuScenes and which files matter for this project?
-2. How can we inspect images, LiDAR, maps, boxes, tracks, and panoptic labels?
-3. What does it mean to replicate a nuScenes interaction in esmini or CARLA?
-4. Which aspects can be reproduced faithfully, and which must be declared approximations?
+1. nuScenes là gì và file nào quan trọng với project?
+2. Xem image, LiDAR, map, box, track và panoptic label bằng cách nào?
+3. “Replicate” tương tác nuScenes bằng esmini hoặc CARLA nghĩa là gì?
+4. Phần nào tái tạo được trung thực, phần nào bắt buộc ghi là xấp xỉ?
 
-Read this document before R2S-100 and R2S-101.
+Đọc guide này trước `R2S-100` và `R2S-101`.
 
-## 2. What nuScenes Is
+## 2. nuScenes là gì
 
-nuScenes is a recorded autonomous-driving dataset. A recording session is divided into scenes, and each scene contains time-linked sensor measurements, ego poses, object annotations, and map/log metadata. The mini version is a small development subset; the full release contains more scenes.
+nuScenes là dataset lái xe tự hành được ghi nhận. Một phiên ghi hình chia thành các scene; mỗi scene có sensor measurement liên kết thời gian, ego pose, object annotation và metadata map/log. Bản mini là subset phục vụ development; bản đầy đủ có nhiều scene hơn.
 
-For this project, nuScenes is the source of a real interaction. It is not itself a simulator. The project extracts the observed motion and scene context, represents them in a canonical format, then recreates an equivalent test in a simulator.
-
-The dataset is organized around these relationships:
+Trong project này, nuScenes là nguồn của tương tác thực tế, không phải simulator. Pipeline trích xuất chuyển động và scene context quan sát được, biểu diễn chúng ở canonical format, rồi tái dựng test tương đương trong simulator.
 
 ```text
 scene
-  -> ordered samples (keyframes)
-     -> sample_data for each camera/LiDAR/radar sensor
-     -> sample_annotation for tracked 3D object boxes
-     -> ego_pose for the ego vehicle pose
-     -> calibrated_sensor for sensor-to-ego calibration
-  -> log and map context
+  -> sample theo thứ tự (keyframe)
+     -> sample_data cho mỗi camera/LiDAR/radar sensor
+     -> sample_annotation cho box 3D object được track
+     -> ego_pose cho pose ego vehicle
+     -> calibrated_sensor cho calibration sensor-to-ego
+  -> log và map context
 ```
 
-In normal nuScenes use, a `sample` is a keyframe. `sample_data` connects that keyframe to one sensor datum and may also form a higher-frequency linked sequence. `sample_annotation` supplies the labeled 3D boxes for instances at the relevant keyframe. An `instance` groups one physical object across annotations over time.
+`sample` là keyframe. `sample_data` nối keyframe với một sensor datum và có thể tạo chuỗi tần số cao hơn. `sample_annotation` chứa box 3D đã gán nhãn cho instance ở keyframe tương ứng. `instance` gom annotation của cùng một vật thể qua thời gian.
 
-## 3. Files And What They Mean
+## 3. File và ý nghĩa
 
-| Record/file | What it contains | Why Real2Scenario needs it |
+| Record/file | Nội dung | Lý do Real2Scenario cần |
 | --- | --- | --- |
-| `scene.json` | Scene names and first/last samples | Select a recorded drive segment. |
-| `sample.json` | Keyframe timeline and channel references | Move through an interaction window. |
-| `sample_data.json` | Sensor file references and linked sensor frames | Locate camera/LiDAR/radar observations. |
-| `sample_annotation.json` | Labeled object 3D boxes, category, instance links | Reconstruct actor tracks and dimensions. |
-| `instance.json` | Object identity across time | Keep one actor ID across keyframes. |
-| `ego_pose.json` | Ego vehicle pose in global coordinates | Reconstruct ego trajectory. |
-| `calibrated_sensor.json` | Sensor pose relative to ego | Project boxes into camera/LiDAR and understand sensor frame. |
-| `sensor.json` | Sensor identity/type/channel | Choose the required camera/LiDAR channel. |
-| `category.json` | Object taxonomy | Map source labels to simulation actor types. |
-| `attribute.json` | Attributes such as moving/parked | Optional behavior context. |
-| map expansion data | Lane, road, and drivable-area information | Road-aligned extraction and map validity checks. |
-| camera images / LiDAR files | Raw observed sensor data | Visual inspection and perception-oriented extension. |
-| panoptic masks / `panoptic.json` | Per-pixel or per-point semantic/instance segmentation labels | Verify scene semantics; not enough for trajectories alone. |
+| `scene.json` | Tên scene và sample đầu/cuối | Chọn đoạn lái xe đã ghi nhận. |
+| `sample.json` | Timeline keyframe, channel reference | Duyệt interaction window. |
+| `sample_data.json` | Sensor file reference, sensor frame liên kết | Tìm camera/LiDAR/radar observation. |
+| `sample_annotation.json` | Box 3D, category, instance link | Tái dựng actor track và kích thước. |
+| `instance.json` | Danh tính object qua thời gian | Giữ actor ID nhất quán giữa keyframe. |
+| `ego_pose.json` | Ego pose trong global coordinate | Tái dựng ego trajectory. |
+| `calibrated_sensor.json` | Sensor pose tương đối ego | Project box vào camera/LiDAR, hiểu sensor frame. |
+| `sensor.json` | Sensor identity/type/channel | Chọn camera/LiDAR channel cần dùng. |
+| `category.json` | Taxonomy object | Map nhãn nguồn sang simulation actor type. |
+| `attribute.json` | Thuộc tính moving/parked... | Behavior context tuỳ chọn. |
+| Map expansion data | Lane, road, drivable area | Road-aligned extraction, map validity check. |
+| Camera image / LiDAR file | Raw observed sensor data | Visual inspection, extension thiên về perception. |
+| Panoptic mask / `panoptic.json` | Semantic/instance segmentation label | Kiểm tra semantic; không đủ để tạo trajectory riêng. |
 
-The currently committed `data/nuScenes-panoptic-v1.0-mini` subset includes panoptic-related content and category metadata. It does **not** include the core scene/sample/annotation/ego-pose tables or the raw sensor files listed above. Therefore it cannot currently provide actor trajectories, ego trajectories, camera rendering, or complete scene browsing on its own.
+Subset `data/nuScenes-panoptic-v1.0-mini` đang commit chỉ gồm panoptic content và category metadata. Nó **không** có bảng scene/sample/annotation/ego-pose cốt lõi hay raw sensor file. Do đó nó chưa thể cung cấp actor/ego trajectory, camera rendering hoặc scene browsing hoàn chỉnh.
 
-## 4. Coordinate Frames
+## 4. Coordinate frame
 
-Coordinate mistakes are a major source of invalid replay. Keep the frame name with every trajectory.
+Lỗi coordinate là nguồn lớn gây replay invalid. Luôn lưu tên frame cùng trajectory.
 
-| Frame | Meaning | Typical use |
+| Frame | Ý nghĩa | Cách dùng |
 | --- | --- | --- |
-| Global/map | Fixed world frame used by recorded poses | Compare ego and actor locations across a scene. |
-| Ego vehicle | Frame attached to the recording vehicle | Express an actor relative to ego. |
-| Sensor | Frame attached to a camera/LiDAR/radar | Project 3D annotations to a sensor view. |
-| Local road-aligned | Project-specific frame centered/oriented at a selected source window | Export stable local trajectories to a template map. |
-| Simulator | Frame used by esmini/OpenDRIVE or CARLA | Execute the reconstructed scenario. |
-
-The general transform chain is:
+| Global/map | World frame cố định của recorded pose | So sánh ego/actor trong scene. |
+| Ego vehicle | Frame gắn với xe ghi nhận | Biểu diễn actor tương đối ego. |
+| Sensor | Frame gắn camera/LiDAR/radar | Project annotation 3D vào sensor view. |
+| Local road-aligned | Frame do project tạo, đặt origin/hướng tại source window | Export trajectory ổn định sang template map. |
+| Simulator | Frame của esmini/OpenDRIVE hoặc CARLA | Chạy scenario tái dựng. |
 
 ```text
-annotation box in global frame
+annotation box trong global frame
   -> inverse ego_pose
   -> ego frame
   -> inverse calibrated_sensor
   -> sensor frame
 ```
 
-For replay, the pipeline first selects a local origin and heading, then converts global recorded positions into the local road-aligned frame. This transform is an intentional project artifact with a documented version, not an implicit coordinate swap.
+Khi replay, pipeline chọn local origin và heading rồi đổi recorded global position sang local road-aligned frame. Đây là project artifact có version, không phải đổi trục ngầm định.
 
-## 5. How To Inspect nuScenes
+## 5. Cách inspect nuScenes
 
-### 5.1 Official Python Devkit
+### 5.1 Official Python devkit
 
-The official `nuscenes-devkit` is the first tool the team should use. It provides table access, a `NuScenes` object, visualization helpers, and map utilities. Use a Jupyter notebook for onboarding so the team can see each representation while reading the corresponding records.
+`nuscenes-devkit` chính thức là công cụ đầu tiên team nên dùng. Nó có table access, `NuScenes` object, visualization helper và map utility. Dùng Jupyter notebook trong onboarding để xem từng representation cùng record tương ứng.
 
-After obtaining a licensed nuScenes mini dataset and installing the devkit in the project environment:
+Sau khi đã có licensed nuScenes mini đầy đủ và cài devkit:
 
 ```bash
 pip install nuscenes-devkit matplotlib
 export NUSCENES_ROOT="$HOME/datasets/nuscenes"
 export NUSCENES_VERSION="v1.0-mini"
 ```
-
-Minimal notebook example:
 
 ```python
 import os
@@ -108,9 +102,7 @@ first_sample_token = scene["first_sample_token"]
 nusc.render_sample(first_sample_token)
 ```
 
-`render_sample` is the most useful first view: it overlays annotations on available sensor views. It requires the matching raw sensor files, not just JSON metadata.
-
-Useful exploration calls include:
+`render_sample` là view khởi đầu hữu ích nhất: nó overlay annotation trên sensor view hiện có. Lệnh cần raw sensor file tương ứng, không chỉ JSON metadata.
 
 ```python
 sample = nusc.get("sample", first_sample_token)
@@ -118,153 +110,134 @@ nusc.render_sample_data(sample["data"]["CAM_FRONT"])
 nusc.render_ego_centric_map(first_sample_token)
 ```
 
-Depending on the installed devkit release and available data, also use its annotation/point-cloud rendering helpers to inspect individual labeled boxes and LiDAR. Treat helper APIs as exploration tools; production ingestion must read and validate the underlying metadata explicitly.
+Tuỳ devkit version và data có sẵn, dùng thêm annotation/point-cloud rendering helper để inspect box và LiDAR. Helper API dành cho khám phá; ingestion production phải đọc, validate metadata gốc.
 
-### 5.2 What Can Be Viewed With Each Download
+### 5.2 Có thể xem gì với từng gói tải về
 
-| Local material | What the team can inspect | What remains unavailable |
+| Dữ liệu cục bộ | Team có thể xem | Chưa có |
 | --- | --- | --- |
-| Metadata JSON only | Scene graph, timestamps, object metadata, poses | Image pixels, point clouds, panoptic mask renderings. |
-| Metadata + camera images | Camera frames with 3D box overlays | LiDAR points and LiDAR panoptic visualization. |
-| Metadata + LiDAR | Point clouds, 3D boxes, selected map overlays | Camera image appearance if images are absent. |
-| Metadata + panoptic masks | Semantic/instance labels aligned with their original sensor data | Actor tracks unless annotations/instances are also present. |
-| Complete mini release | All supported devkit rendering and extraction paths | Exact original world reconstruction in another simulator. |
+| Chỉ metadata JSON | Scene graph, timestamp, object metadata, pose | Pixel image, point cloud, panoptic mask rendering. |
+| Metadata + camera image | Camera frame có overlay box 3D | LiDAR point, LiDAR panoptic visualization. |
+| Metadata + LiDAR | Point cloud, box 3D, map overlay chọn lọc | Camera image nếu không có image. |
+| Metadata + panoptic mask | Semantic/instance label khớp sensor gốc | Actor track nếu thiếu annotation/instance. |
+| Mini release đầy đủ | Mọi devkit rendering/extraction path hỗ trợ | Tái dựng chính xác world gốc trong simulator khác. |
 
-The immediate M1 task is not to download every modality. It is to acquire the metadata needed for ego/object tracks and at least one modality for visual review. Camera images are the easiest option for a human-facing onboarding demo; LiDAR is helpful for validating 3D geometry.
+M1 không cần tải mọi modality. Cần metadata cho ego/object track và ít nhất một modality để visual review. Camera image dễ dùng nhất cho onboarding; LiDAR hữu ích để kiểm tra geometry 3D.
 
-### 5.3 Data Inventory Checklist
+### 5.3 Checklist data inventory
 
-Before coding an extractor, fill this table for the selected dataset location:
+Điền bảng này trước khi code extractor:
 
-| Item | Present? | Path/version | Reviewer notes |
+| Hạng mục | Có? | Path/version | Ghi chú reviewer |
 | --- | --- | --- | --- |
 | Core metadata tables |  |  |  |
 | Map expansion data |  |  |  |
 | Front-camera frames |  |  |  |
 | Top/primary LiDAR frames |  |  |  |
-| Sample annotations and instances |  |  |  |
-| Ego poses and calibration |  |  |  |
+| Sample annotations và instances |  |  |  |
+| Ego poses và calibration |  |  |  |
 | Panoptic labels |  |  |  |
 | NuScenes devkit version |  |  |  |
-| License/attribution reviewed |  |  |  |
+| Đã review license/attribution |  |  |  |
 
-## 6. From nuScenes To A Canonical Scenario
+## 6. Từ nuScenes sang canonical scenario
 
-The extractor must create a simulator-independent description. It should not emit XML while it is reading nuScenes tables.
+Extractor phải tạo biểu diễn độc lập simulator, không xuất XML trong lúc đọc nuScenes table.
 
 ```text
-1. Select scene and time window.
-2. Read ego_pose records to form the ego trajectory.
-3. Follow annotation/instance records to form candidate actor tracks.
-4. Estimate speed/heading only with a documented interpolation/differentiation rule.
-5. Select 1-3 relevant actors using distance, TTC, lane relation, or manual review.
-6. Convert source global coordinates to a named local road-aligned frame.
-7. Save canonical Scenario JSON with source tokens and transformation metadata.
+1. Chọn scene và time window.
+2. Đọc ego_pose để tạo ego trajectory.
+3. Theo annotation/instance để tạo candidate actor track.
+4. Chỉ ước lượng speed/heading bằng rule nội suy/vi phân có tài liệu.
+5. Chọn 1-3 actor liên quan bằng distance, TTC, lane relation hoặc manual review.
+6. Đổi source global coordinate sang local road-aligned frame có tên.
+7. Lưu canonical Scenario JSON cùng source token và transform metadata.
 ```
 
-The output needs at minimum, for each state: time, position, yaw, speed, actor ID, actor type, and dimensions when known. Preserve original source tokens so a reviewer can navigate from any generated scenario back to the nuScenes sample/annotation records.
+Mỗi state tối thiểu cần time, position, yaw, speed, actor ID, actor type và dimensions khi biết. Giữ source token gốc để reviewer đi từ scenario sinh ra về nuScenes sample/annotation record.
 
-## 7. What “Replicate” Means
+## 7. “Replicate” nghĩa là gì
 
-There are three distinct fidelity levels. The project must state which one it achieved.
+Project phải nêu rõ mức fidelity đạt được:
 
-| Level | What is replicated | MVP status |
+| Mức | Nội dung tái tạo | Trạng thái MVP |
 | --- | --- | --- |
-| Trajectory replay | Ego/actor motion, timing, relative interaction, and basic road context | Required. |
-| Scene reconstruction | Road geometry, lanes, actor shapes, traffic furniture, buildings, lighting | Approximate only in MVP. |
-| Sensor replication | Camera/LiDAR/radar observations comparable to recorded data | Post-MVP, requires CARLA/assets/calibration work. |
+| Trajectory replay | Chuyển động ego/actor, timing, relative interaction, road context cơ bản | Bắt buộc. |
+| Scene reconstruction | Road geometry, lane, actor shape, traffic furniture, building, lighting | Chỉ xấp xỉ. |
+| Sensor replication | Camera/LiDAR/radar observation tương đương data ghi nhận | Sau MVP, cần CARLA/asset/calibration. |
 
-A successful OpenSCENARIO replay means the trajectory interaction was recreated under documented assumptions. It does not mean the simulator world is visually identical to the original nuScenes scene, nor that camera pixels or LiDAR returns match the recorded sensor data.
+OpenSCENARIO replay thành công nghĩa là tương tác trajectory được tái tạo dưới các giả định đã công bố. Nó không có nghĩa simulator world giống hình ảnh nuScenes gốc, hoặc camera pixel/LiDAR return khớp recorded sensor data.
 
-## 8. Replicating With esmini
+## 8. Replicate bằng esmini
 
-esmini is used to validate trajectory-level OpenSCENARIO replay.
+esmini dùng để validate OpenSCENARIO ở mức trajectory:
 
 ```text
-nuScenes tracks
-  -> local road-aligned coordinates
-  -> choose supported OpenDRIVE template
-  -> create entities, initial state, trajectories, triggers in .xosc
+nuScenes track
+  -> local road-aligned coordinate
+  -> chọn OpenDRIVE template hỗ trợ
+  -> tạo entity, initial state, trajectory, trigger trong .xosc
   -> esmini replay
   -> normalized replay trace
-  -> compare with source trajectory
+  -> so sánh source trajectory
 ```
 
-### What esmini can prove for this project
+esmini chứng minh được: `.xosc` chạy được, entity spawn đúng initial state/name, reference trajectory/timing được replay, batch chạy headless tính completion rate/position error/TTC/distance và variant được lọc bằng hành vi chạy được.
 
-- The generated OpenSCENARIO file is structurally runnable by the selected backend.
-- Entities spawn with expected names and initial states.
-- Fixed/reference trajectories and timing replay as configured.
-- A batch can be executed headlessly to calculate completion rate, position error, TTC, and distance.
-- Generated variants can be filtered by executable scenario behavior.
+MVP không thể dùng esmini để tái tạo trung thực image/LiDAR/weather/building/city asset gốc, exact road topology khi không khớp `.xodr` template, hay phản ứng closed-loop của driving policy không có external controller.
 
-### What esmini cannot faithfully recreate in this MVP
+## 9. Replicate bằng CARLA
 
-- Original nuScenes camera imagery, LiDAR returns, weather, buildings, and surrounding city assets.
-- Exact road topology if the recorded segment does not match a supported `.xodr` template.
-- Closed-loop reactions of a driving policy unless an external controller is added.
-
-Use esmini first when the review goal is “does the `.xosc` replay the recorded interaction with acceptable kinematic error?”
-
-## 9. Replicating With CARLA
-
-CARLA becomes useful when the goal expands beyond trajectory replay.
+CARLA hữu ích khi mục tiêu vượt qua trajectory replay:
 
 ```text
-nuScenes tracks and map context
+nuScenes track và map context
   -> local coordinate transform
-  -> compatible CARLA town or custom imported map
-  -> choose vehicle/pedestrian blueprints
-  -> spawn actors and apply trajectory/controller behavior
-  -> optionally attach camera/LiDAR/radar sensors
-  -> run synchronous replay and record trace/sensor data
-  -> compare trajectory and, later, perception outputs
+  -> CARLA town tương thích hoặc custom imported map
+  -> chọn vehicle/pedestrian blueprint
+  -> spawn actor và áp trajectory/controller behavior
+  -> gắn camera/LiDAR/radar sensor nếu cần
+  -> chạy synchronous replay, ghi trace/sensor data
+  -> so sánh trajectory rồi đến perception output
 ```
 
-### What CARLA adds
+CARLA thêm 3D world, vehicle/pedestrian/road/weather/lighting, synthetic camera-LiDAR-radar-IMU-GNSS-collision output, closed-loop testing cho perception/planning/control và visual demo tốt hơn.
 
-- A 3D world with vehicles, pedestrians, roads, weather, and lighting.
-- Synthetic camera, LiDAR, radar, IMU, GNSS, and collision sensor outputs.
-- A place to test perception/planning/control systems in closed loop.
-- A presentation-friendly visualization after the core scenario pipeline is proven.
-
-### CARLA replication decisions that must be explicit
-
-| Decision | Required project policy |
+| Quyết định | Chính sách bắt buộc |
 | --- | --- |
-| Map | Use a named built-in town only if its topology is adequate, otherwise import/build a custom map; never imply it is the original nuScenes location. |
-| Actor appearance | Map nuScenes category/dimensions to documented CARLA blueprint choices. |
-| Motion | State whether actors are teleported along a reference trajectory, driven by a controller, or controlled by a behavior model. |
-| Ego role | State whether ego is replayed open loop or controlled by the AV stack under test. |
-| Synchronization | Use a fixed synchronous tick and record the tick rate in the report. |
-| Sensor comparison | Record sensor intrinsics/extrinsics/configuration; do not claim pixel-level equivalence without calibration and scene-asset validation. |
+| Map | Chỉ dùng built-in town có topology phù hợp; nếu không import/build map riêng; không tuyên bố đó là địa điểm nuScenes gốc. |
+| Ngoại hình actor | Map nuScenes category/dimension sang CARLA blueprint có tài liệu. |
+| Motion | Nêu rõ actor teleport theo reference trajectory, do controller lái, hay do behavior model điều khiển. |
+| Vai trò ego | Nêu ego open-loop replay hay do AV stack điều khiển. |
+| Đồng bộ | Dùng synchronous tick cố định, lưu tick rate trong report. |
+| So sánh sensor | Lưu intrinsic/extrinsic/config; không tuyên bố pixel-level equivalence nếu chưa calibration và validate scene asset. |
 
-For open-loop trajectory fidelity, setting transforms directly can match positions more closely but bypasses physical dynamics. For a closed-loop test, use a controller and accept that trajectory error may increase. These are different experiment modes and must never be mixed in one metric report.
+Set transform trực tiếp ở open loop có thể khớp position tốt hơn nhưng bỏ qua physical dynamics. Closed-loop phải dùng controller và chấp nhận trajectory error tăng. Hai experiment mode khác nhau, không được trộn metric trong một report.
 
-## 10. esmini Versus CARLA In This Project
+## 10. esmini so với CARLA trong project này
 
-| Question | esmini | CARLA |
+| Câu hỏi | esmini | CARLA |
 | --- | --- | --- |
-| Can it execute a generated OpenSCENARIO trajectory scenario? | Yes, this is the MVP validation path. | Possible through an adapter/workflow, but it is not the MVP contract. |
-| Can it batch-run quickly in headless CI? | Yes, preferred. | Possible but substantially heavier. |
-| Can it show a visually rich 3D city? | Limited. | Yes. |
-| Can it synthesize camera/LiDAR/radar for AV-stack tests? | Not the intended MVP path. | Yes. |
-| Does it remove the need for map/coordinate assumptions? | No. | No; custom map alignment is still required. |
-| When should the team use it? | M2-M3: export, regression, replay metrics, batch variants. | After M3: 3D demo, sensors, or closed-loop evaluation. |
+| Chạy OpenSCENARIO trajectory scenario? | Có, đây là MVP validation path. | Có thể qua adapter/workflow, nhưng không phải MVP contract. |
+| Batch nhanh trong headless CI? | Có, được ưu tiên. | Có thể nhưng nặng hơn nhiều. |
+| Hiển thị 3D city phong phú? | Hạn chế. | Có. |
+| Sinh camera/LiDAR/radar cho AV-stack test? | Không phải MVP path. | Có. |
+| Loại bỏ giả định map/coordinate? | Không. | Không; vẫn cần custom map alignment. |
+| Khi nào dùng? | M2-M3: export, regression, metric, batch variant. | Sau M3: demo 3D, sensor, closed-loop. |
 
-The recommended architecture is additive: esmini remains the quick, deterministic OpenSCENARIO gate; CARLA becomes a second backend for higher-fidelity experiments. Both consume the same canonical scenario and emit the same report shape where metrics are comparable.
+Kiến trúc là cộng dồn: esmini là cổng OpenSCENARIO nhanh, deterministic; CARLA là backend thứ hai cho experiment fidelity cao hơn. Cả hai consume canonical scenario và emit cùng report shape khi metric so sánh được.
 
-## 11. Team Onboarding Exercise
+## 11. Bài thực hành onboarding
 
-Complete this exercise before the first ingestion pull request:
+Hoàn thành trước pull request ingestion đầu tiên:
 
-1. Install the devkit against a licensed complete mini dataset.
-2. List scenes and choose one source scene.
-3. Render one keyframe with `render_sample`.
-4. Identify the ego pose, front-camera sample data, and one vehicle annotation by token.
-5. Explain how that annotation connects to its `instance` track.
-6. Draw the global-to-local coordinate transform used by the future exporter.
-7. Write down whether the selected interaction matches a supported highway/intersection template.
-8. State which parts would be trajectory-replicated versus only approximated in esmini and CARLA.
+1. Cài devkit với licensed complete mini dataset.
+2. Liệt kê scene và chọn một source scene.
+3. Render một keyframe bằng `render_sample`.
+4. Tìm ego pose, front-camera sample data và một vehicle annotation theo token.
+5. Giải thích annotation đó nối vào `instance` track thế nào.
+6. Vẽ global-to-local transform cho exporter tương lai.
+7. Ghi rõ interaction có khớp highway/intersection template hỗ trợ không.
+8. Nêu phần nào trajectory-replicated, phần nào chỉ xấp xỉ trong esmini/CARLA.
 
-Save the selected scene/sample tokens, screenshots, and completed inventory in the ticket evidence for R2S-100.
+Lưu scene/sample token đã chọn, screenshot và inventory hoàn thành làm evidence cho `R2S-100`.

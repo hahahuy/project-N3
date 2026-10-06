@@ -1,224 +1,224 @@
-# MVP Roadmap And Tickets
+# Roadmap MVP và tickets
 
-This document is the execution ledger. Every ticket should have one owner, a pull request, automated test evidence where applicable, and review evidence listed under its checkpoint. A ticket is not complete merely because code exists.
+Đây là execution ledger. Mỗi ticket cần một owner, pull request, bằng chứng automated test khi phù hợp, và bằng chứng review nêu tại checkpoint. Ticket chưa hoàn thành chỉ vì code đã tồn tại.
 
-## Milestone Summary
+## Tóm tắt milestone
 
-| Milestone | Outcome | Review gate |
+| Milestone | Kết quả | Cổng review |
 | --- | --- | --- |
-| M0 | Reproducible repository and canonical contract | Contract review |
-| M1 | Recorded segment can be inspected and extracted | Data review |
-| M2 | Baseline OpenSCENARIO replays in esmini | Replay review |
-| M3 | Constrained variants are generated and validated | Generation review |
-| M4 | Demo UI and release evidence are complete | Demo review |
+| M0 | Repository tái lập và canonical contract | Review contract |
+| M1 | Có thể inspect và trích xuất recorded segment | Review data |
+| M2 | Baseline OpenSCENARIO replay trong esmini | Review replay |
+| M3 | Sinh và validate biến thể có ràng buộc | Review generation |
+| M4 | Hoàn thiện demo UI và release evidence | Review demo |
 
-## M0: Foundation And Contract
+## M0: Foundation và contract
 
-### R2S-001: Repository bootstrap
+### R2S-001: Khởi tạo repository
 
 - Deliverable: `pyproject.toml`, package layout, test layout, `.gitignore`, README.
-- Acceptance criteria: `pip install -e ".[dev]"` and `pytest` run on a clean environment.
-- Evidence: CI/local command output and clean `git status` after tests.
-- Dependencies: none.
+- Acceptance criteria: `pip install -e ".[dev]"` và `pytest` chạy trong môi trường sạch.
+- Evidence: output CI/local command và `git status` sạch sau test.
+- Dependencies: không có.
 
 ### R2S-002: Canonical scenario schema
 
-- Deliverable: `State`, `Actor`, `Scenario`, provenance, and variant configuration models.
-- Acceptance criteria: SI units documented; actor IDs unique; ego exists; timestamps strictly increase; invalid input raises a useful exception.
-- Evidence: unit tests for valid scenario and each major invariant failure.
+- Deliverable: model `State`, `Actor`, `Scenario`, provenance và variant configuration.
+- Acceptance criteria: đơn vị SI có tài liệu; actor ID duy nhất; ego tồn tại; timestamp tăng nghiêm ngặt; input invalid ném exception hữu ích.
+- Evidence: unit test cho valid scenario và từng invariant lỗi chính.
 - Dependencies: R2S-001.
 
-### R2S-003: Artifact and provenance convention
+### R2S-003: Quy ước artifact và provenance
 
-- Deliverable: scenario/variant ID format and JSON manifest contract.
-- Acceptance criteria: every generated artifact has source dataset/version, source scene/window, map mode/version, generator version, and seed/config.
-- Evidence: example JSON artifact checked into `tests/fixtures/` without restricted dataset content.
+- Deliverable: format ID scenario/variant và JSON manifest contract.
+- Acceptance criteria: mọi artifact sinh ra có source dataset/version, source scene/window, map mode/version, generator version, seed/config.
+- Evidence: JSON artifact mẫu commit vào `tests/fixtures/` mà không chứa dataset content bị hạn chế.
 - Dependencies: R2S-002.
 
-### Checkpoint M0: Contract Review
+### Checkpoint M0: Review contract
 
-- [ ] Package installs using documented commands.
-- [ ] No dataset path, local binary path, or secret is hard-coded.
-- [ ] Canonical schema has unit tests for all invariants.
-- [ ] Units and coordinate-frame fields are explicit.
-- [ ] Reviewer can identify every artifact’s source and config from its manifest.
-- [ ] Scope excludes simulator/UI dependencies from `models.py`.
+- [ ] Package cài được bằng lệnh đã ghi.
+- [ ] Không có dataset path, local binary path hoặc secret bị hard-code.
+- [ ] Canonical schema có unit test cho mọi invariant.
+- [ ] Unit và coordinate-frame field rõ ràng.
+- [ ] Reviewer xác định được source và config của mọi artifact từ manifest.
+- [ ] `models.py` không phụ thuộc simulator/UI.
 
-## M1: Ingestion And Scenario Mining
+## M1: Ingestion và scenario mining
 
-### R2S-100: nuScenes onboarding and data inventory
+### R2S-100: Onboarding nuScenes và data inventory
 
-- Deliverable: completed data inventory plus a short team walkthrough/notebook covering scene, sample, sample data, annotation, ego pose, calibration, and map records.
-- Acceptance criteria: every team member can explain which files provide trajectories, which provide raw sensors/panoptic labels, and why the repository's current panoptic-only subset cannot reconstruct a scenario alone.
-- Evidence: a checked-in onboarding note following `docs/nuscenes-and-simulation-guide.md`, a screenshot of one official-devkit rendering, and the selected source segment ID.
+- Deliverable: data inventory hoàn chỉnh và walkthrough/notebook ngắn về scene, sample, sample data, annotation, ego pose, calibration, map record.
+- Acceptance criteria: mọi thành viên giải thích được file nào cung cấp trajectory, file nào là raw sensor/panoptic label, và vì sao subset panoptic hiện tại không thể tự tái dựng scenario.
+- Evidence: onboarding note commit theo `docs/nuscenes-and-simulation-guide.md`, screenshot một rendering từ official devkit, source segment ID đã chọn.
 - Dependencies: R2S-001.
 
-### R2S-101: nuScenes dataset preflight
+### R2S-101: Dataset preflight cho nuScenes
 
-- Deliverable: command that verifies required metadata files and gives actionable missing-file errors.
-- Acceptance criteria: checks scene, sample, sample_data, sample_annotation, ego_pose, calibrated_sensor, and map availability needed by the selected mode.
-- Evidence: tests using temporary directory fixtures for complete and incomplete metadata layouts.
+- Deliverable: command kiểm tra metadata bắt buộc và báo missing file có hướng dẫn xử lý.
+- Acceptance criteria: kiểm tra scene, sample, sample_data, sample_annotation, ego_pose, calibrated_sensor và map theo mode được chọn.
+- Evidence: test dùng temporary directory fixture cho metadata layout đầy đủ và thiếu.
 - Dependencies: R2S-001.
 
-### R2S-102: Ego and actor trajectory extraction
+### R2S-102: Trích xuất trajectory ego và actor
 
-- Deliverable: adapter converting one configurable source window to canonical `Scenario`.
-- Acceptance criteria: returns ego plus tracked actors with time, position, yaw, speed, dimensions, and source tokens.
-- Evidence: one synthetic fixture test and one documented real-data smoke run.
+- Deliverable: adapter đổi một source window cấu hình được thành canonical `Scenario`.
+- Acceptance criteria: trả về ego và actor được track với time, position, yaw, speed, dimensions và source token.
+- Evidence: một synthetic fixture test và một real-data smoke run có tài liệu.
 - Dependencies: R2S-002, R2S-101.
 
-### R2S-103: Interaction window and actor selection
+### R2S-103: Interaction window và chọn actor
 
-- Deliverable: configurable selector using distance/TTC and manual override.
-- Acceptance criteria: selected actors and rejection reasons are written into provenance; supports 1-3 non-ego actors.
-- Evidence: tests for selection threshold, deterministic tie-break, and manual selection.
+- Deliverable: selector cấu hình được dùng distance/TTC và manual override.
+- Acceptance criteria: actor được chọn và lý do reject được ghi vào provenance; hỗ trợ 1-3 non-ego actor.
+- Evidence: test threshold chọn, deterministic tie-break và manual selection.
 - Dependencies: R2S-102.
 
 ### R2S-104: Top-down source visualizer
 
-- Deliverable: CLI plot or notebook that plays extracted trajectories in a local frame.
-- Acceptance criteria: a reviewer can scrub/play a 8-20 second segment and distinguish ego from each actor.
-- Evidence: screenshot/video and command in documentation.
+- Deliverable: CLI plot hoặc notebook phát extracted trajectory trong local frame.
+- Acceptance criteria: reviewer scrub/phát được segment 8-20 giây, phân biệt ego và từng actor.
+- Evidence: screenshot/video và command trong docs.
 - Dependencies: R2S-102.
 
-### Checkpoint M1: Data Review
+### Checkpoint M1: Review data
 
-- [ ] Required trajectory data is available; panoptic masks alone are not treated as tracks.
-- [ ] Team data inventory identifies which raw sensor and metadata files are locally available.
-- [ ] One documented source segment has ego and at least one interacting actor.
-- [ ] State timestamps are monotonic and in seconds.
-- [ ] Coordinate frame and origin are displayed/documented.
-- [ ] Selection rationale is retained in the scenario artifact.
-- [ ] A reviewer can reproduce the extraction with one command/config.
+- [ ] Có trajectory data bắt buộc; không coi panoptic mask là track.
+- [ ] Data inventory của team nêu raw sensor và metadata file có sẵn cục bộ.
+- [ ] Một source segment được ghi rõ có ego và ít nhất một actor tương tác.
+- [ ] State timestamp đơn điệu và tính bằng giây.
+- [ ] Coordinate frame và origin được hiển thị/ghi tài liệu.
+- [ ] Lý do chọn actor nằm trong scenario artifact.
+- [ ] Reviewer tái tạo extraction bằng một command/config.
 
-## M2: Baseline Reconstruction And Replay
+## M2: Tái dựng baseline và replay
 
 ### R2S-201: Local coordinate transform
 
-- Deliverable: source-to-local road-aligned transform and transform metadata.
-- Acceptance criteria: round-trip error on test points is below configured numerical tolerance; transform uses documented axes/units.
-- Evidence: unit tests including yaw wrapping and a visual overlay.
+- Deliverable: source-to-local road-aligned transform và metadata transform.
+- Acceptance criteria: round-trip error trên test point nhỏ hơn numerical tolerance cấu hình; axes/unit có tài liệu.
+- Evidence: unit test gồm yaw wrapping và visual overlay.
 - Dependencies: R2S-102.
 
 ### R2S-202: OpenDRIVE template registry
 
-- Deliverable: versioned supported `.xodr` templates and selector contract.
-- Acceptance criteria: a source scenario records why a template was selected; unsupported topology is rejected rather than silently mapped.
-- Evidence: registry unit test and one reviewable template diagram.
+- Deliverable: `.xodr` template được hỗ trợ có version và selector contract.
+- Acceptance criteria: source scenario lưu lý do chọn template; topology không hỗ trợ bị reject, không map im lặng.
+- Evidence: registry unit test và sơ đồ template để review.
 - Dependencies: R2S-201.
 
 ### R2S-203: OpenSCENARIO baseline exporter
 
-- Deliverable: canonical scenario to `.xosc` exporter for ego plus 1-3 actors.
-- Acceptance criteria: XML validates structurally; entity names are stable; all trajectory timing is explicit; output contains no user-machine paths.
-- Evidence: XML parsing test and a golden-file diff test.
+- Deliverable: exporter canonical scenario sang `.xosc` cho ego và 1-3 actor.
+- Acceptance criteria: XML validate cấu trúc; entity name ổn định; toàn bộ trajectory timing rõ ràng; output không chứa path theo máy người dùng.
+- Evidence: XML parsing test và golden-file diff test.
 - Dependencies: R2S-002, R2S-202.
 
-### R2S-204: esmini runner and trace parser
+### R2S-204: esmini runner và trace parser
 
-- Deliverable: configured subprocess runner and normalized replay trace.
-- Acceptance criteria: timeout/error output is captured; exit status and esmini version are saved in report; runner is mockable in unit tests.
-- Evidence: unit tests with a fake executable and an optional marked integration test.
+- Deliverable: subprocess runner có cấu hình và normalized replay trace.
+- Acceptance criteria: bắt timeout/error output; lưu exit status và esmini version trong report; runner mock được trong unit test.
+- Evidence: unit test với fake executable và integration test được đánh dấu tuỳ chọn.
 - Dependencies: R2S-203.
 
 ### R2S-205: Replay fidelity metrics
 
-- Deliverable: timestamp alignment, position RMSE, final displacement error, heading MAE, and speed MAE.
-- Acceptance criteria: metric inputs/outputs have units; empty or mismatched traces fail clearly; known numeric examples pass.
-- Evidence: unit tests with hand-calculated expected metrics.
+- Deliverable: timestamp alignment, position RMSE, final displacement error, heading MAE và speed MAE.
+- Acceptance criteria: input/output metric có unit; trace rỗng hoặc mismatch fail rõ ràng; known numeric example pass.
+- Evidence: unit test với expected metric tính tay.
 - Dependencies: R2S-204.
 
-### Checkpoint M2: Replay Review
+### Checkpoint M2: Review replay
 
-- [ ] At least one baseline `.xosc` starts and completes in esmini.
-- [ ] Original and replay trajectories are overlaid in one artifact.
-- [ ] Metrics state units, timestamp alignment method, and sample count.
-- [ ] Map reconstruction is labelled as local/template approximation.
-- [ ] Failed simulator executions retain stderr/exit status in their report.
-- [ ] Reviewer can regenerate baseline XML and replay trace from source config.
+- [ ] Ít nhất một baseline `.xosc` khởi động và hoàn tất trong esmini.
+- [ ] Original/replay trajectory được overlay trong một artifact.
+- [ ] Metric nêu unit, phương pháp timestamp alignment và sample count.
+- [ ] Map reconstruction được gắn nhãn local/template approximation.
+- [ ] Simulator execution fail giữ stderr/exit status trong report.
+- [ ] Reviewer tái tạo baseline XML và replay trace từ source config.
 
-## M3: Variant Generation, Validation, And Ranking
+## M3: Sinh biến thể, validation và ranking
 
 ### R2S-301: Parameterized perturbations
 
-- Deliverable: speed multiplier, initial longitudinal gap, and timing offset transformations.
-- Acceptance criteria: transformations never mutate their parent scenario; every child records complete parameter values and seed.
-- Evidence: tests for immutability, deterministic output, and expected trajectory offsets.
+- Deliverable: biến đổi speed multiplier, initial longitudinal gap và timing offset.
+- Acceptance criteria: transformation không mutate parent scenario; mọi child lưu parameter value đầy đủ và seed.
+- Evidence: test immutability, deterministic output và trajectory offset mong đợi.
 - Dependencies: R2S-002, R2S-203.
 
 ### R2S-302: Batch generator
 
-- Deliverable: grid/random batch command with a manifest and stable variant IDs.
-- Acceptance criteria: a fixed config/seed produces the same IDs and configurations in the same order.
-- Evidence: deterministic batch test and sample manifest.
+- Deliverable: batch command grid/random có manifest và variant ID ổn định.
+- Acceptance criteria: config/seed cố định sinh cùng ID và configuration theo cùng thứ tự.
+- Evidence: deterministic batch test và manifest mẫu.
 - Dependencies: R2S-301.
 
 ### R2S-303: Feasibility validation
 
-- Deliverable: kinematic and supported-road boundary checks with structured rejection reasons.
-- Acceptance criteria: acceleration, deceleration, jerk, yaw-rate, and road boundary thresholds are configuration-driven.
-- Evidence: boundary-value tests that pass at threshold and fail beyond it.
+- Deliverable: kiểm tra kinematic và road boundary được hỗ trợ, có structured rejection reason.
+- Acceptance criteria: threshold acceleration, deceleration, jerk, yaw-rate và road boundary đến từ config.
+- Evidence: boundary-value test pass tại ngưỡng, fail khi vượt ngưỡng.
 - Dependencies: R2S-201, R2S-301.
 
-### R2S-304: Risk features and ranking
+### R2S-304: Risk feature và ranking
 
-- Deliverable: minimum distance, TTC, novelty features, and versioned score breakdown.
-- Acceptance criteria: a failed validity check cannot be ranked as valid; no collision/near-miss label is inferred without stated definition.
-- Evidence: tests for TTC edge cases and score breakdown snapshot.
+- Deliverable: minimum distance, TTC, novelty feature và breakdown score có version.
+- Acceptance criteria: validity fail không được rank là valid; collision/near-miss không được suy luận khi chưa nêu definition.
+- Evidence: test TTC edge case và score breakdown snapshot.
 - Dependencies: R2S-303, R2S-205.
 
 ### R2S-305: Batch report exporter
 
-- Deliverable: per-variant report and aggregate CSV/JSON summary.
-- Acceptance criteria: counts reconcile exactly: generated = valid + invalid + simulator-failed; each result links all artifacts.
-- Evidence: reconciliation test and sample batch report.
+- Deliverable: report từng variant và aggregate CSV/JSON summary.
+- Acceptance criteria: count khớp chính xác: generated = valid + invalid + simulator-failed; mỗi result link mọi artifact.
+- Evidence: reconciliation test và batch report mẫu.
 - Dependencies: R2S-302, R2S-303, R2S-304.
 
-### Checkpoint M3: Generation Review
+### Checkpoint M3: Review generation
 
-- [ ] A batch of at least 20 variants is generated from a fixed baseline.
-- [ ] Seed/config reruns reproduce IDs and trajectories.
-- [ ] Reports separate invalid, simulator-failed, and valid cases.
-- [ ] Every rejection has one or more structured reasons.
-- [ ] Kinematic/map thresholds are versioned configuration, not magic numbers.
-- [ ] Score components are visible; “rare” and “safe” are not conflated.
+- [ ] Batch ít nhất 20 variant sinh từ baseline cố định.
+- [ ] Rerun seed/config tái tạo ID và trajectory.
+- [ ] Report tách invalid, simulator-failed và valid case.
+- [ ] Mọi reject có một hoặc nhiều structured reason.
+- [ ] Kinematic/map threshold là config có version, không phải magic number.
+- [ ] Score component hiển thị rõ; không đánh đồng “rare” với “safe”.
 
-## M4: Demo And Release
+## M4: Demo và release
 
 ### R2S-401: MVP dashboard
 
-- Deliverable: browser, trajectory playback, controls, results table, and export action.
-- Acceptance criteria: the required demo flow in `product-spec.md` runs without direct file edits or terminal intervention after startup.
-- Evidence: recorded 3-minute demo and UI smoke-test checklist.
+- Deliverable: browser, trajectory playback, control, result table và export action.
+- Acceptance criteria: demo flow trong `product-spec.md` chạy không cần sửa file trực tiếp hay terminal sau khi khởi động.
+- Evidence: video demo 3 phút và UI smoke-test checklist.
 - Dependencies: R2S-104, R2S-205, R2S-305.
 
-### R2S-402: Demo scenario curation
+### R2S-402: Curate demo scenario
 
-- Deliverable: three labeled source segments: lead braking plus two additional supported interactions.
-- Acceptance criteria: each has baseline replay, a 20-variant batch, and a known presentation-worthy valid variant.
-- Evidence: curation index with artifact paths and metrics.
+- Deliverable: ba source segment có nhãn: lead braking cộng hai interaction hỗ trợ khác.
+- Acceptance criteria: mỗi segment có baseline replay, batch 20 variant và một valid variant phù hợp trình bày.
+- Evidence: curation index với artifact path và metric.
 - Dependencies: R2S-305.
 
-### R2S-403: Release and reproducibility pack
+### R2S-403: Release và reproducibility pack
 
-- Deliverable: setup guide, configuration examples, known limitations, demo script, and evidence bundle.
-- Acceptance criteria: a new reviewer can set up the project and reproduce one curated batch from instructions.
-- Evidence: clean-machine verification notes.
+- Deliverable: setup guide, configuration example, known limitation, demo script, evidence bundle.
+- Acceptance criteria: reviewer mới setup project và tái tạo một curated batch từ instruction.
+- Evidence: ghi chú verification trên clean machine.
 - Dependencies: R2S-401, R2S-402.
 
-### Checkpoint M4: Demo Review
+### Checkpoint M4: Review demo
 
-- [ ] The walkthrough selects, replays, varies, validates, ranks, and exports a scenario.
-- [ ] The dashboard clearly distinguishes recorded, replayed, and generated paths.
-- [ ] At least three curated source scenarios have complete evidence.
-- [ ] Aggregate counts reconcile with per-variant reports.
-- [ ] Limitations and licensing are visible in documentation/demo material.
-- [ ] A reviewer can follow the script without undocumented manual steps.
+- [ ] Walkthrough chọn, replay, biến đổi, validate, rank và export một scenario.
+- [ ] Dashboard phân biệt rõ recorded, replayed và generated path.
+- [ ] Ít nhất ba curated source scenario có evidence đầy đủ.
+- [ ] Aggregate count khớp report từng variant.
+- [ ] Limitation và licensing hiển thị trong docs/demo.
+- [ ] Reviewer đi theo script được mà không cần manual step không ghi tài liệu.
 
-## Suggested Review Cadence
+## Nhịp review đề xuất
 
-- Review M0 before downloading or integrating a full dataset.
-- Review M1 before committing to a simulator map representation.
-- Review M2 before building a UI or batch generator.
-- Review M3 before describing the project as rare-scenario generation.
-- Review M4 with a clean checkout and the exact demo script.
+- Review M0 trước khi tải hoặc tích hợp full dataset.
+- Review M1 trước khi chốt simulator map representation.
+- Review M2 trước khi xây UI hoặc batch generator.
+- Review M3 trước khi mô tả project là rare-scenario generation.
+- Review M4 với clean checkout và demo script chính xác.

@@ -1,28 +1,45 @@
 # Real2Scenario
 
-Real2Scenario transforms recorded nuScenes vehicle interactions into replayable OpenSCENARIO files, measures replay fidelity, and generates constrained rare-case variants.
+Real2Scenario chuyển các tương tác phương tiện được ghi nhận trong nuScenes thành tệp OpenSCENARIO có thể phát lại, đo độ trung thực của quá trình phát lại, và sinh các biến thể tình huống hiếm có ràng buộc.
 
-The first MVP uses esmini for headless OpenSCENARIO execution. It deliberately supports local road-aligned reconstruction rather than claiming a lossless nuScenes-map to OpenDRIVE conversion.
+MVP đầu tiên dùng esmini để thực thi OpenSCENARIO ở chế độ headless. Hệ thống chủ đích chỉ hỗ trợ tái dựng cục bộ theo hướng đường, không tuyên bố chuyển đổi không mất thông tin từ bản đồ nuScenes sang OpenDRIVE.
 
-## Current Scope
+## Phạm vi hiện tại
 
-- Canonical, simulator-independent scenario schema.
-- nuScenes trajectory extraction once the required metadata is available locally.
-- Baseline OpenSCENARIO export and esmini replay.
-- Controlled speed, gap, and timing perturbations.
-- Validation, trajectory metrics, and a reviewable scenario report.
+- Schema scenario chuẩn, độc lập với simulator.
+- Trích xuất quỹ đạo nuScenes khi metadata cần thiết đã có ở máy cục bộ.
+- Xuất baseline OpenSCENARIO và phát lại bằng esmini.
+- Biến đổi có kiểm soát về tốc độ, khoảng cách và thời điểm.
+- Validation, metric quỹ đạo và báo cáo scenario có thể review.
 
-## Documentation
+## Onboarding cho teammate
 
-- [Product specification](docs/product-spec.md)
-- [Architecture](docs/architecture.md)
-- [MVP roadmap and tickets](docs/mvp-roadmap.md)
-- [Review checklist](docs/review-checklist.md)
-- [Technology and usage guide](docs/technology-guide.md)
-- [nuScenes and simulation guide](docs/nuscenes-and-simulation-guide.md)
-- [Original project brief](docs/description.md)
+Người mới nên đi theo thứ tự này trước khi nhận ticket code:
 
-## Quick Start
+1. Đọc [mô tả sản phẩm](docs/product-spec.md) để hiểu bài toán, phạm vi MVP và tiêu chí hoàn thành.
+2. Đọc [hướng dẫn nuScenes và simulator](docs/nuscenes-and-simulation-guide.md), sau đó hoàn thành bài thực hành onboarding trong mục 11 theo ticket `R2S-100`.
+3. Cài môi trường Python bằng phần **Bắt đầu nhanh**, chạy `pytest`, rồi đọc [hướng dẫn công nghệ và cách sử dụng](docs/technology-guide.md).
+4. Điền data inventory, kiểm tra license, và dùng `nuscenes-devkit` render ít nhất một sample khi team đã có bộ nuScenes mini đầy đủ.
+5. Chọn ticket chưa bị block trong [roadmap và danh sách ticket](docs/mvp-roadmap.md); dùng [checklist review](docs/review-checklist.md) trước khi mở pull request.
+
+Điểm bắt đầu theo vai trò:
+
+- Data/ML: `R2S-100`, `R2S-101`, `R2S-102`.
+- Simulation: đọc guide nuScenes trước, sau đó nhận `R2S-201` đến `R2S-205`.
+- UI/demo: đọc product spec và architecture trước, sau đó theo `R2S-104`, `R2S-401`.
+- Reviewer/PM: bắt đầu ở product spec, roadmap checkpoint và review checklist.
+
+## Tài liệu
+
+- [Đặc tả sản phẩm](docs/product-spec.md)
+- [Kiến trúc](docs/architecture.md)
+- [Roadmap MVP và tickets](docs/mvp-roadmap.md)
+- [Checklist review](docs/review-checklist.md)
+- [Hướng dẫn công nghệ và cách sử dụng](docs/technology-guide.md)
+- [Hướng dẫn nuScenes và mô phỏng](docs/nuscenes-and-simulation-guide.md)
+- [Mô tả đề bài ban đầu](docs/description.md)
+
+## Bắt đầu nhanh
 
 ```bash
 python -m venv .venv
@@ -31,8 +48,8 @@ pip install -e ".[dev]"
 pytest
 ```
 
-The initial scaffold has no simulator or dataset dependency. See the Phase 0 tickets before adding nuScenes metadata or esmini.
+Scaffold ban đầu chưa phụ thuộc simulator hoặc dataset. Xem ticket Phase 0 trước khi thêm nuScenes metadata hoặc esmini.
 
-## Data License
+## Giấy phép dữ liệu
 
-The included nuScenes-derived data is subject to the terms in [data/LICENSE](data/LICENSE), including non-commercial and attribution requirements. Do not add, redistribute, or use dataset material outside those terms.
+Dữ liệu dẫn xuất từ nuScenes trong repository này tuân theo điều khoản tại [data/LICENSE](data/LICENSE), bao gồm yêu cầu phi thương mại và ghi công. Không thêm, phân phối lại hoặc sử dụng dữ liệu ngoài các điều khoản này.

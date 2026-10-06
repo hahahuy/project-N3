@@ -1,63 +1,63 @@
-# Architecture
+# Kiến trúc
 
-## 1. Design Principles
+## 1. Nguyên tắc thiết kế
 
-- Keep recorded-data interpretation separate from simulator-specific export.
-- Preserve provenance and deterministic generation parameters in every artifact.
-- Fail a scenario explicitly instead of silently repairing implausible trajectories.
-- Make each validation decision inspectable by a reviewer.
-- Start with one process and module boundaries, not microservices.
+- Tách việc diễn giải dữ liệu ghi nhận khỏi export đặc thù simulator.
+- Giữ provenance và tham số sinh xác định trong mọi artifact.
+- Báo lỗi scenario không hợp lý rõ ràng, không tự sửa trajectory một cách im lặng.
+- Mỗi quyết định validation phải review được.
+- Bắt đầu bằng một process với module boundary rõ ràng, không dùng microservice.
 
 ## 2. Pipeline
 
 ```text
 nuScenes metadata
-  -> ingestion and event-window extraction
+  -> ingestion và trích xuất event window
   -> canonical Scenario
-  -> road-aligned local coordinate transform
+  -> biến đổi toạ độ local theo hướng đường
   -> OpenSCENARIO exporter
   -> esmini runner
-  -> replay trace and metrics
-  -> constrained variant generator
-  -> validation, ranking, export/report
+  -> replay trace và metrics
+  -> generator biến thể có ràng buộc
+  -> validation, xếp hạng, export/report
 ```
 
-The source coordinate frame, local reconstruction frame, and simulator frame must be named in each artifact. Coordinate transforms must be invertible where possible and unit-tested with known points.
+Mọi artifact phải nêu source frame, local reconstruction frame và simulator frame. Coordinate transform cần khả năng đảo chiều khi phù hợp, đồng thời có unit test bằng điểm đã biết.
 
-## 3. Canonical Contract
+## 3. Canonical contract
 
-`src/real2scenario/models.py` is the contract shared by every pipeline stage. It must not import nuScenes, esmini, CARLA, UI, or XML libraries.
+`src/real2scenario/models.py` là contract chung cho mọi bước pipeline. Module này không được import nuScenes, esmini, CARLA, UI hoặc XML library.
 
-| Type | Required fields | Invariant |
+| Kiểu | Field bắt buộc | Invariant |
 | --- | --- | --- |
-| `State` | time, x, y, yaw, speed | Time is finite and non-negative; values use SI units. |
-| `Actor` | ID, type, trajectory | Actor ID is unique in a scenario; timestamps strictly increase. |
-| `Scenario` | ID, duration, ego ID, actors, provenance | Ego exists; scenario duration covers all states. |
-| `VariantConfig` | speed multiplier, gap delta, timing offset, seed | Input values are serializable and must be stored with output. |
+| `State` | time, x, y, yaw, speed | Thời gian hữu hạn, không âm; giá trị dùng SI. |
+| `Actor` | ID, type, trajectory | ID actor duy nhất trong scenario; timestamp tăng nghiêm ngặt. |
+| `Scenario` | ID, duration, ego ID, actors, provenance | Ego tồn tại; duration bao phủ mọi state. |
+| `VariantConfig` | speed multiplier, gap delta, timing offset, seed | Input serializable và bắt buộc lưu cùng output. |
 
-## 4. Module Boundaries
+## 4. Ranh giới module
 
 ```text
 src/real2scenario/
-  models.py             Canonical dataclasses and validation
-  ingestion/            nuScenes adapters and event mining
-  map/                  Coordinate transforms and road templates
-  export/               OpenSCENARIO XML generation
-  simulation/           esmini process runner and trace parsing
-  generation/           Controlled perturbation strategies
+  models.py             Dataclass chuẩn và validation
+  ingestion/            Adapter nuScenes và event mining
+  map/                  Coordinate transform và road template
+  export/               Sinh OpenSCENARIO XML
+  simulation/           esmini runner và parse trace
+  generation/           Chiến lược perturbation có kiểm soát
   validation/           Feasibility, replay metrics, ranking
-  api/                  Optional FastAPI boundary
+  api/                  Ranh giới FastAPI tuỳ chọn
 ```
 
-Rules:
+Quy tắc:
 
-- `ingestion` creates canonical objects; it does not write XML.
-- `export` consumes canonical objects; it does not inspect nuScenes files.
-- `simulation` only executes/reads simulator artifacts; it does not decide whether a case is rare.
-- `validation` records every rejection reason as structured data.
-- UI/API invoke orchestration functions but do not implement business rules.
+- `ingestion` tạo canonical object, không viết XML.
+- `export` chỉ đọc canonical object, không đọc file nuScenes.
+- `simulation` chạy/đọc artifact simulator, không quyết định scenario có hiếm hay không.
+- `validation` ghi structured data cho mọi lý do reject.
+- UI/API chỉ gọi orchestration; không chứa business rule.
 
-## 5. Artifact Layout
+## 5. Bố cục artifact
 
 ```text
 scenarios/
@@ -76,39 +76,37 @@ maps/
 reports/
 ```
 
-Generated files are ignored by Git by default. A small curated set of fixture artifacts may be committed under `tests/fixtures/` when licensing permits.
+Generated file bị ignore mặc định. Có thể commit fixture nhỏ đã được curate trong `tests/fixtures/` nếu giấy phép cho phép.
 
-## 6. Simulator Strategy
+## 6. Chiến lược simulator
 
-esmini is the MVP execution backend because it is lightweight and OpenSCENARIO-native. The first road maps are curated OpenDRIVE templates. A nuScenes segment is translated into a local road-aligned frame and replayed on the closest supported template.
+esmini là backend MVP vì nhẹ, hỗ trợ OpenSCENARIO/OpenDRIVE trực tiếp và phù hợp batch headless. Các map đầu tiên là OpenDRIVE template được curate. Một segment nuScenes được đưa về local road-aligned frame và replay trên template được hỗ trợ gần nhất.
 
-This is an approximation. The report must expose `map_reconstruction_mode` and map/template version. Do not label this process as a direct nuScenes map conversion.
+Đây là xấp xỉ. Report phải lưu `map_reconstruction_mode` và phiên bản map/template; không gọi đây là chuyển đổi trực tiếp từ nuScenes map.
 
-CARLA is an adapter added only after the canonical scenario, exporter, metrics, and review artifacts are stable. CARLA should consume the same canonical model rather than become the project data model.
+CARLA là adapter bổ sung sau khi canonical scenario, exporter, metrics và review artifact đã ổn định. CARLA phải consume canonical model chung, không trở thành data model của project.
 
-## 7. Validity And Ranking
+## 7. Validity và ranking
 
-Each variant is evaluated independently in this order:
+Mỗi variant được đánh giá theo thứ tự:
 
-1. Schema validity: complete IDs, finite values, monotonic timestamps.
-2. Kinematic validity: configured acceleration, deceleration, jerk, and yaw-rate limits.
-3. Road validity: position stays inside an allowed lane/drivable corridor when the map mode supports it.
-4. Simulator validity: XML parsing and esmini completion.
-5. Quality/risk features: TTC, distance, variation magnitude, replay error.
+1. Schema validity: ID đầy đủ, giá trị hữu hạn, timestamp tăng đơn điệu.
+2. Kinematic validity: acceleration, deceleration, jerk và yaw-rate trong giới hạn cấu hình.
+3. Road validity: vị trí nằm trong lane/drivable corridor khi map mode hỗ trợ.
+4. Simulator validity: XML parse được và esmini chạy hoàn tất.
+5. Feature chất lượng/rủi ro: TTC, khoảng cách, độ lớn biến đổi, replay error.
 
-The report must retain all check outcomes; it must not reduce a rejected scenario to a single boolean without reasons.
-
-An initial transparent score is:
+Report phải giữ mọi kết quả check; không rút scenario bị reject thành một boolean không có nguyên nhân.
 
 ```text
 score = novelty + risk_signal + replay_quality - feasibility_penalty
 ```
 
-Weights are versioned configuration. A high score does not override failed validity checks.
+Trọng số là cấu hình có version. Điểm cao không thể ghi đè validation thất bại.
 
-## 8. Operational Requirements
+## 8. Yêu cầu vận hành
 
-- Python 3.11 or later.
-- All external binary paths come from explicit configuration or environment variables, never hard-coded user paths.
-- Each batch command writes a manifest containing command version, source IDs, map version, generator settings, and timestamp.
-- The CI test suite must run without the full nuScenes dataset or esmini binary. Simulator integration tests are marked separately.
+- Python 3.11 trở lên.
+- Path binary bên ngoài đến từ config hoặc environment variable, không hard-code path cá nhân.
+- Mỗi batch ghi manifest gồm command version, source IDs, map version, generator settings và timestamp.
+- CI phải chạy được test suite khi không có full nuScenes dataset hoặc esmini binary. Simulator integration test được đánh dấu riêng.

@@ -1,56 +1,56 @@
-# Code Review Checklist
+# Checklist review code
 
-Use this checklist together with the milestone checkpoint in `mvp-roadmap.md`. A reviewer should request changes when an unchecked applicable item lacks an explicit reason.
+Dùng checklist này cùng checkpoint milestone trong `mvp-roadmap.md`. Reviewer nên yêu cầu chỉnh sửa nếu một mục áp dụng được nhưng chưa tick mà không có lý do rõ ràng.
 
-## General
+## Chung
 
-- [ ] The ticket ID is included in the pull request title or description.
-- [ ] The change is scoped to the ticket and avoids unrelated refactors.
-- [ ] Public functions have type hints and clear docstrings where behavior is non-obvious.
-- [ ] New behavior has automated tests or a documented reason why it cannot be automated.
-- [ ] Error messages identify the failing scenario/config/artifact without exposing secrets.
-- [ ] No machine-specific absolute paths, credentials, or large generated outputs are committed.
-- [ ] Dataset license requirements remain visible and respected.
+- [ ] Ticket ID có trong tiêu đề hoặc mô tả pull request.
+- [ ] Thay đổi đúng phạm vi ticket và tránh refactor không liên quan.
+- [ ] Public function có type hint và docstring rõ ràng khi hành vi không hiển nhiên.
+- [ ] Hành vi mới có automated test hoặc lý do được ghi rõ vì sao không thể tự động hoá.
+- [ ] Error message xác định scenario/config/artifact lỗi mà không lộ secret.
+- [ ] Không commit absolute path theo máy, credential hoặc output sinh ra dung lượng lớn.
+- [ ] Yêu cầu giấy phép dataset vẫn hiển thị và được tuân thủ.
 
-## Data And Schema
+## Dữ liệu và schema
 
-- [ ] Units are SI and named in fields/docs.
-- [ ] Coordinate frame and origin are explicit.
-- [ ] Time ordering is validated before interpolation or metric calculation.
-- [ ] Actor IDs and scenario IDs are stable and unique.
-- [ ] Source tokens, source window, dataset version, and extraction version are retained.
-- [ ] Missing/invalid data produces a structured failure, not a silent fallback.
+- [ ] Đơn vị là SI và được nêu trong field/docs.
+- [ ] Coordinate frame và origin rõ ràng.
+- [ ] Thứ tự thời gian được validate trước nội suy hoặc tính metric.
+- [ ] Actor ID và scenario ID ổn định, duy nhất.
+- [ ] Source token, source window, phiên bản dataset và phiên bản extraction được giữ lại.
+- [ ] Dữ liệu thiếu/không hợp lệ tạo structured failure, không fallback im lặng.
 
-## Geometry And Metrics
+## Hình học và metrics
 
-- [ ] Heading comparison wraps angles correctly at `-pi`/`pi`.
-- [ ] Time alignment policy is explicit and tested.
-- [ ] Metrics report units, sample count, and handling of missing states.
-- [ ] Threshold values are config, documented, and boundary-tested.
-- [ ] Coordinate transforms have round-trip or known-point tests.
+- [ ] So sánh heading wrap góc đúng tại `-pi`/`pi`.
+- [ ] Chính sách căn chỉnh thời gian rõ ràng và có test.
+- [ ] Metric báo đơn vị, số sample và cách xử lý state thiếu.
+- [ ] Threshold là config, có tài liệu và boundary test.
+- [ ] Coordinate transform có test round-trip hoặc known-point.
 
-## OpenSCENARIO And Simulation
+## OpenSCENARIO và mô phỏng
 
-- [ ] Generated XML is tested structurally and has a stable golden fixture where useful.
-- [ ] All simulator executable/map paths are configured externally.
-- [ ] Subprocess timeout, return code, stdout, and stderr are recorded.
-- [ ] Simulator failures remain distinguishable from invalid source/variant data.
-- [ ] Map/template selection is explained in artifact metadata.
-- [ ] Local reconstruction is not represented as lossless map conversion.
+- [ ] XML sinh ra được kiểm tra cấu trúc và có golden fixture ổn định khi phù hợp.
+- [ ] Mọi path đến executable/map simulator được cấu hình bên ngoài.
+- [ ] Timeout, return code, stdout và stderr của subprocess được ghi lại.
+- [ ] Lỗi simulator vẫn phân biệt được với source/variant data không hợp lệ.
+- [ ] Việc chọn map/template được giải thích trong artifact metadata.
+- [ ] Local reconstruction không được trình bày như map conversion không mất thông tin.
 
-## Variant Generation And Validation
+## Sinh biến thể và validation
 
-- [ ] A generated scenario does not mutate its baseline.
-- [ ] Parent scenario ID, seed, parameter configuration, and generator version are stored.
-- [ ] Same input config/seed reproduces IDs and output ordering.
-- [ ] Feasibility checks report every failure reason.
-- [ ] Invalid scenarios cannot be surfaced as valid ranked output.
-- [ ] Risk metrics are not presented as safety guarantees.
+- [ ] Scenario sinh ra không mutate baseline.
+- [ ] Parent scenario ID, seed, cấu hình tham số và phiên bản generator được lưu.
+- [ ] Cùng input config/seed tái tạo được ID và thứ tự output.
+- [ ] Feasibility check báo mọi lý do thất bại.
+- [ ] Scenario invalid không thể xuất hiện trong output xếp hạng valid.
+- [ ] Risk metric không được trình bày như bảo đảm an toàn.
 
-## UI And Demo
+## UI và demo
 
-- [ ] Recorded, replayed, and generated trajectories use distinct labels/styles.
-- [ ] Controls expose units and permitted ranges.
-- [ ] Results display validity status before score.
-- [ ] Exported files can be linked back to source/provenance metadata.
-- [ ] The intended demo flow works from a clean start using documented commands.
+- [ ] Quỹ đạo recorded, replayed và generated dùng nhãn/style khác nhau.
+- [ ] Control hiển thị đơn vị và miền giá trị cho phép.
+- [ ] Kết quả hiển thị validity trước score.
+- [ ] Tệp export có thể liên kết ngược tới source/provenance metadata.
+- [ ] Demo flow hoạt động từ môi trường sạch bằng lệnh đã ghi trong docs.
