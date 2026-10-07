@@ -121,6 +121,19 @@ real2scenario-devkit \
 `--sample-token <token>`. `inventory` nêu count từng table và token scene/sample
 để ghi evidence R2S-100. `render` cần raw sensor file ngoài metadata JSON.
 
+Sau khi R2S-102 extract source segment thanh canonical artifact, render top-down
+path va mo viewer scrub/play bang command sau:
+
+```bash
+real2scenario-visualize /tmp/scenario.json --output /tmp/source-top-down.png
+real2scenario-visualize /tmp/scenario.json --show
+```
+
+`--show` mo control time scrubber va Play/Pause; ego dung mau do, moi actor dung
+mau rieng. `--output` tao PNG headless de reviewer luu evidence. Artifact JSON
+phai la baseline/variant artifact da qua serialization validation, khong phai
+raw nuScenes metadata.
+
 - Không hard-code home directory trong source.
 - Không commit full dataset, credential hay raw data không được phép phân phối.
 - Lưu source scene token, sample range, dataset version và extraction version trong từng canonical scenario.

@@ -83,13 +83,13 @@
 
 ### Checkpoint M1: Review data
 
-- [ ] Có trajectory data bắt buộc; không coi panoptic mask là track.
-- [ ] Data inventory của team nêu raw sensor và metadata file có sẵn cục bộ.
-- [ ] Một source segment được ghi rõ có ego và ít nhất một actor tương tác.
-- [ ] State timestamp đơn điệu và tính bằng giây.
-- [ ] Coordinate frame và origin được hiển thị/ghi tài liệu.
-- [ ] Lý do chọn actor nằm trong scenario artifact.
-- [ ] Reviewer tái tạo extraction bằng một command/config.
+- [x] Có trajectory data bắt buộc; không coi panoptic mask là track.
+- [x] Data inventory của team nêu raw sensor và metadata file có sẵn cục bộ.
+- [x] Một source segment được ghi rõ có ego và ít nhất một actor tương tác.
+- [x] State timestamp đơn điệu và tính bằng giây.
+- [x] Coordinate frame và origin được hiển thị/ghi tài liệu.
+- [x] Lý do chọn actor nằm trong scenario artifact.
+- [x] Reviewer tái tạo extraction bằng một command/config.
 
 ## M2: Tái dựng baseline và replay
 

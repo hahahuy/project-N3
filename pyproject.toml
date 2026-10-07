@@ -19,6 +19,7 @@ devkit = [
 [project.scripts]
 real2scenario-devkit = "real2scenario.devkit:main"
 real2scenario-preflight = "real2scenario.preflight:main"
+real2scenario-visualize = "real2scenario.visualization:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

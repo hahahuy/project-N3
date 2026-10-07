@@ -2,6 +2,7 @@
 
 from .models import Actor, Scenario, State, VariantConfig
 from .ingestion import SourceWindow, extract_scenario
+from .selection import SELECTION_CONFIG_VERSION, SelectionConfig, select_interaction_actors
 from .serialization import (
     REQUIRED_PROVENANCE_KEYS,
     SCHEMA_VERSION,
@@ -24,7 +25,9 @@ __all__ = [
     "Actor",
     "REQUIRED_PROVENANCE_KEYS",
     "SCHEMA_VERSION",
+    "SELECTION_CONFIG_VERSION",
     "Scenario",
+    "SelectionConfig",
     "SourceWindow",
     "State",
     "VariantConfig",
@@ -37,6 +40,7 @@ __all__ = [
     "extract_scenario",
     "scenario_from_dict",
     "scenario_to_dict",
+    "select_interaction_actors",
     "state_from_dict",
     "state_to_dict",
     "variant_artifact_to_dict",
