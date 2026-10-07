@@ -20,10 +20,11 @@ def _write_metadata(root: Path, version: str = "v1.0-mini") -> Path:
 
 
 def test_preflight_accepts_complete_metadata_and_map_fixture(tmp_path: Path) -> None:
-    _write_metadata(tmp_path)
-    (tmp_path / "maps" / "expansion").mkdir(parents=True)
-    (tmp_path / "maps" / "expansion" / "map.json").write_text(
-        json.dumps({"maps": []}), encoding="utf-8"
+    metadata = _write_metadata(tmp_path)
+    (tmp_path / "maps").mkdir()
+    (tmp_path / "maps" / "map.png").write_bytes(b"map")
+    (metadata / "map.json").write_text(
+        json.dumps([{"filename": "maps/map.png"}]), encoding="utf-8"
     )
 
     report = preflight_dataset(tmp_path)
@@ -59,14 +60,26 @@ def test_preflight_reports_missing_file_and_invalid_json(tmp_path: Path) -> None
     assert any(issue.path.endswith("scene.json") for issue in report.issues)
 
 
-def test_preflight_requires_map_json_when_map_directory_exists(tmp_path: Path) -> None:
+def test_preflight_requires_a_map_manifest_when_map_directory_exists(tmp_path: Path) -> None:
     _write_metadata(tmp_path)
     (tmp_path / "maps").mkdir()
 
     report = preflight_dataset(tmp_path)
 
     assert not report.ready
-    assert [issue.code for issue in report.issues] == ["missing_map_json"]
+    assert [issue.code for issue in report.issues] == ["missing_map_manifest"]
+
+
+def test_preflight_reports_map_file_missing_from_manifest(tmp_path: Path) -> None:
+    metadata = _write_metadata(tmp_path)
+    (tmp_path / "maps").mkdir()
+    (metadata / "map.json").write_text(
+        json.dumps([{"filename": "maps/missing.png"}]), encoding="utf-8"
+    )
+
+    report = preflight_dataset(tmp_path)
+
+    assert [issue.code for issue in report.issues] == ["missing_map_file"]
 
 
 def test_preflight_can_explicitly_skip_map_check(tmp_path: Path) -> None:

@@ -37,12 +37,12 @@
 
 ### Checkpoint M0: Review contract
 
-- [ ] Package cài được bằng lệnh đã ghi.
-- [ ] Không có dataset path, local binary path hoặc secret bị hard-code.
-- [ ] Canonical schema có unit test cho mọi invariant.
-- [ ] Unit và coordinate-frame field rõ ràng.
-- [ ] Reviewer xác định được source và config của mọi artifact từ manifest.
-- [ ] `models.py` không phụ thuộc simulator/UI.
+- [x] Package cài được bằng lệnh đã ghi.
+- [x] Không có dataset path, local binary path hoặc secret bị hard-code.
+- [x] Canonical schema có unit test cho mọi invariant.
+- [x] Unit và coordinate-frame field rõ ràng.
+- [x] Reviewer xác định được source và config của mọi artifact từ manifest.
+- [x] `models.py` không phụ thuộc simulator/UI.
 
 ## M1: Ingestion và scenario mining
 

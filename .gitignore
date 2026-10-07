@@ -10,4 +10,6 @@ dist/
 # Generated scenario and simulator artifacts are reproducible from config.
 scenarios/generated/
 reports/
-data/nuScenes-panoptic-v1.0-mini/
+# Licensed nuScenes releases and their raw sensor payloads are local-only.
+data/v1.0-*/
+data/nuScenes-*/

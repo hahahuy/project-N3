@@ -72,10 +72,11 @@ metadata, không đọc hay phân phối raw sensor data:
 real2scenario-preflight --root "$NUSCENES_ROOT" --version "$NUSCENES_VERSION"
 ```
 
-Mặc định command yêu cầu ít nhất một JSON file bên trong `$NUSCENES_ROOT/maps`
-cho map-aware extraction. Khi team chỉ kiểm tra metadata trước khi map expansion
-được cấp phép/tải về, dùng explicit mode sau; kết quả `READY` trong mode này chưa
-đủ điều kiện cho road-aware extraction:
+Mặc định command kiểm tra `v1.0-mini/map.json` cùng từng map file mà manifest
+tham chiếu trong `$NUSCENES_ROOT/maps`, đủ cho map-aware extraction ở data stage.
+Khi team chỉ kiểm tra metadata trước khi map expansion được cấp phép/tải về, dùng
+explicit mode sau; kết quả `READY` trong mode này chưa đủ điều kiện cho
+road-aware extraction:
 
 ```bash
 real2scenario-preflight \

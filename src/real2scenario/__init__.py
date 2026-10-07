@@ -1,6 +1,7 @@
 """Canonical models and pipeline components for Real2Scenario."""
 
 from .models import Actor, Scenario, State, VariantConfig
+from .ingestion import SourceWindow, extract_scenario
 from .serialization import (
     REQUIRED_PROVENANCE_KEYS,
     SCHEMA_VERSION,
@@ -24,6 +25,7 @@ __all__ = [
     "REQUIRED_PROVENANCE_KEYS",
     "SCHEMA_VERSION",
     "Scenario",
+    "SourceWindow",
     "State",
     "VariantConfig",
     "actor_from_dict",
@@ -32,6 +34,7 @@ __all__ = [
     "artifact_from_json",
     "artifact_to_json",
     "baseline_artifact_to_dict",
+    "extract_scenario",
     "scenario_from_dict",
     "scenario_to_dict",
     "state_from_dict",

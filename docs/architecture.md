@@ -58,6 +58,11 @@ Quy tắc:
 - `validation` ghi structured data cho mọi lý do reject.
 - UI/API chỉ gọi orchestration; không chứa business rule.
 
+R2S-102 ingestion đọc nuScenes metadata và tạo `Scenario` trong
+`nuscenes_global` frame. Nó nhận source window va instance token rõ ràng; việc
+chọn actor theo interaction thuộc R2S-103, còn source-to-local road-aligned
+transform thuộc R2S-201.
+
 `serialization.py` ghi envelope `schema_version` và `artifact_type`. Artifact
 baseline lưu canonical scenario; artifact variant lưu thêm `parent_scenario_id`
 và `variant_config` gồm speed multiplier, gap delta, timing offset và seed.

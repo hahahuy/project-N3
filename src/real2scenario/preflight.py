@@ -65,9 +65,9 @@ def preflight_dataset(
     example ``/datasets/nuscenes/v1.0-mini``. This function does not import the
     nuScenes devkit and does not inspect raw sensor payloads.
 
-    ``map_mode='expansion'`` requires ``<dataset_root>/maps`` to contain at
-    least one JSON map file, searched recursively. Use ``map_mode='none'`` for
-    a metadata-only check; this is not sufficient for road-aware extraction.
+    ``map_mode='expansion'`` requires the official ``map.json`` manifest and
+    every raster map file it references. Use ``map_mode='none'`` for a
+    metadata-only check; this is not sufficient for road-aware extraction.
     """
     if map_mode not in ("none", "expansion"):
         raise ValueError("map_mode must be either 'none' or 'expansion'.")
@@ -116,7 +116,7 @@ def preflight_dataset(
             _check_json_file(path, issues)
 
     if map_mode == "expansion":
-        _check_map_directory(root / "maps", issues)
+        _check_map_expansion(root, metadata_path, issues)
 
     return PreflightReport(
         dataset_root=root,
@@ -150,12 +150,15 @@ def _check_json_file(path: Path, issues: list[PreflightIssue]) -> None:
         )
 
 
-def _check_map_directory(path: Path, issues: list[PreflightIssue]) -> None:
-    if not path.is_dir():
+def _check_map_expansion(
+    dataset_root: Path, metadata_path: Path, issues: list[PreflightIssue]
+) -> None:
+    map_directory = dataset_root / "maps"
+    if not map_directory.is_dir():
         issues.append(
             PreflightIssue(
                 code="missing_map_directory",
-                path=str(path),
+                path=str(map_directory),
                 message=(
                     "Map expansion directory does not exist; provide licensed "
                     "nuScenes map data under <dataset_root>/maps."
@@ -164,14 +167,59 @@ def _check_map_directory(path: Path, issues: list[PreflightIssue]) -> None:
         )
         return
 
-    if not any(path.rglob("*.json")):
+    manifest_path = metadata_path / "map.json"
+    if not manifest_path.is_file():
         issues.append(
             PreflightIssue(
-                code="missing_map_json",
-                path=str(path),
-                message="Map directory contains no JSON map metadata files.",
+                code="missing_map_manifest",
+                path=str(manifest_path),
+                message="Required map metadata table map.json is missing.",
             )
         )
+        return
+
+    try:
+        with manifest_path.open(encoding="utf-8") as file:
+            records = json.load(file)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        issues.append(
+            PreflightIssue(
+                code="invalid_map_manifest",
+                path=str(manifest_path),
+                message=f"Map metadata table cannot be parsed: {error}.",
+            )
+        )
+        return
+
+    if not isinstance(records, list):
+        issues.append(
+            PreflightIssue(
+                code="invalid_map_manifest",
+                path=str(manifest_path),
+                message="Map metadata table must contain a JSON array.",
+            )
+        )
+        return
+
+    for index, record in enumerate(records):
+        if not isinstance(record, dict) or not isinstance(record.get("filename"), str):
+            issues.append(
+                PreflightIssue(
+                    code="invalid_map_record",
+                    path=f"{manifest_path}[{index}]",
+                    message="Map record must provide a string filename.",
+                )
+            )
+            continue
+        map_path = dataset_root / record["filename"]
+        if not map_path.is_file():
+            issues.append(
+                PreflightIssue(
+                    code="missing_map_file",
+                    path=str(map_path),
+                    message="Map file referenced by map.json is missing.",
+                )
+            )
 
 
 def format_report(report: PreflightReport) -> str:
