@@ -37,6 +37,7 @@ Người mới nên đi theo thứ tự này trước khi nhận ticket code:
 - [Checklist review](docs/review-checklist.md)
 - [Hướng dẫn công nghệ và cách sử dụng](docs/technology-guide.md)
 - [Hướng dẫn nuScenes và mô phỏng](docs/nuscenes-and-simulation-guide.md)
+- [Handoff cho agent triển khai tiếp](docs/agent-handoff.md)
 - [Mô tả đề bài ban đầu](docs/description.md)
 
 ## Bắt đầu nhanh

@@ -40,6 +40,7 @@ Mọi artifact phải nêu source frame, local reconstruction frame và simulato
 ```text
 src/real2scenario/
   models.py             Dataclass chuẩn và validation
+  serialization.py      JSON artifact có version và provenance validation
   ingestion/            Adapter nuScenes và event mining
   map/                  Coordinate transform và road template
   export/               Sinh OpenSCENARIO XML
@@ -56,6 +57,12 @@ Quy tắc:
 - `simulation` chạy/đọc artifact simulator, không quyết định scenario có hiếm hay không.
 - `validation` ghi structured data cho mọi lý do reject.
 - UI/API chỉ gọi orchestration; không chứa business rule.
+
+`serialization.py` ghi envelope `schema_version` và `artifact_type`. Artifact
+baseline lưu canonical scenario; artifact variant lưu thêm `parent_scenario_id`
+và `variant_config` gồm speed multiplier, gap delta, timing offset và seed.
+Mọi artifact yêu cầu provenance gồm dataset/version, source scene/window,
+coordinate-transform version, map reconstruction mode/version và generator version.
 
 ## 5. Bố cục artifact
 

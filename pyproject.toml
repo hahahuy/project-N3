@@ -11,6 +11,14 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
+devkit = [
+    "matplotlib>=3.8,<4",
+    "nuscenes-devkit==1.2.0",
+]
+
+[project.scripts]
+real2scenario-devkit = "real2scenario.devkit:main"
+real2scenario-preflight = "real2scenario.preflight:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

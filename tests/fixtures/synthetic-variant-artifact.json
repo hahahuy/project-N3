@@ -1,0 +1,49 @@
+{
+  "artifact_type": "variant",
+  "parent_scenario_id": "synthetic-baseline-001",
+  "scenario": {
+    "actors": [
+      {
+        "actor_id": "ego",
+        "actor_type": "vehicle",
+        "length_m": 4.5,
+        "trajectory": [
+          {"speed_mps": 10.0, "time_s": 0.0, "x_m": 0.0, "y_m": 0.0, "yaw_rad": 0.0},
+          {"speed_mps": 10.0, "time_s": 1.0, "x_m": 10.0, "y_m": 0.0, "yaw_rad": 0.0}
+        ],
+        "width_m": 1.8
+      },
+      {
+        "actor_id": "lead",
+        "actor_type": "vehicle",
+        "length_m": 4.7,
+        "trajectory": [
+          {"speed_mps": 8.0, "time_s": 0.0, "x_m": 20.0, "y_m": 0.0, "yaw_rad": 0.0},
+          {"speed_mps": 8.0, "time_s": 1.0, "x_m": 28.0, "y_m": 0.0, "yaw_rad": 0.0}
+        ],
+        "width_m": 1.9
+      }
+    ],
+    "coordinate_frame": "local_road_aligned",
+    "duration_s": 1.0,
+    "ego_actor_id": "ego",
+    "provenance": {
+      "coordinate_transform_version": "synthetic-transform-v1",
+      "dataset_name": "synthetic-fixture",
+      "dataset_version": "v1",
+      "generator_version": "real2scenario-test-v1",
+      "map_reconstruction_mode": "local-template",
+      "map_reconstruction_version": "highway-template-v1",
+      "source_scene_token": "synthetic-scene-001",
+      "source_window": "0.0s-1.0s"
+    },
+    "scenario_id": "synthetic-variant-001"
+  },
+  "schema_version": "1.0",
+  "variant_config": {
+    "initial_gap_delta_m": -2.0,
+    "seed": 7,
+    "speed_multiplier": 1.1,
+    "timing_offset_s": 0.25
+  }
+}

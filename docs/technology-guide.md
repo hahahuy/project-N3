@@ -59,12 +59,66 @@ calibrated_sensor.json
 log.json
 ```
 
-Trích xuất có nhận biết lane cần thêm nuScenes map data. `R2S-101` sẽ kiểm tra layout chính xác khi được implement.
-
 ```bash
 export NUSCENES_ROOT="$HOME/datasets/nuscenes"
 export NUSCENES_VERSION="v1.0-mini"
 ```
+
+Trích xuất có nhận biết lane cần thêm nuScenes map data. R2S-101 cung cấp
+preflight không cần `nuscenes-devkit`; command chỉ kiểm tra filesystem và JSON
+metadata, không đọc hay phân phối raw sensor data:
+
+```bash
+real2scenario-preflight --root "$NUSCENES_ROOT" --version "$NUSCENES_VERSION"
+```
+
+Mặc định command yêu cầu ít nhất một JSON file bên trong `$NUSCENES_ROOT/maps`
+cho map-aware extraction. Khi team chỉ kiểm tra metadata trước khi map expansion
+được cấp phép/tải về, dùng explicit mode sau; kết quả `READY` trong mode này chưa
+đủ điều kiện cho road-aware extraction:
+
+```bash
+real2scenario-preflight \
+  --root "$NUSCENES_ROOT" \
+  --version "$NUSCENES_VERSION" \
+  --map-mode none
+```
+
+Command exit `0` khi sẵn sàng và `1` khi thiếu hoặc hỏng input; mỗi lỗi nêu path
+và bước xử lý. Required tables gồm `scene`, `sample`, `sample_data`,
+`sample_annotation`, `instance`, `ego_pose`, `calibrated_sensor`, `sensor`,
+`category`, và `log`.
+
+Môi trường project đã pin `nuscenes-devkit==1.2.0` và Matplotlib trong optional
+extra `devkit`. Dùng Python 3.11 cho devkit environment hiện tại:
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev,devkit]"
+```
+
+Sau khi complete licensed mini release có ở `$NUSCENES_ROOT`, tạo inventory
+reviewable và render keyframe đầu của scene đầu tiên:
+
+```bash
+real2scenario-devkit \
+  --root "$NUSCENES_ROOT" \
+  --version "$NUSCENES_VERSION" \
+  inventory \
+  --output /tmp/nuscenes-inventory.json
+
+real2scenario-devkit \
+  --root "$NUSCENES_ROOT" \
+  --version "$NUSCENES_VERSION" \
+  render \
+  --scene-index 0 \
+  --output /tmp/nuscenes-scene-0.png
+```
+
+Để render một keyframe đã chọn thay vì scene đầu, thay `--scene-index 0` bằng
+`--sample-token <token>`. `inventory` nêu count từng table và token scene/sample
+để ghi evidence R2S-100. `render` cần raw sensor file ngoài metadata JSON.
 
 - Không hard-code home directory trong source.
 - Không commit full dataset, credential hay raw data không được phép phân phối.

@@ -10,3 +10,4 @@ dist/
 # Generated scenario and simulator artifacts are reproducible from config.
 scenarios/generated/
 reports/
+data/nuScenes-panoptic-v1.0-mini/
