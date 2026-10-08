@@ -177,11 +177,15 @@
 ### Checkpoint M3: Review generation
 
 - [ ] Batch ít nhất 20 variant sinh từ baseline cố định.
-- [ ] Rerun seed/config tái tạo ID và trajectory.
-- [ ] Report tách invalid, simulator-failed và valid case.
-- [ ] Mọi reject có một hoặc nhiều structured reason.
-- [ ] Kinematic/map threshold là config có version, không phải magic number.
-- [ ] Score component hiển thị rõ; không đánh đồng “rare” với “safe”.
+- [x] Rerun seed/config tái tạo ID và trajectory.
+- [x] Report tách invalid, simulator-failed và valid case.
+- [x] Mọi reject có một hoặc nhiều structured reason.
+- [x] Kinematic/map threshold là config có version, không phải magic number.
+- [x] Score component hiển thị rõ; không đánh đồng “rare” với “safe”.
+
+R2S-304 and R2S-305 evidence: `docs/r2s-304-ranking-evidence.md` and
+`docs/r2s-305-reporting-evidence.md`. The 20-variant baseline batch remains
+pending explicit evidence.
 
 ## M4: Demo và release
 
