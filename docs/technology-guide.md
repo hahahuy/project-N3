@@ -169,7 +169,8 @@ export ESMINI_BIN="/absolute/path/to/esmini"
 "$ESMINI_BIN" --help
 ```
 
-`R2S-204` sẽ bọc command line. Contract mục tiêu:
+`R2S-204` đã bọc command line trong Python API `run_esmini`. Contract CLI dưới
+đây là thiết kế mục tiêu/hướng dẫn tương lai, chưa phải command đã cài đặt:
 
 ```bash
 real2scenario replay \
@@ -178,7 +179,12 @@ real2scenario replay \
   --output scenarios/baseline/<scenario-id>/replay.csv
 ```
 
-Đây chưa phải CLI đã implement. Runner bắt buộc lưu executable/version, command không chứa secret, timeout, exit code, stdout/stderr, trace location, source scenario và map template ID. Chạy headless cho batch; GUI chỉ dùng inspect thủ công scenario được curate.
+M4 không được gọi command này cho đến khi một ticket thêm nó vào
+`pyproject.toml`, test exit code và cập nhật wiki reference. Hiện tại hãy gọi
+`run_esmini` với `EsminiConfig`; runner lưu executable/version, command không
+chứa secret, timeout, exit code, stdout/stderr, trace location, source scenario
+và map template ID. Chạy headless cho batch; GUI chỉ dùng inspect thủ công
+scenario được curate.
 
 ## 6. Vì sao esmini là backend MVP
 
