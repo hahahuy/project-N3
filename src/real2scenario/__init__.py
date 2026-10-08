@@ -1,6 +1,27 @@
 """Canonical models and pipeline components for Real2Scenario."""
 
 from .models import Actor, Scenario, State, VariantConfig
+from .visualization import save_replay_overlay
+from .metrics import (
+    ALIGNMENT_METHOD,
+    ReplayMetrics,
+    compute_replay_metrics,
+    compute_scenario_replay_metrics,
+)
+from .simulation import EsminiConfig, ReplayReport, ReplayState, ReplayTrace, parse_esmini_csv_trace, run_esmini
+from .exporter import OPENSCENARIO_VERSION, build_openscenario_xml, write_openscenario
+from .templates import (
+    STRAIGHT_ROAD_TOPOLOGY,
+    TEMPLATE_REGISTRY_VERSION,
+    OpenDriveTemplate,
+    select_opendrive_template,
+)
+from .coordinates import (
+    COORDINATE_TRANSFORM_VERSION,
+    LOCAL_ROAD_ALIGNED_FRAME,
+    RoadAlignedTransform,
+    transform_to_local_road_aligned,
+)
 from .ingestion import SourceWindow, extract_scenario
 from .selection import SELECTION_CONFIG_VERSION, SelectionConfig, select_interaction_actors
 from .serialization import (
@@ -23,13 +44,26 @@ from .serialization import (
 
 __all__ = [
     "Actor",
+    "ALIGNMENT_METHOD",
+    "COORDINATE_TRANSFORM_VERSION",
+    "EsminiConfig",
+    "OPENSCENARIO_VERSION",
+    "LOCAL_ROAD_ALIGNED_FRAME",
     "REQUIRED_PROVENANCE_KEYS",
     "SCHEMA_VERSION",
     "SELECTION_CONFIG_VERSION",
     "Scenario",
+    "RoadAlignedTransform",
+    "ReplayReport",
+    "ReplayMetrics",
+    "ReplayState",
+    "ReplayTrace",
+    "OpenDriveTemplate",
     "SelectionConfig",
+    "STRAIGHT_ROAD_TOPOLOGY",
     "SourceWindow",
     "State",
+    "TEMPLATE_REGISTRY_VERSION",
     "VariantConfig",
     "actor_from_dict",
     "actor_to_dict",
@@ -37,13 +71,22 @@ __all__ = [
     "artifact_from_json",
     "artifact_to_json",
     "baseline_artifact_to_dict",
+    "build_openscenario_xml",
+    "compute_replay_metrics",
+    "compute_scenario_replay_metrics",
     "extract_scenario",
     "scenario_from_dict",
     "scenario_to_dict",
+    "parse_esmini_csv_trace",
     "select_interaction_actors",
+    "select_opendrive_template",
     "state_from_dict",
     "state_to_dict",
+    "transform_to_local_road_aligned",
+    "run_esmini",
+    "save_replay_overlay",
     "variant_artifact_to_dict",
     "variant_config_from_dict",
     "variant_config_to_dict",
+    "write_openscenario",
 ]

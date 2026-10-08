@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .models import Actor, Scenario, State
 from .serialization import artifact_from_json
+from .simulation import ReplayTrace
 
 
 def save_top_down_plot(scenario: Scenario, output_path: str | Path, *, time_s: float | None = None) -> None:
@@ -19,6 +20,49 @@ def save_top_down_plot(scenario: Scenario, output_path: str | Path, *, time_s: f
     output.parent.mkdir(parents=True, exist_ok=True)
     viewer.figure.savefig(output, bbox_inches="tight", dpi=150)
     viewer.close()
+
+
+def save_replay_overlay(
+    scenario: Scenario, replay_trace: ReplayTrace, output_path: str | Path
+) -> None:
+    """Save a labeled recorded-versus-replayed top-down trajectory overlay."""
+    pyplot, _, _, _ = _load_matplotlib()
+    figure, axes = pyplot.subplots(figsize=(10, 8))
+    all_x: list[float] = []
+    all_y: list[float] = []
+    for index, actor in enumerate(scenario.actors):
+        color = "#d42b2b" if actor.actor_id == scenario.ego_actor_id else _ACTOR_COLORS[
+            index % len(_ACTOR_COLORS)
+        ]
+        recorded_x = [state.x_m for state in actor.trajectory]
+        recorded_y = [state.y_m for state in actor.trajectory]
+        replayed = replay_trace.states_for(actor.actor_id)
+        replayed_x = [state.x_m for state in replayed]
+        replayed_y = [state.y_m for state in replayed]
+        axes.plot(recorded_x, recorded_y, color=color, linewidth=2.5, label=f"recorded: {actor.actor_id}")
+        axes.plot(
+            replayed_x,
+            replayed_y,
+            color=color,
+            linewidth=2.0,
+            linestyle="--",
+            label=f"replayed: {actor.actor_id}",
+        )
+        all_x.extend((*recorded_x, *replayed_x))
+        all_y.extend((*recorded_y, *replayed_y))
+    padding_m = max(5.0, max(max(all_x) - min(all_x), max(all_y) - min(all_y)) * 0.1)
+    axes.set_xlim(min(all_x) - padding_m, max(all_x) + padding_m)
+    axes.set_ylim(min(all_y) - padding_m, max(all_y) + padding_m)
+    axes.set_aspect("equal", adjustable="box")
+    axes.set_xlabel("x (m)")
+    axes.set_ylabel("y (m)")
+    axes.set_title(f"{scenario.scenario_id} | recorded vs replayed | {scenario.coordinate_frame}")
+    axes.grid(True, alpha=0.3)
+    axes.legend(loc="best")
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(output, bbox_inches="tight", dpi=150)
+    pyplot.close(figure)
 
 
 class TopDownViewer:

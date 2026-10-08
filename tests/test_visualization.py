@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from real2scenario import Actor, Scenario, State
-from real2scenario.visualization import _state_at_or_before, save_top_down_plot
+from real2scenario import Actor, ReplayState, ReplayTrace, Scenario, State
+from real2scenario.visualization import _state_at_or_before, save_replay_overlay, save_top_down_plot
 
 
 def _scenario() -> Scenario:
@@ -44,6 +44,23 @@ def test_save_top_down_plot_creates_png(tmp_path: Path) -> None:
     output = tmp_path / "top-down.png"
 
     save_top_down_plot(_scenario(), output, time_s=5.0)
+
+    assert output.is_file()
+    assert output.stat().st_size > 0
+
+
+def test_save_replay_overlay_creates_png(tmp_path: Path) -> None:
+    scenario = _scenario()
+    trace = ReplayTrace(
+        tuple(
+            ReplayState(actor.actor_id, state)
+            for actor in scenario.actors
+            for state in actor.trajectory
+        )
+    )
+    output = tmp_path / "replay-overlay.png"
+
+    save_replay_overlay(scenario, trace, output)
 
     assert output.is_file()
     assert output.stat().st_size > 0
