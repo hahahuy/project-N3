@@ -68,6 +68,18 @@ from .ranking import (
     compute_risk_features,
     rank_scenario,
 )
+from .reporting import (
+    REPORT_STATUSES,
+    REPORT_VERSION,
+    AggregateReport,
+    VariantReport,
+    aggregate_report,
+    aggregate_report_to_dict,
+    variant_report_to_dict,
+    write_aggregate_csv,
+    write_aggregate_json,
+    write_variant_report,
+)
 
 __all__ = [
     "Actor",
@@ -105,6 +117,10 @@ __all__ = [
     "RankingWeights",
     "RiskFeatures",
     "ScoreBreakdown",
+    "REPORT_STATUSES",
+    "REPORT_VERSION",
+    "AggregateReport",
+    "VariantReport",
     "actor_from_dict",
     "actor_to_dict",
     "artifact_from_dict",
@@ -136,5 +152,11 @@ __all__ = [
     "validate_feasibility",
     "compute_risk_features",
     "rank_scenario",
+    "aggregate_report",
+    "aggregate_report_to_dict",
+    "variant_report_to_dict",
+    "write_aggregate_csv",
+    "write_aggregate_json",
+    "write_variant_report",
     "write_openscenario",
 ]

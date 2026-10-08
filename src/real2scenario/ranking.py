@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import cos, inf, isfinite, sin
+from math import cos, isfinite, sin
 
 from .models import Scenario
 from .validation import FeasibilityReport
@@ -34,7 +34,7 @@ class RankingWeights:
 class RiskFeatures:
     """Raw, interpretable risk and novelty features."""
 
-    minimum_distance_m: float
+    minimum_distance_m: float | None
     minimum_ttc_s: float | None
     novelty: float
     risk_signal: float
@@ -77,7 +77,7 @@ def compute_risk_features(
         raise ValueError("ttc_horizon_s must be finite and positive.")
     minimum_distance, minimum_ttc = _pairwise_features(scenario, ttc_horizon_s)
     novelty = _scenario_novelty(scenario, parent_scenario)
-    risk_signal = (
+    risk_signal = 0.0 if minimum_distance is None else (
         max(0.0, collision_distance_m - minimum_distance)
         if collision_distance_m
         else 1.0 / (1.0 + minimum_distance)
@@ -134,8 +134,8 @@ def rank_scenario(
     )
 
 
-def _pairwise_features(scenario: Scenario, horizon_s: float) -> tuple[float, float | None]:
-    minimum_distance = inf
+def _pairwise_features(scenario: Scenario, horizon_s: float) -> tuple[float | None, float | None]:
+    minimum_distance: float | None = None
     minimum_ttc: float | None = None
     for first_index, first_actor in enumerate(scenario.actors):
         for second_actor in scenario.actors[first_index + 1 :]:
@@ -149,7 +149,7 @@ def _pairwise_features(scenario: Scenario, horizon_s: float) -> tuple[float, flo
                 dx = second_state.x_m - first_state.x_m
                 dy = second_state.y_m - first_state.y_m
                 distance = _distance(0.0, 0.0, dx, dy)
-                minimum_distance = min(minimum_distance, distance)
+                minimum_distance = distance if minimum_distance is None else min(minimum_distance, distance)
                 if distance == 0:
                     minimum_ttc = 0.0
                     continue
