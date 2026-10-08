@@ -24,6 +24,16 @@ from .coordinates import (
 )
 from .ingestion import SourceWindow, extract_scenario
 from .selection import SELECTION_CONFIG_VERSION, SelectionConfig, select_interaction_actors
+from .generation import (
+    BATCH_MANIFEST_VERSION,
+    GENERATOR_VERSION,
+    BatchManifest,
+    batch_manifest_to_dict,
+    batch_manifest_to_json,
+    generate_grid_variants,
+    generate_random_variants,
+    perturb_scenario,
+)
 from .serialization import (
     REQUIRED_PROVENANCE_KEYS,
     SCHEMA_VERSION,
@@ -41,12 +51,32 @@ from .serialization import (
     variant_config_from_dict,
     variant_config_to_dict,
 )
+from .validation import (
+    VALIDATION_VERSION,
+    FeasibilityLimits,
+    FeasibilityReport,
+    RejectionReason,
+    RoadBoundary,
+    validate_feasibility,
+)
+from .ranking import (
+    RANKING_VERSION,
+    RankingResult,
+    RankingWeights,
+    RiskFeatures,
+    ScoreBreakdown,
+    compute_risk_features,
+    rank_scenario,
+)
 
 __all__ = [
     "Actor",
+    "BATCH_MANIFEST_VERSION",
+    "BatchManifest",
     "ALIGNMENT_METHOD",
     "COORDINATE_TRANSFORM_VERSION",
     "EsminiConfig",
+    "GENERATOR_VERSION",
     "OPENSCENARIO_VERSION",
     "LOCAL_ROAD_ALIGNED_FRAME",
     "REQUIRED_PROVENANCE_KEYS",
@@ -65,12 +95,24 @@ __all__ = [
     "State",
     "TEMPLATE_REGISTRY_VERSION",
     "VariantConfig",
+    "VALIDATION_VERSION",
+    "FeasibilityLimits",
+    "FeasibilityReport",
+    "RejectionReason",
+    "RoadBoundary",
+    "RANKING_VERSION",
+    "RankingResult",
+    "RankingWeights",
+    "RiskFeatures",
+    "ScoreBreakdown",
     "actor_from_dict",
     "actor_to_dict",
     "artifact_from_dict",
     "artifact_from_json",
     "artifact_to_json",
     "baseline_artifact_to_dict",
+    "batch_manifest_to_dict",
+    "batch_manifest_to_json",
     "build_openscenario_xml",
     "compute_replay_metrics",
     "compute_scenario_replay_metrics",
@@ -78,6 +120,9 @@ __all__ = [
     "scenario_from_dict",
     "scenario_to_dict",
     "parse_esmini_csv_trace",
+    "generate_grid_variants",
+    "generate_random_variants",
+    "perturb_scenario",
     "select_interaction_actors",
     "select_opendrive_template",
     "state_from_dict",
@@ -88,5 +133,8 @@ __all__ = [
     "variant_artifact_to_dict",
     "variant_config_from_dict",
     "variant_config_to_dict",
+    "validate_feasibility",
+    "compute_risk_features",
+    "rank_scenario",
     "write_openscenario",
 ]

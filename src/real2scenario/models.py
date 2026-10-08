@@ -67,6 +67,8 @@ class VariantConfig:
             raise ValueError("Variant initial_gap_delta_m must be finite.")
         if not isfinite(self.timing_offset_s):
             raise ValueError("Variant timing_offset_s must be finite.")
+        if isinstance(self.seed, bool) or not isinstance(self.seed, int):
+            raise ValueError("Variant seed must be an integer.")
 
 
 @dataclass(frozen=True, slots=True)
