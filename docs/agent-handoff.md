@@ -355,3 +355,75 @@ For UI work, also record:
 - The current simulator integration depends on external esmini and `dat2csv`.
 - The current CLI surface does not yet orchestrate the complete M3 pipeline.
 - Licensed nuScenes data remains local-only and must not be committed.
+
+## M4 Execution Update
+
+R2S-401 is implemented in the current working tree on `main`; it has not been
+committed in this session. The local demo consists of a FastAPI adapter in
+`src/r2s_web` and a React/Vite frontend in `frontend`.
+
+### Startup
+
+Backend setup and startup:
+
+```bash
+python -m pip install -e ".[dev,web]"
+uvicorn r2s_web.app:app --app-dir src --reload --port 8000
+```
+
+Frontend setup and startup, in a second terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The browser runs at `http://localhost:5173` and the API at
+`http://localhost:8000`. The backend defaults to project-relative `scenarios`
+and `reports` roots. `R2S_ARTIFACT_ROOT`, `R2S_OUTPUT_ROOT`, `ESMINI_BIN`, and
+`ESMINI_DAT2CSV` are shell configuration only.
+
+### Implemented flow
+
+- Strict baseline and variant artifact catalog, detail, provenance, trajectory,
+  and safe download endpoints.
+- Recorded trajectory output with explicit coordinate-frame and local-template
+  approximation metadata.
+- Deterministic grid and seeded random batch generation through public
+  `real2scenario` APIs.
+- Configurable feasibility limits, validation before ranking, structured invalid
+  reasons, and stable per-variant result lookup.
+- Distinct `valid`, `invalid`, and `simulator-failed` result statuses.
+- Optional OpenSCENARIO export and esmini replay through environment-configured
+  executables, with replay errors preserved in the result.
+- React catalog, trajectory plot, provenance panel, batch controls, and result
+  status summary.
+- Frontend `LOCAL PATHS` settings for artifact directory, nuScenes dataset root,
+  and dataset version, plus a source-scene list with one-click import.
+- Generated result rows are selectable for trajectory inspection, validation and
+  ranking detail, artifact links, simulator failure context, and valid-result
+  OpenSCENARIO export. Replay can be enabled from the frontend.
+- The checked-out `data/v1.0-mini` metadata is discovered automatically when no
+  `NUSCENES_ROOT` override is set; imported derived artifacts are written under
+  ignored `scenarios/nuscenes/`.
+
+### Verification
+
+- Python: `pytest -q` -> `122 passed`.
+- Updated Python: `pytest -q` -> `124 passed` after generated trajectory and
+  export coverage.
+- Python source: `python -m compileall -q src tests` -> passed.
+- Python whitespace: `git diff --check` -> passed.
+- Frontend: `npm run build` -> Vite production build passed.
+- Frontend: `npm test` -> 1 test passed.
+- Synthetic input: `tests/fixtures/synthetic-variant-artifact.json`.
+- Synthetic acceptance covers empty root, catalog/detail/trajectory/download,
+  deterministic 20-variant generation with seed `7`, structured invalid
+  reasons, and simulator failure when replay is requested without configured
+  esmini paths.
+- The three historical console commands were unavailable in the shell before
+  M4 work (`command not found`); no CLI behavior was changed.
+
+Detailed evidence is in `docs/r2s-401-local-web-demo.md`.
+Curated local scene guidance is in `docs/r2s-402-403-curated-scenes.md`.

@@ -11,6 +11,11 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
+web = [
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.30,<1",
+    "httpx>=0.27,<1",
+]
 devkit = [
     "matplotlib>=3.8,<4",
     "nuscenes-devkit==1.2.0",

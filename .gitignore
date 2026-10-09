@@ -6,9 +6,12 @@ __pycache__/
 build/
 dist/
 *.egg-info/
+frontend/node_modules/
+frontend/dist/
 
 # Generated scenario and simulator artifacts are reproducible from config.
 scenarios/generated/
+scenarios/nuscenes/
 reports/
 # Licensed nuScenes releases and their raw sensor payloads are local-only.
 data/v1.0-*/

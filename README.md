@@ -53,6 +53,46 @@ pytest
 
 Scaffold ban đầu chưa phụ thuộc simulator hoặc dataset. Xem ticket Phase 0 trước khi thêm nuScenes metadata hoặc esmini.
 
+## Local M4 web demo
+
+The M4 browser demo uses FastAPI plus React and keeps all scenario processing on
+the current machine. It does not require nuScenes data or esmini for the
+synthetic smoke path.
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev,web]"
+uvicorn r2s_web.app:app --app-dir src --reload --port 8000
+```
+
+In a second terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`. Configure `R2S_ARTIFACT_ROOT` and
+`R2S_OUTPUT_ROOT` before starting the backend when using local artifacts; both
+paths are project-relative by default (`scenarios` and `reports`). The frontend
+never reads those files directly. The optional `ESMINI_BIN` and
+`ESMINI_DAT2CSV` environment variables enable replay and are never stored in
+source or committed documentation.
+
+The synthetic API smoke test copies
+`tests/fixtures/synthetic-variant-artifact.json` into a temporary artifact root,
+loads the scenario, renders recorded trajectories, generates a deterministic
+20-variant grid, validates before ranking, and exercises the distinct
+`simulator-failed` state when esmini is unavailable.
+
+When the local `data/v1.0-mini` release is present, open `LOCAL PATHS` in the
+browser to point the demo at an artifact directory and dataset root. The UI
+will list the ten local nuScenes scenes and can import a selected scene into a
+canonical `local_road_aligned` baseline before generation. Imported files are
+written under `scenarios/nuscenes/`, which is ignored by git.
+
 ## Giấy phép dữ liệu
 
 Dữ liệu dẫn xuất từ nuScenes trong repository này tuân theo điều khoản tại [data/LICENSE](data/LICENSE), bao gồm yêu cầu phi thương mại và ghi công. Không thêm, phân phối lại hoặc sử dụng dữ liệu ngoài các điều khoản này.
