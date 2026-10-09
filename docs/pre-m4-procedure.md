@@ -35,7 +35,7 @@ python -m compileall -q src tests
 git diff --check
 ```
 
-Expected current result: `117 passed`, with no compile or diff-check output.
+Expected current result: `118 passed`, with no compile or diff-check output.
 
 If this fails, stop UI work and report the first failure with the commit,
 Python version, command, and traceback.

@@ -4,16 +4,17 @@
 
 - Repository: `https://github.com/hahahuy/project-N3.git`
 - Branch: `main`
-- Current documented checkpoint: `d4a8a3c` (`update M3 into dóc`)
-- This handoff and the linked pre-M4/wiki documents are the current pending
-  documentation changes on top of that checkpoint; commit them before starting
-  M4 if the team wants the handoff included in the shared repository history.
+- Current documented checkpoint: `main` after the M2 replay and M3 20-variant
+  evidence updates.
+- M2 evidence is in `docs/r2s-206-m2-replay-evidence.md`; M3 20-variant
+  evidence is in `docs/r2s-306-20-variant-batch-evidence.md`.
+- M4 UI/UX and release work remain pending.
 - Previous implementation checkpoints:
   - `f6df4c4` - Complete M3 batch reporting
   - `d1cd856` - Complete M3 generation and ranking
   - `61a38f1` - Complete M2 replay checkpoint
 - Worktree was clean when this handoff was written.
-- Latest verification after M3 reporting: `117 passed`,
+- Latest verification after M3 reporting: `118 passed`,
   `python -m compileall -q src tests`, and `git diff --check`.
 
 ## What Exists

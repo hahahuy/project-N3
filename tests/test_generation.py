@@ -142,6 +142,28 @@ def test_grid_generation_has_stable_order_ids_and_manifest() -> None:
     assert BATCH_MANIFEST_VERSION == "1.0"
 
 
+def test_twenty_variant_baseline_batch_is_deterministic() -> None:
+    first_variants, first_manifest = generate_grid_variants(
+        _scenario(),
+        speed_multipliers=(0.9, 1.0),
+        initial_gap_deltas_m=(-2.0, 0.0),
+        timing_offsets_s=(0.0, 0.25, 0.5, 0.75, 1.0),
+        seed=7,
+    )
+    second_variants, second_manifest = generate_grid_variants(
+        _scenario(),
+        speed_multipliers=(0.9, 1.0),
+        initial_gap_deltas_m=(-2.0, 0.0),
+        timing_offsets_s=(0.0, 0.25, 0.5, 0.75, 1.0),
+        seed=7,
+    )
+
+    assert len(first_variants) == 20
+    assert first_variants == second_variants
+    assert first_manifest == second_manifest
+    assert first_manifest.variant_ids == tuple(item.scenario_id for item in first_variants)
+
+
 def test_random_generation_repeats_with_seed_and_uses_requested_count() -> None:
     first, first_manifest = generate_random_variants(
         _scenario(),

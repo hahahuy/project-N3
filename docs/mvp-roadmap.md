@@ -130,12 +130,12 @@
 
 ### Checkpoint M2: Review replay
 
-- [ ] Ít nhất một baseline `.xosc` khởi động và hoàn tất trong esmini.
-- [ ] Original/replay trajectory được overlay trong một artifact.
-- [ ] Metric nêu unit, phương pháp timestamp alignment và sample count.
-- [ ] Map reconstruction được gắn nhãn local/template approximation.
-- [ ] Simulator execution fail giữ stderr/exit status trong report.
-- [ ] Reviewer tái tạo baseline XML và replay trace từ source config.
+- [x] Ít nhất một baseline `.xosc` khởi động và hoàn tất trong esmini.
+- [x] Original/replay trajectory được overlay trong một artifact.
+- [x] Metric nêu unit, phương pháp timestamp alignment và sample count.
+- [x] Map reconstruction được gắn nhãn local/template approximation.
+- [x] Simulator execution fail giữ stderr/exit status trong report.
+- [x] Reviewer tái tạo baseline XML và replay trace từ source config.
 
 ## M3: Sinh biến thể, validation và ranking
 
@@ -176,7 +176,7 @@
 
 ### Checkpoint M3: Review generation
 
-- [ ] Batch ít nhất 20 variant sinh từ baseline cố định.
+- [x] Batch ít nhất 20 variant sinh từ baseline cố định.
 - [x] Rerun seed/config tái tạo ID và trajectory.
 - [x] Report tách invalid, simulator-failed và valid case.
 - [x] Mọi reject có một hoặc nhiều structured reason.
@@ -184,8 +184,8 @@
 - [x] Score component hiển thị rõ; không đánh đồng “rare” với “safe”.
 
 R2S-304 and R2S-305 evidence: `docs/r2s-304-ranking-evidence.md` and
-`docs/r2s-305-reporting-evidence.md`. The 20-variant baseline batch remains
-pending explicit evidence.
+`docs/r2s-305-reporting-evidence.md`. The 20-variant baseline batch evidence is
+in `docs/r2s-306-20-variant-batch-evidence.md`.
 
 ## M4: Demo và release
 
