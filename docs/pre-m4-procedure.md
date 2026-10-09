@@ -169,6 +169,11 @@ Never classify a simulator failure as a kinematic invalid result.
 
 ## 6. UI Acceptance Gate
 
+M4 uses the local FastAPI plus React architecture in
+`docs/m4-local-demo-architecture.md`. The acceptance gate is for a browser
+demo running on the current machine; it is not a shared-server or
+multi-user deployment gate.
+
 Before declaring M4 UI work ready for review, demonstrate these states using a
 synthetic fixture:
 
@@ -183,6 +188,10 @@ synthetic fixture:
 8. Simulator-failed variants show tool/error context separately.
 9. Export links point to canonical JSON, `.xosc`, replay trace, and report paths.
 10. Reloading the same artifact reproduces the same displayed IDs and metadata.
+
+The implementation must record the exact local API/frontend startup commands
+in the handoff and R2S-403 reproducibility note. After startup, the acceptance
+flow must not require manual file edits or a second terminal.
 
 ## 7. Handoff Evidence
 

@@ -191,23 +191,48 @@ in `docs/r2s-306-20-variant-batch-evidence.md`.
 
 ### R2S-401: MVP dashboard
 
-- Deliverable: browser, trajectory playback, control, result table và export action.
-- Acceptance criteria: demo flow trong `product-spec.md` chạy không cần sửa file trực tiếp hay terminal sau khi khởi động.
+- Deliverable: local browser application using FastAPI plus React, trajectory
+  playback, controls, result table and export action.
+- Acceptance criteria: after the local API and frontend start, the browser can
+  load a local artifact, show provenance and recorded/replayed paths, configure
+  and generate a deterministic batch, validate before ranking, inspect result
+  states, and download artifacts without editing files or using another
+  terminal.
 - Evidence: video demo 3 phút và UI smoke-test checklist.
 - Dependencies: R2S-104, R2S-205, R2S-305.
 
+M4 scope decision: run the demo on the developer machine with local CPU,
+installed esmini, and a project-relative filesystem output directory. Shared
+server deployment, authentication, project permissions, PostgreSQL, object
+storage, queued workers, GPU infrastructure, and local-agent execution are
+deferred platform add-ons documented in `docs/m4-local-demo-architecture.md`.
+
 ### R2S-402: Curate demo scenario
 
-- Deliverable: ba source segment có nhãn: lead braking cộng hai interaction hỗ trợ khác.
-- Acceptance criteria: mỗi segment có baseline replay, batch 20 variant và một valid variant phù hợp trình bày.
-- Evidence: curation index với artifact path và metric.
+- Deliverable: three local source segments labelled as lead braking plus two
+  supporting interaction types, with sanitized fixture metadata and local
+  output paths.
+- Acceptance criteria: each segment has a baseline replay, a 20-variant batch,
+  one presentable valid variant, and enough provenance for the React/FastAPI
+  demo to load it without manual XML editing.
+- Evidence: curation index with project-relative artifact paths, replay metrics,
+  UI labels, and a note identifying any unavailable simulator output.
 - Dependencies: R2S-305.
 
 ### R2S-403: Release và reproducibility pack
 
-- Deliverable: setup guide, configuration example, known limitation, demo script, evidence bundle.
-- Acceptance criteria: reviewer mới setup project và tái tạo một curated batch từ instruction.
-- Evidence: ghi chú verification trên clean machine.
+- Deliverable: local-demo setup guide, configuration example, startup commands,
+  known limitations, demo script, UI smoke-test checklist, and evidence bundle.
+- Acceptance criteria: a new reviewer can create the Python/frontend
+  environment, start the local FastAPI and React application, load the curated
+  fixture, and reproduce a deterministic batch from the instructions.
+- Evidence: clean-checkout verification note including Python and frontend
+  versions, startup commands, fixture input, exercised browser actions, and
+  expected result counts.
+- Explicit non-goal: shared deployment, customer accounts, project
+  permissions, object storage, queued workers, and local-agent execution are
+  deferred to the platform add-on described in
+  `docs/m4-local-demo-architecture.md`.
 - Dependencies: R2S-401, R2S-402.
 
 ### Checkpoint M4: Review demo

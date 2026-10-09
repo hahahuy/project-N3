@@ -47,7 +47,7 @@ src/real2scenario/
   simulation/           esmini runner và parse trace
   generation/           Chiến lược perturbation có kiểm soát
   validation/           Feasibility, replay metrics, ranking
-  api/                  Ranh giới FastAPI tuỳ chọn
+  api/                  Ranh giới FastAPI cho local M4 và platform sau M4
 ```
 
 Quy tắc:

@@ -28,6 +28,12 @@ Với ít nhất ba đoạn ghi nhận được chọn, người dùng có thể
 4. Sinh ít nhất 20 biến thể xác định bằng cách đổi tốc độ, khoảng cách hoặc thời điểm.
 5. Review kết quả validation, tải tệp `.xosc` và báo cáo metadata đi kèm.
 
+M4 delivers this as a local web demo: a React frontend served from the
+developer machine calls a local FastAPI backend over HTTP. The backend runs
+the existing Python pipeline with local CPU resources, optional locally
+installed esmini, and a project-relative output directory. M4 does not require
+accounts, shared-server deployment, object storage, or multi-user access.
+
 ## 5. Trải nghiệm demo
 
 UI MVP có bốn khu vực:
@@ -38,6 +44,28 @@ UI MVP có bốn khu vực:
 | Phát lại top-down | Ego, actor liên quan, timeline, đường original/replay | Phát, kéo thời gian, chọn actor. |
 | Điều khiển biến thể | Hệ số tốc độ, initial gap, timing offset, số lượng sinh | Sinh biến thể xác định. |
 | Kết quả | Validity, RMSE, sai số tốc độ, TTC/khoảng cách nhỏ nhất, export | Lọc và xem một kết quả. |
+
+### Luồng demo hoàn chỉnh
+
+Người dùng mở ứng dụng local trong trình duyệt và đi qua một luồng duy nhất:
+
+1. Chọn hoặc nạp một scenario artifact từ danh sách local.
+2. Kiểm tra scenario ID, coordinate frame, duration, actor và provenance.
+3. Xem trajectory recorded trong top-down viewer; recorded, replayed và
+   generated path phải có style khác nhau.
+4. Chạy hoặc xem baseline replay nếu artifact có replay output, sau đó xem
+   overlay và fidelity metrics.
+5. Chọn speed multiplier, initial gap delta, timing offset, batch size và seed.
+6. Bấm generate; FastAPI gọi batch generator hiện có và trả về job/result
+   status mà không để React tự tính trajectory.
+7. Xem validation trước ranking; invalid variant phải có structured reasons.
+8. Xem ranking components chỉ cho variant hợp lệ; simulator-failed phải hiển
+   thị riêng với exit code, stderr và tool context nếu có.
+9. Chọn một result để xem trajectory, metadata, metrics và artifact links.
+10. Tải canonical JSON, `.xosc`, replay trace hoặc report từ ứng dụng.
+
+Sau khi backend/frontend đã khởi động, reviewer không cần sửa file trực tiếp
+hoặc chạy thêm terminal command trong luồng demo.
 
 Demo chuẩn là tương tác xe phía trước phanh. Cut-in là loại sự kiện thứ hai được ưu tiên. Người đi bộ qua đường và giao lộ thuộc post-MVP vì map alignment và validation khó hơn.
 
@@ -94,3 +122,7 @@ MVP chỉ hoàn thành khi các bằng chứng sau đã được commit hoặc �
 - Validation summary thể hiện số valid, invalid và simulator-failed.
 - Demo kịch bản 3 phút chạy được mà không sửa XML bằng tay.
 - Automated tests pass cho schema, chuyển đổi toạ độ, tính metric và cấu hình biến thể xác định.
+- Local web demo khởi động theo một command đã ghi, chạy được flow chọn ->
+  replay -> generate -> validate -> rank -> export trên fixture đã tài liệu.
+- UI smoke test chứng minh recorded/replayed/generated path và ba trạng thái
+  valid/invalid/simulator-failed được phân biệt.

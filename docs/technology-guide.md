@@ -11,12 +11,14 @@
 | OpenSCENARIO XML | M2-M4 | Scenario artifact di động | Có |
 | OpenDRIVE `.xodr` | M2-M4 | Road template cho backend replay | Có |
 | esmini | M2-M4 | Replay OpenSCENARIO headless, batch validation | Có |
-| Streamlit, Plotly | M4 | Demo UI và top-down playback nhanh | Có cho UI demo |
-| FastAPI | Sau MVP | API boundary cho multi-user/React | Không |
+| FastAPI, React, TypeScript | M4 | Local web demo and future service boundary | Có cho UI demo |
+| PostgreSQL, S3-compatible storage, worker queue | Sau M4 | Shared deployment, private artifacts and queued jobs | Không |
 | CARLA | Sau MVP | 3D, sensor simulation, closed-loop test | Không |
 | Docker | Sau MVP | Deployment/CI tái lập sau khi native dependency ổn định | Không |
 
-Chỉ dùng công cụ nhỏ nhất chứng minh checkpoint kế tiếp. Cài CARLA, Docker, database và React trước M2 tạo chi phí vận hành nhưng chưa chứng minh được data-to-scenario pipeline.
+Chỉ dùng công cụ nhỏ nhất chứng minh checkpoint kế tiếp. Cài CARLA, Docker,
+database và shared infrastructure trước M2 tạo chi phí vận hành nhưng chưa
+chứng minh được data-to-scenario pipeline.
 
 ## 2. Môi trường Python cục bộ
 
@@ -238,9 +240,16 @@ Metric chỉ tính sau khi source/replay trace được căn chỉnh vào common
 
 Validator chạy theo thứ tự schema, kinematic, road, simulator rồi risk. Scenario fail validation bắt buộc vẫn là invalid dù TTC thú vị hoặc novelty score cao.
 
-Ở M4 dùng Streamlit để chứng minh end-to-end flow trước khi duy trì frontend/API riêng. Dashboard cần: chọn source, xem timeline, xem overlay/replay metric, đặt speed/gap/timing, generate/validate batch, lọc validity trước score, và export `.xosc`/JSON/trace/report.
+Ở M4 dùng FastAPI và React để tạo local web demo chạy trên máy phát triển.
+Dashboard cần: chọn source, xem timeline, xem overlay/replay metric, đặt
+speed/gap/timing, generate/validate batch, lọc validity trước score, và export
+`.xosc`/JSON/trace/report`. Shared server, local accounts, object storage,
+queued workers và local-agent execution là platform add-ons sau M4; xem
+`docs/m4-local-demo-architecture.md`.
 
-Chỉ dùng FastAPI + React khi cần concurrent user, queued job dài, deployment riêng hoặc tương tác vượt giới hạn Streamlit. Điều này không được thay đổi canonical model/report contract.
+FastAPI phải giữ ranh giới service/orchestration ngay cả khi chạy local.
+Frontend không đọc Python artifact hoặc filesystem trực tiếp, còn backend không
+được nhân bản business rule của canonical pipeline.
 
 | Mức test | Chạy không cần | Ví dụ |
 | --- | --- | --- |
