@@ -56,3 +56,4 @@ Scaffold ban đầu chưa phụ thuộc simulator hoặc dataset. Xem ticket Pha
 ## Giấy phép dữ liệu
 
 Dữ liệu dẫn xuất từ nuScenes trong repository này tuân theo điều khoản tại [data/LICENSE](data/LICENSE), bao gồm yêu cầu phi thương mại và ghi công. Không thêm, phân phối lại hoặc sử dụng dữ liệu ngoài các điều khoản này.
+CM
