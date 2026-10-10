@@ -38,6 +38,7 @@ Người mới nên đi theo thứ tự này trước khi nhận ticket code:
 - [Hướng dẫn công nghệ và cách sử dụng](docs/technology-guide.md)
 - [Hướng dẫn nuScenes và mô phỏng](docs/nuscenes-and-simulation-guide.md)
 - [Handoff cho agent triển khai tiếp](docs/agent-handoff.md)
+- [M4 local demo architecture](docs/m4-local-demo-architecture.md)
 - [Pre-M4 procedure](docs/pre-m4-procedure.md)
 - [Wiki-ready CLI/API reference](docs/wiki-cli-api-reference.md)
 - [Mô tả đề bài ban đầu](docs/description.md)

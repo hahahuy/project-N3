@@ -1,4 +1,4 @@
-# Agent Handoff: M4 Local FastAPI + React Demo
+# Agent Handoff: M5 Simulator-Backed UI
 
 ## Checkpoint
 
@@ -8,7 +8,9 @@
   evidence updates.
 - M2 evidence is in `docs/r2s-206-m2-replay-evidence.md`; M3 20-variant
   evidence is in `docs/r2s-306-20-variant-batch-evidence.md`.
-- M4 UI/UX and release work remain pending.
+- M4 R2S-401 local web demo is implemented and committed in `1982e00`.
+- M4 R2S-402/R2S-403 local curated-scene and reproducibility documentation is
+  present; the M4 review checklist still needs final human/demo sign-off.
 - Approved M4 direction: local browser demo using FastAPI plus React, running
   on the current machine with local CPU, local esmini, and project-relative
   filesystem artifacts. See `docs/m4-local-demo-architecture.md`.
@@ -16,8 +18,9 @@
   - `f6df4c4` - Complete M3 batch reporting
   - `d1cd856` - Complete M3 generation and ranking
   - `61a38f1` - Complete M2 replay checkpoint
-- Worktree was clean at the previous committed checkpoint; this handoff is the
-  pending M4 execution documentation to commit.
+- The worktree was clean at the M4 implementation checkpoint; an untracked
+  runtime `log.txt` may be present after local esmini execution and must not be
+  committed.
 - Latest verification after M3 reporting: `118 passed`,
   `python -m compileall -q src tests`, and `git diff --check`.
 
@@ -99,12 +102,17 @@ nonexistent `real2scenario replay` or `real2scenario generate` command. M4 may
 add a local FastAPI plus React service boundary, but it must call the existing
 APIs and preserve their contracts.
 
-The repository does not yet contain a FastAPI application or React frontend.
-The next agent is expected to create that application as the R2S-401
-implementation. Do not add Streamlit as an alternative M4 UI unless the user
-explicitly changes the approved architecture.
+M4 contains a FastAPI application under `src/r2s_web` and a React/Vite frontend
+under `frontend`. Do not replace this with Streamlit or introduce a second UI
+framework.
 
-## M4 Objective
+The current UI can request optional esmini replay through `BatchService`, but
+simulator execution is embedded directly in `src/r2s_web/jobs.py`. There is no
+common simulator backend interface, no CARLA adapter, no CARLA capability
+discovery, and no normalized CARLA trace contract yet. M5 must introduce those
+boundaries before adding more simulator-specific UI logic.
+
+## M4 Objective And Current Result
 
 Build the smallest usable end-to-end UI around the existing canonical APIs:
 
@@ -121,6 +129,19 @@ Build the smallest usable end-to-end UI around the existing canonical APIs:
 The UI is an orchestration layer. It must not duplicate trajectory math,
 validation thresholds, TTC, ranking, ID generation, or report reconciliation.
 
+M4 implementation result:
+
+- FastAPI endpoints exist for health, settings, source-scene import, scenario
+  catalog/detail/trajectory, batch generation, result detail, export, and
+  artifact download.
+- React/Vite provides local path setup, source-scene import, scenario detail,
+  trajectory display, batch controls, result status, simulator failure detail,
+  and OpenSCENARIO export.
+- The local batch service can generate, validate, rank, optionally replay with
+  esmini, and persist reports under the local output root.
+- M4 verification documented by `docs/r2s-401-local-web-demo.md` includes the
+  synthetic API path and frontend build/test commands.
+
 ## First Steps For The Next Agent
 
 1. Read `docs/pre-m4-procedure.md` completely.
@@ -135,9 +156,10 @@ validation thresholds, TTC, ranking, ID generation, or report reconciliation.
 6. Add UI smoke tests using synthetic fixtures before depending on licensed
    nuScenes data or an installed esmini binary.
 
-## M4 Execution Plan
+## M4 Execution Plan (Completed)
 
-Implement M4 in small vertical slices. Keep each slice runnable and tested.
+The M4 slices below describe the completed baseline and are retained as context
+for M5. Do not restart this work or redesign the canonical contracts.
 
 ### Slice 1: Project And API Skeleton
 
@@ -298,7 +320,7 @@ using full local nuScenes data:
 9. Valid result with score breakdown and risk/novelty components.
 10. Artifact download links for the selected result.
 
-## Do Not Build In M4
+## Do Not Build In M4 (Historical Boundary)
 
 - User accounts or login screens.
 - Project-level permissions.
@@ -310,6 +332,257 @@ using full local nuScenes data:
 - CARLA integration.
 - A new `real2scenario replay` or `real2scenario generate` CLI command unless
   the command is separately implemented, tested, and documented.
+
+## M5 Objective: Simulator-Backed UI
+
+M5 extends the local FastAPI plus React demo so a user can choose an execution
+backend and run a supported scenario through esmini or CARLA from the browser.
+M5 remains local-first: simulator binaries, CARLA installation, maps, assets,
+and output directories are configured on the machine running FastAPI. Do not
+turn M5 into the shared customer platform or add accounts, object storage,
+PostgreSQL, or a distributed worker queue unless separately requested.
+
+The M5 user flow is:
+
+1. Open the local React application.
+2. Select a canonical baseline or generated variant.
+3. Open the simulator panel and inspect detected backend capabilities.
+4. Choose `esmini` or `CARLA` only when the backend reports `available`.
+5. Choose the execution mode supported by that backend, such as headless
+   replay or rendered run.
+6. Submit a simulator job with scenario ID, backend, backend version/config,
+   timeout, seed, and output policy.
+7. Watch job status and logs without blocking the browser request.
+8. Inspect normalized trace, metrics, simulator-specific artifacts, and errors.
+9. Compare the simulator result with the recorded/generated trajectory.
+10. Download the report and all declared artifacts.
+
+M5 success means the UI makes simulator choice and simulator health visible; it
+does not imply that every scenario can run in every simulator. Unsupported map,
+actor, sensor, or scenario features must be reported as unsupported rather than
+silently approximated.
+
+## M5 Execution Plan
+
+Implement M5 in these vertical slices. Keep esmini and CARLA behind the same
+application-level job contract, but do not force their internal execution
+models to be identical.
+
+### Slice 1: Common Simulator Contract
+
+1. Add a simulator package separate from `real2scenario` domain models and
+   separate from FastAPI route functions.
+2. Define a backend protocol/interface with methods equivalent to:
+
+```text
+capabilities() -> SimulatorCapabilities
+validate_input(request) -> list[StructuredIssue]
+run(request, output_dir) -> SimulatorRunReport
+```
+
+3. Define capability and report models that include:
+
+```text
+SimulatorCapabilities
+  backend_id: esmini | carla
+  display_name
+  available
+  version
+  supported_modes
+  supported_formats
+  configured_paths
+  limitations
+  error
+
+SimulatorRunRequest
+  scenario_id
+  scenario_artifact
+  backend_id
+  mode
+  timeout_s
+  seed
+  map_or_world_reference
+  settings
+
+SimulatorRunReport
+  backend_id
+  backend_version
+  status: completed | failed | timed-out | unsupported
+  command_or_launch_context
+  exit_code
+  timed_out
+  stdout
+  stderr
+  normalized_trace_artifact
+  simulator_artifacts
+  metrics
+  structured_issues
+```
+
+4. Keep `valid`, `invalid`, and `simulator-failed` result statuses. Add
+   simulator backend/status fields instead of replacing the existing status
+   contract.
+5. Never expose raw secrets or uncontrolled absolute paths in API responses.
+   Paths may be shown as safe artifact references and backend diagnostics may
+   identify whether a configured path exists.
+
+### Slice 2: Capability Discovery And Settings
+
+1. Add backend settings for esmini and CARLA using environment variables or a
+   local config file that is ignored by git.
+2. Add capability probes that do not start a long simulation:
+   - esmini executable and `dat2csv` availability plus version.
+   - CARLA Python package, server executable, client version, and configured
+     world/map roots.
+3. Add an API endpoint such as:
+
+```text
+GET /api/simulators
+GET /api/simulators/{backend_id}
+```
+
+4. Add a React simulator panel showing `available`, version, supported modes,
+   missing configuration, and known limitations.
+5. Disable run controls for unavailable backends while preserving a useful
+   diagnostic message.
+
+### Slice 3: Extract Esmini Backend
+
+1. Move the current direct `run_esmini()` orchestration out of `jobs.py` into
+   an `EsminiBackend` implementing the common simulator contract.
+2. Preserve the existing `EsminiConfig`, `ReplayReport`, `ReplayTrace`,
+   `dat2csv` normalization, timeout handling, exit code, stdout, stderr, and
+   tool-version behavior.
+3. Keep the OpenSCENARIO/OpenDRIVE preparation explicit:
+   `select_opendrive_template()` -> `write_openscenario()` -> esmini ->
+   `dat2csv` -> normalized trace -> metrics.
+4. Ensure esmini output is written below the selected job output directory and
+   does not leak a repository-root `log.txt`. Configure a log path explicitly
+   or isolate execution in a temporary working directory.
+5. Add backend tests using fake esmini and fake `dat2csv` executables for
+   success, non-zero exit, timeout, missing executable, malformed trace, and
+   missing OpenDRIVE/template cases.
+6. Add one real local esmini smoke test only when `ESMINI_BIN` and
+   `ESMINI_DAT2CSV` are configured; mark it optional in the test configuration.
+
+### Slice 4: CARLA Scope And Adapter
+
+CARLA is not an esmini drop-in replacement. The first M5 CARLA target is
+trajectory playback in a known, curated CARLA world, not full nuScenes map
+conversion, sensor reproduction, closed-loop autonomy, or arbitrary
+OpenSCENARIO support.
+
+1. Define the CARLA environment contract before writing UI controls:
+   - CARLA client Python package version.
+   - CARLA server/launcher command or connection URL.
+   - CARLA version and compatible Python version.
+   - Curated world/map identifier.
+   - Vehicle blueprint mapping for supported actor types.
+   - Fixed simulation timestep and synchronous/asynchronous mode.
+   - Output recording format and trace conversion policy.
+2. Add a `CarlaBackend` that can:
+   - Connect to a configured local CARLA server or launch one through a
+     configured command.
+   - Load one supported curated world.
+   - Spawn ego and supported vehicle actors from the canonical scenario.
+   - Replay canonical positions/yaw at a fixed timestep in open-loop mode.
+   - Record a normalized trace using the common report contract.
+   - Stop and clean up actors/world state after completion or failure.
+3. Keep the first CARLA actor mapping explicit. Unsupported actor types,
+   dimensions, road topologies, sensors, or behavior must return structured
+   `unsupported` issues.
+4. Do not claim that a local OpenDRIVE template or nuScenes map is converted to
+   a CARLA map. Record the CARLA world ID and map reconstruction mode in the
+   report.
+5. Add fake CARLA client tests for spawn, tick, trace, cleanup, and failure.
+   Add an optional real CARLA integration test gated by environment variables.
+
+### Slice 5: Simulator Job API
+
+1. Extend the local job service so simulator execution is a separate job step
+   from generation/validation/ranking.
+2. Add request/response models equivalent to:
+
+```text
+POST /api/simulator-runs
+GET  /api/simulator-runs/{job_id}
+GET  /api/simulator-runs/{job_id}/logs
+GET  /api/simulator-runs/{job_id}/artifacts
+GET  /api/simulator-runs/{job_id}/trajectory
+```
+
+3. A run request must reference a canonical artifact or generated variant; it
+   must not accept arbitrary paths from the browser.
+4. Return `202` for a run accepted for local execution. Do not keep a long
+   simulator process inside the HTTP request handler.
+5. For the local machine, a bounded subprocess or background-thread runner is
+   acceptable. Persist enough in-memory/local-file job state for the browser to
+   reload a result during the current session.
+6. Use separate artifact namespaces for backend outputs, for example:
+
+```text
+reports/<job-id>/simulators/esmini/...
+reports/<job-id>/simulators/carla/...
+```
+
+7. Add simulator backend and run status to the React result detail view. The UI
+   must show whether metrics came from recorded, esmini, or CARLA output.
+
+### Slice 6: UI Integration
+
+Add a simulator panel to the existing result detail view:
+
+- Backend selector with capability status.
+- Backend version and limitations.
+- Mode selector, such as headless or rendered where supported.
+- Timeout and fixed-timestep controls with units.
+- CARLA world selector limited to supported curated worlds.
+- Run/cancel/retry controls.
+- Live or polled job status.
+- Log/error drawer.
+- Trace and artifact links.
+- Recorded versus simulator trajectory overlay.
+- Metrics grouped by backend.
+
+Do not expose backend-specific controls unless the selected backend advertises
+the capability. Do not show a single combined score that hides which simulator
+produced it.
+
+### Slice 7: M5 Evidence And Review
+
+1. Add `docs/r2s-501-simulator-backend-evidence.md` for the common contract and
+   capability matrix.
+2. Add separate evidence for successful esmini and CARLA runs, including
+   backend version, scenario ID, world/template ID, fixed timestep, actor
+   mapping, trace sample count, artifacts, and metrics.
+3. Document unavailable-backend behavior with no installed CARLA environment.
+4. Add a clean local setup procedure that does not commit simulator binaries,
+   credentials, licensed data, rendered output, or absolute paths.
+5. Record exact UI steps for selecting each backend, running a scenario,
+   inspecting results, and downloading artifacts.
+
+## M5 Acceptance Gate
+
+M5 is ready for review only when all of these are true:
+
+- The UI discovers and reports esmini and CARLA capability status.
+- The current esmini path runs through the common backend contract.
+- At least one real esmini scenario run completes from the browser.
+- At least one curated CARLA scenario run completes from the browser, or the
+  project explicitly records a CARLA environment blocker and keeps all fake/
+  optional tests green.
+- Simulator failures preserve timeout, exit code, stdout/stderr, version, and
+  structured issue context.
+- Unsupported CARLA features fail explicitly and do not produce misleading
+  replay results.
+- Normalized traces and metrics have documented units, alignment, and sample
+  counts.
+- Recorded, esmini, and CARLA paths are visibly distinct in the UI.
+- Simulator-specific artifacts are downloadable through the API.
+- Existing M4 generation, validation, ranking, export, and artifact flows still
+  pass without a simulator installed.
+- No CARLA or esmini binary, raw dataset, secret, or machine-specific path is
+  committed.
 
 ## Coordination Rules
 
@@ -356,10 +629,10 @@ For UI work, also record:
 - The current CLI surface does not yet orchestrate the complete M3 pipeline.
 - Licensed nuScenes data remains local-only and must not be committed.
 
-## M4 Execution Update
+## M4 Implementation Update (Completed)
 
-R2S-401 is implemented in the current working tree on `main`; it has not been
-committed in this session. The local demo consists of a FastAPI adapter in
+R2S-401 is implemented and committed on `main` in `1982e00`. The local demo
+consists of a FastAPI adapter in
 `src/r2s_web` and a React/Vite frontend in `frontend`.
 
 ### Startup

@@ -244,6 +244,91 @@ deferred platform add-ons documented in `docs/m4-local-demo-architecture.md`.
 - [ ] Limitation và licensing hiển thị trong docs/demo.
 - [ ] Reviewer đi theo script được mà không cần manual step không ghi tài liệu.
 
+M4 implementation status: R2S-401 is implemented in commit `1982e00` with a
+local FastAPI plus React application. R2S-402/R2S-403 contain local curated
+scene guidance and reproducibility requirements. The M4 review checklist above
+still requires final demo evidence and human review sign-off; it is not being
+silently marked complete by the implementation commit.
+
+## M5: Simulator-backed execution
+
+M5 extends the local web demo so a user can run a supported scenario through
+esmini or CARLA from the browser. It remains local-first: simulator binaries,
+CARLA server/world assets, maps, and output directories are configured on the
+machine running FastAPI. Shared deployment and multi-user infrastructure remain
+outside this milestone.
+
+### R2S-501: Common simulator backend contract
+
+- Deliverable: capability, run-request, run-report, normalized-trace, and
+  structured-issue contracts shared by the FastAPI job layer and simulator
+  adapters.
+- Acceptance criteria: backend choice, version, supported modes, availability,
+  limitations, status, errors, artifacts, and metrics are explicit; existing
+  M4 statuses remain unchanged.
+- Evidence: contract tests and a capability matrix for esmini and CARLA.
+- Dependencies: R2S-401.
+
+### R2S-502: Esmini backend extraction and hardening
+
+- Deliverable: an `EsminiBackend` extracted from `src/r2s_web/jobs.py` that
+  preserves OpenSCENARIO/OpenDRIVE export, `dat2csv` normalization, timeout,
+  exit-code, stdout/stderr, version, trace, and metric behavior.
+- Acceptance criteria: esmini runs through the common backend contract; output
+  is isolated under the job directory; missing tools, malformed traces, timeout,
+  and non-zero exit are distinct structured failures.
+- Evidence: fake executable tests plus one optional real local browser run.
+- Dependencies: R2S-501.
+
+### R2S-503: CARLA curated-world adapter
+
+- Deliverable: local `CarlaBackend` for one supported CARLA version and one or
+  more curated worlds, with explicit vehicle blueprint mapping, fixed timestep,
+  synchronous-mode policy, normalized trace, cleanup, and artifact output.
+- Acceptance criteria: supported canonical vehicle scenarios run in open-loop
+  trajectory playback; unsupported actors, maps, sensors, or behavior fail with
+  structured `unsupported` issues; no claim of lossless nuScenes map conversion.
+- Evidence: fake CARLA client tests and one optional real CARLA integration run
+  when the local CARLA environment is installed.
+- Dependencies: R2S-501.
+
+### R2S-504: Simulator run API and UI
+
+- Deliverable: simulator capability panel, backend selector, run-status view,
+  logs/errors, trace overlay, backend-specific metrics, and artifact downloads.
+- Acceptance criteria: user can choose an available backend, submit a local
+  simulator run without blocking the HTTP request, inspect status and logs, and
+  distinguish recorded, esmini, and CARLA paths.
+- Evidence: frontend/API smoke tests for available, unavailable, failed, and
+  completed backend states.
+- Dependencies: R2S-502, R2S-503.
+
+### R2S-505: M5 simulator evidence and reproducibility
+
+- Deliverable: backend setup guide, capability matrix, esmini evidence, CARLA
+  environment requirements, supported-world/actor table, known limitations,
+  and browser walkthrough.
+- Acceptance criteria: a reviewer can reproduce the esmini flow and determine
+  whether CARLA is runnable from the documented local environment without
+  committing binaries, credentials, licensed data, or absolute paths.
+- Evidence: `docs/r2s-501-simulator-backend-evidence.md` plus simulator-specific
+  run notes and clean-environment verification.
+- Dependencies: R2S-504.
+
+### Checkpoint M5: Simulator review
+
+- [ ] UI reports esmini and CARLA capability status and limitations.
+- [ ] Esmini runs through the common backend contract from the browser.
+- [ ] CARLA runs one supported curated scenario, or the environment blocker is
+  explicitly documented while fake/optional tests remain green.
+- [ ] Simulator failures preserve timeout, exit code, stdout/stderr, version,
+  and structured issue context.
+- [ ] Unsupported CARLA features fail explicitly instead of producing a
+  misleading replay.
+- [ ] Recorded, esmini, and CARLA trajectories are visually distinct.
+- [ ] Simulator traces, metrics, reports, and backend artifacts are downloadable.
+- [ ] Existing M4 flows pass when no simulator is installed.
+
 ## Nhịp review đề xuất
 
 - Review M0 trước khi tải hoặc tích hợp full dataset.

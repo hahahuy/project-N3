@@ -1,0 +1,130 @@
+esmini GIT REV: v3.9.0-0-efbf7ee1
+esmini GIT TAG: v3.9.0
+esmini GIT BRANCH: tags/v3.9.0^0
+esmini BUILD VERSION: 6434
+[] [info] Loaded /home/hahuy/Documents/VINUNI-K204-L2/Buid-Phase/project-N3/reports/job-d5af830cc031/nuscenes-cc8c0bf57f984915a77078b10eb33198-ca9a282c9e77460f8360f564131a8af5-ed5fc18c31904f96a8f0dbb99ff069c0--variant-10a98e0600b9f481/scenario.xosc
+[2026-10-09 21:02:47]
+[] [info] Player options: --osc /home/hahuy/Documents/VINUNI-K204-L2/Buid-Phase/project-N3/reports/job-d5af830cc031/nuscenes-cc8c0bf57f984915a77078b10eb33198-ca9a282c9e77460f8360f564131a8af5-ed5fc18c31904f96a8f0dbb99ff069c0--variant-10a98e0600b9f481/scenario.xosc --camera_mode orbit --fixed_timestep 0.05 --ground_plane auto --headless --info_text 1 --logfile_path log.txt --log_level info --record /home/hahuy/Documents/VINUNI-K204-L2/Buid-Phase/project-N3/reports/job-d5af830cc031/nuscenes-cc8c0bf57f984915a77078b10eb33198-ca9a282c9e77460f8360f564131a8af5-ed5fc18c31904f96a8f0dbb99ff069c0--variant-10a98e0600b9f481/replay.dat --text_scale 1.0 --traj_filter 0.1 --light_mode auto 
+[] [info] Run simulation decoupled from realtime, with fixed timestep: 0.05
+[] [info] Generated seed 2079497584
+[] [info] Loading /home/hahuy/Documents/VINUNI-K204-L2/Buid-Phase/project-N3/reports/job-d5af830cc031/nuscenes-cc8c0bf57f984915a77078b10eb33198-ca9a282c9e77460f8360f564131a8af5-ed5fc18c31904f96a8f0dbb99ff069c0--variant-10a98e0600b9f481/scenario.xosc (v1.1)
+[] [info] 0 variables
+[] [info] Loaded OpenDRIVE: /home/hahuy/Documents/VINUNI-K204-L2/Buid-Phase/project-N3/reports/job-d5af830cc031/nuscenes-cc8c0bf57f984915a77078b10eb33198-ca9a282c9e77460f8360f564131a8af5-ed5fc18c31904f96a8f0dbb99ff069c0--variant-10a98e0600b9f481/straight-two-lane-v1.xodr
+[] [warn] Catalog VehicleCatalog sub element Directory not found - skipping
+[] [info] Add and deactivate new object "ego" (id 0)
+[] [info] Add and deactivate new object "instance-e91afa15647c4c4994f19aeb302c7179" (id 1)
+[] [info] Add and deactivate new object "instance-e3c5b72c12c34c85aac247734ad83bef" (id 2)
+[] [info] Add and deactivate new object "instance-fdd3fe14d1c044b9a9f6c24383c6207c" (id 3)
+[] [info] 1 parameters:
+[] [info]    $ScenarioDuration = 20.149566173553467
+[0.000] [info] Recording data to file /home/hahuy/Documents/VINUNI-K204-L2/Buid-Phase/project-N3/reports/job-d5af830cc031/nuscenes-cc8c0bf57f984915a77078b10eb33198-ca9a282c9e77460f8360f564131a8af5-ed5fc18c31904f96a8f0dbb99ff069c0--variant-10a98e0600b9f481/replay.dat
+[0.000] [info] Init ego TeleportAction initState -> startTransition -> runningState
+[0.000] [info] Starting teleport Action
+[0.000] [info] ego New position:
+[0.000] [info] Pos(0.00, 0.00, 0.00) Rot(0.00, 0.00, 0.00) roadId 1 laneId 1 s 0.00 offset -1.75 t 0.00
+[0.000] [info] Init ego TeleportAction runningState -> endTransition -> completeState
+[0.000] [info] Init ego LongitudinalAction initState -> startTransition -> runningState
+[0.000] [info] Init ego LongitudinalAction runningState -> endTransition -> completeState
+[0.000] [info] Init instance-e91afa15647c4c4994f19aeb302c7179 TeleportAction initState -> startTransition -> runningState
+[0.000] [info] Starting teleport Action
+[0.000] [info] instance-e91afa15647c4c4994f19aeb302c7179 New position:
+[0.000] [info] Pos(16.21, 4.57, 0.00) Rot(0.03, 0.00, 0.00) roadId 1 laneId 1 s 16.21 offset 2.82 t 4.57
+[0.000] [info] Init instance-e91afa15647c4c4994f19aeb302c7179 TeleportAction runningState -> endTransition -> completeState
+[0.000] [info] Init instance-e91afa15647c4c4994f19aeb302c7179 LongitudinalAction initState -> startTransition -> runningState
+[0.000] [info] Init instance-e91afa15647c4c4994f19aeb302c7179 LongitudinalAction runningState -> endTransition -> completeState
+[0.000] [info] Init instance-e3c5b72c12c34c85aac247734ad83bef TeleportAction initState -> startTransition -> runningState
+[0.000] [info] Starting teleport Action
+[0.000] [info] instance-e3c5b72c12c34c85aac247734ad83bef New position:
+[0.000] [info] Pos(70.88, 12.53, 0.00) Rot(4.66, 0.00, 0.00) roadId 1 laneId 1 s 70.88 offset 10.78 t 12.53
+[0.000] [info] Init instance-e3c5b72c12c34c85aac247734ad83bef TeleportAction runningState -> endTransition -> completeState
+[0.000] [info] Init instance-e3c5b72c12c34c85aac247734ad83bef LongitudinalAction initState -> startTransition -> runningState
+[0.000] [info] Init instance-e3c5b72c12c34c85aac247734ad83bef LongitudinalAction runningState -> endTransition -> completeState
+[0.000] [info] Init instance-fdd3fe14d1c044b9a9f6c24383c6207c TeleportAction initState -> startTransition -> runningState
+[0.000] [info] Starting teleport Action
+[0.000] [info] instance-fdd3fe14d1c044b9a9f6c24383c6207c New position:
+[0.000] [info] Pos(60.73, 20.10, 0.00) Rot(4.12, 0.00, 0.00) roadId 1 laneId 1 s 60.73 offset 18.35 t 20.10
+[0.000] [info] Init instance-fdd3fe14d1c044b9a9f6c24383c6207c TeleportAction runningState -> endTransition -> completeState
+[0.000] [info] Init instance-fdd3fe14d1c044b9a9f6c24383c6207c LongitudinalAction initState -> startTransition -> runningState
+[0.000] [info] Init instance-fdd3fe14d1c044b9a9f6c24383c6207c LongitudinalAction runningState -> endTransition -> completeState
+[0.000] [info] storyBoard initState -> startTransition -> runningState
+[0.000] [info] baseline_replay initState -> startTransition -> runningState
+[0.000] [info] recorded_trajectories initState -> initToStandbyTransition -> standbyState
+[0.050] [info] simulation_time: true, delay: 0.00, 0.0500 > 0.0000, edge: rising
+[0.050] [info] Trigger /------------------------------------------------
+[0.050] [info] Group 0:
+[0.050] [info] simulation_time: true
+[0.050] [info] Trigger  ------------------------------------------------/
+[0.050] [info] recorded_trajectories standbyState -> startTransition -> runningState
+[0.050] [info] ego_trajectory initState -> startTransition -> runningState
+[0.050] [info] ego_follow initState -> startTransition -> runningState
+[0.050] [info] ego_start initState -> initToStandbyTransition -> standbyState
+[0.050] [info] instance-e91afa15647c4c4994f19aeb302c7179_trajectory initState -> startTransition -> runningState
+[0.050] [info] instance-e91afa15647c4c4994f19aeb302c7179_follow initState -> startTransition -> runningState
+[0.050] [info] instance-e91afa15647c4c4994f19aeb302c7179_start initState -> initToStandbyTransition -> standbyState
+[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_trajectory initState -> startTransition -> runningState
+[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_follow initState -> startTransition -> runningState
+[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_start initState -> initToStandbyTransition -> standbyState
+[0.050] [info] instance-fdd3fe14d1c044b9a9f6c24383c6207c_trajectory initState -> startTransition -> runningState
+[0.050] [info] instance-fdd3fe14d1c044b9a9f6c24383c6207c_follow initState -> startTransition -> runningState
+[0.050] [info] instance-fdd3fe14d1c044b9a9f6c24383c6207c_start initState -> initToStandbyTransition -> standbyState
+[0.050] [info] simulation_time: true, delay: 0.00, 0.0500 > 0.0000, edge: none
+[0.050] [info] Trigger /------------------------------------------------
+[0.050] [info] Group 0:
+[0.050] [info] simulation_time: true
+[0.050] [info] Trigger  ------------------------------------------------/
+[0.050] [info] ego_start standbyState -> startTransition -> runningState
+[0.050] [info] ego_follow_trajectory initState -> startTransition -> runningState
+[0.050] [info] simulation_time: true, delay: 0.00, 0.0500 > 0.0000, edge: none
+[0.050] [info] Trigger /------------------------------------------------
+[0.050] [info] Group 0:
+[0.050] [info] simulation_time: true
+[0.050] [info] Trigger  ------------------------------------------------/
+[0.050] [info] instance-e91afa15647c4c4994f19aeb302c7179_start standbyState -> startTransition -> runningState
+[0.050] [info] instance-e91afa15647c4c4994f19aeb302c7179_follow_trajectory initState -> startTransition -> runningState
+[0.050] [info] simulation_time: true, delay: 0.00, 0.0500 > 0.0000, edge: none
+[0.050] [info] Trigger /------------------------------------------------
+[0.050] [info] Group 0:
+[0.050] [info] simulation_time: true
+[0.050] [info] Trigger  ------------------------------------------------/
+[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_start standbyState -> startTransition -> runningState
+[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_follow_trajectory initState -> startTransition -> runningState
+[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_follow_trajectory runningState -> endTransition -> completeState
+[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_start complete after 1 execution
+[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_start runningState -> endTransition -> completeState
+[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_follow runningState -> endTransition -> completeState
+[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_trajectory complete after 1 execution
+[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_trajectory runningState -> endTransition -> completeState
+[0.050] [info] simulation_time: true, delay: 0.00, 0.0500 > 0.0000, edge: none
+[0.050] [info] Trigger /------------------------------------------------
+[0.050] [info] Group 0:
+[0.050] [info] simulation_time: true
+[0.050] [info] Trigger  ------------------------------------------------/
+[0.050] [info] instance-fdd3fe14d1c044b9a9f6c24383c6207c_start standbyState -> startTransition -> runningState
+[0.050] [info] instance-fdd3fe14d1c044b9a9f6c24383c6207c_follow_trajectory initState -> startTransition -> runningState
+[14.600] [info] instance-e91afa15647c4c4994f19aeb302c7179_follow_trajectory runningState -> endTransition -> completeState
+[14.600] [info] instance-e91afa15647c4c4994f19aeb302c7179_start complete after 1 execution
+[14.600] [info] instance-e91afa15647c4c4994f19aeb302c7179_start runningState -> endTransition -> completeState
+[14.600] [info] instance-e91afa15647c4c4994f19aeb302c7179_follow runningState -> endTransition -> completeState
+[14.600] [info] instance-e91afa15647c4c4994f19aeb302c7179_trajectory complete after 1 execution
+[14.600] [info] instance-e91afa15647c4c4994f19aeb302c7179_trajectory runningState -> endTransition -> completeState
+[17.150] [info] instance-fdd3fe14d1c044b9a9f6c24383c6207c_follow_trajectory runningState -> endTransition -> completeState
+[17.150] [info] instance-fdd3fe14d1c044b9a9f6c24383c6207c_start complete after 1 execution
+[17.150] [info] instance-fdd3fe14d1c044b9a9f6c24383c6207c_start runningState -> endTransition -> completeState
+[17.150] [info] instance-fdd3fe14d1c044b9a9f6c24383c6207c_follow runningState -> endTransition -> completeState
+[17.150] [info] instance-fdd3fe14d1c044b9a9f6c24383c6207c_trajectory complete after 1 execution
+[17.150] [info] instance-fdd3fe14d1c044b9a9f6c24383c6207c_trajectory runningState -> endTransition -> completeState
+[19.200] [info] ego_follow_trajectory runningState -> endTransition -> completeState
+[19.200] [info] ego_start complete after 1 execution
+[19.200] [info] ego_start runningState -> endTransition -> completeState
+[19.200] [info] ego_follow runningState -> endTransition -> completeState
+[19.200] [info] ego_trajectory complete after 1 execution
+[19.200] [info] ego_trajectory runningState -> endTransition -> completeState
+[19.200] [info] recorded_trajectories runningState -> endTransition -> completeState
+[19.200] [info] baseline_replay runningState -> endTransition -> completeState
+[20.150] [info] simulation_time: true, delay: 0.00, 20.1500 > 20.1496, edge: rising
+[20.150] [info] Trigger /------------------------------------------------
+[20.150] [info] Group 0:
+[20.150] [info] simulation_time: true
+[20.150] [info] Trigger  ------------------------------------------------/
+[20.150] [info] storyBoard runningState -> stopTransition -> completeState
+[20.150] [info] Closing
