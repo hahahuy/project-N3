@@ -24,8 +24,8 @@ export type ReplayMetric = { sample_count: number; position_rmse_m: number; fina
 export type MetricDistribution = { mean: number; median: number; p95: number; max: number };
 export type ReplayMetricAggregate = { actor_count: number; ade_m: MetricDistribution; fde_m: MetricDistribution | null };
 export type Availability = { available: boolean; unavailable_reason: string | null };
+export type WorkspaceLayer = Availability;
 export type WorkspaceDocument = { document_name: string; branch: string; version: string; active_scenario_id: string; connection: Availability; dataset: Availability; esmini: Availability; dataset_version: string | null; esmini_version: string | null; coordinate_frame: string; transform_version: string | null; provenance: Record<string, string> };
-export type WorkspaceLayer = { available: boolean; unavailable_reason: string | null };
 export type WorkspaceScenario = { scenario: ScenarioSummary; actors: Array<ActorSummary & { role: "ego" | "actor"; states: TrajectoryState[]; dimensions: Availability }>; paths: TrajectoryPath[]; layers: { recorded_path: WorkspaceLayer; generated_path: WorkspaceLayer; map_lanes: WorkspaceLayer; actor_dimensions: WorkspaceLayer; xodr_geometry: WorkspaceLayer; lidar: WorkspaceLayer }; metrics: { available: boolean; unavailable_reason: string | null; source: "replay_trace" | "none"; per_actor: Record<string, ReplayMetric> }; gates: GateResult[] };
 export type TrajectoryResponse = {
   scenario_id: string;
@@ -88,14 +88,24 @@ export const apiUrl = (path: string) => `${API}${path}`;
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(apiUrl(path), init);
-  if (!response.ok) throw new Error((await response.json()).detail ?? `Request failed: ${response.status}`);
-  return response.json() as Promise<T>;
+  const raw = await response.text();
+  let body: unknown = null;
+  if (raw.trim().length > 0) {
+    try { body = JSON.parse(raw); } catch { body = null; }
+  }
+  if (!response.ok) {
+    const detail = (body as { detail?: unknown } | null)?.detail;
+    throw new Error(typeof detail === "string" && detail ? detail : `Request failed: ${response.status} ${response.statusText}`.trim());
+  }
+  if (body === null) throw new Error(`Empty or non-JSON response from ${path} (HTTP ${response.status})`);
+  return body as T;
 }
 
 export const fetchScenarios = () => request<ScenarioSummary[]>("/scenarios");
 export const fetchScenario = (id: string) => request<ScenarioSummary>(`/scenarios/${encodeURIComponent(id)}`);
 export const fetchWorkspaceDocument = (id: string) => request<WorkspaceDocument>(`/workspace/documents/${encodeURIComponent(id)}`);
 export const fetchWorkspaceScenario = (id: string) => request<WorkspaceScenario>(`/workspace/scenarios/${encodeURIComponent(id)}`);
+export const fetchScenarioArtifacts = (id: string) => request<{ scenario_id: string; artifacts: ArtifactLink[] }>(`/scenarios/${encodeURIComponent(id)}/artifacts`);
 export const fetchTrajectory = (id: string) => request<TrajectoryResponse>(`/scenarios/${encodeURIComponent(id)}/trajectory`);
 export const previewVariant = (scenarioId: string, body: PreviewRequest) => request<PreviewResponse>(`/scenarios/${encodeURIComponent(scenarioId)}/variants/preview`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 export const createBatch = (body: object) => request<{ job_id: string }>("/batches", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
