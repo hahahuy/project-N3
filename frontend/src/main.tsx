@@ -1,4 +1,6 @@
 if (import.meta.env.DEV) {
+  // Optional local inspection helper; production builds do not load it.
+  // @ts-expect-error react-grab is a dev-only optional dependency.
   import("react-grab");
 }
 
