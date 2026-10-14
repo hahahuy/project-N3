@@ -17,12 +17,12 @@ milestone complete from a visual approximation alone.
 | Area | State | Evidence / next action |
 |---|---|---|
 | Workspace shell | Implemented for U1 | `frontend/src/App.tsx`, `frontend/src/styles.css`; verify desktop and tablet screenshots |
-| Title bar and status chips | Implemented (CAD studio) | `/api/settings` and `/api/esmini` drive simulation/dataset chips; `/api/workspace/documents/{id}` remains typed and available for later use |
-| Toolbar | Partial | CAD studio toolbar with overflow menu; disabled commands explain that they are unavailable in this build |
+| Title bar and status chips | Implemented against current API | `GET /api/esmini` and `GET /api/settings` drive two-phase green chips; hover or click opens the detail list |
+| Toolbar | Partial | U1 shell exists; disabled commands explain that they are unavailable in this build; overflow menu replaces scrolling |
 | Left icon strip and panel | Partial | Catalog works from existing scenario endpoints; Recipe remains an honest empty state; panel is drag-resizable |
-| Right icon strip and flyouts | Partial | Metrics, provenance and artifacts read live scenario data; G1-G7 gates and run/variant lineage remain U3/U4 |
+| Right icon strip and flyouts | Partial | Metrics, provenance, and artifacts now read live scenario data; G1-G7 gates still need a selected run or variant |
 | View manager | Implemented for U1 | 0-4 views, close-last-view empty state, reset layout, responsive stacking |
-| Top-down view | Implemented against current API | Recorded/generated trajectory overlay; map lanes remain explicitly unavailable and actor geometry is not fabricated |
+| Top-down view | Implemented against current API | Recorded/generated trajectory overlay; map and actor geometry await backend fields |
 | 3rd-person POV | Intentionally unavailable | U5, requires map geometry and actor dimensions |
 | LiDAR 3D | Intentionally unavailable | U6, requires point-cloud contract |
 | Timeline | U1 placeholder only | Full gate lane and actor tracks are U3 |
@@ -34,8 +34,8 @@ For every change, append a row:
 | Date | Agent / change | Milestone + spec sections | Backend fields used | Verification | Open issues |
 |---|---|---|---|---|---|
 | 2026-10-14 | U1 workspace shell and Top-down view | U1; sections 4, 5, 6, 11 | Existing scenario and trajectory endpoints | `npm test`; `npm run build`; `git diff --check` | Screenshot evidence and real map geometry pending |
-| 2026-10-14 | U1 workspace contract integration (superseded in shell by the CAD studio merge) | U1; sections 4, 6, 9, 10 | `WorkspaceDocument`, `WorkspaceScenario` (typed clients retained) | Frontend API tests/build; Python web API tests | Shell now reads `/api/settings` and `/api/esmini`; workspace scenario endpoints stay available for U3 gates/metrics |
-| 2026-10-14 | Merge `feat/part-studio-style` into `plan-a/P0` | U1; sections 4, 5, 6, 9, 11, 13 | `/api/settings`, `/api/esmini`, `/api/scenarios/{id}/artifacts`, `/api/scenarios/{id}/trajectory` | `npm run build`; `npm test`; `pytest -q` | CARLA still has no endpoint; no single-scenario export route; `frontend/src/{workspace,state,tokens.css}` layout still not built |
+| 2026-10-14 | Dev proxy fix, backend wiring of dead controls, CAD restyle, dark mode, handbook | U1; sections 4, 5, 6, 9, 11, 13 | `/api/settings`, `/api/esmini`, `/api/scenarios/{id}/artifacts`, `/api/artifacts/{path}`, `/api/scenarios/{id}/trajectory` | `npm run build`; `npm test`; `pytest -q` (258 passed, 1 skipped); live proxy check of all consumed routes against local uvicorn | CARLA has no endpoint; no single-scenario export route; `frontend/src/{workspace,state,tokens.css}` layout from spec section 13 still not built |
+| 2026-10-14 | Restore files dropped by merge `05cd7d5` | U1; sections 4, 11, 13 | Unchanged; this is a restoration only | `npm run build` (CSS 20.43 kB, was 10.77 kB); `npm test`; `scripts/check_docs_consistency.py`; proxy returns 200 | Merge reset six frontend/config files and four docs to pre-merge state while keeping the new `App.tsx`; `tsc` cannot detect this. Workspace endpoints from `49c6bc3` are client-side only and 404. |
 
 ## Frontend rules for future agents
 

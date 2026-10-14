@@ -15,6 +15,12 @@ New agents and sessions must read these files first:
 9. `docs/current/artifact-policy.md`
 10. `docs/current/next-agent-handoff.md`
 
+Agents changing the browser application must also read:
+
+1. `docs/current/frontend-workspace-handbook.md`
+2. `docs/current/frontend-workspace-log.md`
+3. `docs/current/backend-workspace-contract-log.md`
+
 Historical files under `docs/archive/` are not current contracts. Reports under
 `docs/reports/` record completed work and must not override current decisions.
 

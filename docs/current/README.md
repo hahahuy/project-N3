@@ -15,6 +15,9 @@ project context for agents and future sessions.
   acceptance criteria; hand-off document for a frontend/UX agent.
 - `ui-showcase-checkpoint.md`: lightweight U0 showcase before the unfinished
   full 2D/3D MVP authoring workspace.
+- `frontend-workspace-handbook.md`: how to run, structure and change the browser
+  app under `frontend/`; endpoint inventory, theming rules, and known layout
+  traps. Start here for any frontend task.
 - `wave-3a-backend.md`: completed Wave 3A backend report and historical context;
   current simulator work is defined in `technical-contracts.md` and
   `active-work.md`.
