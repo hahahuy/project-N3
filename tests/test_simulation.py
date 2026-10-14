@@ -39,9 +39,14 @@ def _fake_dat2csv(tmp_path: Path) -> Path:
     return converter
 
 
-def test_runner_captures_success_version_and_normalized_trace(tmp_path: Path) -> None:
+def _scenario(tmp_path: Path) -> Path:
     scenario = tmp_path / "baseline.xosc"
     scenario.write_text("<OpenSCENARIO/>", encoding="utf-8")
+    return scenario
+
+
+def test_runner_captures_success_version_and_normalized_trace(tmp_path: Path) -> None:
+    scenario = _scenario(tmp_path)
     executable = _fake_esmini(
         tmp_path,
         "recording = sys.argv[sys.argv.index('--record') + 1]\n"
@@ -70,8 +75,7 @@ def test_runner_captures_success_version_and_normalized_trace(tmp_path: Path) ->
 
 
 def test_runner_records_nonzero_exit_and_stderr(tmp_path: Path) -> None:
-    scenario = tmp_path / "baseline.xosc"
-    scenario.write_text("<OpenSCENARIO/>", encoding="utf-8")
+    scenario = _scenario(tmp_path)
     executable = _fake_esmini(tmp_path, "print('bad scenario', file=sys.stderr)\nraise SystemExit(7)\n")
 
     report = run_esmini(
@@ -82,6 +86,7 @@ def test_runner_records_nonzero_exit_and_stderr(tmp_path: Path) -> None:
     assert report.exit_code == 7
     assert report.stderr == "bad scenario\n"
     assert report.tool_version == "esmini fake 1.0"
+    assert report.failure_code == "esmini_exit"
 
 
 def test_trace_parser_rejects_empty_and_invalid_trace(tmp_path: Path) -> None:
@@ -94,3 +99,65 @@ def test_trace_parser_rejects_empty_and_invalid_trace(tmp_path: Path) -> None:
         parse_esmini_csv_trace(empty)
     with pytest.raises(ValueError, match="exactly"):
         parse_esmini_csv_trace(invalid)
+
+
+def test_runner_reports_missing_esmini_configuration(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ESMINI_BIN", raising=False)
+    report = run_esmini(_scenario(tmp_path), tmp_path / "trace.csv", EsminiConfig())
+
+    assert report.failure_code == "missing_esmini_bin"
+    assert report.failure_message
+
+
+def test_runner_reports_missing_dat2csv_configuration(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ESMINI_DAT2CSV", raising=False)
+    executable = _fake_esmini(tmp_path, "print('replay complete')\n")
+
+    report = run_esmini(
+        _scenario(tmp_path),
+        tmp_path / "trace.csv",
+        EsminiConfig(executable=(sys.executable, str(executable))),
+    )
+
+    assert report.failure_code == "missing_dat2csv"
+    assert "dat2csv" in report.failure_message
+
+
+def test_runner_reports_timeout(tmp_path: Path) -> None:
+    executable = _fake_esmini(
+        tmp_path,
+        "import time\ntime.sleep(1)\n",
+    )
+
+    report = run_esmini(
+        _scenario(tmp_path),
+        tmp_path / "trace.csv",
+        EsminiConfig(executable=(sys.executable, str(executable)), timeout_s=0.05),
+    )
+
+    assert report.timed_out
+    assert report.failure_code == "timeout"
+
+
+def test_runner_reports_malformed_converter_output(tmp_path: Path) -> None:
+    executable = _fake_esmini(tmp_path, "print('replay complete')\n")
+    converter = tmp_path / "bad_dat2csv.py"
+    converter.write_text(
+        "#!/usr/bin/env python3\n"
+        "import sys\n"
+        "if '--version' in sys.argv: print('dat2csv fake 1.0'); raise SystemExit(0)\n"
+        "open(sys.argv[sys.argv.index('--csv') + 1], 'w').write('not,a,trace\\n')\n",
+        encoding="utf-8",
+    )
+
+    report = run_esmini(
+        _scenario(tmp_path),
+        tmp_path / "trace.csv",
+        EsminiConfig(
+            executable=(sys.executable, str(executable)),
+            trace_converter=(sys.executable, str(converter)),
+        ),
+    )
+
+    assert report.failure_code == "malformed_trace"
+    assert "exactly these CSV columns" in report.failure_message

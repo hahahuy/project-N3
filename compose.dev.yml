@@ -1,0 +1,40 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      R2S_PROJECT_ROOT: /app
+      R2S_ARTIFACT_ROOT: scenarios
+      R2S_OUTPUT_ROOT: reports
+      ESMINI_BIN: ${ESMINI_BIN:-/opt/esmini/bin/esmini}
+      ESMINI_DAT2CSV: ${ESMINI_DAT2CSV:-/opt/esmini/bin/dat2csv}
+    ports:
+      - "${R2S_WEB_API_PORT:-8001}:8000"
+    volumes:
+      - .:/app
+      - r2s-reports:/app/reports
+      - ${HOME}/esmini:/opt/esmini:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${R2S_WEB_FRONTEND_PORT:-5173}:5173"
+    volumes:
+      - ./frontend:/app/frontend
+      - frontend-node-modules:/app/frontend/node_modules
+
+volumes:
+  frontend-node-modules:
+  r2s-reports:

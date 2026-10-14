@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from real2scenario import lane_road_match_evidence_from_dict
 
 
 class ActorSummary(BaseModel):
@@ -54,6 +55,38 @@ class ReplayMetricView(BaseModel):
     final_displacement_m: float
     heading_mae_rad: float
     speed_mae_mps: float
+    ade_m: float | None = None
+    fde_m: float | None = None
+    coverage_status: str = "unknown"
+
+
+class MetricAvailabilityView(BaseModel):
+    """Explicit availability contract for replay metrics.
+
+    Metrics are never fabricated and never defaulted to zero. A consumer can
+    always tell whether a number is missing, and why, without inspecting the
+    surrounding status fields.
+    """
+
+    available: bool
+    unavailable_reason: str | None = None
+    alignment_method: str | None = None
+    source: Literal["replay_trace", "none"] = "none"
+    per_actor: dict[str, ReplayMetricView] = Field(default_factory=dict)
+    aggregate: "ReplayMetricAggregateView | None" = None
+
+
+class MetricDistributionView(BaseModel):
+    mean: float
+    median: float
+    p95: float
+    max: float
+
+
+class ReplayMetricAggregateView(BaseModel):
+    actor_count: int
+    ade_m: MetricDistributionView
+    fde_m: MetricDistributionView | None
 
 
 class TrajectoryResponse(BaseModel):
@@ -113,6 +146,28 @@ class SettingsView(BaseModel):
     source_scene_count: int
 
 
+class CP1ReviewItem(BaseModel):
+    item_id: str
+    category: str
+    title: str
+    status: Literal["blocked", "ready", "deferred", "informational"]
+    blocking: bool
+    what_to_verify: str
+    owner_action: str
+    evidence: list[str]
+    related_api: list[str] = Field(default_factory=list)
+
+
+class CP1ReviewView(BaseModel):
+    review_version: str
+    diagnostic_status: Literal["diagnostic"]
+    scientific_status: Literal["PROVISIONAL"]
+    scene: str
+    corridor_baseline: dict[str, object]
+    scope_note: str
+    items: list[CP1ReviewItem]
+
+
 class ValidationReasonView(BaseModel):
     code: str
     category: str
@@ -166,6 +221,26 @@ class ValidationLimitsRequest(BaseModel):
     road_boundary: RoadBoundaryRequest | None = None
 
 
+class EventDeclarationRequest(BaseModel):
+    """Explicitly declared main-event window used by the G5 footprint gate."""
+
+    model_config = ConfigDict(extra="forbid")
+    main_event_start_s: float
+    main_event_end_s: float
+    event_type: str = Field(min_length=1)
+    event_target_actor_id: str = Field(min_length=1)
+    event_source: str = Field(default="operator_declared", min_length=1)
+
+    def to_declaration(self) -> dict[str, object]:
+        return {
+            "main_event_start_s": self.main_event_start_s,
+            "main_event_end_s": self.main_event_end_s,
+            "event_type": self.event_type,
+            "event_target_actor_id": self.event_target_actor_id,
+            "event_source": self.event_source,
+        }
+
+
 class BatchRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -181,6 +256,19 @@ class BatchRequest(BaseModel):
     seed: int = 7
     validation_limits: ValidationLimitsRequest = Field(default_factory=ValidationLimitsRequest)
     replay_enabled: bool = False
+    lane_match_evidence: dict[str, dict[str, object]] = Field(default_factory=dict)
+    event_declaration: EventDeclarationRequest | None = None
+
+    @field_validator("lane_match_evidence")
+    @classmethod
+    def validate_lane_match_evidence(cls, value: dict[str, dict[str, object]]):
+        """Reject evidence the domain reader cannot validate, before any run."""
+        for variant_id, payload in value.items():
+            try:
+                lane_road_match_evidence_from_dict(payload)
+            except ValueError as error:
+                raise ValueError(f"{variant_id}: {error}") from error
+        return value
 
 
 class JobStatus(BaseModel):
@@ -192,6 +280,28 @@ class JobStatus(BaseModel):
     error: str | None = None
 
 
+class ReplayRequest(BaseModel):
+    scenario_id: str
+
+
+class ReplayJobView(BaseModel):
+    job_id: str
+    scenario_id: str
+    status: Literal["queued", "running", "completed", "failed", "timed-out"]
+    error: str | None = None
+    failure_code: str | None = None
+    failure_message: str | None = None
+    tool_version: str | None = None
+    exit_code: int | None = None
+    timed_out: bool = False
+    stdout: str = ""
+    stderr: str = ""
+    artifacts: dict[str, str] = Field(default_factory=dict)
+    metrics: dict[str, object] = Field(default_factory=dict)
+    started_at: str | None = None
+    finished_at: str | None = None
+
+
 class VariantResult(BaseModel):
     variant_id: str
     status: Literal["valid", "invalid", "simulator-failed"]
@@ -199,6 +309,8 @@ class VariantResult(BaseModel):
     validation: ValidationView
     ranking: RankingView | None
     replay_metrics: dict[str, ReplayMetricView] = Field(default_factory=dict)
+    replay_metric_aggregate: ReplayMetricAggregateView | None = None
+    gates: list["GateResultView"] = Field(default_factory=list)
     simulator_error: str | None = None
     replay_failure: dict[str, object] | None = None
     artifacts: list[ArtifactLink]
@@ -209,8 +321,56 @@ class BatchResults(BaseModel):
     manifest: dict[str, object]
     counts: dict[str, int]
     results: list[VariantResult]
+    replay_metric_aggregate: ReplayMetricAggregateView | None = None
+    replay_metrics: MetricAvailabilityView | None = None
+    gate_funnel: dict[str, object] | None = None
 
 
 class ExportResponse(BaseModel):
     variant_id: str
     artifacts: list[ArtifactLink]
+
+
+class ActorMotionEditRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    actor_id: str
+    speed_multiplier: float = Field(default=1.0, gt=0)
+    heading_offset_rad: float = 0.0
+    timing_offset_s: float = 0.0
+    initial_gap_delta_m: float = 0.0
+
+
+class GateResultView(BaseModel):
+    gate_id: str
+    status: Literal["pass", "fail", "skipped", "error"]
+    reasons: list[str] = Field(default_factory=list)
+    config_version: str | None = None
+    observed: dict[str, object] | None = None
+    scientific_status: str = "not-applicable"
+
+
+class PreviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    actor_edits: list[ActorMotionEditRequest] = Field(min_length=1)
+    replay_mode: Literal["waypoint"] = "waypoint"
+    behavior: Literal["parameterized", "behavior"] = "parameterized"
+    seed: int = 0
+
+
+class PreviewResponse(BaseModel):
+    parent_scenario_id: str
+    variant_id: str | None
+    status: Literal["valid", "invalid", "unsupported"]
+    behavior: dict[str, str]
+    configuration: dict[str, object]
+    provenance: dict[str, str]
+    paths: list[TrajectoryPath] = Field(default_factory=list)
+    validation: ValidationView | None = None
+    gates: list[GateResultView] = Field(default_factory=list)
+    replay_metrics: dict[str, ReplayMetricView] = Field(default_factory=dict)
+    metrics: MetricAvailabilityView = Field(
+        default_factory=lambda: MetricAvailabilityView(
+            available=False, unavailable_reason="preview_has_no_simulator_trace"
+        )
+    )
+    artifacts: list[ArtifactLink] = Field(default_factory=list)

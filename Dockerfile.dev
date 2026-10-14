@@ -1,0 +1,27 @@
+FROM python:3.11-slim-bookworm
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    R2S_PROJECT_ROOT=/app \
+    R2S_ARTIFACT_ROOT=scenarios \
+    R2S_OUTPUT_ROOT=reports
+
+WORKDIR /app
+COPY pyproject.toml README.md ./
+COPY src/ ./src/
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+        libgl1 \
+        libglib2.0-0 \
+        libx11-6 \
+        libxext6 \
+        libxi6 \
+        libxinerama1 \
+        libxrandr2 \
+        libxrender1 \
+        libxxf86vm1 \
+        libfontconfig1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && python -m pip install --no-cache-dir ".[dev,web,devkit]"
+
+CMD ["uvicorn", "r2s_web.app:app", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8000", "--reload"]

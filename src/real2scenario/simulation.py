@@ -104,6 +104,8 @@ class ReplayReport:
     tool_version: str | None
     trace_path: Path
     trace: ReplayTrace | None
+    failure_code: str | None = None
+    failure_message: str | None = None
 
 
 def run_esmini(
@@ -118,7 +120,10 @@ def run_esmini(
     ``dat2csv`` companion command.
     A failed invocation returns an auditable report instead of hiding stderr.
     """
-    executable_command = config.resolve_command()
+    try:
+        executable_command = config.resolve_command()
+    except ValueError as error:
+        return ReplayReport((), False, False, None, "", str(error), None, Path(trace_path), None, "missing_esmini_bin", str(error))
     scenario = Path(scenario_path)
     trace = Path(trace_path)
     if not scenario.is_file():
@@ -143,6 +148,7 @@ def run_esmini(
             check=False,
             text=True,
             timeout=config.timeout_s,
+            cwd=trace.parent,
         )
     except subprocess.TimeoutExpired as error:
         return ReplayReport(
@@ -155,6 +161,7 @@ def run_esmini(
             tool_version=tool_version,
             trace_path=trace,
             trace=None,
+            failure_code="timeout", failure_message="esmini replay timed out.",
         )
     except OSError as error:
         return ReplayReport(
@@ -167,6 +174,7 @@ def run_esmini(
             tool_version=tool_version,
             trace_path=trace,
             trace=None,
+            failure_code="missing_esmini_bin", failure_message=str(error),
         )
 
     if completed.returncode != 0:
@@ -180,9 +188,13 @@ def run_esmini(
             tool_version=tool_version,
             trace_path=trace,
             trace=None,
+            failure_code="esmini_exit", failure_message=f"esmini exited with code {completed.returncode}.",
         )
     try:
-        converter_command = config.resolve_trace_converter_command()
+        try:
+            converter_command = config.resolve_trace_converter_command()
+        except ValueError as error:
+            return ReplayReport(command, False, False, completed.returncode, completed.stdout, completed.stderr, tool_version, trace, None, "missing_dat2csv", str(error))
         conversion = subprocess.run(
             (
                 *converter_command,
@@ -197,6 +209,7 @@ def run_esmini(
             check=False,
             text=True,
             timeout=config.timeout_s,
+            cwd=trace.parent,
         )
         if conversion.returncode != 0:
             raise ValueError(
@@ -214,6 +227,7 @@ def run_esmini(
             tool_version=tool_version,
             trace_path=trace,
             trace=None,
+            failure_code="malformed_trace", failure_message=str(error),
         )
     return ReplayReport(
         command=command,

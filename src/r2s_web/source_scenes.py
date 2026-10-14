@@ -2,17 +2,19 @@
 
 from __future__ import annotations
 
-import json
+import os
 import re
 from pathlib import Path
 from typing import Any
 
 from real2scenario import (
+    MetadataIndex,
     RoadAlignedTransform,
     SelectionConfig,
     SourceWindow,
     artifact_to_json,
     baseline_artifact_to_dict,
+    default_cache_dir,
     extract_scenario,
     select_interaction_actors,
     transform_to_local_road_aligned,
@@ -22,6 +24,33 @@ from .config import WebSettings
 from .schemas import ActorSummary, ArtifactLink, ScenarioSummary, SourceScene, SourceSceneImportResponse
 
 
+_INDEX_CACHE: dict[tuple[str, str, str], MetadataIndex] = {}
+
+
+def metadata_cache_dir() -> Path:
+    """Return the local metadata cache directory for scene import."""
+    configured = os.environ.get("R2S_METADATA_CACHE")
+    return Path(configured).expanduser() if configured else default_cache_dir()
+
+
+def shared_metadata_index(settings: WebSettings) -> MetadataIndex:
+    """Return a process-shared metadata index for the configured dataset.
+
+    Scene discovery and import previously rescanned the large nuScenes
+    metadata tables on every call. The index streams them once into a local
+    private cache and is reused for the remaining calls in this process.
+    """
+    if settings.dataset_root is None:
+        raise ValueError("No local nuScenes dataset is configured.")
+    cache_dir = metadata_cache_dir()
+    key = (str(Path(settings.dataset_root).resolve()), settings.dataset_version, str(cache_dir))
+    index = _INDEX_CACHE.get(key)
+    if index is None:
+        index = MetadataIndex(settings.dataset_root, settings.dataset_version, cache_dir=cache_dir)
+        _INDEX_CACHE[key] = index
+    return index
+
+
 class SourceSceneAdapter:
     """Read the local dataset metadata without importing the nuScenes devkit."""
 
@@ -29,48 +58,10 @@ class SourceSceneAdapter:
         self.settings = settings
 
     def discover(self) -> tuple[SourceScene, ...]:
-        metadata = self._metadata_path()
-        if metadata is None:
+        if self._metadata_path() is None:
             return ()
-        scenes = _read_json_array(metadata / "scene.json")
-        samples = {
-            item["token"]: item for item in _read_json_array(metadata / "sample.json")
-        }
-        annotations = _read_json_array(metadata / "sample_annotation.json")
-        instances = {
-            item["token"]: item for item in _read_json_array(metadata / "instance.json")
-        }
-        categories = {
-            item["token"]: item.get("name", "")
-            for item in _read_json_array(metadata / "category.json")
-        }
-        result: list[SourceScene] = []
-        for scene in scenes:
-            sample_tokens = _scene_sample_tokens(scene, samples)
-            observed_instances = {
-                item["instance_token"]
-                for item in annotations
-                if item.get("sample_token") in sample_tokens
-            }
-            vehicle_tokens = tuple(
-                token
-                for token in sorted(observed_instances)
-                if categories.get(instances.get(token, {}).get("category_token", ""), "").startswith(
-                    "vehicle."
-                )
-            )
-            result.append(
-                SourceScene(
-                    scene_token=scene["token"],
-                    name=scene.get("name", scene["token"]),
-                    description=scene.get("description", ""),
-                    sample_count=len(sample_tokens),
-                    first_sample_token=scene["first_sample_token"],
-                    last_sample_token=scene["last_sample_token"],
-                    vehicle_candidate_count=len(vehicle_tokens),
-                )
-            )
-        return tuple(result)
+        index = shared_metadata_index(self.settings)
+        return tuple(_source_scene(index, record) for record in index.scene_records())
 
     def import_scene(
         self,
@@ -82,50 +73,19 @@ class SourceSceneAdapter:
         max_ttc_s: float = 5.0,
         max_actors: int = 3,
     ) -> SourceSceneImportResponse:
-        scene = next((item for item in self.discover() if item.scene_token == scene_token), None)
-        if scene is None:
-            raise KeyError(f"Source scene {scene_token!r} was not found.")
-        if self.settings.dataset_root is None:
-            raise ValueError("No local nuScenes dataset is configured.")
-        metadata = self._metadata_path()
-        if metadata is None:
+        if self._metadata_path() is None:
             raise ValueError("Configured nuScenes metadata directory does not exist.")
-        samples = {
-            item["token"]: item for item in _read_json_array(metadata / "sample.json")
-        }
-        annotations = _read_json_array(metadata / "sample_annotation.json")
-        instances = {
-            item["token"]: item for item in _read_json_array(metadata / "instance.json")
-        }
-        categories = {
-            item["token"]: item.get("name", "")
-            for item in _read_json_array(metadata / "category.json")
-        }
-        sample_tokens = set(
-            _scene_sample_tokens(
-                {
-                    "first_sample_token": scene.first_sample_token,
-                    "last_sample_token": scene.last_sample_token,
-                    "token": scene.scene_token,
-                },
-                samples,
-            )
-        )
-        vehicle_tokens = tuple(
-            token
-            for token in sorted(
-                {
-                    item["instance_token"]
-                    for item in annotations
-                    if item.get("sample_token") in sample_tokens
-                }
-            )
-            if categories.get(instances.get(token, {}).get("category_token", ""), "").startswith(
-                "vehicle."
-            )
-        )
+        index = shared_metadata_index(self.settings)
+        try:
+            record = index.scene(scene_token)
+        except KeyError:
+            record = None
+        if record is None:
+            raise KeyError(f"Source scene {scene_token!r} was not found.")
+        scene = _source_scene(index, record)
+        vehicle_tokens = index.instance_tokens(scene_token)
         window = SourceWindow(
-            scene.scene_token,
+            scene_token,
             start_sample_token or scene.first_sample_token,
             end_sample_token or scene.last_sample_token,
         )
@@ -134,6 +94,7 @@ class SourceSceneAdapter:
             window,
             vehicle_tokens,
             version=self.settings.dataset_version,
+            tables=index.tables_for_scenes([scene_token]),
         )
         selected = select_interaction_actors(
             source,
@@ -164,15 +125,7 @@ class SourceSceneAdapter:
             artifact_to_json(baseline_artifact_to_dict(local)), encoding="utf-8"
         )
         return SourceSceneImportResponse(
-            scene=SourceScene(
-                scene_token=scene.scene_token,
-                name=scene.name,
-                description=scene.description,
-                sample_count=scene.sample_count,
-                first_sample_token=scene.first_sample_token,
-                last_sample_token=scene.last_sample_token,
-                vehicle_candidate_count=scene.vehicle_candidate_count,
-            ),
+            scene=scene,
             scenario_id=local.scenario_id,
             selected_actor_ids=[actor.actor_id for actor in local.actors if actor.actor_id != "ego"],
             artifact=ArtifactLink(
@@ -208,26 +161,17 @@ class SourceSceneAdapter:
         return path if path.is_dir() else None
 
 
-def _read_json_array(path: Path) -> list[dict[str, Any]]:
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise ValueError(f"Unable to read dataset metadata {path}: {error}.") from error
-    if not isinstance(payload, list) or not all(isinstance(item, dict) for item in payload):
-        raise ValueError(f"Dataset metadata {path} must contain a JSON array of objects.")
-    return payload
-
-
-def _scene_sample_tokens(scene: dict[str, Any], samples: dict[str, dict[str, Any]]) -> list[str]:
-    tokens: list[str] = []
-    current = scene["first_sample_token"]
-    while current:
-        sample = samples[current]
-        tokens.append(current)
-        if current == scene["last_sample_token"]:
-            return tokens
-        current = sample.get("next", "")
-    raise ValueError(f"Scene {scene.get('token', '')!r} does not reach its last sample.")
+def _source_scene(index: MetadataIndex, record: dict[str, Any]) -> SourceScene:
+    scene_token = str(record.get("token", ""))
+    return SourceScene(
+        scene_token=scene_token,
+        name=str(record.get("name", scene_token)),
+        description=str(record.get("description", "")),
+        sample_count=len(index.sample_tokens(scene_token)),
+        first_sample_token=str(record["first_sample_token"]),
+        last_sample_token=str(record["last_sample_token"]),
+        vehicle_candidate_count=len(index.instance_tokens(scene_token)),
+    )
 
 
 def _slug(value: str) -> str:

@@ -29,6 +29,7 @@ REQUIRED_PROVENANCE_KEYS = frozenset(
 )
 
 _STATE_FIELDS = frozenset({"time_s", "x_m", "y_m", "yaw_rad", "speed_mps"})
+_STATE_OPTIONAL_FIELDS = frozenset({"source_timestamp_us", "source_record_token"})
 _ACTOR_FIELDS = frozenset(
     {"actor_id", "actor_type", "trajectory", "length_m", "width_m"}
 )
@@ -59,20 +60,31 @@ _VARIANT_ARTIFACT_FIELDS = frozenset(
 
 def state_to_dict(state: State) -> dict[str, float]:
     """Convert a state to JSON-safe SI-unit values."""
-    return {
+    payload: dict[str, Any] = {
         "time_s": float(state.time_s),
         "x_m": float(state.x_m),
         "y_m": float(state.y_m),
         "yaw_rad": float(state.yaw_rad),
         "speed_mps": float(state.speed_mps),
     }
+    if state.source_timestamp_us is not None:
+        payload["source_timestamp_us"] = state.source_timestamp_us
+    if state.source_record_token is not None:
+        payload["source_record_token"] = state.source_record_token
+    return payload
 
 
 def state_from_dict(payload: Mapping[str, Any]) -> State:
     """Reconstruct a validated state from its JSON object."""
     data = _expect_object(payload, "state")
-    _validate_fields(data, _STATE_FIELDS, "state")
-    return State(**{field: _expect_number(data[field], f"state.{field}") for field in _STATE_FIELDS})
+    _validate_fields(data, _STATE_FIELDS | _STATE_OPTIONAL_FIELDS, "state", optional=_STATE_OPTIONAL_FIELDS)
+    values = {
+        field: _expect_number(data[field], f"state.{field}")
+        for field in ("time_s", "x_m", "y_m", "yaw_rad", "speed_mps")
+    }
+    values["source_timestamp_us"] = data.get("source_timestamp_us")
+    values["source_record_token"] = data.get("source_record_token")
+    return State(**values)
 
 
 def actor_to_dict(actor: Actor) -> dict[str, Any]:
@@ -255,8 +267,14 @@ def _expect_object(value: Any, path: str) -> dict[str, Any]:
     return dict(value)
 
 
-def _validate_fields(data: Mapping[str, Any], expected: frozenset[str], path: str) -> None:
-    missing = expected.difference(data)
+def _validate_fields(
+    data: Mapping[str, Any],
+    expected: frozenset[str],
+    path: str,
+    *,
+    optional: frozenset[str] = frozenset(),
+) -> None:
+    missing = expected.difference(data).difference(optional)
     unknown = set(data).difference(expected)
     if missing:
         raise ValueError(f"{path} is missing required field(s): {', '.join(sorted(missing))}.")

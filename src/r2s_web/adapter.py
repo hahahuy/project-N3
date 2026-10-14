@@ -175,6 +175,9 @@ class ArtifactAdapter:
                     final_displacement_m=metrics.final_displacement_m,
                     heading_mae_rad=metrics.heading_mae_rad,
                     speed_mae_mps=metrics.speed_mae_mps,
+                    ade_m=metrics.ade_m,
+                    fde_m=metrics.fde_m,
+                    coverage_status=metrics.coverage_status,
                 )
                 for actor_id, metrics in compute_scenario_replay_metrics(scenario, replay_trace).items()
             }

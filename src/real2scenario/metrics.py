@@ -23,6 +23,37 @@ class ReplayMetrics:
     final_displacement_m: float
     heading_mae_rad: float
     speed_mae_mps: float
+    ade_m: float
+    fde_m: float | None
+    coverage_status: str
+
+
+@dataclass(frozen=True, slots=True)
+class MetricDistribution:
+    mean: float
+    median: float
+    p95: float
+    max: float
+
+
+@dataclass(frozen=True, slots=True)
+class ReplayMetricAggregate:
+    actor_count: int
+    ade_m: MetricDistribution
+    fde_m: MetricDistribution | None
+
+
+def aggregate_replay_metrics(metrics: Sequence[ReplayMetrics]) -> ReplayMetricAggregate:
+    """Aggregate per-actor metrics without treating missing FDE as zero."""
+    if not metrics:
+        raise ValueError("At least one replay metric is required.")
+    ade_values = [metric.ade_m for metric in metrics]
+    fde_values = [metric.fde_m for metric in metrics if metric.fde_m is not None]
+    return ReplayMetricAggregate(
+        actor_count=len(metrics),
+        ade_m=_distribution(ade_values),
+        fde_m=None if not fde_values else _distribution(fde_values),
+    )
 
 
 def compute_replay_metrics(
@@ -50,6 +81,8 @@ def compute_replay_metrics(
     )
     speed_errors = tuple(abs(recorded.speed_mps - replayed.speed_mps) for recorded, replayed in aligned)
     final_recorded, final_replayed = aligned[-1]
+    position_errors = tuple(squared_error**0.5 for squared_error in squared_position_errors)
+    coverage_status = "complete" if replay_end_s >= recorded_states[-1].time_s else "insufficient_coverage"
     return ReplayMetrics(
         sample_count=len(aligned),
         alignment_method=ALIGNMENT_METHOD,
@@ -60,17 +93,56 @@ def compute_replay_metrics(
         ),
         heading_mae_rad=sum(heading_errors) / len(heading_errors),
         speed_mae_mps=sum(speed_errors) / len(speed_errors),
+        ade_m=sum(position_errors) / len(position_errors),
+        fde_m=(
+            hypot(final_recorded.x_m - final_replayed.x_m, final_recorded.y_m - final_replayed.y_m)
+            if coverage_status == "complete"
+            else None
+        ),
+        coverage_status=coverage_status,
     )
 
 
 def compute_scenario_replay_metrics(
-    scenario: Scenario, replay_trace: ReplayTrace
-) -> dict[str, ReplayMetrics]:
-    """Compute aligned metrics for every canonical actor present in a replay trace."""
-    return {
-        actor.actor_id: compute_replay_metrics(actor.trajectory, replay_trace.states_for(actor.actor_id))
-        for actor in scenario.actors
-    }
+    scenario: Scenario,
+    replay_trace: ReplayTrace,
+    *,
+    min_track_duration_s: float = 0.0,
+) -> "ScenarioReplayMetrics":
+    """Compute metrics and explicit short-track exclusions for each actor."""
+    if min_track_duration_s < 0:
+        raise ValueError("min_track_duration_s must be non-negative.")
+    metrics: dict[str, ReplayMetrics] = {}
+    excluded: list[str] = []
+    for actor in scenario.actors:
+        duration_s = actor.trajectory[-1].time_s - actor.trajectory[0].time_s
+        if duration_s < min_track_duration_s:
+            excluded.append(actor.actor_id)
+            continue
+        metrics[actor.actor_id] = compute_replay_metrics(
+            actor.trajectory, replay_trace.states_for(actor.actor_id)
+        )
+    return ScenarioReplayMetrics(metrics=metrics, excluded_short_tracks=tuple(excluded))
+
+
+@dataclass(frozen=True, slots=True)
+class ScenarioReplayMetrics:
+    """Per-actor metrics plus actors excluded by the short-track policy."""
+
+    metrics: dict[str, ReplayMetrics]
+    excluded_short_tracks: tuple[str, ...]
+
+    def __getitem__(self, actor_id: str) -> ReplayMetrics:
+        return self.metrics[actor_id]
+
+    def __iter__(self):
+        return iter(self.metrics)
+
+    def items(self):
+        return self.metrics.items()
+
+    def keys(self):
+        return self.metrics.keys()
 
 
 def _validate_trajectory(states: Sequence[State], label: str) -> None:
@@ -108,3 +180,16 @@ def _interpolate_angle(start_rad: float, end_rad: float, fraction: float) -> flo
 
 def _wrap_angle(angle_rad: float) -> float:
     return atan2(sin(angle_rad), cos(angle_rad))
+
+
+def _distribution(values: Sequence[float]) -> MetricDistribution:
+    ordered = sorted(values)
+    midpoint = len(ordered) // 2
+    median = ordered[midpoint] if len(ordered) % 2 else (ordered[midpoint - 1] + ordered[midpoint]) / 2
+    p95_index = min(len(ordered) - 1, max(0, int(0.95 * len(ordered) + 0.999999) - 1))
+    return MetricDistribution(
+        mean=sum(ordered) / len(ordered),
+        median=median,
+        p95=ordered[p95_index],
+        max=ordered[-1],
+    )

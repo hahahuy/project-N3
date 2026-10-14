@@ -36,6 +36,7 @@ class FeasibilityLimits:
     max_deceleration_mps2: float = 8.0
     max_jerk_mps3: float = 20.0
     max_yaw_rate_rps: float = 1.5
+    max_speed_mps: float | None = None
     road_boundary: RoadBoundary | None = None
     version: str = VALIDATION_VERSION
 
@@ -50,6 +51,10 @@ class FeasibilityLimits:
                 raise ValueError(f"{name} must be finite and non-negative.")
         if not self.version:
             raise ValueError("FeasibilityLimits version must not be empty.")
+        if self.max_speed_mps is not None and (
+            not isfinite(self.max_speed_mps) or self.max_speed_mps < 0
+        ):
+            raise ValueError("max_speed_mps must be finite and non-negative when provided.")
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,6 +108,20 @@ def _validate_actor(actor: Actor, limits: FeasibilityLimits) -> list[RejectionRe
         yaw_rate = _wrapped_angle_delta(current.yaw_rad, previous.yaw_rad) / delta_t
         accelerations.append(acceleration)
         yaw_rates.append(yaw_rate)
+        if limits.max_speed_mps is not None:
+            for state_index, state in ((index - 1, previous), (index, current)):
+                if state.speed_mps > limits.max_speed_mps:
+                    reasons.append(
+                        _reason(
+                            "speed_exceeded",
+                            "kinematic",
+                            actor,
+                            state_index,
+                            state.speed_mps,
+                            limits.max_speed_mps,
+                            "Speed exceeds configured maximum.",
+                        )
+                    )
         if acceleration > limits.max_acceleration_mps2:
             reasons.append(
                 _reason(

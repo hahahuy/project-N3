@@ -17,7 +17,14 @@ class WebSettings:
     dataset_root: Path | None
     esmini_bin: str | None
     esmini_dat2csv: str | None
-    dataset_version: str = "v1.0-mini"
+    dataset_version: str = "v1.0-trainval"
+
+    def __post_init__(self) -> None:
+        if self.dataset_root is not None and self.dataset_version == "v1.0-trainval":
+            if not (self.dataset_root / "v1.0-trainval").is_dir() and (
+                self.dataset_root / "v1.0-mini"
+            ).is_dir():
+                object.__setattr__(self, "dataset_version", "v1.0-mini")
 
     @classmethod
     def from_environment(cls, project_root: str | Path | None = None) -> "WebSettings":
@@ -37,7 +44,10 @@ class WebSettings:
             dataset_root=dataset_root,
             esmini_bin=os.environ.get("ESMINI_BIN"),
             esmini_dat2csv=os.environ.get("ESMINI_DAT2CSV"),
-            dataset_version=os.environ.get("NUSCENES_VERSION", "v1.0-mini"),
+        dataset_version=os.environ.get(
+            "NUSCENES_VERSION",
+            _default_dataset_version(dataset_root),
+        ),
         )
 
     def with_paths(
@@ -72,5 +82,19 @@ def _project_path(project_root: Path, value: str) -> Path:
 
 
 def _default_dataset_root(project_root: Path) -> Path | None:
-    candidate = project_root / "data" / "v1.0-mini"
-    return candidate.resolve() if candidate.is_dir() else None
+    candidates = (
+        Path.home() / "datasets" / "nuscenes",
+        project_root / "data" / "v1.0-mini",
+    )
+    for candidate in candidates:
+        if (candidate / "v1.0-trainval").is_dir():
+            return candidate.resolve()
+        if (candidate / "v1.0-mini").is_dir():
+            return candidate.resolve()
+    return None
+
+
+def _default_dataset_version(dataset_root: Path | None) -> str:
+    if dataset_root is not None and (dataset_root / "v1.0-mini").is_dir():
+        return "v1.0-mini"
+    return "v1.0-trainval"

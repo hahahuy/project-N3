@@ -15,6 +15,9 @@ from real2scenario import (
     write_aggregate_csv,
     write_aggregate_json,
     write_variant_report,
+    compute_replay_metrics,
+    aggregate_replay_metrics,
+    evaluate_temporary_g6_g7,
 )
 
 
@@ -95,6 +98,8 @@ def test_aggregate_reconciles_all_three_statuses_and_serializes_links() -> None:
     assert data["counts"] == {"generated": 3, "valid": 1, "invalid": 1, "simulator_failed": 1}
     assert data["variants"][0]["artifacts"]["xosc"] == "generated/valid/scenario.xosc"
     assert data["variants"][1]["validation"]["reasons"]
+    assert data["gate_funnel"]["generated"] == 3
+    assert tuple(data["gate_funnel"]["cumulative_pass_counts"]) == ("G1", "G2", "G3", "G4", "G5", "G6", "G7")
 
 
 def test_report_writers_are_deterministic_and_create_parent_directories(tmp_path) -> None:
@@ -142,3 +147,30 @@ def test_aggregate_report_rejects_duplicate_variant_ids() -> None:
     report = _reports()[0]
     with pytest.raises(ValueError, match="unique"):
         aggregate_report("baseline-001", (report, report))
+
+
+def test_reports_serialize_replay_aggregate_and_provisional_gates() -> None:
+    scenario = _scenario("metrics")
+    validation = validate_feasibility(scenario)
+    metrics = compute_replay_metrics(scenario.actors[0].trajectory, scenario.actors[0].trajectory)
+    aggregate = aggregate_replay_metrics((metrics,))
+    gates = evaluate_temporary_g6_g7(scenario, variant_id="metrics").gates
+    report = VariantReport(
+        variant_id="metrics",
+        status="valid",
+        scenario_artifact="metrics/scenario.json",
+        xosc_artifact=None,
+        replay_trace_artifact="metrics/replay.csv",
+        report_artifact="metrics/report.json",
+        validation=validation,
+        replay_metrics={"ego": metrics},
+        replay_metric_aggregate=aggregate,
+        gate_results=gates,
+    )
+
+    data = aggregate_report_to_dict(aggregate_report("baseline", (report,), replay_metric_aggregate=aggregate))
+    variant = data["variants"][0]
+    assert variant["replay_metrics"]["ego"]["ade_m"] == 0.0
+    assert variant["replay_metric_aggregate"]["actor_count"] == 1
+    assert data["replay_metric_aggregate"]["fde_m"]["max"] == 0.0
+    assert {gate["scientific_status"] for gate in variant["gates"]} == {"PROVISIONAL"}
