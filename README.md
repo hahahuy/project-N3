@@ -142,11 +142,12 @@ loads the scenario, renders recorded trajectories, generates a deterministic
 20-variant grid, validates before ranking, and exercises the distinct
 `simulator-failed` state when esmini is unavailable.
 
-When the local `data/v1.0-mini` release is present, open `LOCAL PATHS` in the
-browser to point the demo at an artifact directory and dataset root. The UI
-will list the ten local nuScenes scenes and can import a selected scene into a
-canonical `local_road_aligned` baseline before generation. Imported files are
-written under `scenarios/nuscenes/`, which is ignored by git.
+The default full nuScenes dataset root is `/mnt/backup/nuscenes` with version
+`v1.0-trainval`. Open `LOCAL PATHS` in the browser only when overriding the
+dataset or artifact roots. The UI can import a selected scene into a canonical
+`local_road_aligned` baseline before generation. Imported files are written under
+`scenarios/nuscenes/`, which is ignored by git. The repository's smaller local
+fixtures under `data/` remain test fixtures, not the production dataset root.
 
 ## Docker deployment
 
@@ -206,5 +207,5 @@ Source code của `project-N3` được phát hành theo Apache-2.0, xem `LICENS
 `NOTICE`. Apache-2.0 không áp dụng cho dữ liệu nuScenes, map assets hoặc bất kỳ
 trajectory, `.xosc`, `.xodr`, replay CSV/PNG/video hay artifact nào dẫn xuất từ
 nuScenes. Các artifact này là local/private only và vẫn tuân theo điều khoản
-nuScenes tại `data/v1.0-mini/LICENSE`; không thêm hoặc phân phối lại chúng nếu
+nuScenes tại `/mnt/backup/nuscenes`; không thêm hoặc phân phối lại chúng nếu
 chưa có quyết định phát hành riêng bằng văn bản.

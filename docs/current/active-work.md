@@ -18,6 +18,7 @@
 | CP2 same-XOSC CARLA run | `UNVERIFIED` | custom map import | paired trace/log bundle | CP2 agent |
 | CARLA recorded trajectory backend | `RESEARCHED/IMPLEMENTATION-READY` | compatible CARLA runtime + alignment artifact | `docs/current/carla-recorded-trajectory-replay-research.md`; exact-pose and physics modes remain unimplemented | CP2 agent |
 | CP3 benchmark aggregate report/UI | `IMPLEMENTED/PROVISIONAL` | metric aggregate APIs + benchmark fixtures | `docs/reports/cp3-benchmark-aggregate.md`, `tests/test_benchmark.py`; deterministic multi-scene aggregation exists, approved scene index and real benchmark run remain open | CP3 follow-up |
+| CP3 metric and full-dataset benchmark refinement | `OPEN/NEAR-FUTURE` | complete `v1.0-trainval` + metric schema changes | `docs/current/metric-benchmark-execution-plan.md`; role-separated ADE/FDE, coverage classes, scene-macro aggregation, uncertainty and benchmark manifest | CP3 metrics agent |
 | nuScenes metadata index and caching | `IMPLEMENTED/TESTED` | local dataset metadata tables | `src/real2scenario/metadata_index.py`, `tests/test_metadata_index.py`, `docs/reports/cp3-benchmark-run-evidence.md`; single-pass streaming cache removes the per-scene table rescan, discovery and import output unchanged | CP3 follow-up |
 | CP3 real multi-scene benchmark run | `RUNTIME-VERIFIED/PROVISIONAL/NOT-OWNER-APPROVED` | agent-selected index + metadata index + esmini | `docs/reports/cp3-benchmark-run-evidence.md`, `scripts/run_benchmark_scenes.py`; 5 scenes, 60 generated, 48 valid, 12 invalid, 0 simulator failures, provisional ADE/FDE and gate funnel, G3 skipped and G5 error visible | owner + CP3 follow-up |
 | CP4 full gate orchestration | `RUNTIME-VERIFIED/CONTROLLED/PROVISIONAL` | G1-G7 implementations | `docs/reports/cp4-g1-g7-orchestration.md`, `tests/test_gates.py`, `tests/test_web_api.py`; mixed synthetic batch reconciles valid/invalid/simulator-failed statuses and provisional funnel counts, scientific policy remains open | CP4 follow-up |
@@ -42,6 +43,7 @@
 | CP3 controlled replay aggregate evidence | `COMPLETE/CONTROLLED` | deterministic replay fixture | `tests/test_web_api.py` + CP3 report | CP1 follow-up |
 | CP5 reproducibility manifest | `IMPLEMENTED/TESTED` | local run artifact root | `docs/reports/cp5-reproducibility-manifest.md` + `tests/test_packaging.py` | CP5 follow-up |
 | UI0 interaction audit | `TESTED/PASS-WITH-FIX` | synthetic fixture + local API/esmini | `docs/evidence/m4-ui/u0-motion-editor-showcase.md` | owner review |
+| Backend Workspace U1 contract slice | `IMPLEMENTED-PARTIAL/TESTED` | canonical artifacts + explicit availability protocol | `docs/reports/backend-workspace-contract-slice.md`, `tests/test_web_api.py`; B-WORKSPACE-01/02/06 implemented, map/3D/LiDAR remain unavailable | frontend Workspace follow-up |
 
 Agents may claim implementation tasks, but must not silently change Plan A scope,
 same-XOSC, license boundaries or final scientific thresholds.

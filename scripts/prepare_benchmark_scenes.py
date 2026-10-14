@@ -14,7 +14,7 @@ from r2s_web.source_scenes import SourceSceneAdapter
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset-root", type=Path, default=Path.home() / "datasets" / "nuscenes")
+    parser.add_argument("--dataset-root", type=Path, default=Path("/mnt/backup/nuscenes"))
     parser.add_argument("--dataset-version", default="v1.0-trainval")
     parser.add_argument("--scene-index", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)

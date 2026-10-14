@@ -132,7 +132,7 @@ def main() -> int:
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset-root", type=Path, default=Path.home() / "datasets" / "nuscenes")
+    parser.add_argument("--dataset-root", type=Path, default=Path("/mnt/backup/nuscenes"))
     parser.add_argument("--dataset-version", default="v1.0-trainval")
     parser.add_argument("--scene-index", type=Path, required=True)
     parser.add_argument("--run-root", type=Path, required=True)

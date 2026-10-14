@@ -31,7 +31,7 @@ from real2scenario import (
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--evidence-root", type=Path, default=Path.home() / "cp1-evidence-corridor")
-    parser.add_argument("--dataset-root", type=Path, default=Path.home() / "datasets" / "nuscenes")
+    parser.add_argument("--dataset-root", type=Path, default=Path("/mnt/backup/nuscenes"))
     parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args()
 

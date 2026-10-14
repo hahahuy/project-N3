@@ -14,7 +14,7 @@ from real2scenario import SelectionConfig, SourceWindow, extract_scenario, selec
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--dataset-root", type=Path, default=Path.home() / "datasets" / "nuscenes")
+    parser.add_argument("--dataset-root", type=Path, default=Path("/mnt/backup/nuscenes"))
     parser.add_argument("--dataset-version", default="v1.0-trainval")
     parser.add_argument("--scene", default="scene-0061")
     parser.add_argument("--map-name", default="singapore-onenorth")

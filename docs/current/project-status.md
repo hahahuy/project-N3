@@ -45,7 +45,7 @@ silently reuse nuScenes-specific assumptions.
 ## Environment and Data
 
 - Python environment: `.venv/`, Python 3.12.
-- Dataset root: `$NUSCENES_ROOT`, currently `$HOME/datasets/nuscenes`.
+- Dataset root: `$NUSCENES_ROOT`, defaulting to `/mnt/backup/nuscenes`.
 - Dataset version: `v1.0-trainval`.
 - `v1.0-trainval` preflight: `RUNTIME_VERIFIED`.
 - `v1.0-test`: metadata only for this setup; no trajectory extraction.
@@ -231,7 +231,7 @@ contract, license boundary or scientific thresholds.
   `scripts/verify_release.py` runs the documented verification against a clean
   `git archive` export of `HEAD` or a working-tree snapshot and emits a
   `release-evidence-v1` bundle. That check exposed a real dependency of the
-  suite on the git-ignored local `data/v1.0-mini` dataset, which is now an
+  suite on the git-ignored local dataset, which is now an
   explicit skip; clean-checkout verification of the current sources passes, while
   `HEAD` verification remains blocked until the verified tree is committed. Owner
   sign-off is still pending.
@@ -280,6 +280,11 @@ contract, license boundary or scientific thresholds.
   An agent-selected five-scene Singapore One-North metadata index now exists
   privately without owner approval; canonical preparation exceeded the current
   execution window, so no real multi-scene metrics or acceptance claim exists.
+- The backend Workspace contract slice implements B-WORKSPACE-01, B-WORKSPACE-02
+  and B-WORKSPACE-06 through read-only document/scenario endpoints. Actor roles,
+  dimensions, paths, provenance and metric availability are explicit; map, 3D
+  and LiDAR layers remain unavailable with API-owned reasons rather than fake
+  geometry or values.
 - That CP3 preparation blocker is now cleared. A cached metadata index
   (`nuscenes-metadata-index-v1`) streams the trainval tables once into a local
   private SQLite cache, and `extract_scenario` accepts preloaded tables, so

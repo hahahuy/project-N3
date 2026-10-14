@@ -83,7 +83,7 @@ def _project_path(project_root: Path, value: str) -> Path:
 
 def _default_dataset_root(project_root: Path) -> Path | None:
     candidates = (
-        Path.home() / "datasets" / "nuscenes",
+        Path("/mnt/backup/nuscenes"),
         project_root / "data" / "v1.0-mini",
     )
     for candidate in candidates:

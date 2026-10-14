@@ -7,6 +7,8 @@ services:
       R2S_PROJECT_ROOT: /app
       R2S_ARTIFACT_ROOT: scenarios
       R2S_OUTPUT_ROOT: reports
+      NUSCENES_ROOT: /mnt/backup/nuscenes
+      NUSCENES_VERSION: v1.0-trainval
       ESMINI_BIN: ${ESMINI_BIN:-/opt/esmini/bin/esmini}
       ESMINI_DAT2CSV: ${ESMINI_DAT2CSV:-/opt/esmini/bin/dat2csv}
     ports:
@@ -14,6 +16,7 @@ services:
     volumes:
       - .:/app
       - r2s-reports:/app/reports
+      - /mnt/backup/nuscenes:/mnt/backup/nuscenes:ro
       - ${HOME}/esmini:/opt/esmini:ro
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]

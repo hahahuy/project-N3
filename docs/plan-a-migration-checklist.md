@@ -87,7 +87,7 @@ and evidence that do not depend on the unresolved claim.
 Status: `PARTIAL`
 
 - [x] Python/package/test environment documented. Evidence: `pyproject.toml`, `README.md`.
-- [x] nuScenes `v1.0-mini` metadata available locally. Evidence: `data/v1.0-mini/`, `src/real2scenario/preflight.py`.
+- [x] nuScenes `v1.0-trainval` metadata available locally. Evidence: `/mnt/backup/nuscenes/v1.0-trainval/`, `src/real2scenario/preflight.py`.
 - [x] Esmini baseline and `dat2csv` available. Evidence: `docs/evidence/m2-replay/r2s-206-m2-replay-evidence.md`.
 - [x] CARLA 0.9.16 container and Python client handshake verified locally. Evidence: local run log; do not claim repository evidence until recorded in a phase report.
 - [ ] Add reproducible CP0 environment manifest with Python, Docker image digest, CARLA server/client, esmini, dataset version and git commit.

@@ -100,6 +100,9 @@ nuScenes v1.0-trainval
   -> optional recorded LiDAR evidence layer
 ```
 
+Use `/mnt/backup/nuscenes` as the default local dataset root unless a task
+explicitly supplies another `NUSCENES_ROOT`.
+
 CARLA is post-MVP. Same-XOSC CARLA execution, custom-map import and paired
 comparison remain future work. Esmini and the internal kinematic preview are the
 current MVP execution backends.

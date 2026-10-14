@@ -40,6 +40,9 @@ nuScenes v1.0-trainval
   -> optional recorded LiDAR evidence
 ```
 
+The default local dataset root is `/mnt/backup/nuscenes`. Keep raw and derived
+nuScenes artifacts outside the repository.
+
 CARLA is post-MVP. Same-XOSC CARLA execution remains a future contract and must
 not be reported as current MVP evidence.
 

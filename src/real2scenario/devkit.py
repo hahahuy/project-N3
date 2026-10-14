@@ -103,7 +103,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Run inventory or sample-rendering for a local nuScenes release."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", required=True, type=Path, help="nuScenes dataroot.")
-    parser.add_argument("--version", default="v1.0-mini")
+    parser.add_argument("--version", default="v1.0-trainval")
     commands = parser.add_subparsers(dest="command", required=True)
 
     inventory = commands.add_parser("inventory", help="Write table and scene inventory JSON.")
