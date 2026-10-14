@@ -55,7 +55,9 @@ def test_empty_artifact_root_is_a_valid_health_state(tmp_path: Path) -> None:
         "status": "ok",
         "artifact_root_configured": False,
         "scenario_count": 0,
-        "source_scene_count": 0,
+        "dataset_configured": False,
+        "dataset_version": "v1.0-trainval",
+        "dataset_metadata_available": False,
     }
 
 
@@ -93,6 +95,28 @@ def test_catalog_detail_trajectory_and_path_safety(tmp_path: Path) -> None:
     assert download.status_code == 200
     assert json.loads(download.text)["artifact_type"] == "variant"
     assert traversal.status_code in {404, 400}
+
+
+def test_workspace_contract_exposes_metadata_layers_and_explicit_unavailability(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+
+    document = client.get("/api/workspace/documents/synthetic-variant-001")
+    view = client.get("/api/workspace/scenarios/synthetic-variant-001")
+
+    assert document.status_code == 200
+    assert document.json()["active_scenario_id"] == "synthetic-variant-001"
+    assert document.json()["coordinate_frame"] == "local_road_aligned"
+    assert document.json()["dataset"]["available"] is False
+    assert document.json()["dataset"]["unavailable_reason"] == "dataset_not_configured"
+    assert view.status_code == 200
+    payload = view.json()
+    assert payload["layers"]["map_lanes"] == {
+        "available": False,
+        "unavailable_reason": "map_lane_geometry_not_available_in_current_artifact",
+    }
+    assert payload["layers"]["lidar"]["unavailable_reason"] == "recorded_lidar_layer_not_implemented"
+    assert payload["metrics"]["available"] is False
+    assert all(actor["dimensions"]["available"] for actor in payload["actors"])
 
 
 def test_batch_is_deterministic_and_reconciles_three_statuses(tmp_path: Path) -> None:

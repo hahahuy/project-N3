@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import re
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +26,7 @@ from .schemas import ActorSummary, ArtifactLink, ScenarioSummary, SourceScene, S
 
 
 _INDEX_CACHE: dict[tuple[str, str, str], MetadataIndex] = {}
+_INDEX_CACHE_LOCK = threading.RLock()
 
 
 def metadata_cache_dir() -> Path:
@@ -44,11 +46,12 @@ def shared_metadata_index(settings: WebSettings) -> MetadataIndex:
         raise ValueError("No local nuScenes dataset is configured.")
     cache_dir = metadata_cache_dir()
     key = (str(Path(settings.dataset_root).resolve()), settings.dataset_version, str(cache_dir))
-    index = _INDEX_CACHE.get(key)
-    if index is None:
-        index = MetadataIndex(settings.dataset_root, settings.dataset_version, cache_dir=cache_dir)
-        _INDEX_CACHE[key] = index
-    return index
+    with _INDEX_CACHE_LOCK:
+        index = _INDEX_CACHE.get(key)
+        if index is None:
+            index = MetadataIndex(settings.dataset_root, settings.dataset_version, cache_dir=cache_dir)
+            _INDEX_CACHE[key] = index
+        return index
 
 
 class SourceSceneAdapter:

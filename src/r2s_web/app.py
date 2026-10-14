@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from real2scenario import state_to_dict
 
 from .adapter import ArtifactAdapter
 from .config import WebSettings
@@ -30,6 +31,13 @@ from .schemas import (
     PreviewResponse,
     CP1ReviewView,
     CP1ReviewItem,
+    WorkspaceDocumentView,
+    ScenarioViewPayload,
+    AvailabilityView,
+    ActorPoseView,
+    ScenarioLayerView,
+    MetricAvailabilityView,
+    TrajectoryState,
 )
 from .source_scenes import SourceSceneAdapter
 
@@ -57,11 +65,19 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
 
     @app.get("/api/health")
     def health() -> dict[str, object]:
+        dataset_root = resolved_settings.dataset_root
+        dataset_path = (
+            None
+            if dataset_root is None
+            else dataset_root / resolved_settings.dataset_version
+        )
         return {
             "status": "ok",
             "artifact_root_configured": resolved_settings.artifact_root.is_dir(),
             "scenario_count": len(adapter.discover()),
-            "source_scene_count": len(source_scenes.discover()),
+            "dataset_configured": dataset_path is not None,
+            "dataset_version": resolved_settings.dataset_version,
+            "dataset_metadata_available": bool(dataset_path and dataset_path.is_dir()),
         }
 
     @app.get("/api/settings", response_model=SettingsView)
@@ -259,6 +275,79 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
             return adapter.detail(adapter.get(scenario_id))
         except KeyError as error:
             raise HTTPException(status_code=404, detail=str(error)) from error
+
+    @app.get("/api/workspace/documents/{scenario_id}", response_model=WorkspaceDocumentView)
+    def workspace_document(scenario_id: str) -> WorkspaceDocumentView:
+        try:
+            record = adapter.get(scenario_id)
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        scenario = record.scenario
+        provenance = dict(scenario.provenance)
+        esmini_info = esmini.capability()
+        dataset_available = resolved_settings.dataset_root is not None and (
+            resolved_settings.dataset_root / resolved_settings.dataset_version
+        ).is_dir()
+        return WorkspaceDocumentView(
+            document_name=scenario.scenario_id,
+            branch="main" if record.parent_scenario_id is None else "variant",
+            version=provenance.get("generator_version", "canonical-scenario-v1"),
+            active_scenario_id=scenario.scenario_id,
+            connection=AvailabilityView(available=True, unavailable_reason=None),
+            dataset=AvailabilityView(available=dataset_available, unavailable_reason=None if dataset_available else "dataset_not_configured"),
+            esmini=AvailabilityView(available=bool(esmini_info["available"]), unavailable_reason=None if esmini_info["available"] else esmini_info["diagnostic"]),
+            dataset_version=provenance.get("dataset_version", resolved_settings.dataset_version if dataset_available else None),
+            esmini_version=esmini_info.get("version"),
+            coordinate_frame=scenario.coordinate_frame,
+            transform_version=provenance.get("coordinate_transform_version"),
+            provenance=provenance,
+        )
+
+    @app.get("/api/workspace/scenarios/{scenario_id}", response_model=ScenarioViewPayload)
+    def workspace_scenario(scenario_id: str) -> ScenarioViewPayload:
+        try:
+            record = adapter.get(scenario_id)
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        trajectory = adapter.trajectory(record)
+        actors = [
+            ActorPoseView(
+                actor_id=actor.actor_id,
+                actor_type=actor.actor_type,
+                role="ego" if actor.actor_id == record.scenario.ego_actor_id else "actor",
+                states=[TrajectoryState(**state_to_dict(state)) for state in actor.trajectory],
+                dimensions=AvailabilityView(
+                    available=actor.length_m is not None and actor.width_m is not None,
+                    unavailable_reason=None if actor.length_m is not None and actor.width_m is not None else "actor_dimensions_unavailable",
+                ),
+                length_m=actor.length_m,
+                width_m=actor.width_m,
+            )
+            for actor in record.scenario.actors
+        ]
+        has_generated = record.artifact_type == "variant"
+        return ScenarioViewPayload(
+            scenario=adapter.summary(record),
+            actors=actors,
+            paths=trajectory.paths,
+            layers=ScenarioLayerView(
+                recorded_path=AvailabilityView(available=not has_generated, unavailable_reason=None if not has_generated else "recorded_path_not_primary_for_variant"),
+                generated_path=AvailabilityView(available=has_generated, unavailable_reason=None if has_generated else "generated_path_not_available"),
+                map_lanes=AvailabilityView(available=False, unavailable_reason="map_lane_geometry_not_available_in_current_artifact"),
+                actor_dimensions=AvailabilityView(
+                    available=all(actor.length_m is not None and actor.width_m is not None for actor in record.scenario.actors),
+                    unavailable_reason=None if all(actor.length_m is not None and actor.width_m is not None for actor in record.scenario.actors) else "one_or_more_actor_dimensions_unavailable",
+                ),
+                xodr_geometry=AvailabilityView(available=False, unavailable_reason="xodr_viewer_geometry_not_available"),
+                lidar=AvailabilityView(available=False, unavailable_reason="recorded_lidar_layer_not_implemented"),
+            ),
+            metrics=MetricAvailabilityView(
+                available=bool(trajectory.replay_metrics),
+                unavailable_reason=None if trajectory.replay_metrics else "replay_trace_not_available",
+                source="replay_trace" if trajectory.replay_metrics else "none",
+                per_actor=trajectory.replay_metrics,
+            ),
+        )
 
     @app.get("/api/scenarios/{scenario_id}/artifacts")
     def scenario_artifacts(scenario_id: str):

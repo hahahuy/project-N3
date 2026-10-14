@@ -261,19 +261,21 @@ class MetadataIndex:
         directory.mkdir(parents=True, exist_ok=True)
         path = directory / f"{self.version}-{INDEX_VERSION}.sqlite3"
         if path.exists() and _cache_matches(path, self._signature):
-            connection = sqlite3.connect(path, check_same_thread=False)
+            connection = _connect_sqlite(path)
             self._cache_path = path
             return connection
-        temporary = path.with_suffix(".sqlite3.tmp")
+        temporary = path.with_name(
+            f"{path.name}.{os.getpid()}.{threading.get_ident()}.tmp"
+        )
         if temporary.exists():
             temporary.unlink()
-        connection = sqlite3.connect(temporary, check_same_thread=False)
+        connection = _connect_sqlite(temporary)
         self._create_schema(connection)
         self._populate(connection)
         connection.commit()
         connection.close()
         os.replace(temporary, path)
-        connection = sqlite3.connect(path, check_same_thread=False)
+        connection = _connect_sqlite(path)
         self._cache_path = path
         self._built_now = True
         return connection
@@ -594,7 +596,7 @@ def _source_signature(metadata_path: Path) -> dict[str, dict[str, int]]:
 
 def _cache_matches(path: Path, signature: Mapping[str, Mapping[str, int]]) -> bool:
     try:
-        connection = sqlite3.connect(path)
+        connection = _connect_sqlite(path)
     except sqlite3.Error:
         return False
     try:
@@ -615,6 +617,13 @@ def _cache_matches(path: Path, signature: Mapping[str, Mapping[str, int]]) -> bo
     except json.JSONDecodeError:
         return False
     return stored == dict(signature)
+
+
+def _connect_sqlite(path: str | Path) -> sqlite3.Connection:
+    """Open a cache connection tolerant of concurrent reload/health requests."""
+    connection = sqlite3.connect(path, timeout=60.0, check_same_thread=False)
+    connection.execute("PRAGMA busy_timeout=60000")
+    return connection
 
 
 def _dump(value: Any) -> str:
