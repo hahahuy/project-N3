@@ -5,11 +5,15 @@
 New agents and sessions must read these files first:
 
 1. `MVP&ProjectSummary.md`
-2. `docs/current/project-status.md`
-3. `docs/current/decisions.md`
-4. `docs/current/technical-contracts.md`
-5. `docs/current/active-work.md`
-6. `docs/current/evidence-index.md`
+2. `README.md`
+3. `docs/current/pm-agent-guide.md`
+4. `docs/current/project-status.md`
+5. `docs/current/decisions.md`
+6. `docs/current/active-work.md`
+7. `docs/current/technical-contracts.md`
+8. `docs/current/evidence-index.md`
+9. `docs/current/artifact-policy.md`
+10. `docs/current/next-agent-handoff.md`
 
 Historical files under `docs/archive/` are not current contracts. Reports under
 `docs/reports/` record completed work and must not override current decisions.

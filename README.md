@@ -14,22 +14,71 @@ MVP đầu tiên dùng esmini để thực thi OpenSCENARIO ở chế độ head
 - Biến đổi có kiểm soát về tốc độ, khoảng cách và thời điểm.
 - Validation, metric quỹ đạo và báo cáo scenario có thể review.
 
-## Onboarding cho teammate
+## Agent onboarding: start here
 
-Người mới nên đi theo thứ tự này trước khi nhận ticket code:
+Read the current context before changing code. The current MVP is nuScenes
+`v1.0-trainval` -> a scene-local `scene-0061` corridor -> OpenDRIVE/
+OpenSCENARIO -> esmini replay/evaluation -> metrics and diagnostic gates ->
+dynamic object variation -> an internal kinematic preview -> the full 2D/3D
+authoring workspace -> optional recorded LiDAR evidence. CARLA is post-MVP and
+same-XOSC CARLA execution is not current MVP evidence.
 
-1. Đọc [Plan A và current project status](MVP&ProjectSummary.md) và [documentation entrypoint](docs/README.md).
-2. Đọc [nuScenes và simulator guide](docs/guides/nuscenes-and-simulation-guide.md), sau đó hoàn thành bài thực hành onboarding theo candidate dataset local.
-3. Cài môi trường Python bằng phần **Bắt đầu nhanh**, chạy `pytest`, rồi đọc [technology guide](docs/guides/technology-guide.md).
-4. Điền data inventory, kiểm tra license, và dùng `nuscenes-devkit` render ít nhất một sample khi team đã có dataset local. Với full/local batches, đặt `NUSCENES_ROOT=$HOME/datasets/nuscenes` và `NUSCENES_VERSION=v1.0-trainval`.
-5. Chọn work item trong [current active work](docs/current/active-work.md); dùng [review checklist](docs/guides/review-checklist.md) trước khi mở pull request.
+### Required reading order
 
-Điểm bắt đầu theo vai trò:
+1. [MVP & Project Summary](MVP&ProjectSummary.md): Plan A scope and checkpoint intent.
+2. [Documentation entrypoint](docs/README.md): documentation rules and directory map.
+3. [PM agent guide](docs/current/pm-agent-guide.md): ownership, status vocabulary and workflow.
+4. [Current project status](docs/current/project-status.md): latest checkpoint state, evidence and risks.
+5. [Decision log](docs/current/decisions.md): approved scope, simulator and physics decisions.
+6. [Active work queue](docs/current/active-work.md): dependencies, acceptance evidence and next agents.
+7. [Technical contracts](docs/current/technical-contracts.md): CP1/CP2, preview/frame and `kinematic-open-loop-v1` contracts.
+8. [Evidence index](docs/current/evidence-index.md): claim-to-report mapping and unverified claims.
+9. [Artifact policy](docs/current/artifact-policy.md): license, privacy and local/private artifact boundaries.
+10. [Next-agent handoff](docs/current/next-agent-handoff.md): repository checks and the assigned first task.
 
-- Data/ML: `R2S-100`, `R2S-101`, `R2S-102`.
-- Simulation: đọc guide nuScenes trước, sau đó nhận `R2S-201` đến `R2S-205`.
-- UI/demo: đọc [current UI contracts](docs/current/ui-motion-editor.md) và [architecture](docs/architecture/) trước, sau đó xem các M4 evidence reports.
-- Reviewer/PM: bắt đầu ở [current status](docs/current/project-status.md), [active work](docs/current/active-work.md) và [review checklist](docs/guides/review-checklist.md).
+Read only the relevant follow-up handoff after the common context:
+
+- CP1 semantic alignment: [CP1 agent handoff](docs/current/cp1-agent-handoff-next.md) and the linked CP1 reports.
+- UI and authoring: [UI motion editor](docs/current/ui-motion-editor.md), [MVP UI flow](docs/current/ui-mvp-flow-spec.md), and [U0 showcase](docs/current/ui-showcase-checkpoint.md).
+- Simulator work: [technical contracts](docs/current/technical-contracts.md), especially the MVP physics budget and Tier 1 `kinematic-open-loop-v1`.
+- PM/review work: [PM guide](docs/current/pm-agent-guide.md), [active work](docs/current/active-work.md), and [review checklist](docs/guides/review-checklist.md).
+
+Do not use `docs/archive/plan-b/` as current scope. It is historical context
+only. Reports under `docs/reports/` and evidence under `docs/evidence/` support
+claims but do not override current decisions.
+
+### First repository checks
+
+Run these commands from the repository root before implementation:
+
+```bash
+git status --short
+git log --oneline -10
+python --version
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/check_docs_consistency.py
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider
+```
+
+The expected baseline is a passing documentation checker and passing Python
+suite. Record differences before editing. Do not reset or overwrite unrelated
+worktree changes.
+
+### Current next work
+
+The active implementation sequence is:
+
+1. CP1 owner interpretation and cross-scene semantic confirmation, preserving the immutable `20/143 = 13.99%` baseline.
+2. CP3 owner-approved benchmark index/protocol and provisional benchmark evidence.
+3. CP5 owner sign-off and verified-tree release evidence.
+4. Tier 1 `kinematic-open-loop-v1` internal simulator with normalized traces, explicit limit diagnostics and collision pre-checks.
+5. Full 2D/3D authoring workspace and frame-aware timeline.
+6. Post-edit frame generation and optional recorded LiDAR evidence.
+7. CP6 paper evidence.
+
+Do not silently change Plan A, actor scope, lane direction, tolerances, ground
+truth policy, same-XOSC requirements, licensing boundaries or final scientific
+thresholds. Every completed work item needs tests, evidence, status updates and
+an English completion report.
 
 ## Tài liệu
 
@@ -55,7 +104,9 @@ pip install -e ".[dev]"
 pytest
 ```
 
-Scaffold ban đầu chưa phụ thuộc simulator hoặc dataset. Xem ticket Phase 0 trước khi thêm nuScenes metadata hoặc esmini.
+The repository now contains the current MVP implementation and its supporting
+contracts. Use the onboarding sequence above rather than historical Phase 0
+ticket assumptions.
 
 ## Local M4 web demo
 
