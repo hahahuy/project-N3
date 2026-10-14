@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchScenario, fetchScenarios, fetchTrajectory, ScenarioSummary, TrajectoryResponse } from "./api";
+import { apiUrl, fetchScenarios, fetchWorkspaceDocument, fetchWorkspaceScenario, ScenarioSummary, TrajectoryResponse, WorkspaceDocument, WorkspaceScenario } from "./api";
 
 type ViewType = "top-down" | "third-person" | "lidar";
 type View = { id: number; type: ViewType };
@@ -12,6 +12,8 @@ function App() {
   const [scenarios, setScenarios] = useState<ScenarioSummary[]>([]);
   const [selected, setSelected] = useState<ScenarioSummary | null>(null);
   const [trajectory, setTrajectory] = useState<TrajectoryResponse | null>(null);
+  const [workspaceDocument, setWorkspaceDocument] = useState<WorkspaceDocument | null>(null);
+  const [workspaceScenario, setWorkspaceScenario] = useState<WorkspaceScenario | null>(null);
   const [panel, setPanel] = useState<Panel>("catalog");
   const [flyout, setFlyout] = useState<Flyout | null>(null);
   const [views, setViews] = useState<View[]>([{ id: 1, type: "top-down" }]);
@@ -27,8 +29,8 @@ function App() {
   useEffect(() => { fetchScenarios().then(setScenarios).catch((e) => setError(e.message)).finally(() => setLoading(false)); }, []);
   useEffect(() => {
     if (!selected) { setTrajectory(null); return; }
-    Promise.all([fetchScenario(selected.scenario_id), fetchTrajectory(selected.scenario_id)])
-      .then(([detail, paths]) => { setSelected(detail); setTrajectory(paths); setTimeline(0); })
+    Promise.all([fetchWorkspaceDocument(selected.scenario_id), fetchWorkspaceScenario(selected.scenario_id)])
+      .then(([document, view]) => { setWorkspaceDocument(document); setWorkspaceScenario(view); setSelected(view.scenario); setTrajectory({ scenario_id: view.scenario.scenario_id, coordinate_frame: view.scenario.coordinate_frame, duration_s: view.scenario.duration_s, map_warning: view.layers.map_lanes.available ? "" : (view.layers.map_lanes.unavailable_reason ?? "Map lanes unavailable"), paths: view.paths, replay_metrics: view.metrics.per_actor }); setTimeline(0); })
       .catch((e) => setError(e.message));
   }, [selected?.scenario_id]);
 
@@ -44,7 +46,7 @@ function App() {
   return <main className="workspace-app">
     <header className="titlebar">
       <div className="brand"><span className="brand-mark">R2S</span><div><strong>Scenario workspace</strong><span>untitled scenario document</span></div></div>
-      <div className="title-status"><span className="chip pass">Connected</span><span className="chip unsupported">esmini unavailable</span><span className="chip unavailable">dataset unavailable</span><button className="quiet-button">Export</button></div>
+      <div className="title-status"><AvailabilityChip label="connection" availability={workspaceDocument?.connection} loading={!workspaceDocument} /><AvailabilityChip label="esmini" availability={workspaceDocument?.esmini} loading={!workspaceDocument} /><AvailabilityChip label="dataset" availability={workspaceDocument?.dataset} loading={!workspaceDocument} /><button className="quiet-button">Export</button></div>
     </header>
     <nav className="toolbar" aria-label="Workspace toolbar">
       <ToolbarGroup label="History"><ToolButton label="Undo" shortcut="Ctrl+Z" disabled /><ToolButton label="Redo" shortcut="Ctrl+Shift+Z" disabled /></ToolbarGroup>
@@ -77,7 +79,7 @@ function App() {
         <IconButton label="Gates" badge="0" active={flyout === "gates"} onClick={() => setFlyout(flyout === "gates" ? null : "gates")} icon="G" />
         <IconButton label="Provenance" active={flyout === "provenance"} onClick={() => setFlyout(flyout === "provenance" ? null : "provenance")} icon="P" />
         <IconButton label="Artifacts" active={flyout === "artifacts"} onClick={() => setFlyout(flyout === "artifacts" ? null : "artifacts")} icon="A" />
-        {flyout && <div className="flyout"><span className="section-kicker">{flyout}</span><h2>{flyout === "metrics" ? "No metrics available" : flyout === "gates" ? "G1-G7 gates" : flyout === "provenance" ? "Provenance" : "Artifacts"}</h2><p>{selected ? "Select a run or variant to inspect this surface." : "Select an imported scenario first."}</p>{flyout === "metrics" && <StatusBadge status="n/a" />}</div>}
+        {flyout && <WorkspaceFlyout flyout={flyout} workspace={workspaceScenario} selected={selected} />}
       </aside>
     </div>
     <footer className="document-footer"><div className="document-tabs">{["Scenario studio", "Variant studio", "Replay", "Report"].map((tab) => <button className={activeTab === tab ? "active" : ""} key={tab} onClick={() => setActiveTab(tab)}>{tab}</button>)}</div><div className="status-bar"><span>selection: {selected?.scenario_id ?? "none"}</span><span>branch: main</span><span>rollback: n/a</span><span>PROVISIONAL: 0</span><span>frame: {selected?.coordinate_frame ?? "n/a"}</span></div></footer>
@@ -88,6 +90,8 @@ function ToolbarGroup({ label, children }: { label: string; children: React.Reac
 function ToolButton({ label, shortcut, badge, disabled, onClick }: { label: string; shortcut?: string; badge?: string; disabled?: boolean; onClick?: () => void }) { return <button className="tool-button" disabled={disabled} title={`${label}${shortcut ? ` (${shortcut})` : ""}${disabled ? " - unavailable in this build" : ""}`} onClick={onClick}><span className="tool-icon">{label.slice(0, 1)}</span>{label}{badge && <small>{badge}</small>}</button>; }
 function IconButton({ label, icon, badge, active, onClick }: { label: string; icon: string; badge?: string; active?: boolean; onClick: () => void }) { return <button className={`icon-button ${active ? "active" : ""}`} aria-label={label} title={label} onClick={onClick}><span>{icon}</span>{badge && <b>{badge}</b>}</button>; }
 function StatusBadge({ status }: { status: string }) { return <span className={`status-badge ${status}`}>{status}</span>; }
+function AvailabilityChip({ label, availability, loading }: { label: string; availability?: { available: boolean; unavailable_reason: string | null }; loading: boolean }) { const status = loading ? "loading" : availability?.available ? "available" : "unavailable"; return <span className={`chip ${status}`} title={availability?.unavailable_reason ?? status}>{label}: {status}</span>; }
+function WorkspaceFlyout({ flyout, workspace, selected }: { flyout: Flyout; workspace: WorkspaceScenario | null; selected: ScenarioSummary | null }) { if (!workspace || !selected) return <div className="flyout"><span className="section-kicker">{flyout}</span><h2>Unavailable</h2><p>Select an imported scenario first.</p><StatusBadge status="unavailable" /></div>; if (flyout === "metrics") return <div className="flyout"><span className="section-kicker">METRICS</span><h2>{workspace.metrics.available ? "Replay metrics" : "Metrics unavailable"}</h2><p>{workspace.metrics.unavailable_reason ?? "Source: replay trace"}</p><StatusBadge status={workspace.metrics.available ? "available" : "n/a"} />{workspace.metrics.available && Object.entries(workspace.metrics.per_actor).map(([actorId, metric]) => <div className="flyout-row" key={actorId}><strong>{actorId}</strong><span>ADE {metric.ade_m?.toFixed(3) ?? "n/a"} · {metric.coverage_status ?? "unknown"}</span></div>)}</div>; if (flyout === "gates") return <div className="flyout"><span className="section-kicker">GATES</span><h2>G1-G7 gates</h2>{workspace.gates.length ? workspace.gates.map((gate) => <div className="flyout-row" key={gate.gate_id}><strong>{gate.gate_id}</strong><span><StatusBadge status={gate.status} /> {gate.scientific_status}</span></div>) : <p>No gate results available for this scenario.</p>}</div>; if (flyout === "provenance") return <div className="flyout"><span className="section-kicker">PROVENANCE</span><h2>{selected.scenario_id}</h2>{Object.entries(selected.provenance).map(([key, value]) => <div className="flyout-row" key={key}><strong>{key}</strong><span>{value}</span></div>)}</div>; return <div className="flyout"><span className="section-kicker">ARTIFACTS</span><h2>{selected.available_artifacts.length} available</h2>{selected.available_artifacts.map((artifact) => <a className="artifact-link" key={artifact.path} href={apiUrl(artifact.url.replace("/api", ""))} target="_blank">{artifact.kind} ↗</a>)}</div>; }
 function EmptyPanel({ title, copy }: { title: string; copy: string }) { return <div className="panel-content"><span className="section-kicker">LEFT PANEL</span><h2>{title}</h2><p>{copy}</p></div>; }
 function Catalog({ scenarios, selected, loading, filter, onFilter, onSelect }: { scenarios: ScenarioSummary[]; selected: ScenarioSummary | null; loading: boolean; filter: string; onFilter: (value: string) => void; onSelect: (scenario: ScenarioSummary) => void }) { const visible = scenarios.filter((scenario) => scenario.scenario_id.toLowerCase().includes(filter.toLowerCase())); return <div className="panel-content"><div className="panel-title"><span className="section-kicker">CATALOG</span><span className="count">{visible.length}/{scenarios.length}</span></div><input className="filter" value={filter} onChange={(event) => onFilter(event.target.value)} placeholder="Filter scenarios" aria-label="Filter scenarios" />{loading ? <div className="skeleton-list"><i /><i /><i /></div> : scenarios.length === 0 ? <div className="panel-empty">Import a scene to start a scenario.</div> : visible.length === 0 ? <div className="panel-empty">No scenarios match this filter.</div> : <div className="scenario-list">{visible.map((scenario) => <button className={selected?.scenario_id === scenario.scenario_id ? "selected" : ""} key={scenario.scenario_id} onClick={() => onSelect(scenario)}><span><strong>{scenario.scenario_id}</strong><small>{scenario.artifact_type} / {scenario.duration_s.toFixed(2)} s</small></span><em>:</em></button>)}</div>}</div>; }
 function AddViewMenu({ viewCount, onAdd }: { viewCount: number; onAdd: (type: ViewType) => void }) { const atLimit = viewCount >= 4; return <div className="add-view-menu" role="menu"><button disabled={atLimit} onClick={() => onAdd("top-down")}><strong>Top-down</strong><small>{atLimit ? "maximum 4 views reached" : "available"}</small></button><button disabled><strong>3rd-person POV</strong><small>not in this build - U5</small></button><button disabled><strong>LiDAR 3D</strong><small>unavailable - no point-cloud access</small></button></div>; }

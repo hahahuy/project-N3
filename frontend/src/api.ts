@@ -23,6 +23,10 @@ export type TrajectoryPath = { actor_id: string; actor_type: string; path_kind: 
 export type ReplayMetric = { sample_count: number; position_rmse_m: number; final_displacement_m: number; heading_mae_rad: number; speed_mae_mps: number; alignment_method: string; ade_m?: number | null; fde_m?: number | null; coverage_status?: string };
 export type MetricDistribution = { mean: number; median: number; p95: number; max: number };
 export type ReplayMetricAggregate = { actor_count: number; ade_m: MetricDistribution; fde_m: MetricDistribution | null };
+export type Availability = { available: boolean; unavailable_reason: string | null };
+export type WorkspaceDocument = { document_name: string; branch: string; version: string; active_scenario_id: string; connection: Availability; dataset: Availability; esmini: Availability; dataset_version: string | null; esmini_version: string | null; coordinate_frame: string; transform_version: string | null; provenance: Record<string, string> };
+export type WorkspaceLayer = { available: boolean; unavailable_reason: string | null };
+export type WorkspaceScenario = { scenario: ScenarioSummary; actors: Array<ActorSummary & { role: "ego" | "actor"; states: TrajectoryState[]; dimensions: Availability }>; paths: TrajectoryPath[]; layers: { recorded_path: WorkspaceLayer; generated_path: WorkspaceLayer; map_lanes: WorkspaceLayer; actor_dimensions: WorkspaceLayer; xodr_geometry: WorkspaceLayer; lidar: WorkspaceLayer }; metrics: { available: boolean; unavailable_reason: string | null; source: "replay_trace" | "none"; per_actor: Record<string, ReplayMetric> }; gates: GateResult[] };
 export type TrajectoryResponse = {
   scenario_id: string;
   coordinate_frame: string;
@@ -90,6 +94,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const fetchScenarios = () => request<ScenarioSummary[]>("/scenarios");
 export const fetchScenario = (id: string) => request<ScenarioSummary>(`/scenarios/${encodeURIComponent(id)}`);
+export const fetchWorkspaceDocument = (id: string) => request<WorkspaceDocument>(`/workspace/documents/${encodeURIComponent(id)}`);
+export const fetchWorkspaceScenario = (id: string) => request<WorkspaceScenario>(`/workspace/scenarios/${encodeURIComponent(id)}`);
 export const fetchTrajectory = (id: string) => request<TrajectoryResponse>(`/scenarios/${encodeURIComponent(id)}/trajectory`);
 export const previewVariant = (scenarioId: string, body: PreviewRequest) => request<PreviewResponse>(`/scenarios/${encodeURIComponent(scenarioId)}/variants/preview`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 export const createBatch = (body: object) => request<{ job_id: string }>("/batches", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
