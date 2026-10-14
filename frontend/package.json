@@ -10,15 +10,16 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
-    "vite": "latest",
-    "typescript": "latest",
+    "jsdom": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "vitest": "latest",
-    "jsdom": "latest"
+    "typescript": "latest",
+    "vite": "latest",
+    "vitest": "latest"
   },
   "devDependencies": {
     "@types/react": "latest",
-    "@types/react-dom": "latest"
+    "@types/react-dom": "latest",
+    "react-grab": "^0.2.0"
   }
 }

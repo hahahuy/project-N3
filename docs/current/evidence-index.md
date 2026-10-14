@@ -2,6 +2,7 @@
 
 | Claim | Status | Evidence | Notes |
 |---|---|---|---|
+| Frontend U1 shell reaches the local API through the Vite proxy | `RUNTIME_VERIFIED` | `docs/current/frontend-workspace-handbook.md` | Proxy target corrected to loopback; `/api/health`, `/api/scenarios`, `/api/settings`, `/api/esmini`, `/api/scenarios/{id}/trajectory`, `/api/scenarios/{id}/artifacts` and `/api/artifacts/{path}` all returned 200 through `:5173` against local uvicorn on `:8000`. |
 | Trainval preflight | `RUNTIME_VERIFIED` | `docs/reports/dataset-update.md` | Local external dataset. |
 | Vector map available | `RUNTIME_VERIFIED` | `docs/reports/dataset-update.md` | Expansion JSON inventory. |
 | CP1 line prototype | `IMPLEMENTED` | `docs/reports/cp1-map-builder-prototype.md` | Not CP1 acceptance. |
