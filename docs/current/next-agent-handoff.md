@@ -1,7 +1,7 @@
 # Next Agent Handoff
 
 Status: `READY FOR IMPLEMENTATION`
-Primary next work: native esmini adapter for live browser 3D state/control
+Primary next work: finish the live adapter, browser renderer and remaining acceptance tracks
 
 ## Mission
 
@@ -37,7 +37,7 @@ nuScenes v1.0-trainval
   -> canonical scenario and provenance
   -> native map/query capabilities
   -> OpenDRIVE/OpenSCENARIO contracts
-  -> esmini and Tier 1 kinematic preview
+  -> native esminiLib adapter and Tier 1 kinematic preview
   -> metrics, gates, private sensor evidence and UI
 ```
 
@@ -48,6 +48,21 @@ propagation, native map/query routes, private LiDAR descriptors, actor timeline,
 gate timeline, recipe/rollback, lineage, Compare, evidence layers and advisory
 prediction metrics. The next task is to finish acceptance and the remaining
 renderer/sensor gaps, not redesign those contracts.
+
+## Remaining Work
+
+1. Implement `B-WORKSPACE-19`: a bounded native `esminiLib` session with load,
+   pause, resume, step, reset, control and camera operations; timestamped object
+   state; capability/status metadata; XOSC/XODR hashes; and focused API tests.
+2. Add the browser-native live 3D renderer and state transport integration. Render
+   roads, actors, cameras, trajectories and interpolation from adapter state; do
+   not use screenshot streaming as the editor path.
+3. Implement or formally scope post-edit camera/LiDAR/radar frame generation. Until
+   calibrated artifacts exist, keep variant sensor status `unsupported` and use only
+   the explicit parent-sweep fallback.
+4. Complete private runtime/browser acceptance with a complete dataset and configured
+   esmini capture runtime, retaining fail-closed unavailable states when needed.
+5. Continue owner-gated CP1/CP3/CP4/CP5/CP6 work. CARLA same-XOSC remains post-MVP.
 
 ## Approved Live 3D Direction
 
@@ -100,15 +115,20 @@ is implemented, fallback, unavailable or unverified.
 
 ## Short Prompt For The Next Agent
 
-> Implement the approved live esmini adapter in this repository. Read
+> Continue the remaining Real2Scenario work. Read
 > `docs/current/next-agent-handoff.md`, `docs/current/technical-contracts.md`, and
 > `docs/current/backend-workspace-contract-log.md` first. Replace the assumption
 > that esmini is only an asynchronous image/replay subprocess with a bounded native
 > `esminiLib` session/service that can load an XOSC/XODR pair, step/pause/reset,
 > accept validated control/camera commands, and expose timestamped object state and
-> capability metadata over a WebSocket-friendly backend contract. Keep the browser
-> renderer authoritative for live 3D presentation; do not stream screenshots as the
-> primary interaction path and do not claim transform data is an esmini image.
-> Preserve the existing fail-closed replay/image-capture routes, private artifact
-> policy, CARLA post-MVP boundary and canonical schemas. Add focused backend/API
-> tests, document runtime limitations, and run the docs checker plus Python tests.
+> capability metadata over a WebSocket-friendly backend contract, then wire a
+> browser-native Three.js/PlayCanvas renderer for live state, camera and timeline
+> interaction. Do not stream screenshots as the primary editor path or claim
+> transform data is an esmini image. Keep variant post-edit sensor frames
+> unsupported until real calibrated artifacts exist. Preserve fail-closed
+> replay/image-capture routes, private artifact policy, canonical schemas and the
+> CARLA post-MVP boundary. Add focused backend/frontend/API tests, document runtime
+> limitations, and run the docs checker, Python tests, frontend tests and production
+> build. If local/private data or runtime support blocks a track, record the exact
+> unavailable reason and update `active-work.md`, `project-status.md` and
+> `evidence-index.md`.

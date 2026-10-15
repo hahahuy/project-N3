@@ -88,24 +88,22 @@ silently reuse nuScenes-specific assumptions.
 - The approved next simulator architecture is a native, bounded `esminiLib` live-session adapter with WebSocket-friendly state/control messages and a browser-native Three.js/PlayCanvas renderer. The existing subprocess/image-capture path remains for replay, validation and evidence; it is not the primary live 3D interaction path. Full esmini WebAssembly, Unity WebGL and WebRTC remote rendering are deferred alternatives.
 - ADE/FDE scientific thresholds are not finalized.
 
-## Execution Order
+## Remaining Work Order
 
-The Wave 3A backend and U0 showcase slice is implemented and verified. U0 is a
-showcase, not the complete MVP authoring workspace. Phase 2 of the approved
-nuScenes-devkit backend makeover has tested additive source-state, native
-map/query, private LiDAR descriptor and advisory prediction contracts. Tier 1
-propagation, diagnostics and collision pre-checks are tested. The active work
-is now live Workspace wiring: native map/time-indexed actor state, constrained
-maneuver editing, LiDAR payloads and simulator-backed POVs. Esmini comparison,
-final acceptance evidence and CARLA same-XOSC remain open/post-MVP.
+The Wave 3A backend, Workspace authoring slice and Phase 2 devkit contracts are
+implemented and verified locally. Remaining implementation order is: native
+`esminiLib` live-session adapter; browser-native live 3D renderer/state transport;
+post-edit sensor/render frame generation or explicit unavailable boundaries; then
+complete private runtime/browser acceptance. Esmini image capture remains a replay
+and evidence path, not the live editor path. Final acceptance evidence, owner-gated
+CP1/CP3/CP4/CP5 work and CARLA same-XOSC remain separate; CARLA is post-MVP.
 
 ```text
-Workspace wiring for completed devkit Phase 2 contracts
-  -> native map/time-indexed actor state in Top-down
-  -> constrained maneuver editor and Tier 1 preview
-  -> private LiDAR payload/POV and simulator-backed POV capability
-  -> advisory prediction surface and CP3 source-contract update
-  -> resume CP1/CP3/CP4/CP5 closure tracks
+Native esminiLib live-session adapter and state/control contract
+  -> browser-native Three.js/PlayCanvas live renderer
+  -> post-edit camera/LiDAR/radar frames or explicit unsupported contracts
+  -> complete private runtime/browser acceptance
+  -> CP1/CP3/CP4/CP5 owner closure and CP6 paper evidence
   -> post-MVP CP2 same-XOSC CARLA execution
 ```
 
