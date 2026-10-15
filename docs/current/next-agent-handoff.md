@@ -58,9 +58,9 @@ renderer/sensor gaps, not redesign those contracts. The bounded live-session
    smoke. Reset reloads the confined artifact pair; native control remains
    explicitly unavailable because no stable public ABI is present. A private
    scenario-pair endpoint exposes safe XOSC/XODR artifacts for browser sessions.
-2. **Browser live 3D:** complete live-state interaction and visual rendering against
-   an actual native session; do not use screenshot streaming as the editor path.
-3. **NuScenes evidence view:** add a separate `LIDAR_TOP` multi-sweep view using
+2. **Browser live 3D:** retain the implemented private-pair creation and polling
+   flow; remaining acceptance is runtime evidence against a configured native session.
+3. **NuScenes evidence view:** maintain the separate `LIDAR_TOP` multi-sweep view using
    devkit semantics equivalent to `render_sample_data(..., nsweeps=5,
    underlay_map=True)`. Keep the current Top-down view as authoring/map/trajectory;
    include calibration, ego pose, map, sweep offsets, decimation and CAN telemetry
@@ -69,9 +69,9 @@ renderer/sensor gaps, not redesign those contracts. The bounded live-session
    generation. Until calibrated artifacts exist, keep variant sensor status
    `unsupported` and use only the explicit parent-sweep fallback.
 5. **Devkit optimization:** follow `docs/current/nuscenes-devkit-optimization-decision.md`.
-   Replace repeated metadata scans/manual transforms with cached `NuScenes` access,
-   `from_file_multisweep`, official boxes/map/projection helpers, vectorized NumPy
-   payloads and cached CAN timestamp lookup. Add SciPy only after measured need.
+   The cached `NuScenes` adapter, official multisweep/transform/map/CAN seams and
+   NumPy payload path are implemented provisionally; full private-dataset acceptance
+   remains open. Add SciPy only after measured need.
 6. **Runtime acceptance:** complete private dataset/browser acceptance with a
    configured esmini capture runtime, retaining fail-closed unavailable states.
 7. **Engineering closure:** finish owner-gated CP1 semantic/map review, CP3

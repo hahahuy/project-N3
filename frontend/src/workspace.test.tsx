@@ -295,6 +295,10 @@ function route(url: string): Response {
   if (url.endsWith(`/api/workspace/scenarios/${SCENARIO_ID}/timeline`)) return json(actorTimeline);
   if (url.endsWith(`/api/workspace/scenarios/${SCENARIO_ID}/gate-timeline`)) return json(gateTimeline);
   if (url.endsWith(`/api/workspace/scenarios/${SCENARIO_ID}/lidar`)) return json({ available: true, sample_data_token: "sd-1", channel: "LIDAR_TOP", timestamp_us: 1_000_000, frame: "sensor", coordinate_frame: "local_road_aligned", transform_version: "local-road-aligned-v1", decimation: 8, total_count: 100, returned_count: 50, artifact_visibility: "local_private" });
+  if (url.includes(`/api/workspace/scenarios/${SCENARIO_ID}/sensor-evidence`)) return json({ contract_version: "nuscenes-sensor-evidence-v1", channel: "LIDAR_TOP", status: "recorded", requested_nsweeps: 5, nsweeps: 2, timestamp_us: 1_000_000, reference: { sample_data_token: "sd-1", sample_token: "sample-1", timestamp_us: 1_000_000 }, sweeps: [{ sample_data_token: "sd-1", sample_token: "sample-1", timestamp_us: 1_000_000, channel: "LIDAR_TOP", artifact_visibility: "local_private" }, { sample_data_token: "sd-0", sample_token: "sample-0", timestamp_us: 900_000, channel: "LIDAR_TOP", historical: true, artifact_visibility: "local_private" }], annotations: { available: false, source: "NuScenes.get_boxes", boxes: [], unavailable_reason: "annotation_fixture_unavailable", provenance: {} }, map_underlay: { available: false, source: "NuScenesMap", unavailable_reason: "map_fixture_unavailable" }, can_telemetry: { available: false, source: "NuScenesCanBus", unavailable_reason: "can_fixture_unavailable" }, synchronization: { status: "recorded_history", historical_sweep_smearing: "expected_motion_smear_across_historical_sweeps" }, provenance: { render_equivalent: "render_sample_data:LIDAR_TOP:nsweeps" }, artifact_visibility: "local_private" });
+  if (url.includes("/api/esmini/live/capability")) return json({ contract_version: "esmini-live-session-v1", configured: true, available: true, library: "/opt/esmini/libesminiLib.so", version: "3.10.0", adapter_version: "esmini-live-adapter-v1", max_sessions: 2, active_sessions: 0, unavailable_reason: null, commands: ["pause", "resume", "step", "reset", "control", "camera"], command_capabilities: { reset: { available: true }, control: { available: false, unavailable_reason: "esminiLib_control_abi_unavailable" }, camera: { available: true } }, browser_renderer: "browser-native-state-renderer", screenshot_stream: false });
+  if (url.includes("/api/esmini/live/scenario-pairs")) return json({ contract_version: "esmini-live-session-v1", session_id: "live-fixture", scenario_id: SCENARIO_ID, status: "paused", unavailable_reason: null, simulator_version: "3.10.0", xosc_sha256: "x", xodr_sha256: "y", timestep_s: 0.05, simulation_time_s: 0, coordinate_frame: "esmini_local", transform_version: "esmini-state-v1", objects: [{ id: "ego", x_m: 0, y_m: 0, yaw_rad: 0 }], events: [], camera: {}, artifacts: { openscenario: "/api/artifacts/reports/live-pairs/scenario.xosc", opendrive: "/api/artifacts/reports/live-pairs/road.xodr" } });
+  if (url.includes("/api/esmini/live/sessions/live-fixture")) return json({ contract_version: "esmini-live-session-v1", message_type: "state", session_id: "live-fixture", scenario_id: SCENARIO_ID, status: "paused", unavailable_reason: null, simulator_version: "3.10.0", xosc_sha256: "x", xodr_sha256: "y", timestep_s: 0.05, simulation_time_s: 0, coordinate_frame: "esmini_local", transform_version: "esmini-state-v1", objects: [{ id: "ego", x_m: 0, y_m: 0, yaw_rad: 0 }], events: [], camera: {} });
   if (url.endsWith(`/api/workspace/scenarios/${SCENARIO_ID}`)) return json(workspacePayload(scenarioSummary));
   if (url.endsWith(`/api/workspace/scenarios/${secondScenarioId}`)) return json(workspacePayload(secondScenarioSummary));
   if (url.endsWith(`/api/scenarios/${SCENARIO_ID}`)) return json(scenarioSummary);
@@ -589,6 +593,21 @@ describe("evidence layers", () => {
     for (const label of ["recorded", "generated", "replayed", "sensor-evidence"]) {
       expect(legend?.textContent).toContain(label);
     }
+  });
+});
+
+describe("recorded sensor evidence and native live session", () => {
+  it("keeps Sensor Evidence separate and starts a native state session", async () => {
+    await renderWorkspace();
+    fireEvent.click(screen.getByRole("button", { name: "Add view" }));
+    fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /Sensor Evidence/ }));
+    expect(await screen.findByRole("img", { name: /nuScenes Sensor Evidence view with 2 LIDAR_TOP sweeps/ })).toBeTruthy();
+    expect(screen.getByText("historical sweep smearing expected")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Add view" }));
+    fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /3rd-person POV/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Start native session" }));
+    expect(await screen.findByText("native esminiLib state")).toBeTruthy();
   });
 });
 

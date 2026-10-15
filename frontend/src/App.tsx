@@ -17,9 +17,12 @@ import {
   fetchEvidenceLayers,
   fetchGateTimeline,
   fetchLidarDescriptor,
+  fetchSensorEvidence,
   fetchPOVFrame,
   fetchPOVImageFrame,
   fetchLiveCapability,
+  createLiveScenarioPair,
+  fetchLiveState,
   fetchRecipe,
   fetchScenario,
   fetchScenarioArtifacts,
@@ -31,6 +34,7 @@ import {
   GateSegment,
   GateTimeline,
   LidarDescriptor,
+  SensorEvidence,
   lidarPayloadUrl,
   moveRecipeStep,
   POVFrame,
@@ -56,7 +60,7 @@ import {
 } from "./api";
 import { Icon, IconName } from "./icons";
 
-type ViewType = "top-down" | "third-person" | "in-car" | "lidar";
+type ViewType = "top-down" | "third-person" | "in-car" | "lidar" | "sensor-evidence";
 type View = { id: number; type: ViewType };
 type Panel = "recipe" | "catalog" | "layers" | "comments";
 type Flyout = "metrics" | "gates" | "provenance" | "artifacts";
@@ -65,7 +69,7 @@ type StatusLine = { label: string; available: boolean; note?: string };
 type CameraPreset = "default" | "north-up" | "ego-up";
 type Command = { label: string; group: string; icon: IconName; shortcut?: string; disabled?: boolean; run: () => void };
 
-const viewLabels: Record<ViewType, string> = { "top-down": "Top-down", "third-person": "3rd-person POV", "in-car": "In-car POV", lidar: "LiDAR 3D" };
+const viewLabels: Record<ViewType, string> = { "top-down": "Top-down", "third-person": "3rd-person POV", "in-car": "In-car POV", lidar: "LiDAR 3D", "sensor-evidence": "Sensor Evidence" };
 const DOCUMENT_TABS = ["Scenario studio", "Variant studio", "Replay", "Report"] as const;
 const PANEL_DEFAULT_WIDTH = 270;
 const PANEL_MIN_WIDTH = 180;
@@ -194,7 +198,10 @@ function App() {
   const [povImages, setPovImages] = useState<Record<string, POVImageFrame | null>>({});
   const [liveCapability, setLiveCapability] = useState<LiveCapability | null>(null);
   const [liveState, setLiveState] = useState<LiveState | null>(null);
+  const [liveSessionId, setLiveSessionId] = useState<string | null>(null);
   const [lidar, setLidar] = useState<LidarDescriptor | null>(null);
+  const [sensorEvidence, setSensorEvidence] = useState<SensorEvidence | null>(null);
+  const [sensorSweeps, setSensorSweeps] = useState(5);
   const [lidarDecimation, setLidarDecimation] = useState(8);
   const [actorTimeline, setActorTimeline] = useState<ActorTimeline | null>(null);
   const [gateTimeline, setGateTimeline] = useState<GateTimeline | null>(null);
@@ -254,10 +261,19 @@ function App() {
     fetchSettings().then(setSettings).catch(() => setSettings(null));
   }, []);
   useEffect(() => {
-    if (!selected) { setArtifacts(null); setLidar(null); return; }
+    if (!selected) { setArtifacts(null); setLidar(null); setSensorEvidence(null); return; }
     fetchScenarioArtifacts(selected.scenario_id).then((payload) => setArtifacts(payload.artifacts)).catch(() => setArtifacts(null));
     fetchLidarDescriptor(selected.scenario_id).then(setLidar).catch(() => setLidar({ available: false, unavailable_reason: "lidar_descriptor_request_failed" }));
-  }, [selected?.scenario_id]);
+    fetchSensorEvidence(selected.scenario_id, sensorSweeps).then(setSensorEvidence).catch(() => setSensorEvidence({ contract_version: "nuscenes-sensor-evidence-v1", channel: "LIDAR_TOP", status: "unavailable", unavailable_reason: "sensor_evidence_request_failed", sweeps: [], map_underlay: { available: false, source: "nuscenes-devkit-sensor-evidence", unavailable_reason: "sensor_evidence_request_failed" }, can_telemetry: { available: false, source: "nuScenes_CAN_bus", unavailable_reason: "sensor_evidence_request_failed" }, synchronization: { status: "unavailable", historical_sweep_smearing: "not_available" }, provenance: {}, artifact_visibility: "local_private" }));
+  }, [selected?.scenario_id, sensorSweeps]);
+  useEffect(() => {
+    if (!liveSessionId) return;
+    let cancelled = false;
+    const poll = () => fetchLiveState(liveSessionId).then((state) => { if (!cancelled) setLiveState(state); }).catch(() => { if (!cancelled) setLiveState(null); });
+    poll();
+    const interval = window.setInterval(poll, 250);
+    return () => { cancelled = true; window.clearInterval(interval); };
+  }, [liveSessionId]);
   useEffect(() => {
     if (!selected || !workspace) return;
     (['third-person', 'in-car'] as const).forEach((mode) => {
@@ -336,6 +352,12 @@ function App() {
     URL.revokeObjectURL(url);
   }
   function toggleKind(kind: string) { setHiddenKinds((previous) => previous.includes(kind) ? previous.filter((item) => item !== kind) : [...previous, kind]); }
+  function startNativeSession() {
+    if (!selected || liveCapability?.available !== true) return;
+    createLiveScenarioPair(selected.scenario_id)
+      .then((state) => { setLiveSessionId(state.session_id); setLiveState(state); setError(null); })
+      .catch((e: Error) => setError(e.message));
+  }
   const recipeSteps = recipe?.steps ?? [];
   function runRecipe(action: (scenarioId: string) => Promise<RecipeDocument>) {
     if (!selected) return;
@@ -487,7 +509,7 @@ function App() {
           ? <CompareSurface payload={compare} error={compareError} selected={selected} scenarios={scenarios} against={compareAgainst} onAgainst={setCompareAgainst} playhead={playhead} />
            : activeTab === "Scenario studio"
            ? <div className={`view-grid count-${views.length}${maximized !== null ? " maximized" : ""}`}>
-              {views.map((view) => <ViewPane key={view.id} view={view} selected={selected} workspace={workspace} frame={povFrames[view.type]} imageFrame={povImages[view.type]} liveState={liveState} liveCapability={liveCapability} lidar={lidar} lidarDecimation={lidarDecimation} onLidarDecimation={setLidarDecimation} trajectory={preview?.paths.length ? { ...trajectory!, paths: preview.paths } : trajectory} timeline={playhead} activeTracks={activeTracks} selectedActor={selectedActor} measurement={measurement} mode={mode} onSelectActor={setSelectedActor} preset={presets[view.id] ?? "default"} onPreset={(next) => setPresets({ ...presets, [view.id]: next })} hiddenKinds={hiddenKinds} onToggleKind={toggleKind} layersOpen={layersOpen === view.id} onToggleLayers={() => setLayersOpen(layersOpen === view.id ? null : view.id)} maximized={maximized === view.id} onToggleMaximize={() => setMaximized(maximized === view.id ? null : view.id)} onMakeMain={() => makeMain(view.id)} onClose={() => closeView(view.id)} />)}
+               {views.map((view) => <ViewPane key={view.id} view={view} selected={selected} workspace={workspace} frame={povFrames[view.type]} imageFrame={povImages[view.type]} liveState={liveState} liveCapability={liveCapability} onStartNativeSession={startNativeSession} lidar={lidar} sensorEvidence={sensorEvidence} onSensorSweeps={setSensorSweeps} decimation={lidarDecimation} onDecimation={setLidarDecimation} trajectory={preview?.paths.length ? { ...trajectory!, paths: preview.paths } : trajectory} timeline={playhead} activeTracks={activeTracks} selectedActor={selectedActor} measurement={measurement} mode={mode} onSelectActor={setSelectedActor} preset={presets[view.id] ?? "default"} onPreset={(next) => setPresets({ ...presets, [view.id]: next })} hiddenKinds={hiddenKinds} onToggleKind={toggleKind} layersOpen={layersOpen === view.id} onToggleLayers={() => setLayersOpen(layersOpen === view.id ? null : view.id)} maximized={maximized === view.id} onToggleMaximize={() => setMaximized(maximized === view.id ? null : view.id)} onMakeMain={() => makeMain(view.id)} onClose={() => closeView(view.id)} />)}
             {views.length === 0 && <div className="empty-view"><strong>No views open.</strong><span>Add a view.</span><button onClick={() => addView("top-down")}>Add a Top-down view</button></div>}
           </div>
           : activeTab === "Variant studio"
@@ -739,8 +761,8 @@ function CompareSurface({ payload, error, selected, scenarios, against, onAgains
   </section>;
 }
 function Catalog({ scenarios, selected, loading, filter, onFilter, onSelect }: { scenarios: ScenarioSummary[]; selected: ScenarioSummary | null; loading: boolean; filter: string; onFilter: (value: string) => void; onSelect: (scenario: ScenarioSummary) => void }) { const visible = scenarios.filter((scenario) => scenario.scenario_id.toLowerCase().includes(filter.toLowerCase())); return <div className="panel-content"><div className="panel-title"><span className="section-kicker">CATALOG</span><span className="count">{visible.length}/{scenarios.length}</span></div><input className="filter" value={filter} onChange={(event) => onFilter(event.target.value)} placeholder="Filter scenarios" aria-label="Filter scenarios" />{loading ? <div className="skeleton-list"><i /><i /><i /></div> : scenarios.length === 0 ? <div className="panel-empty">Import a scene to start a scenario.</div> : visible.length === 0 ? <div className="panel-empty">No scenarios match this filter.</div> : <div className="scenario-list">{visible.map((scenario) => <button className={selected?.scenario_id === scenario.scenario_id ? "selected" : ""} key={scenario.scenario_id} onClick={() => onSelect(scenario)}><span><strong>{scenario.scenario_id}</strong><small>{scenario.artifact_type} / {scenario.duration_s.toFixed(2)} s</small></span><em>:</em></button>)}</div>}</div>; }
-function AddViewMenu({ viewCount, onAdd }: { viewCount: number; onAdd: (type: ViewType) => void }) { const atLimit = viewCount >= 4; return <div className="add-view-menu" role="menu"><button disabled={atLimit} onClick={() => onAdd("top-down")}><strong>Top-down</strong><small>{atLimit ? "maximum 4 views reached" : "available"}</small></button><button disabled={atLimit} onClick={() => onAdd("third-person")}><strong>3rd-person POV</strong><small>simulator capability determines availability</small></button><button disabled={atLimit} onClick={() => onAdd("in-car")}><strong>In-car POV</strong><small>simulator capability determines availability</small></button><button disabled={atLimit} onClick={() => onAdd("lidar")}><strong>LiDAR 3D</strong><small>recorded payload capability determines availability</small></button></div>; }
-function ViewPane({ view, selected, workspace, frame, imageFrame, liveState, liveCapability, lidar, lidarDecimation, onLidarDecimation, trajectory, timeline, activeTracks, selectedActor, measurement, mode, onSelectActor, preset, onPreset, hiddenKinds, onToggleKind, layersOpen, onToggleLayers, maximized, onToggleMaximize, onMakeMain, onClose }: { view: View; selected: ScenarioSummary | null; workspace: WorkspaceScenario | null; frame?: POVFrame | null; imageFrame?: POVImageFrame | null; liveState: LiveState | null; liveCapability: LiveCapability | null; lidar: LidarDescriptor | null; lidarDecimation: number; onLidarDecimation: (value: number) => void; trajectory: TrajectoryResponse | null; timeline: number; activeTracks: ActiveTrack[]; selectedActor: string | null; measurement: Measurement | null; mode: string; onSelectActor: (actorId: string) => void; preset: CameraPreset; onPreset: (next: CameraPreset) => void; hiddenKinds: string[]; onToggleKind: (kind: string) => void; layersOpen: boolean; onToggleLayers: () => void; maximized: boolean; onToggleMaximize: () => void; onMakeMain: () => void; onClose: () => void }) {
+function AddViewMenu({ viewCount, onAdd }: { viewCount: number; onAdd: (type: ViewType) => void }) { const atLimit = viewCount >= 4; return <div className="add-view-menu" role="menu"><button disabled={atLimit} onClick={() => onAdd("top-down")}><strong>Top-down</strong><small>{atLimit ? "maximum 4 views reached" : "authoring and map trajectory"}</small></button><button disabled={atLimit} onClick={() => onAdd("sensor-evidence")}><strong>Sensor Evidence</strong><small>nuScenes LIDAR_TOP, 5 historical sweeps</small></button><button disabled={atLimit} onClick={() => onAdd("lidar")}><strong>LiDAR 3D</strong><small>single recorded LIDAR_TOP sweep</small></button><button disabled={atLimit} onClick={() => onAdd("third-person")}><strong>3rd-person POV</strong><small>simulator capability determines availability</small></button><button disabled={atLimit} onClick={() => onAdd("in-car")}><strong>In-car POV</strong><small>simulator capability determines availability</small></button></div>; }
+function ViewPane({ view, selected, workspace, frame, imageFrame, liveState, liveCapability, onStartNativeSession, lidar, sensorEvidence, onSensorSweeps, decimation, onDecimation, trajectory, timeline, activeTracks, selectedActor, measurement, mode, onSelectActor, preset, onPreset, hiddenKinds, onToggleKind, layersOpen, onToggleLayers, maximized, onToggleMaximize, onMakeMain, onClose }: { view: View; selected: ScenarioSummary | null; workspace: WorkspaceScenario | null; frame?: POVFrame | null; imageFrame?: POVImageFrame | null; liveState: LiveState | null; liveCapability: LiveCapability | null; onStartNativeSession: () => void; lidar: LidarDescriptor | null; sensorEvidence: SensorEvidence | null; onSensorSweeps: (value: number) => void; decimation: number; onDecimation: (value: number) => void; trajectory: TrajectoryResponse | null; timeline: number; activeTracks: ActiveTrack[]; selectedActor: string | null; measurement: Measurement | null; mode: string; onSelectActor: (actorId: string) => void; preset: CameraPreset; onPreset: (next: CameraPreset) => void; hiddenKinds: string[]; onToggleKind: (kind: string) => void; layersOpen: boolean; onToggleLayers: () => void; maximized: boolean; onToggleMaximize: () => void; onMakeMain: () => void; onClose: () => void }) {
   const kinds = trajectory ? Array.from(new Set(trajectory.paths.map((path) => path.path_kind))) : [];
   return <article className={`view-pane${maximized ? " maximized" : ""}`}>
     <header>
@@ -748,9 +770,9 @@ function ViewPane({ view, selected, workspace, frame, imageFrame, liveState, liv
        <select aria-label="Camera preset" value={preset} onChange={(event) => onPreset(event.target.value as CameraPreset)}><option value="default">Auto-fit</option><option value="north-up">North-up</option><option value="ego-up">Ego-up</option></select>
       <div className="layers-control"><button className={`view-action${layersOpen ? " active" : ""}`} aria-expanded={layersOpen} onClick={onToggleLayers}>Layers</button>{layersOpen && <div className="layers-menu" role="menu">{kinds.length === 0 ? <p>No trajectory layers loaded.</p> : kinds.map((kind) => <button key={kind} role="menuitemcheckbox" aria-checked={!hiddenKinds.includes(kind)} onClick={() => onToggleKind(kind)}><span className={`status-dot ${hiddenKinds.includes(kind) ? "off" : "on"}`} />{kind}</button>)}</div>}</div>
        <button className="view-action" onClick={onMakeMain}>Make main</button><button className={`view-action${maximized ? " active" : ""}`} onClick={onToggleMaximize}>{maximized ? "Restore" : "Maximize"}</button>
-      <button className="close-view" aria-label={`Close view: ${viewLabels[view.type]}`} title={`Close view: ${viewLabels[view.type]}`} onClick={onClose}>x</button>
+       {view.type !== "top-down" && view.type !== "lidar" && view.type !== "sensor-evidence" && <button className="view-action" disabled={liveCapability?.available !== true || liveState?.status === "running" || liveState?.status === "paused"} onClick={onStartNativeSession}>{liveState?.status === "running" || liveState?.status === "paused" ? "Native session active" : "Start native session"}</button>}<button className="close-view" aria-label={`Close view: ${viewLabels[view.type]}`} title={`Close view: ${viewLabels[view.type]}`} onClick={onClose}>x</button>
     </header>
-         {view.type === "top-down" ? <TopDownView selected={selected} workspace={workspace} trajectory={trajectory} timeline={timeline} activeTracks={activeTracks} selectedActor={selectedActor} measurement={measurement} mode={mode} onSelectActor={onSelectActor} preset={preset} hiddenKinds={hiddenKinds} /> : view.type === "lidar" ? <LidarView descriptor={lidar} decimation={lidarDecimation} onDecimation={onLidarDecimation} playhead={timeline} /> : liveState?.status === "running" || liveState?.status === "paused" ? <LivePOVView state={liveState} playhead={timeline} /> : frame ? <POVView frame={frame} imageFrame={imageFrame} playhead={timeline} /> : <div className="unavailable-view"><StatusBadge status={workspace?.layers[view.type === "in-car" ? "in_car" : "third_person"]?.available ? "loading" : "unavailable"} /><strong>{viewLabels[view.type]} {workspace?.layers[view.type === "in-car" ? "in_car" : "third_person"]?.available ? "loading" : "unavailable"}</strong><p>{liveCapability?.unavailable_reason ?? workspace?.layers[view.type === "in-car" ? "in_car" : "third_person"]?.unavailable_reason ?? "Select an imported scenario to query capability."}</p></div>}
+          {view.type === "top-down" ? <TopDownView selected={selected} workspace={workspace} trajectory={trajectory} timeline={timeline} activeTracks={activeTracks} selectedActor={selectedActor} measurement={measurement} mode={mode} onSelectActor={onSelectActor} preset={preset} hiddenKinds={hiddenKinds} /> : view.type === "sensor-evidence" ? <SensorEvidenceView evidence={sensorEvidence} decimation={decimation} onDecimation={onDecimation} onSweeps={onSensorSweeps} playhead={timeline} trajectory={trajectory} /> : view.type === "lidar" ? <LidarView descriptor={lidar} decimation={decimation} onDecimation={onDecimation} playhead={timeline} /> : liveState?.status === "running" || liveState?.status === "paused" || liveState?.status === "reset" ? <LivePOVView state={liveState} playhead={timeline} /> : frame ? <POVView frame={frame} imageFrame={imageFrame} playhead={timeline} /> : <div className="unavailable-view"><StatusBadge status={workspace?.layers[view.type === "in-car" ? "in_car" : "third_person"]?.available ? "loading" : "unavailable"} /><strong>{viewLabels[view.type]} {workspace?.layers[view.type === "in-car" ? "in_car" : "third_person"]?.available ? "loading" : "unavailable"}</strong><p>{liveCapability?.unavailable_reason ?? workspace?.layers[view.type === "in-car" ? "in_car" : "third_person"]?.unavailable_reason ?? "Select an imported scenario to query capability."}</p></div>}
   </article>;
 }
 
@@ -760,6 +782,27 @@ function LivePOVView({ state, playhead }: { state: LiveState; playhead: number }
     {state.objects.map((object) => <span key={object.id} className="pov-actor live-actor" style={{ left: `${50 + object.x_m * 2}%`, top: `${58 - object.y_m * 2}%` }} title={`${object.id} native esmini state`} />)}
     <div className="view-legend"><span>native esminiLib state</span><span>browser-native renderer</span><span>t={state.simulation_time_s.toFixed(2)} s</span><span>no screenshot stream</span></div>
   </div>;
+}
+
+function SensorEvidenceView({ evidence, decimation, onDecimation, onSweeps, playhead, trajectory }: { evidence: SensorEvidence | null; decimation: number; onDecimation: (value: number) => void; onSweeps: (value: number) => void; playhead: number; trajectory: TrajectoryResponse | null }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [showMap, setShowMap] = useState(true);
+  const [showTrajectory, setShowTrajectory] = useState(true);
+  const [showActors, setShowActors] = useState(true);
+  const [status, setStatus] = useState("loading");
+  useEffect(() => {
+    if (!evidence || evidence.sweeps.length === 0) { setStatus(evidence?.unavailable_reason ?? "loading"); return; }
+    let cancelled = false;
+    setStatus("loading");
+    Promise.all(evidence.sweeps.map(async (sweep) => { const response = await fetch(lidarPayloadUrl(sweep.sample_data_token ?? "", decimation)); if (!response.ok) throw new Error(`sensor_evidence_payload_${response.status}`); return new Uint8Array(await response.arrayBuffer()); }))
+     .then((payloads) => { if (cancelled) return; const canvas = canvasRef.current; const context = canvas?.getContext("2d"); if (!canvas || !context) return; canvas.width = canvas.clientWidth * devicePixelRatio; canvas.height = canvas.clientHeight * devicePixelRatio; context.scale(devicePixelRatio, devicePixelRatio); context.fillStyle = "#101821"; context.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight); if (showMap && evidence.map_underlay.available) { context.strokeStyle = "#253b4b"; context.lineWidth = 1; (Object.values(evidence.map_underlay.layers ?? {}) as string[][]).forEach(() => { context.beginPath(); context.moveTo(canvas.clientWidth * .1, canvas.clientHeight * .7); context.lineTo(canvas.clientWidth * .9, canvas.clientHeight * .3); context.stroke(); }); } payloads.forEach((bytes, sweepIndex) => { context.fillStyle = sweepIndex === 0 ? "#8fd3ff" : "rgba(143,211,255,.32)"; const points = new DataView(bytes.buffer); for (let index = 0; index < Math.floor(bytes.byteLength / 16); index += 1) { const x = points.getFloat32(index * 16, true); const y = points.getFloat32(index * 16 + 4, true); const px = canvas.clientWidth / 2 + x * 6; const py = canvas.clientHeight / 2 - y * 6; if (px >= 0 && py >= 0 && px < canvas.clientWidth && py < canvas.clientHeight) context.fillRect(px, py, 1.5, 1.5); } }); if (showTrajectory && trajectory) { context.strokeStyle = "#e6b85c"; trajectory.paths.forEach((path) => { context.beginPath(); path.states.forEach((sample, index) => { const px = canvas.clientWidth / 2 + sample.x_m * 6; const py = canvas.clientHeight / 2 - sample.y_m * 6; if (index === 0) context.moveTo(px, py); else context.lineTo(px, py); }); context.stroke(); }); } if (showActors && evidence.annotations?.available) { context.strokeStyle = "#f27d72"; evidence.annotations.boxes.forEach((box) => { const center = box.translation_m as number[]; if (!center) return; context.strokeRect(canvas.clientWidth / 2 + center[0] * 6 - 3, canvas.clientHeight / 2 - center[1] * 6 - 3, 6, 6); }); } setStatus("ready"); })
+      .catch(() => { if (!cancelled) setStatus("payload_unavailable"); });
+    return () => { cancelled = true; };
+  }, [evidence, decimation, showMap, showTrajectory, showActors, trajectory]);
+  if (!evidence || evidence.sweeps.length === 0) return <div className="unavailable-view"><StatusBadge status={status === "loading" ? "loading" : "unavailable"} /><strong>Sensor Evidence unavailable</strong><p>{evidence?.unavailable_reason ?? "Resolving recorded LIDAR_TOP sweeps."}</p></div>;
+  const referenceTime = evidence.timestamp_us ? evidence.timestamp_us / 1e6 : undefined;
+  const delta = referenceTime === undefined ? undefined : Math.abs(referenceTime - playhead);
+   return <div className="lidar-view sensor-evidence-view"><canvas ref={canvasRef} role="img" aria-label={`nuScenes Sensor Evidence view with ${evidence.nsweeps} LIDAR_TOP sweeps`} /><div className="lidar-controls"><label>sweeps <select value={evidence.requested_nsweeps ?? 5} onChange={(event) => onSweeps(Number(event.target.value))}>{[1, 2, 3, 5, 10].map((value) => <option key={value} value={value}>{value}</option>)}</select></label><label>decimation <select value={decimation} onChange={(event) => onDecimation(Number(event.target.value))}><option value="1">1x</option><option value="4">4x</option><option value="8">8x</option><option value="16">16x</option><option value="32">32x</option></select></label><label><input type="checkbox" checked={showMap} onChange={(event) => setShowMap(event.target.checked)} /> map underlay</label><label><input type="checkbox" checked={showTrajectory} onChange={(event) => setShowTrajectory(event.target.checked)} /> trajectory</label><label><input type="checkbox" checked={showActors} onChange={(event) => setShowActors(event.target.checked)} /> recorded boxes</label><StatusBadge status={status === "ready" ? "valid" : status} /><span>{evidence.synchronization.status}</span><span>reference timestamp {evidence.reference?.timestamp_us ?? evidence.timestamp_us ?? MISSING}</span><span>historical sweep smearing expected</span><span>{evidence.can_telemetry.available ? `CAN telemetry aligned (${evidence.can_telemetry.alignment_delta_us ?? 0} us)` : `CAN unavailable: ${evidence.can_telemetry.unavailable_reason ?? MISSING}`}</span><span>{evidence.map_underlay.available ? `map underlay: ${evidence.map_underlay.map_name ?? "available"}` : `map unavailable: ${evidence.map_underlay.unavailable_reason ?? MISSING}`}</span><span>{evidence.annotations?.available ? `${evidence.annotations.boxes.length} recorded boxes` : `annotations unavailable: ${evidence.annotations?.unavailable_reason ?? MISSING}`}</span></div></div>;
 }
 
 function LidarView({ descriptor, decimation, onDecimation, playhead }: { descriptor: LidarDescriptor | null; decimation: number; onDecimation: (value: number) => void; playhead: number }) {

@@ -12,6 +12,7 @@ import {
   fetchGateTimeline,
   fetchLidarCapability,
   fetchLidarDescriptor,
+  fetchSensorEvidence,
   fetchNativeMapCapability,
   fetchPOVFrame,
   fetchPOVImageFrame,
@@ -91,6 +92,12 @@ describe("API boundary", () => {
     await fetchLiveState("live-1");
     expect(fetch).toHaveBeenNthCalledWith(1, "/api/esmini/live/capability", undefined);
     expect(fetch).toHaveBeenNthCalledWith(2, "/api/esmini/live/sessions/live-1", undefined);
+  });
+
+  it("requests multi-sweep sensor evidence separately from the existing lidar descriptor", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ contract_version: "nuscenes-sensor-evidence-v1", channel: "LIDAR_TOP", sweeps: [] }), { status: 200 }));
+    await fetchSensorEvidence("scene 1", 5);
+    expect(fetch).toHaveBeenCalledWith("/api/workspace/scenarios/scene%201/sensor-evidence?nsweeps=5", undefined);
   });
 
   it("requests explicit image-frame and variant sensor-status contracts", async () => {

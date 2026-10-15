@@ -77,3 +77,16 @@ def test_fake_native_binding_supports_lifecycle_and_timestamped_state(tmp_path: 
     session.command("pause")
     session.command("reset")
     assert session.simulation_time_s == 0.0
+
+
+def test_native_command_capabilities_separate_supported_reset_and_control(tmp_path: Path) -> None:
+    xosc, xodr = _files(tmp_path)
+    session = LiveSessionService(tmp_path, "fake.so", binding_factory=FakeBinding).create(
+        "scenario-1", xosc, xodr, 0.05
+    )
+
+    capabilities = session.metadata()["command_capabilities"]
+    assert capabilities["reset"]["available"] is True
+    assert capabilities["reset"]["implementation"] == "reload_same_artifact_pair"
+    assert capabilities["control"]["available"] is False
+    session.command("control", {"actor_id": "ego", "throttle": 0.2})

@@ -140,6 +140,11 @@ class LiveSessionCreateRequest(BaseModel):
     timestep_s: float = 0.05
 
 
+class LiveScenarioPairRequest(BaseModel):
+    scenario_id: str
+    timestep_s: float = 0.05
+
+
 class LiveSessionCommandRequest(BaseModel):
     command: Literal["pause", "resume", "step", "reset", "control", "camera"]
     payload: dict[str, object] = Field(default_factory=dict)

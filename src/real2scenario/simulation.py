@@ -194,6 +194,10 @@ def run_esmini(
         )
 
     if completed.returncode != 0:
+        failure_message = f"esmini exited with code {completed.returncode}."
+        combined_output = f"{completed.stdout}\n{completed.stderr}".lower()
+        if "viewer initialization failed" in combined_output or "failed to create window" in combined_output:
+            failure_message = "esmini image capture requires a usable viewer/display; headless capture is unavailable."
         return ReplayReport(
             command=command,
             completed=False,
@@ -204,7 +208,8 @@ def run_esmini(
             tool_version=tool_version,
             trace_path=trace,
             trace=None,
-            failure_code="esmini_exit", failure_message=f"esmini exited with code {completed.returncode}.",
+            failure_code="capture_viewer_unavailable" if config.capture_images else "esmini_exit",
+            failure_message=failure_message,
         )
     try:
         try:

@@ -90,6 +90,34 @@ def test_live_esmini_capability_and_unavailable_session_are_explicit(tmp_path: P
     assert command.json()["message_type"] == "command_result"
 
 
+def test_sensor_evidence_is_separate_and_fails_closed_without_dataset(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+    response = client.get("/api/workspace/scenarios/synthetic-variant-001/sensor-evidence?nsweeps=5")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["contract_version"] == "nuscenes-sensor-evidence-v1"
+    assert payload["channel"] == "LIDAR_TOP"
+    assert payload["sweeps"] == []
+    assert payload["artifact_visibility"] == "local_private"
+
+
+def test_live_scenario_pair_flow_materializes_private_pair(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+
+    response = client.post(
+        "/api/esmini/live/scenario-pairs",
+        json={"scenario_id": "synthetic-variant-001", "timestep_s": 0.05},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "unavailable"
+    assert payload["artifacts"]["openscenario"].startswith("/api/artifacts/reports/live-pairs/")
+    assert payload["artifacts"]["opendrive"].endswith("straight-two-lane-v1.xodr")
+    assert (tmp_path / "reports" / "live-pairs").is_dir()
+
+
 def test_settings_fails_closed_when_dataset_directory_has_no_scene_metadata(tmp_path: Path) -> None:
     dataset_root = tmp_path / "dataset"
     (dataset_root / "v1.0-trainval").mkdir(parents=True)

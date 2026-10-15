@@ -110,6 +110,7 @@ class CtypesEsminiBinding:
         self._loaded = False
 
     def load(self, xosc_path: str, xodr_path: str, timestep_s: float) -> None:
+        self._xosc_path = xosc_path
         result = self.library.SE_Init(xosc_path.encode(), 0, 0, 0, 0)
         if result != 0:
             raise RuntimeError(f"esminiLib_init_failed:{result}")
@@ -148,7 +149,13 @@ class CtypesEsminiBinding:
         return {"objects": objects, "events": []}
 
     def reset(self) -> None:
-        raise RuntimeError("esminiLib_reset_requires_reload")
+        if not self._loaded or not getattr(self, "_xosc_path", None):
+            raise RuntimeError("esminiLib_reset_requires_reload")
+        self.library.SE_Close()
+        result = self.library.SE_Init(self._xosc_path.encode(), 0, 0, 0, 0)
+        if result != 0:
+            self._loaded = False
+            raise RuntimeError(f"esminiLib_reset_reload_failed:{result}")
 
     def control(self, command: dict[str, Any]) -> None:
         raise RuntimeError("esminiLib_control_abi_unavailable")
@@ -193,6 +200,11 @@ class LiveSession:
             "transform_version": "esmini-state-v1",
             "authoritative_state_source": "native_esminiLib" if self.binding else None,
             "commands": ["pause", "resume", "step", "reset", "control", "camera"],
+            "command_capabilities": {
+                "reset": {"available": True, "implementation": "reload_same_artifact_pair"},
+                "control": {"available": False, "unavailable_reason": "esminiLib_control_abi_unavailable"},
+                "camera": {"available": True, "implementation": "browser_native_renderer"},
+            },
             "rendering": {"browser_native": True, "screenshot_stream": False},
             "sensors": {"post_edit_frames": "unsupported"},
             "artifact_visibility": "local_private",
@@ -280,6 +292,11 @@ class LiveSessionService:
             "commands": ["pause", "resume", "step", "reset", "control", "camera"],
             "browser_renderer": "browser-native-state-renderer",
             "screenshot_stream": False,
+            "command_capabilities": {
+                "reset": {"available": True, "implementation": "reload_same_artifact_pair"},
+                "control": {"available": False, "unavailable_reason": "esminiLib_control_abi_unavailable"},
+                "camera": {"available": True, "implementation": "browser_native_renderer"},
+            },
         }
 
     def create(self, scenario_id: str, xosc_path: str, xodr_path: str, timestep_s: float) -> LiveSession:

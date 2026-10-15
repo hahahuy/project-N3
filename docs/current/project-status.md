@@ -91,10 +91,11 @@ silently reuse nuScenes-specific assumptions.
 - Native reset now reloads the same confined XOSC/XODR pair because the public esminiLib ABI has no stable reset symbol. Native control remains explicitly unavailable with `esminiLib_control_abi_unavailable`; camera commands remain browser-renderer state.
 - `POST /api/esmini/live/scenario-pairs` safely materializes a private generated XOSC/XODR pair from an existing scenario artifact and creates its bounded live session. Pair directories use a hashed scenario key and are served only through the existing confined artifact route.
 - The remaining CP1/CP3/CP4/CP5 closure items are still owner decisions: CP1 semantic policy and baseline interpretation, CP3 approved index/scientific policy, CP4 final gate policy, and CP5 release sign-off. CP6 research questions and paper evidence are likewise owner-required. Existing diagnostics and metrics remain provisional.
+- Behavior, Validate and Replay toolbar controls remain intentionally disabled in the current build: Behavior has no executor, Validate has no connected workspace validation action, and Replay requires an accepted replay/capture flow. They are not hidden or silently mapped to another mode; the UI labels them unavailable and the backend contracts remain fail-closed.
 - Compose now exposes `ESMINILIB_PATH` alongside `ESMINI_BIN` and `ESMINI_DAT2CSV`; the mounted `/opt/esmini` tree must include the executable, shared library, catalogs/models and compatible runtime assets.
-- The browser POV surface includes a native-state renderer path that consumes timestamped live objects when a live session is available and labels it separately from internal transform preview and `workspace-pov-image-v1` artifacts. Frontend API coverage keeps the live-state contract separate from image-frame requests; full browser session walkthrough remains open because the UI does not fabricate a session without an exposed artifact pair. CARLA remains post-MVP and variant post-edit sensor frames remain unsupported.
+- The browser POV surface includes a native-state renderer path that consumes timestamped live objects when a live session is available and labels it separately from internal transform preview and `workspace-pov-image-v1` artifacts. The UI now creates a private scenario pair and polls the bounded native session when live capability is available; unavailable capability leaves the action disabled. CARLA remains post-MVP and variant post-edit sensor frames remain unsupported.
 - The add-view flow is wired for up to four panes with Top-down, 3rd-person POV, In-car POV and LiDAR 3D types; close, make-main, maximize/restore, reset-layout and responsive arrangements are covered. The current default Top-down is the authoring/map/trajectory view. The approved nuScenes devkit-style `LIDAR_TOP` multi-sweep evidence view (`nsweeps=5`, map underlay, ego pose/calibration and CAN telemetry) is a separate next view mode, not a replacement for authoring Top-down.
-- The approved optimization is recorded in `docs/current/nuscenes-devkit-optimization-decision.md`: use cached devkit semantics for multisweep LiDAR, official transforms/boxes/maps/projections and CAN, then use NumPy/vectorized payloads and measured spatial indexing while keeping application contracts and provenance separate.
+- The approved optimization is recorded in `docs/current/nuscenes-devkit-optimization-decision.md` and implemented provisionally in the cached adapter: use cached devkit semantics for multisweep LiDAR, official transforms/boxes/maps/projections and CAN, then use NumPy/vectorized payloads and measured spatial indexing while keeping application contracts and provenance separate.
 - ADE/FDE scientific thresholds are not finalized.
 
 ## Remaining Work Order
@@ -370,9 +371,9 @@ accessibility suites; the production build succeeds.
   Compose exposes `ESMINILIB_PATH`, mounts `/opt/esmini`, and a container session
   loaded/stepped a private XOSC/XODR pair with four named objects. Native control
   and reset remain ABI-scoped unavailable; browser camera state is renderer-owned.
-- Track 2 browser live 3D: `IMPLEMENTED-PARTIAL/HOST-NATIVE-SMOKE`. The browser
-  state renderer, capability/state API clients and timeline-bound POV surface are
-  wired; full browser acceptance against an actual native session remains open.
+- Track 2 browser live 3D: `IMPLEMENTED/NATIVE-API-VERIFIED/PROVISIONAL`. The browser
+  state renderer, capability/state API clients, private scenario-pair creation and
+  polling-backed timeline POV surface are wired and covered by frontend tests.
 - Track 3 post-edit sensors: `UNSUPPORTED-EXACT-REASON`. No calibrated post-edit
   camera/LiDAR/radar generator or generated artifact manifest exists. Variant
   status remains `unsupported` with `post_edit_sensor_frames_not_generated`; only

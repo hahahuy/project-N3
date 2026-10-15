@@ -2,19 +2,26 @@
 
 from __future__ import annotations
 
-import json
-import struct
-from pathlib import Path
 from typing import Any
+
 
 from real2scenario import lidar_payload_contract
 
 from .config import WebSettings
+from .nuscenes_adapter import NuScenesDatasetAdapter
 
 
 class LidarService:
     def __init__(self, settings: WebSettings):
         self.settings = settings
+        self._dataset: NuScenesDatasetAdapter | None = None
+
+    def _adapter(self) -> NuScenesDatasetAdapter:
+        if self.settings.dataset_root is None:
+            raise RuntimeError("dataset_not_configured")
+        if self._dataset is None:
+            self._dataset = NuScenesDatasetAdapter.for_dataset(self.settings.dataset_root, self.settings.dataset_version)
+        return self._dataset
 
     def capability(self) -> dict[str, object]:
         if self.settings.dataset_root is None:
@@ -30,17 +37,18 @@ class LidarService:
     def payload(self, sample_data_token: str, decimation: int = 8) -> tuple[dict[str, object], bytes]:
         if decimation < 1 or decimation > 1024:
             raise ValueError("decimation must be between 1 and 1024")
-        sample_data, calibration, ego_pose, source_path = self._records(sample_data_token)
+        sample_data, calibration, ego_pose, source_path = self._adapter().records(sample_data_token)
         contract = lidar_payload_contract({**sample_data, "filename": str(source_path.relative_to(self.settings.dataset_root))}, calibration, decimation=decimation)
         try:
             from nuscenes.utils.data_classes import LidarPointCloud
+            import numpy as np
             cloud = LidarPointCloud.from_file(str(source_path))
-            points = cloud.points.T[::decimation]
-            payload = b"".join(struct.pack("<ffff", float(point[0]), float(point[1]), float(point[2]), float(point[3])) for point in points)
+            points = np.ascontiguousarray(cloud.points[:4, ::decimation].T, dtype="<f4")
+            payload = points.tobytes(order="C")
             total_count = int(cloud.points.shape[1])
         except (ImportError, OSError, ValueError) as error:
             raise RuntimeError(f"lidar_payload_unavailable:{type(error).__name__}") from error
-        return ({**self._metadata(sample_data, calibration, ego_pose, contract), "decimation": decimation, "total_count": total_count, "returned_count": len(points)}, payload)
+        return ({**self._metadata(sample_data, calibration, ego_pose, contract), "decimation": decimation, "total_count": total_count, "returned_count": int(len(points))}, payload)
 
     def availability(self, sample_data_token: str) -> dict[str, object]:
         """Return only whether the recorded sweep can be addressed, plus a reason."""
@@ -54,9 +62,61 @@ class LidarService:
 
     def descriptor(self, sample_data_token: str) -> dict[str, object]:
         """Return safe metadata for a browser to address a private sweep."""
-        sample_data, calibration, ego_pose, _ = self._records(sample_data_token)
+        sample_data, calibration, ego_pose, _ = self._adapter().records(sample_data_token)
         contract = lidar_payload_contract(sample_data, calibration)
         return {**self._metadata(sample_data, calibration, ego_pose, contract), "decimation": None, "total_count": None, "returned_count": None}
+
+    def sensor_evidence(self, sample_data_token: str, nsweeps: int = 5) -> dict[str, object]:
+        """Describe recorded LIDAR_TOP history using nuScenes sweep semantics."""
+        if not 1 <= nsweeps <= 20:
+            raise ValueError("nsweeps must be between 1 and 20")
+        dataset = self._adapter()
+        records = dataset.sweep_records(sample_data_token, nsweeps)
+        if not records:
+            raise ValueError("recorded_lidar_sweeps_unavailable")
+        sweeps = []
+        for sample_data, calibration, ego_pose, source_path in records:
+            contract = lidar_payload_contract(sample_data, calibration)
+            transforms = dataset.transform(calibration, ego_pose)
+            sweeps.append({
+                **self._metadata(sample_data, calibration, ego_pose, contract),
+                "sample_data_token": sample_data["token"],
+                "sample_token": sample_data.get("sample_token"),
+                "timestamp_us": int(sample_data.get("timestamp", contract.timestamp_us)),
+                "offset_us": int(sample_data.get("timestamp", contract.timestamp_us)) - int(records[0][0].get("timestamp", contract.timestamp_us)),
+                "historical": sample_data["token"] != records[0][0]["token"],
+                "transforms": transforms,
+                "payload_url": f"/api/workspace/lidar/{sample_data['token']}",
+                "source_file": str(source_path.relative_to(self.settings.dataset_root)),
+            })
+        first = sweeps[0]
+        return {
+            "contract_version": "nuscenes-sensor-evidence-v1",
+            "channel": "LIDAR_TOP",
+            "sample_data_token": first["sample_data_token"],
+            "sample_token": first["sample_token"],
+            "timestamp_us": first["timestamp_us"],
+            "nsweeps": len(sweeps),
+            "requested_nsweeps": nsweeps,
+            "sweeps": sweeps,
+            "reference": {"sample_data_token": first["sample_data_token"], "sample_token": first["sample_token"], "timestamp_us": first["timestamp_us"]},
+            "annotations": dataset.annotations(first["sample_data_token"]),
+            "map_underlay": dataset.map_underlay(first["sample_data_token"]),
+            "can_telemetry": dataset.can_alignment(first["sample_data_token"]),
+            "synchronization": {
+                "status": "recorded_history",
+                "reference_timestamp_us": first["timestamp_us"],
+                "historical_sweep_smearing": "expected_motion_smear_across_historical_sweeps",
+            },
+            "provenance": {
+                "source": "nuscenes-devkit-sensor-evidence",
+                "render_equivalent": "render_sample_data:LIDAR_TOP:nsweeps",
+                **dataset.multisweep_provenance(first["sample_data_token"], nsweeps),
+                "artifact_visibility": "local_private",
+                "post_edit_frames": "unsupported",
+            },
+            "artifact_visibility": "local_private",
+        }
 
     def _metadata(self, sample_data: dict[str, Any], calibration: dict[str, Any], ego_pose: dict[str, Any], contract: Any) -> dict[str, object]:
         return {
@@ -72,31 +132,6 @@ class LidarService:
             "source_file": str(sample_data["filename"]),
             "artifact_visibility": "local_private",
         }
-
-    def _records(self, token: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], Path]:
-        if self.settings.dataset_root is None:
-            raise RuntimeError("dataset_not_configured")
-        root = self.settings.dataset_root / self.settings.dataset_version
-        tables = {name: json.loads((root / f"{name}.json").read_text(encoding="utf-8")) for name in ("sample_data", "calibrated_sensor", "sensor", "ego_pose")}
-        candidates = [item for item in tables["sample_data"] if item.get("token") == token or item.get("sample_token") == token]
-        sample_data = None
-        calibration = None
-        for candidate in candidates:
-            candidate_calibration = next((item for item in tables["calibrated_sensor"] if item.get("token") == candidate.get("calibrated_sensor_token")), None)
-            sensor = next((item for item in tables["sensor"] if item.get("token") == (candidate_calibration or {}).get("sensor_token")), None)
-            if candidate_calibration is not None and sensor and sensor.get("channel") == "LIDAR_TOP":
-                sample_data, calibration = candidate, candidate_calibration
-                break
-        if sample_data is None or calibration is None:
-            raise ValueError("sample_data calibration is not LIDAR_TOP")
-        ego_pose = next((item for item in tables["ego_pose"] if item.get("token") == sample_data.get("ego_pose_token")), None)
-        if ego_pose is None:
-            raise ValueError("LIDAR sample_data ego pose is unavailable")
-        source_path = (self.settings.dataset_root / str(sample_data["filename"])).resolve()
-        if not source_path.is_file() or self.settings.dataset_root not in source_path.parents:
-            raise FileNotFoundError("LIDAR source file is unavailable")
-        return sample_data, calibration, ego_pose, source_path
-
 
 def _transform(record: dict[str, Any]) -> dict[str, object]:
     translation = record.get("translation")

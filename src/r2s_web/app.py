@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -55,6 +56,7 @@ from .schemas import (
     VariantSensorStatusView,
     LiveSessionCreateRequest,
     LiveSessionCommandRequest,
+    LiveScenarioPairRequest,
 )
 from .actor_timeline import actor_timeline
 from .compare import compare_payload
@@ -68,6 +70,8 @@ from .native_map import NativeMapService
 from .lidar import LidarService
 from .frames import capability as frame_capability, frame as render_frame
 from .live_session import LiveSessionService
+from real2scenario import STRAIGHT_ROAD_TOPOLOGY, select_opendrive_template, write_openscenario
+from pathlib import Path
 from fastapi.responses import Response
 
 
@@ -177,6 +181,32 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
             )
             return session.metadata()
         except (RuntimeError, ValueError) as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+
+    @app.post("/api/esmini/live/scenario-pairs")
+    def create_live_scenario_pair(request: LiveScenarioPairRequest) -> dict[str, object]:
+        """Materialize a private XOSC/XODR pair and create its native session."""
+        try:
+            record = adapter.get(request.scenario_id)
+            selected, template = select_opendrive_template(
+                record.scenario, topology=STRAIGHT_ROAD_TOPOLOGY
+            )
+            pair_key = hashlib.sha256(request.scenario_id.encode("utf-8")).hexdigest()[:24]
+            pair_root = resolved_settings.output_root / "live-pairs" / pair_key
+            pair_root.mkdir(parents=True, exist_ok=True)
+            xosc = write_openscenario(selected, template, pair_root / "scenario.xosc")
+            xodr = pair_root / Path(template.relative_path).name
+            xodr.write_bytes(template.path().read_bytes())
+            session = live_sessions.create(request.scenario_id, str(xosc), str(xodr), request.timestep_s)
+            return session.metadata() | {
+                "artifacts": {
+                    "openscenario": f"/api/artifacts/{xosc.relative_to(resolved_settings.project_root).as_posix()}",
+                    "opendrive": f"/api/artifacts/{xodr.relative_to(resolved_settings.project_root).as_posix()}",
+                }
+            }
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        except (OSError, RuntimeError, ValueError) as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
 
     @app.get("/api/esmini/live/sessions/{session_id}")
@@ -490,6 +520,25 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
             return {**lidar.descriptor(sample_data_token), "sample_data_token": sample_data_token, "payload_url": f"/api/workspace/lidar/{sample_data_token}"}
         except (KeyError, FileNotFoundError, ImportError, OSError, RuntimeError, ValueError) as error:
             return {"available": False, "unavailable_reason": str(error)}
+
+    @app.get("/api/workspace/scenarios/{scenario_id}/sensor-evidence")
+    def workspace_sensor_evidence(scenario_id: str, nsweeps: int = 5) -> dict[str, object]:
+        try:
+            record = adapter.get(scenario_id)
+            source_window = record.scenario.provenance.get("source_window", "")
+            sample_data_token = source_window.split(":", 1)[0]
+            if not sample_data_token:
+                raise ValueError("recorded_lidar_sample_unavailable")
+            return lidar.sensor_evidence(sample_data_token, nsweeps)
+        except (KeyError, FileNotFoundError, ImportError, OSError, RuntimeError, ValueError) as error:
+            return {
+                "contract_version": "nuscenes-sensor-evidence-v1",
+                "channel": "LIDAR_TOP",
+                "status": "unavailable",
+                "unavailable_reason": str(error),
+                "sweeps": [],
+                "artifact_visibility": "local_private",
+            }
 
     @app.get("/api/workspace/scenarios/{scenario_id}", response_model=ScenarioViewPayload)
     def workspace_scenario(scenario_id: str) -> ScenarioViewPayload:

@@ -28,6 +28,7 @@ const icons = {
   "third-person": <><circle cx="8" cy="4.6" r="2.3" /><path d="M3.6 13.6a4.4 4.4 0 0 1 8.8 0" /></>,
   "in-car": <><path d="M2.5 10.8h11" /><path d="m4 10.8 1.2-4h5.6l1.2 4" /><circle cx="4.5" cy="12.5" r="1" /><circle cx="11.5" cy="12.5" r="1" /></>,
   lidar: <><circle cx="8" cy="8" r="1.7" /><path d="M4.7 6.3a4.8 4.8 0 0 0 0 3.4" /><path d="M11.3 6.3a4.8 4.8 0 0 1 0 3.4" /><path d="M8 2.4v1.6" /><path d="M8 12v1.6" /><path d="M2.4 8H4" /><path d="M12 8h1.6" /></>,
+  "sensor-evidence": <><path d="M2.5 11.5 5.7 8l2.3 2.2 3.5-4.1 2 2" /><path d="M2.5 13.5h11" /><circle cx="5.7" cy="8" r="1" /><circle cx="11.5" cy="6.1" r="1" /></>,
   "chevron-left": <><path d="m9.5 4-4 4 4 4" /></>,
   "chevron-right": <><path d="m6.5 4 4 4-4 4" /></>,
   "chevron-up": <><path d="m4 9.5 4-4 4 4" /></>,

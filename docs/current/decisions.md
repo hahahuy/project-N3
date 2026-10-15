@@ -176,3 +176,18 @@ execution backends.
   provides `LIDAR_TOP` history, map underlay, annotations and telemetry.
 - Recorded evidence is never generated post-edit sensor output; unavailable
   capabilities remain explicit and raw/derived data stays local/private.
+
+## DEC-016 — Disabled Workspace Controls
+
+- Status: `APPROVED CURRENT MVP BOUNDARY`
+- Behavior remains disabled because no behavior executor exists; it must remain
+  structured `unsupported` rather than falling back to waypoint or kinematic
+  preview semantics.
+- Validate remains disabled until the Workspace exposes a connected validation
+  action with an API-owned result. The browser must not imply validation by
+  reusing gate labels or preview status.
+- Replay remains disabled until an accepted replay request, trace contract and
+  private artifact flow are connected to the workspace. Internal transform POV
+  and recorded Sensor Evidence are not replay substitutes.
+- The controls remain visible with explicit unavailable labeling so capability
+  boundaries are discoverable and cannot be mistaken for completed workflows.
