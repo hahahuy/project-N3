@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -53,6 +53,8 @@ from .schemas import (
     EvidenceLayersView,
     CompareView,
     VariantSensorStatusView,
+    LiveSessionCreateRequest,
+    LiveSessionCommandRequest,
 )
 from .actor_timeline import actor_timeline
 from .compare import compare_payload
@@ -65,6 +67,7 @@ from .sensor_status import variant_sensor_status
 from .native_map import NativeMapService
 from .lidar import LidarService
 from .frames import capability as frame_capability, frame as render_frame
+from .live_session import LiveSessionService
 from fastapi.responses import Response
 
 
@@ -78,6 +81,7 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
     batches = BatchService(resolved_settings, adapter)
     previews = PreviewService(resolved_settings, adapter)
     esmini = EsminiBackend(resolved_settings, adapter)
+    live_sessions = LiveSessionService(resolved_settings.project_root, resolved_settings.esmini_lib)
     app = FastAPI(title="Real2Scenario Local Demo", version="0.1.0")
     app.state.settings = resolved_settings
     app.state.adapter = adapter
@@ -88,6 +92,7 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
     app.state.lidar = lidar
     app.state.recipes = recipes
     app.state.esmini = esmini
+    app.state.live_sessions = live_sessions
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
@@ -159,6 +164,60 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
     @app.get("/api/esmini")
     def esmini_capability() -> dict[str, object]:
         return esmini.capability()
+
+    @app.get("/api/esmini/live/capability")
+    def esmini_live_capability() -> dict[str, object]:
+        return live_sessions.capability()
+
+    @app.post("/api/esmini/live/sessions")
+    def create_live_session(request: LiveSessionCreateRequest) -> dict[str, object]:
+        try:
+            session = live_sessions.create(
+                request.scenario_id, request.xosc_path, request.xodr_path, request.timestep_s
+            )
+            return session.metadata()
+        except (RuntimeError, ValueError) as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+
+    @app.get("/api/esmini/live/sessions/{session_id}")
+    def get_live_session(session_id: str) -> dict[str, object]:
+        try:
+            return live_sessions.get(session_id).frame()
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+
+    @app.post("/api/esmini/live/sessions/{session_id}/commands")
+    def command_live_session(session_id: str, request: LiveSessionCommandRequest) -> dict[str, object]:
+        try:
+            return live_sessions.get(session_id).command(request.command, request.payload)
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        except (RuntimeError, ValueError) as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+
+    @app.delete("/api/esmini/live/sessions/{session_id}")
+    def close_live_session(session_id: str) -> dict[str, object]:
+        try:
+            live_sessions.close(session_id)
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        return {"session_id": session_id, "status": "closed"}
+
+    @app.websocket("/api/esmini/live/sessions/{session_id}/stream")
+    async def stream_live_session(websocket: WebSocket, session_id: str) -> None:
+        await websocket.accept()
+        try:
+            session = live_sessions.get(session_id)
+            await websocket.send_json(session.frame())
+            while True:
+                message = await websocket.receive_json()
+                command = LiveSessionCommandRequest.model_validate(message)
+                payload = session.command(command.command, command.payload)
+                await websocket.send_json(payload)
+        except (KeyError, ValueError, RuntimeError) as error:
+            await websocket.send_json({"contract_version": "esmini-live-session-v1", "message_type": "error", "error": str(error)})
+        except WebSocketDisconnect:
+            return
 
     @app.get("/api/cp1/review", response_model=CP1ReviewView)
     def cp1_review() -> CP1ReviewView:

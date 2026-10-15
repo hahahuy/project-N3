@@ -1,7 +1,7 @@
 # Next Agent Handoff
 
 Status: `READY FOR IMPLEMENTATION`
-Primary next work: finish the live adapter, browser renderer and remaining acceptance tracks
+Primary next work: finish native runtime integration, sensor generation and acceptance tracks
 
 ## Mission
 
@@ -47,16 +47,18 @@ optional CAN ego speed, source-state acceleration/yaw-rate alignment, Tier 1
 propagation, native map/query routes, private LiDAR descriptors, actor timeline,
 gate timeline, recipe/rollback, lineage, Compare, evidence layers and advisory
 prediction metrics. The next task is to finish acceptance and the remaining
-renderer/sensor gaps, not redesign those contracts.
+renderer/sensor gaps, not redesign those contracts. The bounded live-session
+contract and browser native-state renderer are now implemented partially; native
+execution is unavailable in the current environment because no compatible
+versioned esminiLib binding is configured.
 
 ## Remaining Work
 
-1. Implement `B-WORKSPACE-19`: a bounded native `esminiLib` session with load,
-   pause, resume, step, reset, control and camera operations; timestamped object
-   state; capability/status metadata; XOSC/XODR hashes; and focused API tests.
-2. Add the browser-native live 3D renderer and state transport integration. Render
-   roads, actors, cameras, trajectories and interpolation from adapter state; do
-   not use screenshot streaming as the editor path.
+1. Complete the version-compatible native `esminiLib` binding and runtime proof for
+   `B-WORKSPACE-19`; the bounded service, validation, hashes, REST/WebSocket
+   transport and browser native-state path already exist.
+2. Complete browser live-state interaction and visual rendering against an actual
+   native session; do not use screenshot streaming as the editor path.
 3. Implement or formally scope post-edit camera/LiDAR/radar frame generation. Until
    calibrated artifacts exist, keep variant sensor status `unsupported` and use only
    the explicit parent-sweep fallback.

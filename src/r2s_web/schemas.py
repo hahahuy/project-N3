@@ -133,6 +133,18 @@ class POVFrameView(BaseModel):
     provenance: dict[str, str]
 
 
+class LiveSessionCreateRequest(BaseModel):
+    scenario_id: str
+    xosc_path: str
+    xodr_path: str
+    timestep_s: float = 0.05
+
+
+class LiveSessionCommandRequest(BaseModel):
+    command: Literal["pause", "resume", "step", "reset", "control", "camera"]
+    payload: dict[str, object] = Field(default_factory=dict)
+
+
 class POVImageFrameView(BaseModel):
     """A real private esmini image artifact, or an explicit unavailable state."""
 

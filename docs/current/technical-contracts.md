@@ -462,6 +462,16 @@ The first implementation may use JSON over WebSocket or an equivalent polling
 transport behind the same typed contract. Binary state encoding, WebRTC data/video,
 Unity WebGL and direct esmini WebAssembly are future optimizations, not prerequisites.
 
+The implemented service exposes `GET /api/esmini/live/capability`, bounded session
+creation under `/api/esmini/live/sessions`, validated command POSTs, state polling,
+and `/stream` as a WebSocket-friendly JSON transport. It confines XOSC/XODR paths
+to the project root and records SHA-256 hashes before loading. A session without a
+configured version-compatible native binding is `unavailable`; it may expose its
+identity and command vocabulary, but it does not synthesize object state from the
+kinematic preview. The current ctypes seam intentionally fails closed when the
+installed library does not expose the required ABI, so an operator must provide a
+version-compatible binding before native execution can be claimed.
+
 ## CP3 Replay and Gate Reporting
 
 - Variant and batch reports may include per-actor replay metrics and ADE/FDE

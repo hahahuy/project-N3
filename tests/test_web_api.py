@@ -61,6 +61,35 @@ def test_empty_artifact_root_is_a_valid_health_state(tmp_path: Path) -> None:
     }
 
 
+def test_live_esmini_capability_and_unavailable_session_are_explicit(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+    xosc = tmp_path / "scenario.xosc"
+    xodr = tmp_path / "road.xodr"
+    xosc.write_text("<OpenSCENARIO version='1.1'/>")
+    xodr.write_text("<OpenDRIVE revMajor='1' revMinor='6'/>")
+
+    capability = client.get("/api/esmini/live/capability")
+    created = client.post("/api/esmini/live/sessions", json={
+        "scenario_id": "synthetic-variant-001",
+        "xosc_path": str(xosc),
+        "xodr_path": str(xodr),
+        "timestep_s": 0.05,
+    })
+
+    assert capability.status_code == 200
+    assert capability.json()["contract_version"] == "esmini-live-session-v1"
+    assert capability.json()["available"] is False
+    assert created.status_code == 200
+    payload = created.json()
+    assert payload["status"] == "unavailable"
+    assert payload["xosc_sha256"].startswith("sha256:")
+    state = client.get(f"/api/esmini/live/sessions/{payload['session_id']}")
+    assert state.json()["rendering"]["screenshot_stream"] is False
+    command = client.post(f"/api/esmini/live/sessions/{payload['session_id']}/commands", json={"command": "step"})
+    assert command.status_code == 200
+    assert command.json()["message_type"] == "command_result"
+
+
 def test_settings_fails_closed_when_dataset_directory_has_no_scene_metadata(tmp_path: Path) -> None:
     dataset_root = tmp_path / "dataset"
     (dataset_root / "v1.0-trainval").mkdir(parents=True)

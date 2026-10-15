@@ -17,6 +17,7 @@ class WebSettings:
     dataset_root: Path | None
     esmini_bin: str | None
     esmini_dat2csv: str | None
+    esmini_lib: str | None = None
     dataset_version: str = "v1.0-trainval"
     esmini_capture_images: bool = False
 
@@ -45,6 +46,7 @@ class WebSettings:
             dataset_root=dataset_root,
             esmini_bin=os.environ.get("ESMINI_BIN"),
             esmini_dat2csv=os.environ.get("ESMINI_DAT2CSV"),
+            esmini_lib=os.environ.get("ESMINILIB_PATH"),
             esmini_capture_images=os.environ.get("ESMINI_CAPTURE_IMAGES", "0") == "1",
         dataset_version=os.environ.get(
             "NUSCENES_VERSION",
@@ -90,6 +92,7 @@ class WebSettings:
             else self.dataset_root,
             esmini_bin=self.esmini_bin,
             esmini_dat2csv=self.esmini_dat2csv,
+            esmini_lib=self.esmini_lib,
             dataset_version=dataset_version or self.dataset_version,
             esmini_capture_images=self.esmini_capture_images,
         )

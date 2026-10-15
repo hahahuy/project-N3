@@ -86,6 +86,8 @@ silently reuse nuScenes-specific assumptions.
 - Browser acceptance now covers the real local recipe editor, Tier 1 steering/acceleration/braking/target-speed preview, rollback/undo state, synchronized Compare, timeline/gate text equivalents, evidence layers and keyboard/mobile-capable controls. The no-dataset runtime correctly reports LiDAR and esmini image artifacts unavailable.
 - Variant sensor status is explicit through `workspace-variant-sensor-v1`: post-edit frames remain `unsupported` until generated artifacts exist, while a recorded parent sweep is reported separately with provenance. `workspace-pov-image-v1` serves only real private esmini capture artifacts; transform-only internal POV remains distinct and is never mislabeled as an image.
 - The approved next simulator architecture is a native, bounded `esminiLib` live-session adapter with WebSocket-friendly state/control messages and a browser-native Three.js/PlayCanvas renderer. The existing subprocess/image-capture path remains for replay, validation and evidence; it is not the primary live 3D interaction path. Full esmini WebAssembly, Unity WebGL and WebRTC remote rendering are deferred alternatives.
+- `esmini-live-session-v1` is now implemented as a bounded optional native-binding service with XOSC/XODR confinement and SHA-256 identity, lifecycle/control/camera validation, REST commands and a WebSocket-friendly state stream. The current environment has no compatible configured `esminiLib`, so native execution remains explicitly unavailable; no kinematic or screenshot fallback is claimed as esmini state.
+- The browser POV surface includes a native-state renderer path that consumes timestamped live objects when a live session is available and labels it separately from internal transform preview and `workspace-pov-image-v1` artifacts. CARLA remains post-MVP and variant post-edit sensor frames remain unsupported.
 - ADE/FDE scientific thresholds are not finalized.
 
 ## Remaining Work Order
@@ -339,7 +341,7 @@ contract, license boundary or scientific thresholds.
 
 ```text
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider
-  310 passed, 1 warning. The warning is the existing Starlette/httpx deprecation;
+  315 passed, 1 warning. The warning is the existing Starlette/httpx deprecation;
 the cache provider is disabled because the default pytest cache path is not
 writable in this worktree.
 

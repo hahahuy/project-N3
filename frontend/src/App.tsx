@@ -19,6 +19,7 @@ import {
   fetchLidarDescriptor,
   fetchPOVFrame,
   fetchPOVImageFrame,
+  fetchLiveCapability,
   fetchRecipe,
   fetchScenario,
   fetchScenarioArtifacts,
@@ -34,6 +35,8 @@ import {
   moveRecipeStep,
   POVFrame,
   POVImageFrame,
+  LiveCapability,
+  LiveState,
   PreviewResponse,
   previewVariant,
   RecipeDocument,
@@ -189,6 +192,8 @@ function App() {
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [povFrames, setPovFrames] = useState<Record<string, POVFrame | null>>({});
   const [povImages, setPovImages] = useState<Record<string, POVImageFrame | null>>({});
+  const [liveCapability, setLiveCapability] = useState<LiveCapability | null>(null);
+  const [liveState, setLiveState] = useState<LiveState | null>(null);
   const [lidar, setLidar] = useState<LidarDescriptor | null>(null);
   const [lidarDecimation, setLidarDecimation] = useState(8);
   const [actorTimeline, setActorTimeline] = useState<ActorTimeline | null>(null);
@@ -245,6 +250,7 @@ function App() {
   useEffect(() => { fetchScenarios().then(setScenarios).catch((e) => setError(e.message)).finally(() => setLoading(false)); }, []);
   useEffect(() => {
     fetchEsminiCapability().then(setCapability).catch(() => setCapability(null));
+    fetchLiveCapability().then(setLiveCapability).catch(() => setLiveCapability(null));
     fetchSettings().then(setSettings).catch(() => setSettings(null));
   }, []);
   useEffect(() => {
@@ -477,11 +483,11 @@ function App() {
       <section className="view-manager" aria-label="View manager">
         <div className="view-manager-head"><div><span className="section-kicker">{activeTab.toUpperCase()}</span><strong>{selected?.scenario_id ?? "No scenario selected"}</strong></div><div className="mode-switcher" aria-label="Mode">{["select", "edit", "measure", "compare"].map((item) => <button key={item} className={mode === item ? "active" : ""} aria-pressed={mode === item} onClick={() => setMode(item)} disabled={item === "compare" && (!selected || scenarios.length < 2)} title={item === "compare" && scenarios.length < 2 ? "Compare needs two scenarios in the catalog" : undefined}>{item}</button>)}</div><button className="reset-button" onClick={resetLayout}>Reset layout</button></div>
         {error && <div className="inline-error" role="alert">{error}</div>}
-        {mode === "compare"
+         {mode === "compare"
           ? <CompareSurface payload={compare} error={compareError} selected={selected} scenarios={scenarios} against={compareAgainst} onAgainst={setCompareAgainst} playhead={playhead} />
-          : activeTab === "Scenario studio"
-          ? <div className={`view-grid count-${views.length}${maximized !== null ? " maximized" : ""}`}>
-             {views.map((view) => <ViewPane key={view.id} view={view} selected={selected} workspace={workspace} frame={povFrames[view.type]} imageFrame={povImages[view.type]} lidar={lidar} lidarDecimation={lidarDecimation} onLidarDecimation={setLidarDecimation} trajectory={preview?.paths.length ? { ...trajectory!, paths: preview.paths } : trajectory} timeline={playhead} activeTracks={activeTracks} selectedActor={selectedActor} measurement={measurement} mode={mode} onSelectActor={setSelectedActor} preset={presets[view.id] ?? "default"} onPreset={(next) => setPresets({ ...presets, [view.id]: next })} hiddenKinds={hiddenKinds} onToggleKind={toggleKind} layersOpen={layersOpen === view.id} onToggleLayers={() => setLayersOpen(layersOpen === view.id ? null : view.id)} maximized={maximized === view.id} onToggleMaximize={() => setMaximized(maximized === view.id ? null : view.id)} onMakeMain={() => makeMain(view.id)} onClose={() => closeView(view.id)} />)}
+           : activeTab === "Scenario studio"
+           ? <div className={`view-grid count-${views.length}${maximized !== null ? " maximized" : ""}`}>
+              {views.map((view) => <ViewPane key={view.id} view={view} selected={selected} workspace={workspace} frame={povFrames[view.type]} imageFrame={povImages[view.type]} liveState={liveState} liveCapability={liveCapability} lidar={lidar} lidarDecimation={lidarDecimation} onLidarDecimation={setLidarDecimation} trajectory={preview?.paths.length ? { ...trajectory!, paths: preview.paths } : trajectory} timeline={playhead} activeTracks={activeTracks} selectedActor={selectedActor} measurement={measurement} mode={mode} onSelectActor={setSelectedActor} preset={presets[view.id] ?? "default"} onPreset={(next) => setPresets({ ...presets, [view.id]: next })} hiddenKinds={hiddenKinds} onToggleKind={toggleKind} layersOpen={layersOpen === view.id} onToggleLayers={() => setLayersOpen(layersOpen === view.id ? null : view.id)} maximized={maximized === view.id} onToggleMaximize={() => setMaximized(maximized === view.id ? null : view.id)} onMakeMain={() => makeMain(view.id)} onClose={() => closeView(view.id)} />)}
             {views.length === 0 && <div className="empty-view"><strong>No views open.</strong><span>Add a view.</span><button onClick={() => addView("top-down")}>Add a Top-down view</button></div>}
           </div>
           : activeTab === "Variant studio"
@@ -734,7 +740,7 @@ function CompareSurface({ payload, error, selected, scenarios, against, onAgains
 }
 function Catalog({ scenarios, selected, loading, filter, onFilter, onSelect }: { scenarios: ScenarioSummary[]; selected: ScenarioSummary | null; loading: boolean; filter: string; onFilter: (value: string) => void; onSelect: (scenario: ScenarioSummary) => void }) { const visible = scenarios.filter((scenario) => scenario.scenario_id.toLowerCase().includes(filter.toLowerCase())); return <div className="panel-content"><div className="panel-title"><span className="section-kicker">CATALOG</span><span className="count">{visible.length}/{scenarios.length}</span></div><input className="filter" value={filter} onChange={(event) => onFilter(event.target.value)} placeholder="Filter scenarios" aria-label="Filter scenarios" />{loading ? <div className="skeleton-list"><i /><i /><i /></div> : scenarios.length === 0 ? <div className="panel-empty">Import a scene to start a scenario.</div> : visible.length === 0 ? <div className="panel-empty">No scenarios match this filter.</div> : <div className="scenario-list">{visible.map((scenario) => <button className={selected?.scenario_id === scenario.scenario_id ? "selected" : ""} key={scenario.scenario_id} onClick={() => onSelect(scenario)}><span><strong>{scenario.scenario_id}</strong><small>{scenario.artifact_type} / {scenario.duration_s.toFixed(2)} s</small></span><em>:</em></button>)}</div>}</div>; }
 function AddViewMenu({ viewCount, onAdd }: { viewCount: number; onAdd: (type: ViewType) => void }) { const atLimit = viewCount >= 4; return <div className="add-view-menu" role="menu"><button disabled={atLimit} onClick={() => onAdd("top-down")}><strong>Top-down</strong><small>{atLimit ? "maximum 4 views reached" : "available"}</small></button><button disabled={atLimit} onClick={() => onAdd("third-person")}><strong>3rd-person POV</strong><small>simulator capability determines availability</small></button><button disabled={atLimit} onClick={() => onAdd("in-car")}><strong>In-car POV</strong><small>simulator capability determines availability</small></button><button disabled={atLimit} onClick={() => onAdd("lidar")}><strong>LiDAR 3D</strong><small>recorded payload capability determines availability</small></button></div>; }
-function ViewPane({ view, selected, workspace, frame, imageFrame, lidar, lidarDecimation, onLidarDecimation, trajectory, timeline, activeTracks, selectedActor, measurement, mode, onSelectActor, preset, onPreset, hiddenKinds, onToggleKind, layersOpen, onToggleLayers, maximized, onToggleMaximize, onMakeMain, onClose }: { view: View; selected: ScenarioSummary | null; workspace: WorkspaceScenario | null; frame?: POVFrame | null; imageFrame?: POVImageFrame | null; lidar: LidarDescriptor | null; lidarDecimation: number; onLidarDecimation: (value: number) => void; trajectory: TrajectoryResponse | null; timeline: number; activeTracks: ActiveTrack[]; selectedActor: string | null; measurement: Measurement | null; mode: string; onSelectActor: (actorId: string) => void; preset: CameraPreset; onPreset: (next: CameraPreset) => void; hiddenKinds: string[]; onToggleKind: (kind: string) => void; layersOpen: boolean; onToggleLayers: () => void; maximized: boolean; onToggleMaximize: () => void; onMakeMain: () => void; onClose: () => void }) {
+function ViewPane({ view, selected, workspace, frame, imageFrame, liveState, liveCapability, lidar, lidarDecimation, onLidarDecimation, trajectory, timeline, activeTracks, selectedActor, measurement, mode, onSelectActor, preset, onPreset, hiddenKinds, onToggleKind, layersOpen, onToggleLayers, maximized, onToggleMaximize, onMakeMain, onClose }: { view: View; selected: ScenarioSummary | null; workspace: WorkspaceScenario | null; frame?: POVFrame | null; imageFrame?: POVImageFrame | null; liveState: LiveState | null; liveCapability: LiveCapability | null; lidar: LidarDescriptor | null; lidarDecimation: number; onLidarDecimation: (value: number) => void; trajectory: TrajectoryResponse | null; timeline: number; activeTracks: ActiveTrack[]; selectedActor: string | null; measurement: Measurement | null; mode: string; onSelectActor: (actorId: string) => void; preset: CameraPreset; onPreset: (next: CameraPreset) => void; hiddenKinds: string[]; onToggleKind: (kind: string) => void; layersOpen: boolean; onToggleLayers: () => void; maximized: boolean; onToggleMaximize: () => void; onMakeMain: () => void; onClose: () => void }) {
   const kinds = trajectory ? Array.from(new Set(trajectory.paths.map((path) => path.path_kind))) : [];
   return <article className={`view-pane${maximized ? " maximized" : ""}`}>
     <header>
@@ -744,8 +750,16 @@ function ViewPane({ view, selected, workspace, frame, imageFrame, lidar, lidarDe
        <button className="view-action" onClick={onMakeMain}>Make main</button><button className={`view-action${maximized ? " active" : ""}`} onClick={onToggleMaximize}>{maximized ? "Restore" : "Maximize"}</button>
       <button className="close-view" aria-label={`Close view: ${viewLabels[view.type]}`} title={`Close view: ${viewLabels[view.type]}`} onClick={onClose}>x</button>
     </header>
-        {view.type === "top-down" ? <TopDownView selected={selected} workspace={workspace} trajectory={trajectory} timeline={timeline} activeTracks={activeTracks} selectedActor={selectedActor} measurement={measurement} mode={mode} onSelectActor={onSelectActor} preset={preset} hiddenKinds={hiddenKinds} /> : view.type === "lidar" ? <LidarView descriptor={lidar} decimation={lidarDecimation} onDecimation={onLidarDecimation} playhead={timeline} /> : frame ? <POVView frame={frame} imageFrame={imageFrame} playhead={timeline} /> : <div className="unavailable-view"><StatusBadge status={workspace?.layers[view.type === "in-car" ? "in_car" : "third_person"]?.available ? "loading" : "unavailable"} /><strong>{viewLabels[view.type]} {workspace?.layers[view.type === "in-car" ? "in_car" : "third_person"]?.available ? "loading" : "unavailable"}</strong><p>{workspace?.layers[view.type === "in-car" ? "in_car" : "third_person"]?.unavailable_reason ?? "Select an imported scenario to query capability."}</p></div>}
+         {view.type === "top-down" ? <TopDownView selected={selected} workspace={workspace} trajectory={trajectory} timeline={timeline} activeTracks={activeTracks} selectedActor={selectedActor} measurement={measurement} mode={mode} onSelectActor={onSelectActor} preset={preset} hiddenKinds={hiddenKinds} /> : view.type === "lidar" ? <LidarView descriptor={lidar} decimation={lidarDecimation} onDecimation={onLidarDecimation} playhead={timeline} /> : liveState?.status === "running" || liveState?.status === "paused" ? <LivePOVView state={liveState} playhead={timeline} /> : frame ? <POVView frame={frame} imageFrame={imageFrame} playhead={timeline} /> : <div className="unavailable-view"><StatusBadge status={workspace?.layers[view.type === "in-car" ? "in_car" : "third_person"]?.available ? "loading" : "unavailable"} /><strong>{viewLabels[view.type]} {workspace?.layers[view.type === "in-car" ? "in_car" : "third_person"]?.available ? "loading" : "unavailable"}</strong><p>{liveCapability?.unavailable_reason ?? workspace?.layers[view.type === "in-car" ? "in_car" : "third_person"]?.unavailable_reason ?? "Select an imported scenario to query capability."}</p></div>}
   </article>;
+}
+
+function LivePOVView({ state, playhead }: { state: LiveState; playhead: number }) {
+  return <div className="pov-view live-pov" role="img" aria-label={`Live esmini state at ${state.simulation_time_s.toFixed(2)} seconds for playhead ${playhead.toFixed(2)} seconds`}>
+    <div className="pov-horizon" /><div className="pov-road" />
+    {state.objects.map((object) => <span key={object.id} className="pov-actor live-actor" style={{ left: `${50 + object.x_m * 2}%`, top: `${58 - object.y_m * 2}%` }} title={`${object.id} native esmini state`} />)}
+    <div className="view-legend"><span>native esminiLib state</span><span>browser-native renderer</span><span>t={state.simulation_time_s.toFixed(2)} s</span><span>no screenshot stream</span></div>
+  </div>;
 }
 
 function LidarView({ descriptor, decimation, onDecimation, playhead }: { descriptor: LidarDescriptor | null; decimation: number; onDecimation: (value: number) => void; playhead: number }) {
