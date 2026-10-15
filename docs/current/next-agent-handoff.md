@@ -48,26 +48,31 @@ propagation, native map/query routes, private LiDAR descriptors, actor timeline,
 gate timeline, recipe/rollback, lineage, Compare, evidence layers and advisory
 prediction metrics. The next task is to finish acceptance and the remaining
 renderer/sensor gaps, not redesign those contracts. The bounded live-session
-contract and browser native-state renderer are now implemented partially; native
-execution is unavailable in the current environment because no compatible
-versioned esminiLib binding is configured.
+  contract and browser native-state renderer are now implemented; host/Compose
+  native execution is verified. Remaining gaps are capability acceptance, private
+  capture/display support and owner-gated scientific/paper closure.
 
 ## Remaining Work: Tracks 1-6
 
 1. **Native runtime completion:** preserve the verified host/Compose load-step
-   smoke, then finish ABI-scoped control/reset behavior and expose a safe scenario
-   artifact-pair flow for the browser session. The bounded service, validation,
-   hashes, REST/WebSocket transport and browser native-state path already exist.
+   smoke. Reset reloads the confined artifact pair; native control remains
+   explicitly unavailable because no stable public ABI is present. A private
+   scenario-pair endpoint exposes safe XOSC/XODR artifacts for browser sessions.
 2. **Browser live 3D:** complete live-state interaction and visual rendering against
    an actual native session; do not use screenshot streaming as the editor path.
-3. **Post-edit sensors:** implement or formally scope camera/LiDAR/radar frame
+3. **NuScenes evidence view:** add a separate `LIDAR_TOP` multi-sweep view using
+   devkit semantics equivalent to `render_sample_data(..., nsweeps=5,
+   underlay_map=True)`. Keep the current Top-down view as authoring/map/trajectory;
+   include calibration, ego pose, map, sweep offsets, decimation and CAN telemetry
+   provenance, and label historical sweep smearing honestly.
+4. **Post-edit sensors:** implement or formally scope camera/LiDAR/radar frame
    generation. Until calibrated artifacts exist, keep variant sensor status
    `unsupported` and use only the explicit parent-sweep fallback.
-4. **Runtime acceptance:** complete private dataset/browser acceptance with a
+5. **Runtime acceptance:** complete private dataset/browser acceptance with a
    configured esmini capture runtime, retaining fail-closed unavailable states.
-5. **Engineering closure:** finish owner-gated CP1 semantic/map review, CP3
+6. **Engineering closure:** finish owner-gated CP1 semantic/map review, CP3
    benchmark index/scientific policy, and CP4/CP5 evidence and release sign-off.
-6. **Paper closure:** complete CP6 research questions, final evidence bundle and
+7. **Paper closure:** complete CP6 research questions, final evidence bundle and
    reproducibility narrative without promoting provisional metrics to final claims.
 
 CARLA same-XOSC remains explicitly post-MVP and is not part of tracks 1-6.
@@ -123,7 +128,7 @@ is implemented, fallback, unavailable or unverified.
 
 ## Short Prompt For The Next Agent
 
-> Work through remaining tracks 1-6 in
+> Work through the remaining runtime, evidence-view and closure tracks in
 > `docs/current/next-agent-handoff.md`. Read
 > `docs/current/next-agent-handoff.md`, `docs/current/technical-contracts.md`, and
 > `docs/current/backend-workspace-contract-log.md` first. Replace the assumption
@@ -135,7 +140,9 @@ is implemented, fallback, unavailable or unverified.
 > complete browser live 3D, post-edit sensor generation, private runtime acceptance,
 > CP1/CP3/CP4/CP5 engineering
 > closure, and CP6 paper evidence. The bounded live-session service and browser
-> state contract already exist partially. Do not stream screenshots as the editor
+> state contract already exist partially. Add the separate nuScenes devkit-style
+> `LIDAR_TOP` `nsweeps=5` map-underlay evidence view; do not replace the authoring
+> Top-down view. Do not stream screenshots as the editor
 > path or claim transform data is an esmini image. Preserve fail-closed behavior,
 > private artifacts, canonical schemas, provisional metric status and the CARLA
 > post-MVP boundary. Add focused tests and update status/evidence docs. Run the docs

@@ -87,23 +87,29 @@ silently reuse nuScenes-specific assumptions.
 - Variant sensor status is explicit through `workspace-variant-sensor-v1`: post-edit frames remain `unsupported` until generated artifacts exist, while a recorded parent sweep is reported separately with provenance. `workspace-pov-image-v1` serves only real private esmini capture artifacts; transform-only internal POV remains distinct and is never mislabeled as an image.
 - The approved next simulator architecture is a native, bounded `esminiLib` live-session adapter with WebSocket-friendly state/control messages and a browser-native Three.js/PlayCanvas renderer. The existing subprocess/image-capture path remains for replay, validation and evidence; it is not the primary live 3D interaction path. Full esmini WebAssembly, Unity WebGL and WebRTC remote rendering are deferred alternatives.
 - `esmini-live-session-v1` is now implemented as a bounded optional native-binding service with XOSC/XODR confinement and SHA-256 identity, lifecycle/control/camera validation, REST commands and a WebSocket-friendly state stream. Upstream esmini v3.10.0 was cloned outside the repository, host v3.9 and v3.10 shared-library load/step smokes pass, and Compose container load/step returned four named private scenario objects at `t=0.05s`. Browser camera state is separate from the native viewer. No kinematic or screenshot fallback is claimed as esmini state.
+- Native reset now reloads the same confined XOSC/XODR pair because the public esminiLib ABI has no stable reset symbol. Native control remains explicitly unavailable with `esminiLib_control_abi_unavailable`; camera commands remain browser-renderer state.
+- `POST /api/esmini/live/scenario-pairs` safely materializes a private generated XOSC/XODR pair from an existing scenario artifact and creates its bounded live session. Pair directories use a hashed scenario key and are served only through the existing confined artifact route.
+- The remaining CP1/CP3/CP4/CP5 closure items are still owner decisions: CP1 semantic policy and baseline interpretation, CP3 approved index/scientific policy, CP4 final gate policy, and CP5 release sign-off. CP6 research questions and paper evidence are likewise owner-required. Existing diagnostics and metrics remain provisional.
 - Compose now exposes `ESMINILIB_PATH` alongside `ESMINI_BIN` and `ESMINI_DAT2CSV`; the mounted `/opt/esmini` tree must include the executable, shared library, catalogs/models and compatible runtime assets.
 - The browser POV surface includes a native-state renderer path that consumes timestamped live objects when a live session is available and labels it separately from internal transform preview and `workspace-pov-image-v1` artifacts. Frontend API coverage keeps the live-state contract separate from image-frame requests; full browser session walkthrough remains open because the UI does not fabricate a session without an exposed artifact pair. CARLA remains post-MVP and variant post-edit sensor frames remain unsupported.
+- The add-view flow is wired for up to four panes with Top-down, 3rd-person POV, In-car POV and LiDAR 3D types; close, make-main, maximize/restore, reset-layout and responsive arrangements are covered. The current default Top-down is the authoring/map/trajectory view. The approved nuScenes devkit-style `LIDAR_TOP` multi-sweep evidence view (`nsweeps=5`, map underlay, ego pose/calibration and CAN telemetry) is a separate next view mode, not a replacement for authoring Top-down.
 - ADE/FDE scientific thresholds are not finalized.
 
 ## Remaining Work Order
 
 The Wave 3A backend, Workspace authoring slice and Phase 2 devkit contracts are
-implemented and verified locally. Remaining implementation order is tracks 1-6:
-native `esminiLib` runtime proof; browser-native live 3D renderer/state transport;
-post-edit sensor/render frame generation or explicit unavailable boundaries; private
-runtime/browser acceptance; CP1/CP3/CP4/CP5 engineering closure; and CP6
-paper/evidence closure. Esmini image capture remains a replay and evidence path,
-not the live editor path. CARLA same-XOSC remains separate and post-MVP.
+implemented and verified locally. Remaining implementation order is: the separate
+nuScenes `LIDAR_TOP` multi-sweep evidence view; full browser live-session
+acceptance; post-edit sensor/render frame generation or explicit unavailable
+boundaries; private runtime/browser acceptance; CP1/CP3/CP4/CP5 engineering
+closure; and CP6 paper/evidence closure. Esmini image capture remains a replay and
+evidence path, not the live editor path. CARLA same-XOSC remains separate and
+post-MVP.
 
 ```text
 Native esminiLib live-session adapter and state/control contract
   -> browser-native Three.js/PlayCanvas live renderer
+  -> separate nuScenes LIDAR_TOP nsweeps=5 evidence view with map underlay
   -> post-edit camera/LiDAR/radar frames or explicit unsupported contracts
   -> complete private runtime/browser acceptance
   -> CP1/CP3/CP4/CP5 engineering closure
