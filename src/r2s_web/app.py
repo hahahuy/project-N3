@@ -41,6 +41,7 @@ from .schemas import (
     TrajectoryState,
     SimulatorCapabilityView,
     POVFrameView,
+    POVImageFrameView,
     ActorTimelineView,
     GateTimelineView,
     RecipeDocumentView,
@@ -51,6 +52,7 @@ from .schemas import (
     VariantLineageView,
     EvidenceLayersView,
     CompareView,
+    VariantSensorStatusView,
 )
 from .actor_timeline import actor_timeline
 from .compare import compare_payload
@@ -59,6 +61,7 @@ from .gate_timeline import gate_timeline
 from .lineage import variant_lineage
 from .recipe import RecipeStore
 from .source_scenes import SourceSceneAdapter
+from .sensor_status import variant_sensor_status
 from .native_map import NativeMapService
 from .lidar import LidarService
 from .frames import capability as frame_capability, frame as render_frame
@@ -480,6 +483,7 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
             ),
             metrics=metric_availability(record),
             evidence_layers=EvidenceLayersView(**layers_for(record)),
+            sensor_status=VariantSensorStatusView(**variant_sensor_status(record, lidar)),
             native_map=map_payload,
             gates=gate_timeline(record.scenario)["gates"],
             time_s=0.0,
@@ -662,6 +666,25 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
         except (KeyError, ValueError) as error:
             raise HTTPException(status_code=404, detail=str(error)) from error
         return POVFrameView(**payload)
+
+    @app.get(
+        "/api/workspace/scenarios/{scenario_id}/image-frames/{mode}",
+        response_model=POVImageFrameView,
+    )
+    def workspace_image_frame(
+        scenario_id: str, mode: str, time_s: float = 0.0
+    ) -> POVImageFrameView:
+        if mode not in {"third-person", "in-car"}:
+            raise HTTPException(status_code=422, detail="Unsupported POV mode.")
+        record = record_for(scenario_id)
+        return POVImageFrameView(**esmini.image_frame(record, mode=mode, time_s=time_s))
+
+    @app.get(
+        "/api/workspace/scenarios/{scenario_id}/sensor-status",
+        response_model=VariantSensorStatusView,
+    )
+    def workspace_sensor_status(scenario_id: str) -> VariantSensorStatusView:
+        return VariantSensorStatusView(**variant_sensor_status(record_for(scenario_id), lidar))
 
     @app.get("/api/scenarios/{scenario_id}/artifacts")
     def scenario_artifacts(scenario_id: str):

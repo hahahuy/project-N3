@@ -18,6 +18,7 @@ class WebSettings:
     esmini_bin: str | None
     esmini_dat2csv: str | None
     dataset_version: str = "v1.0-trainval"
+    esmini_capture_images: bool = False
 
     def __post_init__(self) -> None:
         if self.dataset_root is not None and self.dataset_version == "v1.0-trainval":
@@ -44,6 +45,7 @@ class WebSettings:
             dataset_root=dataset_root,
             esmini_bin=os.environ.get("ESMINI_BIN"),
             esmini_dat2csv=os.environ.get("ESMINI_DAT2CSV"),
+            esmini_capture_images=os.environ.get("ESMINI_CAPTURE_IMAGES", "0") == "1",
         dataset_version=os.environ.get(
             "NUSCENES_VERSION",
             _default_dataset_version(dataset_root),
@@ -89,6 +91,7 @@ class WebSettings:
             esmini_bin=self.esmini_bin,
             esmini_dat2csv=self.esmini_dat2csv,
             dataset_version=dataset_version or self.dataset_version,
+            esmini_capture_images=self.esmini_capture_images,
         )
 
 

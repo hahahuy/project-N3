@@ -133,6 +133,43 @@ class POVFrameView(BaseModel):
     provenance: dict[str, str]
 
 
+class POVImageFrameView(BaseModel):
+    """A real private esmini image artifact, or an explicit unavailable state."""
+
+    contract_version: Literal["workspace-pov-image-v1"]
+    scenario_id: str
+    mode: Literal["third-person", "in-car"]
+    status: Literal["rendered", "unavailable", "error"]
+    frame_id: str | None = None
+    timestamp_s: float | None = None
+    simulator: str
+    simulator_version: str | None = None
+    artifact: ArtifactLink | None = None
+    unavailable_reason: str | None = None
+    provenance: dict[str, str] = Field(default_factory=dict)
+
+
+class ParentSweepStatusView(BaseModel):
+    available: bool
+    scenario_id: str | None = None
+    sample_data_token: str | None = None
+    timestamp_us: int | None = None
+    source: str
+    unavailable_reason: str | None = None
+
+
+class VariantSensorStatusView(BaseModel):
+    contract_version: Literal["workspace-variant-sensor-v1"]
+    scenario_id: str
+    artifact_type: Literal["baseline", "variant"]
+    status: Literal["available", "unavailable", "unsupported"]
+    post_edit_frames: AvailabilityView
+    parent_sweep: ParentSweepStatusView
+    unavailable_reason: str | None = None
+    provenance: dict[str, str] = Field(default_factory=dict)
+    artifact_visibility: str = "local_private"
+
+
 class WorkspaceDocumentView(BaseModel):
     document_name: str
     branch: str
@@ -186,6 +223,7 @@ class ScenarioViewPayload(BaseModel):
     layers: ScenarioLayerView
     metrics: MetricAvailabilityView
     evidence_layers: "EvidenceLayersView | None" = None
+    sensor_status: VariantSensorStatusView | None = None
     gates: list["GateSegmentView"] = Field(default_factory=list)
     native_map: NativeMapView | None = None
     time_s: float = 0.0

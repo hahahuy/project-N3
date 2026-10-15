@@ -411,6 +411,19 @@ The browser may render these transforms as a POV scene only when the capability
 block is available. esmini-rendered image frames and CARLA same-XOSC remain
 separate capabilities; CARLA remains post-MVP.
 
+### POV image artifact boundary
+
+`workspace-pov-image-v1` is separate from `simulator-frame-v1`. The image route
+returns `rendered` only when a private esmini capture manifest names an existing
+image artifact, mode, timestamp and simulator provenance. If no real capture
+exists it returns `unavailable` with `esmini_image_capture_artifact_unavailable`.
+The internal browser transform renderer is not an image artifact and must not be
+described as one. CARLA same-XOSC remains out of scope.
+
+`workspace-variant-sensor-v1` similarly reports post-edit sensor frames as
+`unsupported` until actual calibrated frame generation exists. A recorded parent
+LiDAR sweep is a separate fallback and never a generated variant frame.
+
 ## CP3 Replay and Gate Reporting
 
 - Variant and batch reports may include per-actor replay metrics and ADE/FDE

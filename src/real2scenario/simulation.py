@@ -56,6 +56,8 @@ class EsminiConfig:
     trace_converter: str | Path | tuple[str, ...] | None = None
     timeout_s: float = 30.0
     fixed_timestep_s: float = 0.05
+    capture_images: bool = False
+    camera_mode: str = "orbit"
 
     def __post_init__(self) -> None:
         for field_name, value in (
@@ -64,6 +66,8 @@ class EsminiConfig:
         ):
             if not isfinite(value) or value <= 0:
                 raise ValueError(f"EsminiConfig {field_name} must be finite and positive.")
+        if self.camera_mode not in {"orbit", "driver"}:
+            raise ValueError("EsminiConfig camera_mode must be 'orbit' or 'driver'.")
 
     def resolve_command(self) -> tuple[str, ...]:
         """Resolve an explicit executable or the caller-provided ``ESMINI_BIN``."""
@@ -134,12 +138,24 @@ def run_esmini(
         *executable_command,
         "--osc",
         str(scenario),
-        "--headless",
         "--fixed_timestep",
         format(config.fixed_timestep_s, ".12g"),
         "--record",
         str(recording_path),
     )
+    if config.capture_images:
+        command += (
+            "--capture_screen",
+            "--camera_mode",
+            config.camera_mode,
+            "--window",
+            "0",
+            "0",
+            "640",
+            "480",
+        )
+    else:
+        command += ("--headless",)
     tool_version = _tool_version(executable_command, config.timeout_s)
     try:
         completed = subprocess.run(

@@ -12,7 +12,9 @@ import {
   fetchLidarDescriptor,
   fetchNativeMapCapability,
   fetchPOVFrame,
+  fetchPOVImageFrame,
   fetchRecipe,
+  fetchVariantSensorStatus,
   fetchVariantLineage,
   lidarPayloadUrl,
   moveRecipeStep,
@@ -79,6 +81,14 @@ describe("API boundary", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ status: "rendered" }), { status: 200 }));
     await fetchPOVFrame("scene 1", "third-person", 1.25);
     expect(fetch).toHaveBeenCalledWith("/api/workspace/scenarios/scene%201/frames/third-person?time_s=1.25", undefined);
+  });
+
+  it("requests explicit image-frame and variant sensor-status contracts", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response(JSON.stringify({ status: "unavailable" }), { status: 200 }));
+    await fetchPOVImageFrame("scene 1", "third-person", 1.25);
+    await fetchVariantSensorStatus("scene 1");
+    expect(fetch).toHaveBeenNthCalledWith(1, "/api/workspace/scenarios/scene%201/image-frames/third-person?time_s=1.25", undefined);
+    expect(fetch).toHaveBeenNthCalledWith(2, "/api/workspace/scenarios/scene%201/sensor-status", undefined);
   });
 
   it("requests the actor timeline and gate timeline for the selected scenario", async () => {

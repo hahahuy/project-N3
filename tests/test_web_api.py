@@ -150,6 +150,33 @@ def test_workspace_internal_simulator_returns_timestamped_pov_frame(tmp_path: Pa
     assert payload["provenance"]["artifact_visibility"] == "local_private"
 
 
+def test_workspace_reports_variant_sensor_status_and_unavailable_image_artifact(
+    tmp_path: Path,
+) -> None:
+    client = _client(tmp_path)
+
+    sensor = client.get("/api/workspace/scenarios/synthetic-variant-001/sensor-status")
+    image = client.get(
+        "/api/workspace/scenarios/synthetic-variant-001/image-frames/third-person",
+        params={"time_s": 0.5},
+    )
+
+    assert sensor.status_code == 200
+    assert sensor.json()["contract_version"] == "workspace-variant-sensor-v1"
+    assert sensor.json()["status"] == "unsupported"
+    assert sensor.json()["post_edit_frames"] == {
+        "available": False,
+        "unavailable_reason": "post_edit_sensor_frames_not_generated",
+    }
+    assert sensor.json()["parent_sweep"]["available"] is False
+    assert sensor.json()["parent_sweep"]["unavailable_reason"] == "dataset_not_configured"
+    assert image.status_code == 200
+    assert image.json()["contract_version"] == "workspace-pov-image-v1"
+    assert image.json()["status"] == "unavailable"
+    assert image.json()["unavailable_reason"] == "esmini_image_capture_artifact_unavailable"
+    assert image.json()["artifact"] is None
+
+
 def test_native_map_capability_and_queries_fail_closed_without_dataset(tmp_path: Path) -> None:
     client = _client(tmp_path)
 

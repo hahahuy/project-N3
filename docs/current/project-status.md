@@ -83,6 +83,8 @@ silently reuse nuScenes-specific assumptions.
   in-process and non-destructive; replay metrics remain `PROVISIONAL`; no final
   scientific threshold or canonical recorded scenario was changed.
 - Constrained maneuver authoring now uses named recipe steps and explicit time ranges, with Tier 1 `kinematic-open-loop-v1` limits, violations, provenance and immutable-parent rollback markers visible in the local preview UI; CP1 remains `20/143 = 13.99%` provisional.
+- Browser acceptance now covers the real local recipe editor, Tier 1 steering/acceleration/braking/target-speed preview, rollback/undo state, synchronized Compare, timeline/gate text equivalents, evidence layers and keyboard/mobile-capable controls. The no-dataset runtime correctly reports LiDAR and esmini image artifacts unavailable.
+- Variant sensor status is explicit through `workspace-variant-sensor-v1`: post-edit frames remain `unsupported` until generated artifacts exist, while a recorded parent sweep is reported separately with provenance. `workspace-pov-image-v1` serves only real private esmini capture artifacts; transform-only internal POV remains distinct and is never mislabeled as an image.
 - ADE/FDE scientific thresholds are not finalized.
 
 ## Execution Order
@@ -331,32 +333,31 @@ contract, license boundary or scientific thresholds.
   `pose` optionally supplies matched ego speed with explicit finite-difference
   fallback, and polygon lane widths prefer a sampled cross-section median. The
   canonical State schema, CP1 baseline and scientific thresholds remain unchanged;
-  CAN acceleration/yaw-rate promotion and sensor/map APIs are later slices.
+  source-state, sensor/map APIs and Workspace wiring are implemented with
+  fail-closed runtime boundaries.
 
 ## Latest Verification
 
 ```text
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider
- 307 passed, 1 warning. The warning is the existing Starlette/httpx deprecation;
+ 308 passed, 1 warning. The warning is the existing Starlette/httpx deprecation;
 the cache provider is disabled because the default pytest cache path is not
 writable in this worktree.
 
 cd frontend && npm test && npm run build
- 36 tests passed across the API boundary and the Workspace keyboard, mobile and
+ 37 tests passed across the API boundary and the Workspace keyboard, mobile and
 accessibility suites; the production build succeeds.
 ```
 
 ## Next Safe Work
 
-1. Extend the actor timeline with a per-sample text equivalent for every
-   visualization and review the recorded CAN pedal channel where a source scene
-   declares recorded timestamps.
-2. Implement constrained steering/acceleration/braking/speed maneuver editing
-   with Tier 1 preview and explicit limits.
-3. Extend private decimated LiDAR payloads with variant sensor status only when
-   post-edit frame generation is actually implemented; keep parent-sweep and
-   unavailable states explicit.
-4. Add simulator-backed third-person/in-car POV capability and frame contracts.
+1. Review the recorded CAN pedal channel where a source scene declares recorded
+   timestamps and complete any remaining per-sample text-equivalent review.
+2. Run esmini image capture on a runtime with viewer/off-screen support and
+   publish a private capture manifest; the API remains fail-closed without it.
+3. Implement post-edit camera/LiDAR/radar generation only when real calibrated
+   frame generation is available; retain the parent-sweep and unavailable states.
+4. Add owner acceptance evidence for the completed Workspace flows.
 5. Add advisory nuScenes prediction evaluation without mixing metric roles.
 6. Resume CP1/CP3/CP4/CP5 closure tracks after source/UI contracts stabilize.
 7. Complete the CP6 paper evidence bundle from accepted, reproducible results.
