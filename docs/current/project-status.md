@@ -93,19 +93,20 @@ silently reuse nuScenes-specific assumptions.
 ## Remaining Work Order
 
 The Wave 3A backend, Workspace authoring slice and Phase 2 devkit contracts are
-implemented and verified locally. Remaining implementation order is: native
-`esminiLib` live-session adapter; browser-native live 3D renderer/state transport;
-post-edit sensor/render frame generation or explicit unavailable boundaries; then
-complete private runtime/browser acceptance. Esmini image capture remains a replay
-and evidence path, not the live editor path. Final acceptance evidence, owner-gated
-CP1/CP3/CP4/CP5 work and CARLA same-XOSC remain separate; CARLA is post-MVP.
+implemented and verified locally. Remaining implementation order is tracks 1-6:
+native `esminiLib` runtime proof; browser-native live 3D renderer/state transport;
+post-edit sensor/render frame generation or explicit unavailable boundaries; private
+runtime/browser acceptance; CP1/CP3/CP4/CP5 engineering closure; and CP6
+paper/evidence closure. Esmini image capture remains a replay and evidence path,
+not the live editor path. CARLA same-XOSC remains separate and post-MVP.
 
 ```text
 Native esminiLib live-session adapter and state/control contract
   -> browser-native Three.js/PlayCanvas live renderer
   -> post-edit camera/LiDAR/radar frames or explicit unsupported contracts
   -> complete private runtime/browser acceptance
-  -> CP1/CP3/CP4/CP5 owner closure and CP6 paper evidence
+  -> CP1/CP3/CP4/CP5 engineering closure
+  -> CP6 paper and evidence closure
   -> post-MVP CP2 same-XOSC CARLA execution
 ```
 

@@ -52,19 +52,24 @@ contract and browser native-state renderer are now implemented partially; native
 execution is unavailable in the current environment because no compatible
 versioned esminiLib binding is configured.
 
-## Remaining Work
+## Remaining Work: Tracks 1-6
 
-1. Complete the version-compatible native `esminiLib` binding and runtime proof for
-   `B-WORKSPACE-19`; the bounded service, validation, hashes, REST/WebSocket
-   transport and browser native-state path already exist.
-2. Complete browser live-state interaction and visual rendering against an actual
-   native session; do not use screenshot streaming as the editor path.
-3. Implement or formally scope post-edit camera/LiDAR/radar frame generation. Until
-   calibrated artifacts exist, keep variant sensor status `unsupported` and use only
-   the explicit parent-sweep fallback.
-4. Complete private runtime/browser acceptance with a complete dataset and configured
-   esmini capture runtime, retaining fail-closed unavailable states when needed.
-5. Continue owner-gated CP1/CP3/CP4/CP5/CP6 work. CARLA same-XOSC remains post-MVP.
+1. **Native runtime proof:** complete the version-compatible native `esminiLib`
+   binding and run proof for `B-WORKSPACE-19`. The bounded service, validation,
+   hashes, REST/WebSocket transport and browser native-state path already exist.
+2. **Browser live 3D:** complete live-state interaction and visual rendering against
+   an actual native session; do not use screenshot streaming as the editor path.
+3. **Post-edit sensors:** implement or formally scope camera/LiDAR/radar frame
+   generation. Until calibrated artifacts exist, keep variant sensor status
+   `unsupported` and use only the explicit parent-sweep fallback.
+4. **Runtime acceptance:** complete private dataset/browser acceptance with a
+   configured esmini capture runtime, retaining fail-closed unavailable states.
+5. **Engineering closure:** finish owner-gated CP1 semantic/map review, CP3
+   benchmark index/scientific policy, and CP4/CP5 evidence and release sign-off.
+6. **Paper closure:** complete CP6 research questions, final evidence bundle and
+   reproducibility narrative without promoting provisional metrics to final claims.
+
+CARLA same-XOSC remains explicitly post-MVP and is not part of tracks 1-6.
 
 ## Approved Live 3D Direction
 
@@ -117,20 +122,19 @@ is implemented, fallback, unavailable or unverified.
 
 ## Short Prompt For The Next Agent
 
-> Continue the remaining Real2Scenario work. Read
+> Work through remaining tracks 1-6 in
+> `docs/current/next-agent-handoff.md`. Read
 > `docs/current/next-agent-handoff.md`, `docs/current/technical-contracts.md`, and
 > `docs/current/backend-workspace-contract-log.md` first. Replace the assumption
 > that esmini is only an asynchronous image/replay subprocess with a bounded native
 > `esminiLib` session/service that can load an XOSC/XODR pair, step/pause/reset,
 > accept validated control/camera commands, and expose timestamped object state and
-> capability metadata over a WebSocket-friendly backend contract, then wire a
-> browser-native Three.js/PlayCanvas renderer for live state, camera and timeline
-> interaction. Do not stream screenshots as the primary editor path or claim
-> transform data is an esmini image. Keep variant post-edit sensor frames
-> unsupported until real calibrated artifacts exist. Preserve fail-closed
-> replay/image-capture routes, private artifact policy, canonical schemas and the
-> CARLA post-MVP boundary. Add focused backend/frontend/API tests, document runtime
-> limitations, and run the docs checker, Python tests, frontend tests and production
-> build. If local/private data or runtime support blocks a track, record the exact
-> unavailable reason and update `active-work.md`, `project-status.md` and
-> `evidence-index.md`.
+> Start with native esminiLib runtime proof, then complete browser live 3D, post-edit
+> sensor generation, private runtime acceptance, CP1/CP3/CP4/CP5 engineering
+> closure, and CP6 paper evidence. The bounded live-session service and browser
+> state contract already exist partially. Do not stream screenshots as the editor
+> path or claim transform data is an esmini image. Preserve fail-closed behavior,
+> private artifacts, canonical schemas, provisional metric status and the CARLA
+> post-MVP boundary. Add focused tests and update status/evidence docs. Run the docs
+> checker, Python tests, frontend tests and production build. If a track is blocked
+> by missing private data or runtime support, record the exact unavailable reason.
