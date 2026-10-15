@@ -1,0 +1,483 @@
+- generic [ref=f30e2]:
+  - generic [ref=f30e3]:
+    - link "Skip to content" [ref=f30e4] [cursor=pointer]:
+      - /url: "#start-of-content"
+    - banner [ref=f30e9]:
+      - heading "Navigation Menu" [level=2] [ref=f30e10]
+      - generic [ref=f30e11]:
+        - link "Homepage" [ref=f30e13] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f30e16]:
+          - navigation "Global" [ref=f30e17]:
+            - list [ref=f30e18]:
+              - listitem [ref=f30e19]:
+                - button "Platform" [ref=f30e21] [cursor=pointer]
+              - listitem [ref=f30e24]:
+                - button "Solutions" [ref=f30e26] [cursor=pointer]
+              - listitem [ref=f30e29]:
+                - button "Resources" [ref=f30e31] [cursor=pointer]
+              - listitem [ref=f30e34]:
+                - button "Open Source" [ref=f30e36] [cursor=pointer]
+              - listitem [ref=f30e39]:
+                - button "Enterprise" [ref=f30e41] [cursor=pointer]
+              - listitem [ref=f30e44]:
+                - link "Pricing" [ref=f30e45] [cursor=pointer]:
+                  - /url: https://github.com/pricing
+          - generic [ref=f30e46]:
+            - button "Search or jump to, type / to search" [ref=f30e48] [cursor=pointer]
+            - link "Sign in" [ref=f30e55] [cursor=pointer]:
+              - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DNoCrash%26type%3Drepositories
+            - link "Sign up" [ref=f30e58] [cursor=pointer]:
+              - /url: /signup?ref_cta=Sign+up&ref_loc=header+logged+out&ref_page=%2Fsearch&source=header
+            - button "Appearance settings" [ref=f30e61] [cursor=pointer]
+  - main [ref=f30e67]:
+    - generic [ref=f30e70]:
+      - heading "repositories Search Results · NoCrash" [level=1] [ref=f30e71]
+      - generic [ref=f30e74]:
+        - generic [ref=f30e75]:
+          - region [ref=f30e76]:
+            - heading "Filter by" [level=2] [ref=f30e77]
+            - list "Filter by" [ref=f30e82]:
+              - listitem [ref=f30e83]:
+                - list [ref=f30e84]:
+                  - listitem [ref=f30e85]:
+                    - link "Code (...) results" [ref=f30e86] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash&type=code
+                      - generic [ref=f30e87]:
+                        - generic [ref=f30e88]: Code
+                        - generic:
+                          - generic [aria-hidden]: ...
+                          - generic: (...)
+                          - generic: results
+                  - listitem [ref=f30e89]:
+                    - link "Repositories (42) results" [ref=f30e90] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash&type=repositories
+                      - generic [ref=f30e91]:
+                        - generic [ref=f30e92]: Repositories
+                        - generic:
+                          - generic [aria-hidden]: "42"
+                          - generic: (42)
+                          - generic: results
+                  - listitem [ref=f30e93]:
+                    - link "Issues (386) results" [ref=f30e94] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash&type=issues
+                      - generic [ref=f30e95]:
+                        - generic [ref=f30e96]: Issues
+                        - generic:
+                          - generic [aria-hidden]: "386"
+                          - generic: (386)
+                          - generic: results
+                  - listitem [ref=f30e97]:
+                    - link "Pull requests (726) results" [ref=f30e98] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash&type=pullrequests
+                      - generic [ref=f30e99]:
+                        - generic [ref=f30e100]: Pull requests
+                        - generic:
+                          - generic [aria-hidden]: "726"
+                          - generic: (726)
+                          - generic: results
+                  - listitem [ref=f30e101]:
+                    - link "Discussions (2) results" [ref=f30e102] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash&type=discussions
+                      - generic [ref=f30e103]:
+                        - generic [ref=f30e104]: Discussions
+                        - generic:
+                          - generic [aria-hidden]: "2"
+                          - generic: (2)
+                          - generic: results
+                  - listitem [ref=f30e105]:
+                    - link "Users (14) results" [ref=f30e106] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash&type=users
+                      - generic [ref=f30e107]:
+                        - generic [ref=f30e108]: Users
+                        - generic:
+                          - generic [aria-hidden]: "14"
+                          - generic: (14)
+                          - generic: results
+                  - listitem [ref=f30e109]:
+                    - button "More" [ref=f30e110] [cursor=pointer]
+              - listitem [aria-hidden] [ref=f30e113]
+              - listitem [ref=f30e114]:
+                - heading "Languages" [level=3] [ref=f30e116]
+                - list "Languages" [ref=f30e117]:
+                  - listitem [ref=f30e118]:
+                    - link "Java" [ref=f30e119] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash+language%3AJava&type=repositories
+                      - generic "Java" [ref=f30e123]
+                  - listitem [ref=f30e124]:
+                    - link "JavaScript" [ref=f30e125] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash+language%3AJavaScript&type=repositories
+                      - generic "JavaScript" [ref=f30e129]
+                  - listitem [ref=f30e130]:
+                    - link "C#" [ref=f30e131] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash+language%3AC%23&type=repositories
+                      - generic "C#" [ref=f30e135]
+                  - listitem [ref=f30e136]:
+                    - link "Objective-C" [ref=f30e137] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash+language%3AObjective-C&type=repositories
+                      - generic "Objective-C" [ref=f30e141]
+                  - listitem [ref=f30e142]:
+                    - link "C++" [ref=f30e143] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash+language%3AC%2B%2B&type=repositories
+                      - generic "C++" [ref=f30e147]
+                  - listitem [ref=f30e148]:
+                    - link "Kotlin" [ref=f30e149] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash+language%3AKotlin&type=repositories
+                      - generic "Kotlin" [ref=f30e153]
+                  - listitem [ref=f30e154]:
+                    - link "Python" [ref=f30e155] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash+language%3APython&type=repositories
+                      - generic "Python" [ref=f30e159]
+                  - listitem [ref=f30e160]:
+                    - link "Go" [ref=f30e161] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash+language%3AGo&type=repositories
+                      - generic "Go" [ref=f30e165]
+                  - listitem [ref=f30e166]:
+                    - link "Jupyter Notebook" [ref=f30e167] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash+language%3AJupyter+Notebook&type=repositories
+                      - generic "Jupyter Notebook" [ref=f30e171]
+                  - listitem [ref=f30e172]:
+                    - link "TypeScript" [ref=f30e173] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash+language%3ATypeScript&type=repositories
+                      - generic "TypeScript" [ref=f30e177]
+                  - listitem [ref=f30e178]:
+                    - button "More languages..." [ref=f30e179] [cursor=pointer]:
+                      - generic "More languages..." [ref=f30e182]
+                  - listitem [aria-hidden] [ref=f30e183]
+              - listitem [ref=f30e184]:
+                - heading "Advanced" [level=3] [ref=f30e186]
+                - list "Advanced" [ref=f30e187]:
+                  - listitem [ref=f30e188]:
+                    - button "Owner" [ref=f30e189] [cursor=pointer]:
+                      - generic "Owner" [ref=f30e193]
+                  - listitem [ref=f30e194]:
+                    - button "Size" [ref=f30e195] [cursor=pointer]:
+                      - generic "Size" [ref=f30e199]
+                  - listitem [ref=f30e200]:
+                    - button "Number of followers" [ref=f30e201] [cursor=pointer]:
+                      - generic "Number of followers" [ref=f30e205]
+                  - listitem [ref=f30e206]:
+                    - button "Number of forks" [ref=f30e207] [cursor=pointer]:
+                      - generic "Number of forks" [ref=f30e211]
+                  - listitem [ref=f30e212]:
+                    - button "Number of stars" [ref=f30e213] [cursor=pointer]:
+                      - generic "Number of stars" [ref=f30e217]
+                  - listitem [ref=f30e218]:
+                    - button "Date created" [ref=f30e219] [cursor=pointer]:
+                      - generic "Date created" [ref=f30e223]
+                  - listitem [ref=f30e224]:
+                    - button "Date pushed" [ref=f30e225] [cursor=pointer]:
+                      - generic "Date pushed" [ref=f30e229]
+                  - listitem [ref=f30e230]:
+                    - button "Topic" [ref=f30e231] [cursor=pointer]:
+                      - generic "Topic" [ref=f30e235]
+                  - listitem [ref=f30e236]:
+                    - button "License" [ref=f30e237] [cursor=pointer]:
+                      - generic "License" [ref=f30e241]
+                  - listitem [ref=f30e242]:
+                    - button "Archived" [ref=f30e243] [cursor=pointer]:
+                      - generic "Archived" [ref=f30e247]
+                  - listitem [ref=f30e248]:
+                    - link "Public" [ref=f30e249] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash+is%3Apublic&type=repositories
+                      - generic "Public" [ref=f30e253]
+                  - listitem [ref=f30e254]:
+                    - link "Private" [ref=f30e255] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash+is%3Aprivate&type=repositories
+                      - generic "Private" [ref=f30e259]
+              - listitem [aria-hidden] [ref=f30e260]
+              - listitem [ref=f30e261]:
+                - link "Advanced search" [ref=f30e262] [cursor=pointer]:
+                  - /url: /search/advanced
+          - slider "Draggable pane splitter" [ref=f30e266]
+        - generic [ref=f30e269]:
+          - generic [ref=f30e270]:
+            - generic [ref=f30e272]:
+              - generic [ref=f30e273]:
+                - generic [ref=f30e274]:
+                  - generic [ref=f30e275]: 42 results
+                  - generic [ref=f30e276]: (167 ms)
+                - heading "42 results" [active] [level=2] [ref=f30e277]
+              - generic [ref=f30e278]:
+                - 'button "Sort by: Best match" [ref=f30e280] [cursor=pointer]'
+                - button "Open column options" [ref=f30e284] [cursor=pointer]
+            - generic [ref=f30e289]:
+              - generic [ref=f30e291]:
+                - generic [ref=f30e292]:
+                  - heading "zarandya/megasync-nocrashhandler" [level=3] [ref=f30e293]:
+                    - link [ref=f30e297] [cursor=pointer]:
+                      - /url: /zarandya/megasync-nocrashhandler
+                      - generic [ref=f30e298]:
+                        - text: zarandya/megasync-
+                        - emphasis [ref=f30e299]: nocrashhandler
+                  - generic [ref=f30e300]: MEGAsync with the crash handler removed, allows building MEGAsync on aarch64 and other non-supported architectures
+                  - list [ref=f30e301]:
+                    - listitem [ref=f30e302]:
+                      - link "3 stars" [ref=f30e303] [cursor=pointer]:
+                        - /url: /zarandya/megasync-nocrashhandler/stargazers
+                        - generic [ref=f30e306]: "3"
+                    - generic [aria-hidden] [ref=f30e307]: ·
+                    - listitem [ref=f30e308]:
+                      - generic [ref=f30e309]:
+                        - text: Updated
+                        - generic "Aug 1, 2026, 2:57 AM GMT+7" [ref=f30e310]: on Aug 1
+                - link "Star" [ref=f30e313] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DNoCrash%26type%3Drepositories
+              - generic [ref=f30e317]:
+                - generic [ref=f30e318]:
+                  - heading "GaetanOff/NoCrashCo" [level=3] [ref=f30e319]:
+                    - link [ref=f30e323] [cursor=pointer]:
+                      - /url: /GaetanOff/NoCrashCo
+                      - generic [ref=f30e324]:
+                        - text: GaetanOff/
+                        - emphasis [ref=f30e325]: NoCrashCo
+                  - generic [ref=f30e326]: Security crash exploit
+                  - list [ref=f30e327]:
+                    - listitem [ref=f30e328]:
+                      - generic "Java language" [ref=f30e331]: Java
+                    - generic [aria-hidden] [ref=f30e332]: ·
+                    - listitem [ref=f30e333]:
+                      - link "6 stars" [ref=f30e334] [cursor=pointer]:
+                        - /url: /GaetanOff/NoCrashCo/stargazers
+                        - generic [ref=f30e337]: "6"
+                    - generic [aria-hidden] [ref=f30e338]: ·
+                    - listitem [ref=f30e339]:
+                      - generic [ref=f30e340]:
+                        - text: Updated
+                        - generic "Feb 8, 2021, 4:05 AM GMT+7" [ref=f30e341]: on Feb 8, 2021
+                - link "Star" [ref=f30e344] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DNoCrash%26type%3Drepositories
+              - generic [ref=f30e348]:
+                - generic [ref=f30e349]:
+                  - heading "CoderHann/NoCrash" [level=3] [ref=f30e350]:
+                    - link [ref=f30e354] [cursor=pointer]:
+                      - /url: /CoderHann/NoCrash
+                      - generic [ref=f30e355]:
+                        - text: CoderHann/
+                        - emphasis [ref=f30e356]: NoCrash
+                  - generic [ref=f30e357]: iOS应用避免crash的SDK
+                  - list [ref=f30e358]:
+                    - listitem [ref=f30e359]:
+                      - generic "Objective-C language" [ref=f30e362]: Objective-C
+                    - generic [aria-hidden] [ref=f30e363]: ·
+                    - listitem [ref=f30e364]:
+                      - link "3 stars" [ref=f30e365] [cursor=pointer]:
+                        - /url: /CoderHann/NoCrash/stargazers
+                        - generic [ref=f30e368]: "3"
+                    - generic [aria-hidden] [ref=f30e369]: ·
+                    - listitem [ref=f30e370]:
+                      - generic [ref=f30e371]:
+                        - text: Updated
+                        - generic "Apr 14, 2019, 9:49 AM GMT+7" [ref=f30e372]: on Apr 14, 2019
+                - link "Star" [ref=f30e375] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DNoCrash%26type%3Drepositories
+              - generic [ref=f30e379]:
+                - generic [ref=f30e380]:
+                  - heading "MartinSVK12/nocrashes Public archive" [level=3] [ref=f30e381]:
+                    - generic [ref=f30e382]:
+                      - link [ref=f30e385] [cursor=pointer]:
+                        - /url: /MartinSVK12/nocrashes
+                        - generic [ref=f30e386]:
+                          - text: MartinSVK12/
+                          - emphasis [ref=f30e387]: nocrashes
+                      - generic [ref=f30e388]: Public archive
+                  - generic [ref=f30e389]: Better crash handler for BTA!
+                  - generic [ref=f30e390]:
+                    - link "minecraft" [ref=f30e392] [cursor=pointer]:
+                      - /url: /topics/minecraft
+                    - link "minecraft-mod" [ref=f30e394] [cursor=pointer]:
+                      - /url: /topics/minecraft-mod
+                    - link "modloader" [ref=f30e396] [cursor=pointer]:
+                      - /url: /topics/modloader
+                    - link "minecraft-modding" [ref=f30e398] [cursor=pointer]:
+                      - /url: /topics/minecraft-modding
+                    - link "babric" [ref=f30e400] [cursor=pointer]:
+                      - /url: /topics/babric
+                  - list [ref=f30e401]:
+                    - listitem [ref=f30e402]:
+                      - generic "Java language" [ref=f30e405]: Java
+                    - generic [aria-hidden] [ref=f30e406]: ·
+                    - listitem [ref=f30e407]:
+                      - link "3 stars" [ref=f30e408] [cursor=pointer]:
+                        - /url: /MartinSVK12/nocrashes/stargazers
+                        - generic [ref=f30e411]: "3"
+                    - generic [aria-hidden] [ref=f30e412]: ·
+                    - listitem [ref=f30e413]:
+                      - generic [ref=f30e414]:
+                        - text: Updated
+                        - generic "Dec 16, 2023, 1:08 AM GMT+7" [ref=f30e415]: on Dec 16, 2023
+                - link "Star" [ref=f30e418] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DNoCrash%26type%3Drepositories
+              - generic [ref=f30e422]:
+                - generic [ref=f30e423]:
+                  - heading "muhammadarslanshahzad/nocrashout" [level=3] [ref=f30e424]:
+                    - link [ref=f30e428] [cursor=pointer]:
+                      - /url: /muhammadarslanshahzad/nocrashout
+                      - generic [ref=f30e429]:
+                        - text: muhammadarslanshahzad/
+                        - emphasis [ref=f30e430]: nocrashout
+                  - list [ref=f30e431]:
+                    - listitem [ref=f30e432]:
+                      - link "0 stars" [ref=f30e433] [cursor=pointer]:
+                        - /url: /muhammadarslanshahzad/nocrashout/stargazers
+                        - generic [ref=f30e436]: "0"
+                    - generic [aria-hidden] [ref=f30e437]: ·
+                    - listitem [ref=f30e438]:
+                      - generic [ref=f30e439]:
+                        - text: Updated
+                        - generic "Aug 12, 2026, 3:41 AM GMT+7" [ref=f30e440]: on Aug 12
+                - link "Star" [ref=f30e443] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DNoCrash%26type%3Drepositories
+              - generic [ref=f30e447]:
+                - generic [ref=f30e448]:
+                  - heading "fardinGG/nocrashairlines" [level=3] [ref=f30e449]:
+                    - link [ref=f30e453] [cursor=pointer]:
+                      - /url: /fardinGG/nocrashairlines
+                      - generic [ref=f30e454]:
+                        - text: fardinGG/
+                        - emphasis [ref=f30e455]: nocrashairlines
+                  - generic [ref=f30e457]:
+                    - emphasis [ref=f30e458]: NoCrash
+                    - text: Airlines is a flight ticket booking system that allows passengers to browse, book, and manage flight tickets efficiently through …
+                  - list [ref=f30e459]:
+                    - listitem [ref=f30e460]:
+                      - generic "Java language" [ref=f30e463]: Java
+                    - generic [aria-hidden] [ref=f30e464]: ·
+                    - listitem [ref=f30e465]:
+                      - link "0 stars" [ref=f30e466] [cursor=pointer]:
+                        - /url: /fardinGG/nocrashairlines/stargazers
+                        - generic [ref=f30e469]: "0"
+                    - generic [aria-hidden] [ref=f30e470]: ·
+                    - listitem [ref=f30e471]:
+                      - generic [ref=f30e472]:
+                        - text: Updated
+                        - generic "Jan 13, 2026, 8:23 AM GMT+7" [ref=f30e473]: on Jan 13
+                - link "Star" [ref=f30e476] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DNoCrash%26type%3Drepositories
+              - generic [ref=f30e480]:
+                - generic [ref=f30e481]:
+                  - heading "nocrashsoft/nocrashsoft" [level=3] [ref=f30e482]:
+                    - link [ref=f30e486] [cursor=pointer]:
+                      - /url: /nocrashsoft/nocrashsoft
+                      - generic [ref=f30e487]:
+                        - text: nocrashsoft/
+                        - emphasis [ref=f30e488]: nocrashsoft
+                  - generic [ref=f30e489]: Config files for my GitHub profile.
+                  - generic [ref=f30e490]:
+                    - link "config" [ref=f30e492] [cursor=pointer]:
+                      - /url: /topics/config
+                    - link "github-config" [ref=f30e494] [cursor=pointer]:
+                      - /url: /topics/github-config
+                  - list [ref=f30e495]:
+                    - listitem [ref=f30e496]:
+                      - link "0 stars" [ref=f30e497] [cursor=pointer]:
+                        - /url: /nocrashsoft/nocrashsoft/stargazers
+                        - generic [ref=f30e500]: "0"
+                    - generic [aria-hidden] [ref=f30e501]: ·
+                    - listitem [ref=f30e502]:
+                      - generic [ref=f30e503]:
+                        - text: Updated
+                        - generic "May 23, 2022, 12:33 PM GMT+7" [ref=f30e504]: on May 23, 2022
+                - link "Star" [ref=f30e507] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DNoCrash%26type%3Drepositories
+              - generic [ref=f30e511]:
+                - generic [ref=f30e512]:
+                  - heading "catengineering/nocrashdemo" [level=3] [ref=f30e513]:
+                    - link [ref=f30e517] [cursor=pointer]:
+                      - /url: /catengineering/nocrashdemo
+                      - generic [ref=f30e518]:
+                        - text: catengineering/
+                        - emphasis [ref=f30e519]: nocrashdemo
+                  - list [ref=f30e520]:
+                    - listitem [ref=f30e521]:
+                      - generic "Go language" [ref=f30e524]: Go
+                    - generic [aria-hidden] [ref=f30e525]: ·
+                    - listitem [ref=f30e526]:
+                      - link "0 stars" [ref=f30e527] [cursor=pointer]:
+                        - /url: /catengineering/nocrashdemo/stargazers
+                        - generic [ref=f30e530]: "0"
+                    - generic [aria-hidden] [ref=f30e531]: ·
+                    - listitem [ref=f30e532]:
+                      - generic [ref=f30e533]:
+                        - text: Updated
+                        - generic "Oct 16, 2019, 3:08 AM GMT+7" [ref=f30e534]: on Oct 16, 2019
+                - link "Star" [ref=f30e537] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DNoCrash%26type%3Drepositories
+              - generic [ref=f30e541]:
+                - generic [ref=f30e542]:
+                  - heading "dnvterror/nocrashplease" [level=3] [ref=f30e543]:
+                    - link [ref=f30e547] [cursor=pointer]:
+                      - /url: /dnvterror/nocrashplease
+                      - generic [ref=f30e548]:
+                        - text: dnvterror/
+                        - emphasis [ref=f30e549]: nocrashplease
+                  - list [ref=f30e550]:
+                    - listitem [ref=f30e551]:
+                      - link "0 stars" [ref=f30e552] [cursor=pointer]:
+                        - /url: /dnvterror/nocrashplease/stargazers
+                        - generic [ref=f30e555]: "0"
+                    - generic [aria-hidden] [ref=f30e556]: ·
+                    - listitem [ref=f30e557]:
+                      - generic [ref=f30e558]:
+                        - text: Updated
+                        - generic "Apr 16, 2025, 8:43 PM GMT+7" [ref=f30e559]: on Apr 16, 2025
+                - link "Star" [ref=f30e562] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DNoCrash%26type%3Drepositories
+              - generic [ref=f30e566]:
+                - generic [ref=f30e567]:
+                  - heading "JichinX/NoCrash" [level=3] [ref=f30e568]:
+                    - link [ref=f30e572] [cursor=pointer]:
+                      - /url: /JichinX/NoCrash
+                      - generic [ref=f30e573]:
+                        - text: JichinX/
+                        - emphasis [ref=f30e574]: NoCrash
+                  - generic [ref=f30e575]: 对APP崩溃信息的获取
+                  - list [ref=f30e576]:
+                    - listitem [ref=f30e577]:
+                      - generic "Kotlin language" [ref=f30e580]: Kotlin
+                    - generic [aria-hidden] [ref=f30e581]: ·
+                    - listitem [ref=f30e582]:
+                      - link "0 stars" [ref=f30e583] [cursor=pointer]:
+                        - /url: /JichinX/NoCrash/stargazers
+                        - generic [ref=f30e586]: "0"
+                    - generic [aria-hidden] [ref=f30e587]: ·
+                    - listitem [ref=f30e588]:
+                      - generic [ref=f30e589]:
+                        - text: Updated
+                        - generic "Jan 14, 2021, 1:36 PM GMT+7" [ref=f30e590]: on Jan 14, 2021
+                - link "Star" [ref=f30e593] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DNoCrash%26type%3Drepositories
+            - navigation "Pagination" [ref=f30e598]:
+              - generic [ref=f30e599]:
+                - generic [aria-hidden] [ref=f30e600]: Previous
+                - link "Page 1" [ref=f30e603] [cursor=pointer]:
+                  - /url: https://github.com/search?q=NoCrash&type=repositories&p=1
+                  - text: "1"
+                - link "Page 2" [ref=f30e604] [cursor=pointer]:
+                  - /url: https://github.com/search?q=NoCrash&type=repositories&p=2
+                  - text: "2"
+                - link "Page 3" [ref=f30e605] [cursor=pointer]:
+                  - /url: https://github.com/search?q=NoCrash&type=repositories&p=3
+                  - text: "3"
+                - link "Page 4" [ref=f30e606] [cursor=pointer]:
+                  - /url: https://github.com/search?q=NoCrash&type=repositories&p=4
+                  - text: "4"
+                - link "Page 5" [ref=f30e607] [cursor=pointer]:
+                  - /url: https://github.com/search?q=NoCrash&type=repositories&p=5
+                  - text: "5"
+                - link "Next Page" [ref=f30e608] [cursor=pointer]:
+                  - /url: https://github.com/search?q=NoCrash&type=repositories&p=2
+                  - text: Next
+          - generic [ref=f30e612]:
+            - generic [ref=f30e613]:
+              - img "Package icon" [ref=f30e615]
+              - heading "Sponsor open source projects you depend on" [level=2] [ref=f30e616]
+              - generic [ref=f30e617]: Contributors are working behind the scenes to make open source better for everyone—give them the help and recognition they deserve.
+              - link "Explore sponsorable projects" [ref=f30e618] [cursor=pointer]:
+                - /url: https://github.com/sponsors/explore
+            - generic [ref=f30e621]:
+              - generic [ref=f30e622]: ProTip!
+              - generic [ref=f30e625]:
+                - text: Press the
+                - generic [ref=f30e626]: /
+                - text: key to activate the search input again and adjust your query.

@@ -1,0 +1,5 @@
+[     547ms] [INFO] (Glean.core.Upload.PingUploadManager) Ping fcddb8ab-755e-4093-81a9-5246d02a031b successfully sent 200. @ https://developer.mozilla.org/static/client/4585.e30f706b333273cd.js:1
+[     876ms] [INFO] (Glean.core.Upload.PingUploadManager) Ping 88d72931-1c71-4c1d-bcde-095daefe3615 successfully sent 200. @ https://developer.mozilla.org/static/client/4585.e30f706b333273cd.js:1
+[    1247ms] [INFO] (Glean.core.Upload.PingUploadManager) Ping 3faaa181-ebe1-4d41-8a1d-d887369dbe0e successfully sent 200. @ https://developer.mozilla.org/static/client/4585.e30f706b333273cd.js:1
+[    1249ms] [INFO] (Glean.core.Upload.PingUploadManager) Ping 87a4101a-f400-4b45-9aee-b60b657c2eb2 successfully sent 200. @ https://developer.mozilla.org/static/client/4585.e30f706b333273cd.js:1
+[    2255ms] [INFO] (Glean.core.Upload.PingUploadManager) Ping 63aa3399-a727-473b-805a-c0876ade8d46 successfully sent 200. @ https://developer.mozilla.org/static/client/4585.e30f706b333273cd.js:1

@@ -1,0 +1,479 @@
+- generic [ref=f14e2]:
+  - generic [ref=f14e3]:
+    - link "Skip to content" [ref=f14e4] [cursor=pointer]:
+      - /url: "#start-of-content"
+    - banner [ref=f14e9]:
+      - heading "Navigation Menu" [level=2] [ref=f14e10]
+      - generic [ref=f14e11]:
+        - link "Homepage" [ref=f14e13] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f14e16]:
+          - navigation "Global" [ref=f14e17]:
+            - list [ref=f14e18]:
+              - listitem [ref=f14e19]:
+                - button "Platform" [ref=f14e21] [cursor=pointer]
+              - listitem [ref=f14e24]:
+                - button "Solutions" [ref=f14e26] [cursor=pointer]
+              - listitem [ref=f14e29]:
+                - button "Resources" [ref=f14e31] [cursor=pointer]
+              - listitem [ref=f14e34]:
+                - button "Open Source" [ref=f14e36] [cursor=pointer]
+              - listitem [ref=f14e39]:
+                - button "Enterprise" [ref=f14e41] [cursor=pointer]
+              - listitem [ref=f14e44]:
+                - link "Pricing" [ref=f14e45] [cursor=pointer]:
+                  - /url: https://github.com/pricing
+          - generic [ref=f14e46]:
+            - button "Search or jump to, type / to search" [ref=f14e48] [cursor=pointer]
+            - link "Sign in" [ref=f14e55] [cursor=pointer]:
+              - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DnuScenes%2BCARLA%26type%3Drepositories
+            - link "Sign up" [ref=f14e58] [cursor=pointer]:
+              - /url: /signup?ref_cta=Sign+up&ref_loc=header+logged+out&ref_page=%2Fsearch&source=header
+            - button "Appearance settings" [ref=f14e61] [cursor=pointer]
+  - main [ref=f14e67]:
+    - generic [ref=f14e70]:
+      - heading "repositories Search Results · nuScenes CARLA" [level=1] [ref=f14e71]
+      - generic [ref=f14e74]:
+        - generic [ref=f14e75]:
+          - region [ref=f14e76]:
+            - heading "Filter by" [level=2] [ref=f14e77]
+            - list "Filter by" [ref=f14e82]:
+              - listitem [ref=f14e83]:
+                - list [ref=f14e84]:
+                  - listitem [ref=f14e85]:
+                    - link "Code (...) results" [ref=f14e86] [cursor=pointer]:
+                      - /url: https://github.com/search?q=nuScenes+CARLA&type=code
+                      - generic [ref=f14e87]:
+                        - generic [ref=f14e88]: Code
+                        - generic:
+                          - generic [aria-hidden]: ...
+                          - generic: (...)
+                          - generic: results
+                  - listitem [ref=f14e89]:
+                    - link "Repositories (25) results" [ref=f14e90] [cursor=pointer]:
+                      - /url: https://github.com/search?q=nuScenes+CARLA&type=repositories
+                      - generic [ref=f14e91]:
+                        - generic [ref=f14e92]: Repositories
+                        - generic:
+                          - generic [aria-hidden]: "25"
+                          - generic: (25)
+                          - generic: results
+                  - listitem [ref=f14e93]:
+                    - link "Issues (249) results" [ref=f14e94] [cursor=pointer]:
+                      - /url: https://github.com/search?q=nuScenes+CARLA&type=issues
+                      - generic [ref=f14e95]:
+                        - generic [ref=f14e96]: Issues
+                        - generic:
+                          - generic [aria-hidden]: "249"
+                          - generic: (249)
+                          - generic: results
+                  - listitem [ref=f14e97]:
+                    - link "Pull requests (24) results" [ref=f14e98] [cursor=pointer]:
+                      - /url: https://github.com/search?q=nuScenes+CARLA&type=pullrequests
+                      - generic [ref=f14e99]:
+                        - generic [ref=f14e100]: Pull requests
+                        - generic:
+                          - generic [aria-hidden]: "24"
+                          - generic: (24)
+                          - generic: results
+                  - listitem [ref=f14e101]:
+                    - link "Discussions (2) results" [ref=f14e102] [cursor=pointer]:
+                      - /url: https://github.com/search?q=nuScenes+CARLA&type=discussions
+                      - generic [ref=f14e103]:
+                        - generic [ref=f14e104]: Discussions
+                        - generic:
+                          - generic [aria-hidden]: "2"
+                          - generic: (2)
+                          - generic: results
+                  - listitem [ref=f14e105]:
+                    - link "Users (0) results" [ref=f14e106] [cursor=pointer]:
+                      - /url: https://github.com/search?q=nuScenes+CARLA&type=users
+                      - generic [ref=f14e107]:
+                        - generic [ref=f14e108]: Users
+                        - generic:
+                          - generic [aria-hidden]: "0"
+                          - generic: (0)
+                          - generic: results
+                  - listitem [ref=f14e109]:
+                    - button "More" [ref=f14e110] [cursor=pointer]
+              - listitem [aria-hidden] [ref=f14e113]
+              - listitem [ref=f14e114]:
+                - heading "Languages" [level=3] [ref=f14e116]
+                - list "Languages" [ref=f14e117]:
+                  - listitem [ref=f14e118]:
+                    - link "Python" [ref=f14e119] [cursor=pointer]:
+                      - /url: https://github.com/search?q=nuScenes+CARLA+language%3APython&type=repositories
+                      - generic "Python" [ref=f14e123]
+                  - listitem [ref=f14e124]:
+                    - link "Jupyter Notebook" [ref=f14e125] [cursor=pointer]:
+                      - /url: https://github.com/search?q=nuScenes+CARLA+language%3AJupyter+Notebook&type=repositories
+                      - generic "Jupyter Notebook" [ref=f14e129]
+                  - listitem [ref=f14e130]:
+                    - button "More languages..." [ref=f14e131] [cursor=pointer]:
+                      - generic "More languages..." [ref=f14e134]
+                  - listitem [aria-hidden] [ref=f14e135]
+              - listitem [ref=f14e136]:
+                - heading "Advanced" [level=3] [ref=f14e138]
+                - list "Advanced" [ref=f14e139]:
+                  - listitem [ref=f14e140]:
+                    - button "Owner" [ref=f14e141] [cursor=pointer]:
+                      - generic "Owner" [ref=f14e145]
+                  - listitem [ref=f14e146]:
+                    - button "Size" [ref=f14e147] [cursor=pointer]:
+                      - generic "Size" [ref=f14e151]
+                  - listitem [ref=f14e152]:
+                    - button "Number of followers" [ref=f14e153] [cursor=pointer]:
+                      - generic "Number of followers" [ref=f14e157]
+                  - listitem [ref=f14e158]:
+                    - button "Number of forks" [ref=f14e159] [cursor=pointer]:
+                      - generic "Number of forks" [ref=f14e163]
+                  - listitem [ref=f14e164]:
+                    - button "Number of stars" [ref=f14e165] [cursor=pointer]:
+                      - generic "Number of stars" [ref=f14e169]
+                  - listitem [ref=f14e170]:
+                    - button "Date created" [ref=f14e171] [cursor=pointer]:
+                      - generic "Date created" [ref=f14e175]
+                  - listitem [ref=f14e176]:
+                    - button "Date pushed" [ref=f14e177] [cursor=pointer]:
+                      - generic "Date pushed" [ref=f14e181]
+                  - listitem [ref=f14e182]:
+                    - button "Topic" [ref=f14e183] [cursor=pointer]:
+                      - generic "Topic" [ref=f14e187]
+                  - listitem [ref=f14e188]:
+                    - button "License" [ref=f14e189] [cursor=pointer]:
+                      - generic "License" [ref=f14e193]
+                  - listitem [ref=f14e194]:
+                    - button "Archived" [ref=f14e195] [cursor=pointer]:
+                      - generic "Archived" [ref=f14e199]
+                  - listitem [ref=f14e200]:
+                    - link "Public" [ref=f14e201] [cursor=pointer]:
+                      - /url: https://github.com/search?q=nuScenes+CARLA+is%3Apublic&type=repositories
+                      - generic "Public" [ref=f14e205]
+                  - listitem [ref=f14e206]:
+                    - link "Private" [ref=f14e207] [cursor=pointer]:
+                      - /url: https://github.com/search?q=nuScenes+CARLA+is%3Aprivate&type=repositories
+                      - generic "Private" [ref=f14e211]
+              - listitem [aria-hidden] [ref=f14e212]
+              - listitem [ref=f14e213]:
+                - link "Advanced search" [ref=f14e214] [cursor=pointer]:
+                  - /url: /search/advanced
+          - slider "Draggable pane splitter" [ref=f14e218]
+        - generic [ref=f14e221]:
+          - generic [ref=f14e222]:
+            - generic [ref=f14e224]:
+              - generic [ref=f14e225]:
+                - generic [ref=f14e226]:
+                  - generic [ref=f14e227]: 25 results
+                  - generic [ref=f14e228]: (181 ms)
+                - heading "25 results" [active] [level=2] [ref=f14e229]
+              - generic [ref=f14e230]:
+                - 'button "Sort by: Best match" [ref=f14e232] [cursor=pointer]'
+                - button "Open column options" [ref=f14e236] [cursor=pointer]
+            - generic [ref=f14e241]:
+              - generic [ref=f14e243]:
+                - generic [ref=f14e244]:
+                  - heading "cf206cd/carla_nuscenes" [level=3] [ref=f14e245]:
+                    - link [ref=f14e249] [cursor=pointer]:
+                      - /url: /cf206cd/carla_nuscenes
+                      - generic [ref=f14e250]:
+                        - text: cf206cd/
+                        - emphasis [ref=f14e251]: carla
+                        - text: _
+                        - emphasis [ref=f14e252]: nuscenes
+                  - list [ref=f14e253]:
+                    - listitem [ref=f14e254]:
+                      - generic "Python language" [ref=f14e257]: Python
+                    - generic [aria-hidden] [ref=f14e258]: ·
+                    - listitem [ref=f14e259]:
+                      - link "58 stars" [ref=f14e260] [cursor=pointer]:
+                        - /url: /cf206cd/carla_nuscenes/stargazers
+                        - generic [ref=f14e263]: "58"
+                    - generic [aria-hidden] [ref=f14e264]: ·
+                    - listitem [ref=f14e265]:
+                      - generic [ref=f14e266]:
+                        - text: Updated
+                        - generic "Jan 16, 2024, 10:09 AM GMT+7" [ref=f14e267]: on Jan 16, 2024
+                - link "Star" [ref=f14e270] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DnuScenes%2BCARLA%26type%3Drepositories
+              - generic [ref=f14e274]:
+                - generic [ref=f14e275]:
+                  - heading "michigan-traffic-lab/nuCarla" [level=3] [ref=f14e276]:
+                    - link [ref=f14e280] [cursor=pointer]:
+                      - /url: /michigan-traffic-lab/nuCarla
+                      - generic [ref=f14e281]:
+                        - text: michigan-traffic-lab/nu
+                        - emphasis [ref=f14e282]: Carla
+                  - generic [ref=f14e284]:
+                    - text: "This repo contains the code for paper \"nuCarla: A"
+                    - emphasis [ref=f14e285]: nuScenes
+                    - text: "-Style Bird’s-Eye View Perception Dataset for"
+                    - emphasis [ref=f14e286]: CARLA
+                    - text: Simulation"
+                  - list [ref=f14e287]:
+                    - listitem [ref=f14e288]:
+                      - generic "Python language" [ref=f14e291]: Python
+                    - generic [aria-hidden] [ref=f14e292]: ·
+                    - listitem [ref=f14e293]:
+                      - link "72 stars" [ref=f14e294] [cursor=pointer]:
+                        - /url: /michigan-traffic-lab/nuCarla/stargazers
+                        - generic [ref=f14e297]: "72"
+                    - generic [aria-hidden] [ref=f14e298]: ·
+                    - listitem [ref=f14e299]:
+                      - generic [ref=f14e300]:
+                        - text: Updated
+                        - generic "Jan 3, 2026, 5:54 AM GMT+7" [ref=f14e301]: on Jan 3
+                - link "Star" [ref=f14e304] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DnuScenes%2BCARLA%26type%3Drepositories
+              - generic [ref=f14e308]:
+                - generic [ref=f14e309]:
+                  - heading "Morphlng/Carla_nuScenes_BEV" [level=3] [ref=f14e310]:
+                    - link [ref=f14e314] [cursor=pointer]:
+                      - /url: /Morphlng/Carla_nuScenes_BEV
+                      - generic [ref=f14e315]:
+                        - text: Morphlng/
+                        - emphasis [ref=f14e316]: Carla
+                        - text: _
+                        - emphasis [ref=f14e317]: nuScenes
+                        - text: _BEV
+                  - generic [ref=f14e319]:
+                    - text: Generate
+                    - emphasis [ref=f14e320]: nuScenes
+                    - text: style birdeye-view image in
+                    - emphasis [ref=f14e321]: Carla
+                    - text: Simulator
+                  - list [ref=f14e322]:
+                    - listitem [ref=f14e323]:
+                      - generic "Python language" [ref=f14e326]: Python
+                    - generic [aria-hidden] [ref=f14e327]: ·
+                    - listitem [ref=f14e328]:
+                      - link "34 stars" [ref=f14e329] [cursor=pointer]:
+                        - /url: /Morphlng/Carla_nuScenes_BEV/stargazers
+                        - generic [ref=f14e332]: "34"
+                    - generic [aria-hidden] [ref=f14e333]: ·
+                    - listitem [ref=f14e334]:
+                      - generic [ref=f14e335]:
+                        - text: Updated
+                        - generic "Sep 5, 2023, 8:52 AM GMT+7" [ref=f14e336]: on Sep 5, 2023
+                - link "Star" [ref=f14e339] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DnuScenes%2BCARLA%26type%3Drepositories
+              - generic [ref=f14e343]:
+                - generic [ref=f14e344]:
+                  - heading "Jas000n/DataGenerationTool_Carla" [level=3] [ref=f14e345]:
+                    - link [ref=f14e349] [cursor=pointer]:
+                      - /url: /Jas000n/DataGenerationTool_Carla
+                      - generic [ref=f14e350]:
+                        - text: Jas000n/DataGenerationTool_
+                        - emphasis [ref=f14e351]: Carla
+                  - generic [ref=f14e353]:
+                    - text: A
+                    - emphasis [ref=f14e354]: CARLA
+                    - text: simulation environment using
+                    - emphasis [ref=f14e355]: nuScenes
+                    - text: statistics as a baseline, while allowing for flexible adjustments.
+                  - list [ref=f14e356]:
+                    - listitem [ref=f14e357]:
+                      - generic "Python language" [ref=f14e360]: Python
+                    - generic [aria-hidden] [ref=f14e361]: ·
+                    - listitem [ref=f14e362]:
+                      - link "9 stars" [ref=f14e363] [cursor=pointer]:
+                        - /url: /Jas000n/DataGenerationTool_Carla/stargazers
+                        - generic [ref=f14e366]: "9"
+                    - generic [aria-hidden] [ref=f14e367]: ·
+                    - listitem [ref=f14e368]:
+                      - generic [ref=f14e369]:
+                        - text: Updated
+                        - generic "Jan 5, 2026, 9:47 PM GMT+7" [ref=f14e370]: on Jan 5
+                - link "Star" [ref=f14e373] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DnuScenes%2BCARLA%26type%3Drepositories
+              - generic [ref=f14e377]:
+                - generic [ref=f14e378]:
+                  - heading "zhoujiawei3/Carla_Nuscenes_Pytorch3d" [level=3] [ref=f14e379]:
+                    - link [ref=f14e383] [cursor=pointer]:
+                      - /url: /zhoujiawei3/Carla_Nuscenes_Pytorch3d
+                      - generic [ref=f14e384]:
+                        - text: zhoujiawei3/
+                        - emphasis [ref=f14e385]: Carla
+                        - text: _
+                        - emphasis [ref=f14e386]: Nuscenes
+                        - text: _Pytorch3d
+                  - generic [ref=f14e388]:
+                    - text: Render the multi-view
+                    - emphasis [ref=f14e389]: NuScenes
+                    - text: dataset created in
+                    - emphasis [ref=f14e390]: Carla
+                    - text: exactly the same way in PyTorch3D and then perform vehicle replacement.
+                  - list [ref=f14e391]:
+                    - listitem [ref=f14e392]:
+                      - generic "Python language" [ref=f14e395]: Python
+                    - generic [aria-hidden] [ref=f14e396]: ·
+                    - listitem [ref=f14e397]:
+                      - link "10 stars" [ref=f14e398] [cursor=pointer]:
+                        - /url: /zhoujiawei3/Carla_Nuscenes_Pytorch3d/stargazers
+                        - generic [ref=f14e401]: "10"
+                    - generic [aria-hidden] [ref=f14e402]: ·
+                    - listitem [ref=f14e403]:
+                      - generic [ref=f14e404]:
+                        - text: Updated
+                        - generic "Jul 16, 2025, 9:44 AM GMT+7" [ref=f14e405]: on Jul 16, 2025
+                - link "Star" [ref=f14e408] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DnuScenes%2BCARLA%26type%3Drepositories
+              - generic [ref=f14e412]:
+                - generic [ref=f14e413]:
+                  - heading "zhoujiawei3/Carla_Nuscenes" [level=3] [ref=f14e414]:
+                    - link [ref=f14e418] [cursor=pointer]:
+                      - /url: /zhoujiawei3/Carla_Nuscenes
+                      - generic [ref=f14e419]:
+                        - text: zhoujiawei3/
+                        - emphasis [ref=f14e420]: Carla
+                        - text: _
+                        - emphasis [ref=f14e421]: Nuscenes
+                  - list [ref=f14e422]:
+                    - listitem [ref=f14e423]:
+                      - generic "Python language" [ref=f14e426]: Python
+                    - generic [aria-hidden] [ref=f14e427]: ·
+                    - listitem [ref=f14e428]:
+                      - link "5 stars" [ref=f14e429] [cursor=pointer]:
+                        - /url: /zhoujiawei3/Carla_Nuscenes/stargazers
+                        - generic [ref=f14e432]: "5"
+                    - generic [aria-hidden] [ref=f14e433]: ·
+                    - listitem [ref=f14e434]:
+                      - generic [ref=f14e435]:
+                        - text: Updated
+                        - generic "Nov 11, 2025, 8:46 PM GMT+7" [ref=f14e436]: on Nov 11, 2025
+                - link "Star" [ref=f14e439] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DnuScenes%2BCARLA%26type%3Drepositories
+              - generic [ref=f14e443]:
+                - generic [ref=f14e444]:
+                  - heading "DarkerSun6/compound_eye_carla_nuscenes" [level=3] [ref=f14e445]:
+                    - link [ref=f14e449] [cursor=pointer]:
+                      - /url: /DarkerSun6/compound_eye_carla_nuscenes
+                      - generic [ref=f14e450]:
+                        - text: DarkerSun6/compound_eye_
+                        - emphasis [ref=f14e451]: carla
+                        - text: _
+                        - emphasis [ref=f14e452]: nuscenes
+                  - generic [ref=f14e454]:
+                    - text: 一个
+                    - emphasis [ref=f14e455]: nuscenes
+                    - text: 格式的
+                    - emphasis [ref=f14e456]: carla
+                    - text: 虚拟仿真数据收集程序，用于收集复眼结构下的3D目标检测数据集 A
+                    - emphasis [ref=f14e457]: carla
+                    - text: virtual simulation data collection program in
+                    - emphasis [ref=f14e458]: nuscenes
+                    - text: format Used to collect 3D…
+                  - list [ref=f14e459]:
+                    - listitem [ref=f14e460]:
+                      - generic "Python language" [ref=f14e463]: Python
+                    - generic [aria-hidden] [ref=f14e464]: ·
+                    - listitem [ref=f14e465]:
+                      - link "4 stars" [ref=f14e466] [cursor=pointer]:
+                        - /url: /DarkerSun6/compound_eye_carla_nuscenes/stargazers
+                        - generic [ref=f14e469]: "4"
+                    - generic [aria-hidden] [ref=f14e470]: ·
+                    - listitem [ref=f14e471]:
+                      - generic [ref=f14e472]:
+                        - text: Updated
+                        - generic "Jul 7, 2025, 3:28 PM GMT+7" [ref=f14e473]: on Jul 7, 2025
+                - link "Star" [ref=f14e476] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DnuScenes%2BCARLA%26type%3Drepositories
+              - generic [ref=f14e480]:
+                - generic [ref=f14e481]:
+                  - heading "myamo333/carla_nuscenes" [level=3] [ref=f14e482]:
+                    - link [ref=f14e486] [cursor=pointer]:
+                      - /url: /myamo333/carla_nuscenes
+                      - generic [ref=f14e487]:
+                        - text: myamo333/
+                        - emphasis [ref=f14e488]: carla
+                        - text: _
+                        - emphasis [ref=f14e489]: nuscenes
+                  - list [ref=f14e490]:
+                    - listitem [ref=f14e491]:
+                      - generic "Jupyter Notebook language" [ref=f14e494]: Jupyter Notebook
+                    - generic [aria-hidden] [ref=f14e495]: ·
+                    - listitem [ref=f14e496]:
+                      - link "0 stars" [ref=f14e497] [cursor=pointer]:
+                        - /url: /myamo333/carla_nuscenes/stargazers
+                        - generic [ref=f14e500]: "0"
+                    - generic [aria-hidden] [ref=f14e501]: ·
+                    - listitem [ref=f14e502]:
+                      - generic [ref=f14e503]:
+                        - text: Updated
+                        - generic "Sep 15, 2025, 8:52 PM GMT+7" [ref=f14e504]: on Sep 15, 2025
+                - link "Star" [ref=f14e507] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DnuScenes%2BCARLA%26type%3Drepositories
+              - generic [ref=f14e511]:
+                - generic [ref=f14e512]:
+                  - heading "yejiida/nuscenes_CARLA" [level=3] [ref=f14e513]:
+                    - link [ref=f14e517] [cursor=pointer]:
+                      - /url: /yejiida/nuscenes_CARLA
+                      - generic [ref=f14e518]:
+                        - text: yejiida/
+                        - emphasis [ref=f14e519]: nuscenes
+                        - text: _
+                        - emphasis [ref=f14e520]: CARLA
+                  - list [ref=f14e521]:
+                    - listitem [ref=f14e522]:
+                      - link "0 stars" [ref=f14e523] [cursor=pointer]:
+                        - /url: /yejiida/nuscenes_CARLA/stargazers
+                        - generic [ref=f14e526]: "0"
+                    - generic [aria-hidden] [ref=f14e527]: ·
+                    - listitem [ref=f14e528]:
+                      - generic [ref=f14e529]:
+                        - text: Updated
+                        - generic "Aug 20, 2025, 6:45 AM GMT+7" [ref=f14e530]: on Aug 20, 2025
+                - link "Star" [ref=f14e533] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DnuScenes%2BCARLA%26type%3Drepositories
+              - generic [ref=f14e537]:
+                - generic [ref=f14e538]:
+                  - heading "teamadas2026-hash/carla_nuscenes" [level=3] [ref=f14e539]:
+                    - link [ref=f14e543] [cursor=pointer]:
+                      - /url: /teamadas2026-hash/carla_nuscenes
+                      - generic [ref=f14e544]:
+                        - text: teamadas2026-hash/
+                        - emphasis [ref=f14e545]: carla
+                        - text: _
+                        - emphasis [ref=f14e546]: nuscenes
+                  - list [ref=f14e547]:
+                    - listitem [ref=f14e548]:
+                      - generic "Python language" [ref=f14e551]: Python
+                    - generic [aria-hidden] [ref=f14e552]: ·
+                    - listitem [ref=f14e553]:
+                      - link "0 stars" [ref=f14e554] [cursor=pointer]:
+                        - /url: /teamadas2026-hash/carla_nuscenes/stargazers
+                        - generic [ref=f14e557]: "0"
+                    - generic [aria-hidden] [ref=f14e558]: ·
+                    - listitem [ref=f14e559]:
+                      - generic [ref=f14e560]:
+                        - text: Updated
+                        - generic "May 15, 2026, 4:08 AM GMT+7" [ref=f14e561]: on May 15
+                - link "Star" [ref=f14e564] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DnuScenes%2BCARLA%26type%3Drepositories
+            - navigation "Pagination" [ref=f14e569]:
+              - generic [ref=f14e570]:
+                - generic [aria-hidden] [ref=f14e571]: Previous
+                - link "Page 1" [ref=f14e574] [cursor=pointer]:
+                  - /url: https://github.com/search?q=nuScenes+CARLA&type=repositories&p=1
+                  - text: "1"
+                - link "Page 2" [ref=f14e575] [cursor=pointer]:
+                  - /url: https://github.com/search?q=nuScenes+CARLA&type=repositories&p=2
+                  - text: "2"
+                - link "Page 3" [ref=f14e576] [cursor=pointer]:
+                  - /url: https://github.com/search?q=nuScenes+CARLA&type=repositories&p=3
+                  - text: "3"
+                - link "Next Page" [ref=f14e577] [cursor=pointer]:
+                  - /url: https://github.com/search?q=nuScenes+CARLA&type=repositories&p=2
+                  - text: Next
+          - generic [ref=f14e581]:
+            - generic [ref=f14e582]:
+              - img "Package icon" [ref=f14e584]
+              - heading "Sponsor open source projects you depend on" [level=2] [ref=f14e585]
+              - generic [ref=f14e586]: Contributors are working behind the scenes to make open source better for everyone—give them the help and recognition they deserve.
+              - link "Explore sponsorable projects" [ref=f14e587] [cursor=pointer]:
+                - /url: https://github.com/sponsors/explore
+            - generic [ref=f14e590]:
+              - generic [ref=f14e591]: ProTip!
+              - generic [ref=f14e594]:
+                - text: Press the
+                - generic [ref=f14e595]: /
+                - text: key to activate the search input again and adjust your query.

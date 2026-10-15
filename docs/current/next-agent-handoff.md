@@ -1,13 +1,15 @@
 # Next Agent Handoff
 
-Status: `READY FOR IMPLEMENTATION`
-Primary next work: finish native runtime integration, sensor generation and acceptance tracks
+Status: `READY FOR ACCEPTANCE / OWNER REVIEW`
+Primary next work: execute private runtime acceptance and obtain the documented owner decisions
 
 ## Mission
 
-Use the available nuScenes release and official devkit to improve backend source
-measurements, native map access, sensor evidence and benchmark inputs. Start with
-the authoritative plan in `docs/current/nuscenes-devkit-makeover-handoff.md`.
+The approved backend and Workspace implementation is complete for the current
+contracts. Use the available private runtime and official devkit only to produce
+acceptance evidence; do not start another makeover or expand scope. The seven
+acceptance groups and their exact actions are in
+`docs/reports/tracks-1-6-disposition.md`.
 
 Do not restart the old CP1 semantic-alignment handoff, Plan B milestones or CARLA
 runtime work. Existing CP1/CP3/CP4/CP5 material is historical or parallel
@@ -52,32 +54,23 @@ renderer/sensor gaps, not redesign those contracts. The bounded live-session
   native execution is verified. Remaining gaps are capability acceptance, private
   capture/display support and owner-gated scientific/paper closure.
 
-## Remaining Work: Tracks 1-6
+## Remaining Work: Acceptance Tracks
 
-1. **Native runtime completion:** preserve the verified host/Compose load-step
-   smoke. Reset reloads the confined artifact pair; native control remains
-   explicitly unavailable because no stable public ABI is present. A private
-   scenario-pair endpoint exposes safe XOSC/XODR artifacts for browser sessions.
-2. **Browser live 3D:** retain the implemented private-pair creation and polling
-   flow; remaining acceptance is runtime evidence against a configured native session.
-3. **NuScenes evidence view:** maintain the separate `LIDAR_TOP` multi-sweep view using
-   devkit semantics equivalent to `render_sample_data(..., nsweeps=5,
-   underlay_map=True)`. Keep the current Top-down view as authoring/map/trajectory;
-   include calibration, ego pose, map, sweep offsets, decimation and CAN telemetry
-   provenance, and label historical sweep smearing honestly.
-4. **Post-edit sensors:** implement or formally scope camera/LiDAR/radar frame
-   generation. Until calibrated artifacts exist, keep variant sensor status
-   `unsupported` and use only the explicit parent-sweep fallback.
-5. **Devkit optimization:** follow `docs/current/nuscenes-devkit-optimization-decision.md`.
-   The cached `NuScenes` adapter, official multisweep/transform/map/CAN seams and
-   NumPy payload path are implemented provisionally; full private-dataset acceptance
-   remains open. Add SciPy only after measured need.
-6. **Runtime acceptance:** complete private dataset/browser acceptance with a
-   configured esmini capture runtime, retaining fail-closed unavailable states.
-7. **Engineering closure:** finish owner-gated CP1 semantic/map review, CP3
-   benchmark index/scientific policy, and CP4/CP5 evidence and release sign-off.
-8. **Paper closure:** complete CP6 research questions, final evidence bundle and
-   reproducibility narrative without promoting provisional metrics to final claims.
+1. **Private runtime/browser acceptance:** run scenario-pair creation, polling,
+   timeline synchronization, native rendering, step and reset against configured
+   private data, recording exact evidence or unavailable reasons.
+2. **Native control boundary:** determine whether a compatible public ABI exists;
+   otherwise accept `esminiLib_control_abi_unavailable` and label reset-by-reload.
+3. **Image capture:** test configured/off-screen capture; retain
+   `capture_viewer_unavailable` unless real image artifacts and a manifest exist.
+4. **Post-edit sensors:** obtain an owner scope decision; until calibrated frame
+   generation is real and verified, keep variant sensors `unsupported`.
+5. **CP1/CP3/CP4/CP5 closure:** obtain semantic, benchmark, gate and release
+   decisions while preserving the immutable CP1 `20/143 = 13.99%` baseline.
+6. **CP6 paper closure:** finalize research questions and evidence bundle without
+   promoting provisional engineering diagnostics to scientific claims.
+7. **UI scope decision:** keep Behavior, Validate and Replay explicitly disabled
+   and classified as deferred/unavailable unless a separate scope is approved.
 
 CARLA same-XOSC remains explicitly post-MVP and is not part of tracks 1-6.
 
@@ -126,29 +119,18 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/check_docs_consistency.py
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider
 ```
 
-Before handoff, update the makeover handoff, active work, project status and
-evidence index. Add frontend/API/browser tests and state exactly which capability
-is implemented, fallback, unavailable or unverified.
+Before handoff, update the active work, project status, evidence index and track
+disposition. State exactly which capability is implemented, fallback, unavailable
+or unverified. Do not claim completion from tests without runtime evidence and
+owner sign-off.
 
 ## Short Prompt For The Next Agent
 
-> Work through the remaining runtime, evidence-view and closure tracks in
-> `docs/current/next-agent-handoff.md`. Read
-> `docs/current/next-agent-handoff.md`, `docs/current/technical-contracts.md`, and
-> `docs/current/backend-workspace-contract-log.md` first. Replace the assumption
-> that esmini is only an asynchronous image/replay subprocess with a bounded native
-> `esminiLib` session/service that can load an XOSC/XODR pair, step/pause/reset,
-> accept validated control/camera commands, and expose timestamped object state and
-> Start with the verified host/Compose native load-step path: finish ABI-scoped
-> control/reset behavior and expose a safe scenario artifact-pair flow. Then
-> complete browser live 3D, post-edit sensor generation, private runtime acceptance,
-> CP1/CP3/CP4/CP5 engineering
-> closure, and CP6 paper evidence. The bounded live-session service and browser
-> state contract already exist partially. Add the separate nuScenes devkit-style
-> `LIDAR_TOP` `nsweeps=5` map-underlay evidence view; do not replace the authoring
-> Top-down view. Do not stream screenshots as the editor
-> path or claim transform data is an esmini image. Preserve fail-closed behavior,
-> private artifacts, canonical schemas, provisional metric status and the CARLA
-> post-MVP boundary. Add focused tests and update status/evidence docs. Run the docs
-> checker, Python tests, frontend tests and production build. If a track is blocked
-> by missing private data or runtime support, record the exact unavailable reason.
+> Execute the seven acceptance groups in
+> `docs/reports/tracks-1-6-disposition.md`, starting with the configured private
+> browser/runtime walkthrough. Do not redesign the bounded live-session service or
+> regenerate sensors without an owner-approved scope. Preserve the separate
+> recorded `LIDAR_TOP` evidence view, fail-closed image and variant-sensor states,
+> canonical schemas, provisional metric status and CARLA post-MVP boundary. Record
+> exact unavailable reasons, owner decisions and release evidence; passing tests
+> alone is not project completion.

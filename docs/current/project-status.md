@@ -352,44 +352,50 @@ contract, license boundary or scientific thresholds.
 
 ```text
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider
-  315 passed, 1 warning. The warning is the existing Starlette/httpx deprecation;
+  322 passed, 1 warning. The warning is the existing Starlette/httpx deprecation;
 the cache provider is disabled because the default pytest cache path is not
 writable in this worktree.
 
 cd frontend && npm test && npm run build
- 37 tests passed across the API boundary and the Workspace keyboard, mobile and
+  40 tests passed across the API boundary and the Workspace keyboard, mobile and
 accessibility suites; the production build succeeds.
 ```
 
+## Acceptance Readiness
+
+Overall readiness is `IMPLEMENTATION-COMPLETE / ACCEPTANCE-PROVISIONAL / NOT
+RELEASE-READY`. Seven active acceptance groups remain: private runtime/browser,
+native control boundary, image capture, post-edit sensor scope, CP1/CP3/CP4/CP5
+closure, CP6 paper evidence, and the Behavior/Validate/Replay UI scope decision.
+The owner, dependency, evidence and next-action matrix is in
+`docs/reports/tracks-1-6-disposition.md`.
+
+The current checkout proves the authoring workspace, timeline, recipe editing,
+rollback, Compare, recorded Sensor Evidence view, cached devkit seams, private
+LiDAR contracts, bounded native esmini load/step and browser native-state wiring.
+It does not prove final scientific acceptance, configured private browser runtime
+acceptance, real esmini image artifacts, post-edit sensor generation, owner
+decisions or release sign-off.
+
 ## Next Safe Work
 
-### Tracks 1-6 disposition
+### Acceptance tracks disposition
 
-- Track 1 native runtime proof: `HOST-AND-COMPOSE-SMOKE-VERIFIED`. Upstream
-  v3.10 release artifacts were cloned outside the repository, the v3.10 ctypes
-  ABI was wired, and both v3.10 and host v3.9 load/step smokes return two objects.
-  Compose exposes `ESMINILIB_PATH`, mounts `/opt/esmini`, and a container session
-  loaded/stepped a private XOSC/XODR pair with four named objects. Native control
-  and reset remain ABI-scoped unavailable; browser camera state is renderer-owned.
-- Track 2 browser live 3D: `IMPLEMENTED/NATIVE-API-VERIFIED/PROVISIONAL`. The browser
-  state renderer, capability/state API clients, private scenario-pair creation and
-  polling-backed timeline POV surface are wired and covered by frontend tests.
-- Track 3 post-edit sensors: `UNSUPPORTED-EXACT-REASON`. No calibrated post-edit
-  camera/LiDAR/radar generator or generated artifact manifest exists. Variant
-  status remains `unsupported` with `post_edit_sensor_frames_not_generated`; only
-  the explicit recorded parent-sweep fallback is allowed.
-- Track 4 private runtime acceptance: `PARTIAL/PROVISIONAL`. Private native
-  map/state/LiDAR and browser acceptance are recorded; Compose assets/configuration
-  are verified and native replay reaches esmini, but image capture fails closed
-  with `Viewer initialization failed` because the container has no usable display.
-- Track 5 engineering closure: `PARTIAL/PENDING-OWNER`. CP1 remains the immutable
-  `20/143 = 13.99%` provisional baseline; CP3 scene/index/scientific policy,
-  CP4 scientific gate policy and CP5 owner sign-off remain open. Working-tree
-  release verification passes, but committed-HEAD proof still depends on commit
-  and owner sign-off.
-- Track 6 paper closure: `OPEN/OWNER-REQUIRED`. Existing CP1/CP3/CP4/CP5
-  engineering evidence is inventory only; final research questions and final
-  scientific results are not approved, so no paper claim is promoted.
+- Track 1 private runtime/browser: `PROVISIONAL`; run the configured private
+  browser walkthrough and record exact evidence or unavailable reasons.
+- Track 2 native control boundary: `OWNER-REQUIRED`; retain
+  `esminiLib_control_abi_unavailable` unless a compatible public ABI is verified,
+  and label reset-by-reload as reload.
+- Track 3 image capture: `PROVISIONAL`; current container fails closed as
+  `capture_viewer_unavailable` and has no real image manifest.
+- Track 4 post-edit sensors: `DEFERRED`; no calibrated generator exists, so the
+  variant remains `unsupported` with explicit parent-sweep fallback only.
+- Track 5 CP1/CP3/CP4/CP5 closure: `OWNER-REQUIRED`; preserve CP1
+  `20/143 = 13.99%` and keep metrics and gates provisional.
+- Track 6 CP6 paper/evidence closure: `OWNER-REQUIRED`; research questions and
+  final evidence bundle are not approved.
+- Track 7 UI scope: `OWNER-REQUIRED`; Behavior, Validate and Replay are disabled
+  intentionally and must be classified as deferred/unavailable until decided.
 
 1. Review the recorded CAN pedal channel where a source scene declares recorded
    timestamps and complete any remaining per-sample text-equivalent review.

@@ -1079,7 +1079,7 @@ def test_settings_accept_dataset_root_from_extra_allowed_roots(
     (project / "scenarios").mkdir(parents=True)
     mounted = tmp_path / "mounted"
     (mounted / "v1.0-mini").mkdir(parents=True)
-    monkeypatch.setenv("R2S_EXTRA_DATA_ROOTS", str(mounted))
+    monkeypatch.setenv("PROJECT_N3_EXTRA_DATA_ROOTS", str(mounted))
     settings = WebSettings(
         project_root=project,
         artifact_root=project / "scenarios",

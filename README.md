@@ -119,7 +119,7 @@ synthetic smoke path.
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -e ".[dev,web]"
-uvicorn r2s_web.app:app --app-dir src --reload --port 8000
+uvicorn PROJECT_N3_WEB.app:app --app-dir src --reload --port 8000
 ```
 
 In a second terminal:

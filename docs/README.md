@@ -27,6 +27,15 @@ contracts, plans or assignments. Reports under `docs/reports/` record completed
 work and must not override current decisions. The active implementation plan is
 `docs/current/nuscenes-devkit-makeover-handoff.md`.
 
+Controlling documents for deployment state:
+
+- `docs/current/environment-environments.md` - development and product environments
+- `docs/current/demo-hardening-backlog.md` - public exposure hardening status
+- `docs/current/product-scene-exposure.md` - whether to expose all 850 scenes
+- `docs/current/naming-migration.md` - `r2s` to `project-N3` rename record
+- `docs/current/mission-batch-concurrency-benchmark.md` - S-6 cap selection
+- `docs/current/local-artifact-bundles.md` - local/private evidence index
+
 ## Documentation Rules
 
 - Plan A in `MVP&ProjectSummary.md` is the project scope baseline.

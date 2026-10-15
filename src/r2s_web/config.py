@@ -30,9 +30,9 @@ class WebSettings:
 
     @classmethod
     def from_environment(cls, project_root: str | Path | None = None) -> "WebSettings":
-        root = Path(project_root or os.environ.get("R2S_PROJECT_ROOT", ".")).resolve()
-        artifact_root = _project_path(root, os.environ.get("R2S_ARTIFACT_ROOT", "scenarios"))
-        output_root = _project_path(root, os.environ.get("R2S_OUTPUT_ROOT", "reports"))
+        root = Path(project_root or os.environ.get("PROJECT_N3_ROOT", ".")).resolve()
+        artifact_root = _project_path(root, os.environ.get("PROJECT_N3_ARTIFACT_ROOT", "scenarios"))
+        output_root = _project_path(root, os.environ.get("PROJECT_N3_OUTPUT_ROOT", "reports"))
         dataset_value = os.environ.get("NUSCENES_ROOT")
         dataset_root = (
             Path(dataset_value).resolve()
@@ -114,12 +114,12 @@ def _is_within(candidate: Path, root: Path) -> bool:
 def _extra_allowed_roots() -> tuple[Path, ...]:
     """Return operator-configured roots that the local UI may select.
 
-    ``R2S_EXTRA_DATA_ROOTS`` is a ``os.pathsep`` separated list of directories
+    ``PROJECT_N3_EXTRA_DATA_ROOTS`` is a ``os.pathsep`` separated list of directories
     the operator is willing to expose, such as a mounted nuScenes release that
     lives outside the project tree. It is read from the environment only and is
     never populated from request data.
     """
-    configured = os.environ.get("R2S_EXTRA_DATA_ROOTS", "")
+    configured = os.environ.get("PROJECT_N3_EXTRA_DATA_ROOTS", "")
     roots = []
     for value in configured.split(os.pathsep):
         if value.strip():

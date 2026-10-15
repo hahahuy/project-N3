@@ -1,0 +1,142 @@
+- main [ref=f6e3]:
+  - generic [ref=f6e4]:
+    - generic [ref=f6e5]:
+      - paragraph [ref=f6e6]: R2S / LOCAL LAB
+      - heading "Scenario review, without the black box." [level=1] [ref=f6e7]
+      - paragraph [ref=f6e8]: A CPU-only browser surface for recorded trajectories and deterministic variation. Every score links back to a canonical artifact.
+    - generic [ref=f6e9]:
+      - text: LOCAL API
+      - strong [ref=f6e11]: Connected boundary
+      - generic [ref=f6e12]: "esmini: ESMINI_BIN is not configured. ESMINI_DAT2CSV is not configured."
+  - generic [ref=f6e146]: "'/tmp/opencode/r2s-reports/previews/synthetic-variant-001--preview-aec1815e5d0ee3c4/scenario.json' is not in the subpath of '/home/hahuy/github/project-N3'"
+  - generic [ref=f6e13]:
+    - button "LOCAL PATHS +" [ref=f6e14] [cursor=pointer]:
+      - text: LOCAL PATHS
+      - generic [ref=f6e15]: +
+    - generic [ref=f6e53]: "artifacts: ready · dataset: missing"
+  - generic [ref=f6e16]:
+    - complementary [ref=f6e17]:
+      - generic [ref=f6e18]:
+        - generic [ref=f6e19]: 01 / CATALOG
+        - generic [ref=f6e20]: 1 artifacts
+      - heading "Source scenarios" [level=2] [ref=f6e21]
+      - paragraph [ref=f6e22]: Validated artifacts discovered below the configured directory.
+      - button "synthetic-variant-001 variant · 1.00 s →" [ref=f6e54] [cursor=pointer]:
+        - generic [ref=f6e56]:
+          - strong [ref=f6e57]: synthetic-variant-001
+          - generic [ref=f6e58]: variant · 1.00 s
+        - generic [ref=f6e59]: →
+      - generic [ref=f6e25]:
+        - heading "nuScenes source scenes" [level=3] [ref=f6e26]
+        - paragraph [ref=f6e27]: Dataset metadata is not reachable.
+    - generic [ref=f6e28]:
+      - generic [ref=f6e29]:
+        - generic [ref=f6e30]: 02 / INSPECT
+        - generic [ref=f6e31]: local_road_aligned
+      - generic [ref=f6e60]:
+        - generic [ref=f6e61]:
+          - heading "synthetic-variant-001" [level=2] [ref=f6e62]
+          - paragraph [ref=f6e63]: Child of synthetic-baseline-001
+        - link "Download JSON ↗" [ref=f6e64] [cursor=pointer]:
+          - /url: /api/artifacts/tests/fixtures/synthetic-variant-artifact.json
+      - generic [ref=f6e65]:
+        - generic [ref=f6e66]:
+          - generic [ref=f6e67]: DURATION
+          - strong [ref=f6e68]: 1.00 s
+        - generic [ref=f6e69]:
+          - generic [ref=f6e70]: ACTORS
+          - strong [ref=f6e71]: "2"
+        - generic [ref=f6e72]:
+          - generic [ref=f6e73]: FRAME
+          - strong [ref=f6e74]: local_road_aligned
+        - generic [ref=f6e75]:
+          - generic [ref=f6e76]: DATASET
+          - strong [ref=f6e77]: synthetic-fixture
+      - generic [ref=f6e78]:
+        - heading "Recorded actors" [level=3] [ref=f6e79]
+        - button "ego vehicle · 2 states EDIT" [ref=f6e80] [cursor=pointer]:
+          - generic [ref=f6e81]:
+            - strong [ref=f6e82]: ego
+            - generic [ref=f6e83]: vehicle · 2 states
+          - generic [ref=f6e84]: EDIT
+        - button "lead vehicle · 2 states →" [ref=f6e85] [cursor=pointer]:
+          - generic [ref=f6e86]:
+            - strong [ref=f6e87]: lead
+            - generic [ref=f6e88]: vehicle · 2 states
+          - generic [ref=f6e89]: →
+      - generic [ref=f6e93]:
+        - generic [ref=f6e94]: recorded
+        - generic [ref=f6e96]: generated
+        - generic [ref=f6e98]: replayed
+        - generic [ref=f6e100]: t=0.00s · OpenDRIVE output uses a local template approximation; it is not lossless map conversion.
+      - generic [ref=f6e101]:
+        - generic [ref=f6e102]:
+          - generic [ref=f6e103]: TIMELINE
+          - generic [ref=f6e104]: 0.00 / 1.00 s
+        - slider [ref=f6e105]: "0"
+      - generic [ref=f6e106]:
+        - heading "Provenance record" [level=3] [ref=f6e107]
+        - generic [ref=f6e108]:
+          - generic [ref=f6e109]:
+            - generic [ref=f6e110]: coordinate transform version
+            - strong [ref=f6e111]: synthetic-transform-v1
+          - generic [ref=f6e112]:
+            - generic [ref=f6e113]: dataset name
+            - strong [ref=f6e114]: synthetic-fixture
+          - generic [ref=f6e115]:
+            - generic [ref=f6e116]: dataset version
+            - strong [ref=f6e117]: v1
+          - generic [ref=f6e118]:
+            - generic [ref=f6e119]: generator version
+            - strong [ref=f6e120]: real2scenario-test-v1
+          - generic [ref=f6e121]:
+            - generic [ref=f6e122]: map reconstruction mode
+            - strong [ref=f6e123]: local-template
+          - generic [ref=f6e124]:
+            - generic [ref=f6e125]: map reconstruction version
+            - strong [ref=f6e126]: highway-template-v1
+          - generic [ref=f6e127]:
+            - generic [ref=f6e128]: source scene token
+            - strong [ref=f6e129]: synthetic-scene-001
+          - generic [ref=f6e130]:
+            - generic [ref=f6e131]: source window
+            - strong [ref=f6e132]: 0.0s-1.0s
+    - complementary [ref=f6e33]:
+      - generic [ref=f6e34]:
+        - generic [ref=f6e35]: 03 / MOTION EDIT
+        - generic [ref=f6e36]: U0 PREVIEW
+      - heading "Actor variation" [level=2] [ref=f6e37]
+      - paragraph [ref=f6e38]: Edit one recorded actor, then preview a deterministic child without mutating the parent.
+      - generic [ref=f6e133]:
+        - heading "Edit ego" [level=3] [ref=f6e134]
+        - generic [ref=f6e135]:
+          - generic [ref=f6e136]:
+            - text: Speed multiplier ×
+            - spinbutton "Speed multiplier ×" [ref=f6e137]: "1"
+          - generic [ref=f6e138]:
+            - text: Heading offset rad
+            - spinbutton "Heading offset rad" [ref=f6e139]: "0"
+          - generic [ref=f6e140]:
+            - text: Initial gap m
+            - spinbutton "Initial gap m" [ref=f6e141]: "0"
+          - generic [ref=f6e142]:
+            - text: Timing offset s
+            - spinbutton "Timing offset s" [ref=f6e143]: "0"
+          - generic [ref=f6e144]:
+            - text: Seed deterministic
+            - spinbutton "Seed deterministic" [ref=f6e145]: "7"
+      - generic [ref=f6e39]:
+        - text: BEHAVIOR MODE
+        - strong [ref=f6e40]: UNSUPPORTED
+        - generic [ref=f6e41]: Executor is not implemented. No fallback is used.
+      - generic [ref=f6e42]:
+        - button "PREVIEW VARIANT" [ref=f6e43] [cursor=pointer]
+        - button "VALIDATE" [ref=f6e44] [cursor=pointer]
+        - button "RESET" [disabled] [ref=f6e45]
+        - button "EXPORT CONFIG" [disabled] [ref=f6e46]
+      - heading "Existing batch tools" [level=3] [ref=f6e48]
+      - generic [ref=f6e49]:
+        - checkbox "Replay with esmini" [ref=f6e50]
+        - text: Replay with esmini
+      - button "GENERATE BATCH" [ref=f6e51] [cursor=pointer]
+      - button "RUN SELECTED WITH ESMINI" [disabled] [ref=f6e52] [cursor=pointer]

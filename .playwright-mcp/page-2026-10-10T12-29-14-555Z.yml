@@ -1,0 +1,122 @@
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - paragraph [ref=e6]: R2S / LOCAL LAB
+      - heading "Scenario review, without the black box." [level=1] [ref=e7]
+      - paragraph [ref=e8]: A CPU-only browser surface for recorded trajectories and deterministic variation. Every score links back to a canonical artifact.
+    - generic [ref=e9]:
+      - text: LOCAL API
+      - strong [ref=e11]: Connected boundary
+      - generic [ref=e12]: "esmini: esmini GIT REV: v3.9.0-0-efbf7ee1 esmini GIT TAG: v3.9.0 esmini GIT BRANCH: tags/v3.9.0^0 esmini BUILD VERSION: 6434"
+  - generic [ref=e13]:
+    - button "LOCAL PATHS +" [ref=e14] [cursor=pointer]:
+      - text: LOCAL PATHS
+      - generic [ref=e15]: +
+    - generic [ref=e16]: "artifacts: ready · dataset: ready"
+  - generic [ref=e17]:
+    - complementary [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]: 01 / CATALOG
+        - generic [ref=e21]: 2 artifacts
+      - heading "Source scenarios" [level=2] [ref=e22]
+      - paragraph [ref=e23]: Validated artifacts discovered below the configured directory.
+      - generic [ref=e24]:
+        - button "nuscenes-cc8c0bf57f984915a77078b10eb33198-ca9a282c9e77460f8360f564131a8af5-ed5fc18c31904f96a8f0dbb99ff069c0 baseline · 19.15 s →" [ref=e25] [cursor=pointer]:
+          - generic [ref=e27]:
+            - strong [ref=e28]: nuscenes-cc8c0bf57f984915a77078b10eb33198-ca9a282c9e77460f8360f564131a8af5-ed5fc18c31904f96a8f0dbb99ff069c0
+            - generic [ref=e29]: baseline · 19.15 s
+          - generic [ref=e30]: →
+        - button "nuscenes-fcbccedd61424f1b85dcbf8f897f9754-3e8750f331d7499e9b5123e9eb70f2e2-281b92269fd648d4b52d06ac06ca6d65 baseline · 19.40 s →" [ref=e31] [cursor=pointer]:
+          - generic [ref=e33]:
+            - strong [ref=e34]: nuscenes-fcbccedd61424f1b85dcbf8f897f9754-3e8750f331d7499e9b5123e9eb70f2e2-281b92269fd648d4b52d06ac06ca6d65
+            - generic [ref=e35]: baseline · 19.40 s
+          - generic [ref=e36]: →
+      - generic [ref=e37]:
+        - heading "nuScenes source scenes" [level=3] [ref=e38]
+        - generic [ref=e39]:
+          - generic [ref=e40]:
+            - strong [ref=e41]: scene-0061
+            - generic [ref=e42]: 39 samples · 29 vehicles
+          - button "IMPORT" [ref=e43] [cursor=pointer]
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - strong [ref=e46]: scene-0103
+            - generic [ref=e47]: 40 samples · 67 vehicles
+          - button "IMPORT" [ref=e48] [cursor=pointer]
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - strong [ref=e51]: scene-0553
+            - generic [ref=e52]: 41 samples · 28 vehicles
+          - button "IMPORT" [ref=e53] [cursor=pointer]
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - strong [ref=e56]: scene-0655
+            - generic [ref=e57]: 41 samples · 110 vehicles
+          - button "IMPORT" [ref=e58] [cursor=pointer]
+        - generic [ref=e59]:
+          - generic [ref=e60]:
+            - strong [ref=e61]: scene-0757
+            - generic [ref=e62]: 41 samples · 22 vehicles
+          - button "IMPORT" [ref=e63] [cursor=pointer]
+        - generic [ref=e64]:
+          - generic [ref=e65]:
+            - strong [ref=e66]: scene-0796
+            - generic [ref=e67]: 40 samples · 39 vehicles
+          - button "IMPORT" [ref=e68] [cursor=pointer]
+        - generic [ref=e69]:
+          - generic [ref=e70]:
+            - strong [ref=e71]: scene-0916
+            - generic [ref=e72]: 41 samples · 71 vehicles
+          - button "IMPORT" [ref=e73] [cursor=pointer]
+        - generic [ref=e74]:
+          - generic [ref=e75]:
+            - strong [ref=e76]: scene-1077
+            - generic [ref=e77]: 41 samples · 59 vehicles
+          - button "IMPORT" [ref=e78] [cursor=pointer]
+        - generic [ref=e79]:
+          - generic [ref=e80]:
+            - strong [ref=e81]: scene-1094
+            - generic [ref=e82]: 40 samples · 30 vehicles
+          - button "IMPORT" [ref=e83] [cursor=pointer]
+        - generic [ref=e84]:
+          - generic [ref=e85]:
+            - strong [ref=e86]: scene-1100
+            - generic [ref=e87]: 40 samples · 21 vehicles
+          - button "IMPORT" [ref=e88] [cursor=pointer]
+    - generic [ref=e89]:
+      - generic [ref=e90]:
+        - generic [ref=e91]: 02 / INSPECT
+        - generic [ref=e92]: waiting for artifact
+      - generic [ref=e93]: Select an imported scenario to inspect trajectories, provenance, and replay metadata.
+    - complementary [ref=e94]:
+      - generic [ref=e95]:
+        - generic [ref=e96]: 03 / GENERATE
+        - generic [ref=e97]: DETERMINISTIC
+      - heading "Variation batch" [level=2] [ref=e98]
+      - paragraph [ref=e99]: Grid configuration in SI units. The API validates before it ranks.
+      - generic [ref=e100]:
+        - text: Seed
+        - spinbutton "Seed" [ref=e101]: "7"
+      - generic [ref=e102]:
+        - checkbox "Replay with esmini" [ref=e103]
+        - text: Replay with esmini
+      - generic [ref=e104]:
+        - generic [ref=e105]:
+          - text: Speed multiplier
+          - strong [ref=e106]:
+            - text: 0.9 — 1.0
+            - emphasis [ref=e107]: ×
+        - generic [ref=e110]:
+          - text: Initial gap delta
+          - strong [ref=e111]:
+            - text: "-2 — 0"
+            - emphasis [ref=e112]: m
+        - generic [ref=e115]:
+          - text: Timing offset
+          - strong [ref=e116]:
+            - text: 0 — 1.0
+            - emphasis [ref=e117]: s
+      - button "GENERATE 20 VARIANTS ↗" [disabled] [ref=e120]:
+        - text: GENERATE 20 VARIANTS
+        - generic [ref=e121]: ↗
+      - button "RUN SELECTED WITH ESMINI" [disabled] [ref=e122] [cursor=pointer]

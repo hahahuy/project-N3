@@ -1,0 +1,350 @@
+- generic [ref=f9e1]:
+  - generic [ref=f9e2]:
+    - generic [ref=f9e3]:
+      - generic:
+        - generic [ref=f9e4]:
+          - link "go to the homepage" [ref=f9e6] [cursor=pointer]:
+            - /url: https://docs.unity3d.com
+          - generic [ref=f9e8]:
+            - textbox "Search manual documentation" [ref=f9e9]:
+              - /placeholder: Search manual...
+            - button "Submit" [ref=f9e10] [cursor=pointer]
+          - list [ref=f9e11]:
+            - listitem [ref=f9e12]:
+              - link "Manual" [ref=f9e13] [cursor=pointer]:
+                - /url: index.html
+            - listitem [ref=f9e14]:
+              - link "Scripting API" [ref=f9e15] [cursor=pointer]:
+                - /url: ../ScriptReference/index.html
+        - list [ref=f9e18]:
+          - listitem [ref=f9e19]:
+            - link "unity.com" [ref=f9e20] [cursor=pointer]:
+              - /url: https://unity.com/?ampDeviceId=2a0ed08b-e39f-403f-bef3-29e1e3d94e70&ampSessionId=1792029532259&ampTimestamp=1792115932263
+    - generic [ref=f9e21]:
+      - generic:
+        - generic [ref=f9e22] [cursor=pointer]: "Version: Unity 6.6 (6000.6)"
+        - generic [ref=f9e25]:
+          - generic [ref=f9e26] [cursor=pointer]: "Language : English"
+          - generic [ref=f9e27] [cursor=pointer]
+  - generic [ref=f9e28]:
+    - generic [ref=f9e32] [cursor=pointer]:
+      - heading "Unity Manual" [level=2] [ref=f9e33]
+      - list [ref=f9e34]:
+        - listitem [ref=f9e35]:
+          - button [ref=f9e36]
+          - link "Unity 6.6 User Manual" [ref=f9e37]:
+            - /url: UnityManual.html
+        - listitem [ref=f9e38]:
+          - button [ref=f9e39]
+          - link "What's new in Unity" [ref=f9e40]:
+            - /url: WhatsNew.html
+        - listitem [ref=f9e41]:
+          - button [ref=f9e42]
+          - link "Get started" [ref=f9e43]:
+            - /url: get-started.html
+        - listitem [ref=f9e44]:
+          - button [ref=f9e45]
+          - link "Upgrade Unity" [ref=f9e46]:
+            - /url: UpgradeGuides.html
+        - listitem [ref=f9e47]:
+          - button [ref=f9e48]
+          - link "Unity Building Blocks" [ref=f9e49]:
+            - /url: building-blocks.html
+        - listitem [ref=f9e50]:
+          - button [ref=f9e51]
+          - link "Unity Editor interface" [ref=f9e52]:
+            - /url: unity-editor.html
+        - listitem [ref=f9e53]:
+          - button [ref=f9e54]
+          - link "Packages and package management" [ref=f9e55]:
+            - /url: PackagesList.html
+        - listitem [ref=f9e56]:
+          - button [ref=f9e57]
+          - link "Assets and media" [ref=f9e58]:
+            - /url: assets-and-media.html
+        - listitem [ref=f9e59]:
+          - button [ref=f9e60]
+          - link "2D game development" [ref=f9e61]:
+            - /url: Unity2D.html
+        - listitem [ref=f9e62]:
+          - button [ref=f9e63]
+          - link "Unity's AI" [ref=f9e64]:
+            - /url: unity-ai.html
+        - listitem [ref=f9e65]:
+          - button [ref=f9e66]
+          - link "XR" [ref=f9e67]:
+            - /url: XR.html
+        - listitem [ref=f9e68]:
+          - link "Multiplayer" [ref=f9e70]:
+            - /url: multiplayer.html
+        - listitem [ref=f9e71]:
+          - button [ref=f9e72]
+          - link "Platform development" [ref=f9e73]:
+            - /url: PlatformSpecific.html
+          - list [ref=f9e74]:
+            - listitem [ref=f9e75]:
+              - button [ref=f9e76]
+              - link "Cross-platform features and considerations" [ref=f9e77]:
+                - /url: cross-platform-features.html
+            - listitem [ref=f9e78]:
+              - button [ref=f9e79]
+              - link "Android" [ref=f9e80]:
+                - /url: android.html
+            - listitem [ref=f9e81]:
+              - button [ref=f9e82]
+              - link "Dedicated Server" [ref=f9e83]:
+                - /url: dedicated-server.html
+            - listitem [ref=f9e84]:
+              - button [ref=f9e85]
+              - link "Embedded systems" [ref=f9e86]:
+                - /url: embedded-systems.html
+            - listitem [ref=f9e87]:
+              - button [ref=f9e88]
+              - link "iOS" [ref=f9e89]:
+                - /url: iphone.html
+            - listitem [ref=f9e90]:
+              - button [ref=f9e91]
+              - link "Linux" [ref=f9e92]:
+                - /url: linux.html
+            - listitem [ref=f9e93]:
+              - button [ref=f9e94]
+              - link "macOS" [ref=f9e95]:
+                - /url: AppleMac.html
+            - listitem [ref=f9e96]:
+              - button [ref=f9e97]
+              - link "tvOS" [ref=f9e98]:
+                - /url: tvOS-introducing.html
+            - listitem [ref=f9e99]:
+              - button [ref=f9e100]
+              - link "Universal Windows Platform" [ref=f9e101]:
+                - /url: WindowsStore.html
+            - listitem [ref=f9e102]:
+              - link "visionOS" [ref=f9e104]:
+                - /url: visionOS.html
+            - listitem [ref=f9e105]:
+              - button [ref=f9e106]
+              - link "Web" [ref=f9e107]:
+                - /url: webgl.html
+              - list [ref=f9e108]:
+                - listitem [ref=f9e109]:
+                  - button [ref=f9e110]
+                  - link "Web introduction" [ref=f9e111]:
+                    - /url: webgl-intro.html
+                - listitem [ref=f9e112]:
+                  - button [ref=f9e113]
+                  - link "Web development" [ref=f9e114]:
+                    - /url: webgl-develop.html
+                - listitem [ref=f9e115]:
+                  - button [ref=f9e116]
+                  - link "Build and distribute a Web application" [ref=f9e117]:
+                    - /url: webgl-building-distribution.html
+            - listitem [ref=f9e118]:
+              - button [ref=f9e119]
+              - link "Windows" [ref=f9e120]:
+                - /url: Windows.html
+        - listitem [ref=f9e121]:
+          - button [ref=f9e122]
+          - link "GameObjects" [ref=f9e123]:
+            - /url: working-with-gameobjects.html
+        - listitem [ref=f9e124]:
+          - button [ref=f9e125]
+          - link "Scenes" [ref=f9e126]:
+            - /url: working-with-scenes.html
+        - listitem [ref=f9e127]:
+          - button [ref=f9e128]
+          - link "Cameras" [ref=f9e129]:
+            - /url: Cameras.html
+        - listitem [ref=f9e130]:
+          - button [ref=f9e131]
+          - link "World building" [ref=f9e132]:
+            - /url: CreatingEnvironments.html
+        - listitem [ref=f9e133]:
+          - button [ref=f9e134]
+          - link "Physics" [ref=f9e135]:
+            - /url: PhysicsSection.html
+        - listitem [ref=f9e136]:
+          - button [ref=f9e137]
+          - link "Input" [ref=f9e138]:
+            - /url: Input.html
+        - listitem [ref=f9e139]:
+          - button [ref=f9e140]
+          - link "UI systems" [ref=f9e141]:
+            - /url: UIToolkits.html
+        - listitem [ref=f9e142]:
+          - button [ref=f9e143]
+          - link "Accessibility" [ref=f9e144]:
+            - /url: accessibility/_index.html
+        - listitem [ref=f9e145]:
+          - button [ref=f9e146]
+          - link "Animation" [ref=f9e147]:
+            - /url: AnimationSection.html
+        - listitem [ref=f9e148]:
+          - button [ref=f9e149]
+          - link "Audio" [ref=f9e150]:
+            - /url: Audio.html
+        - listitem [ref=f9e151]:
+          - button [ref=f9e152]
+          - link "Video and cutscenes" [ref=f9e153]:
+            - /url: Video.html
+        - listitem [ref=f9e154]:
+          - button [ref=f9e155]
+          - link "Lighting" [ref=f9e156]:
+            - /url: LightingOverview.html
+        - listitem [ref=f9e157]:
+          - button [ref=f9e158]
+          - link "Materials and shaders" [ref=f9e159]:
+            - /url: materials-and-shaders.html
+        - listitem [ref=f9e160]:
+          - button [ref=f9e161]
+          - link "Visual effects" [ref=f9e162]:
+            - /url: visual-effects.html
+        - listitem [ref=f9e163]:
+          - button [ref=f9e164]
+          - link "Render pipelines" [ref=f9e165]:
+            - /url: render-pipelines.html
+        - listitem [ref=f9e166]:
+          - button [ref=f9e167]
+          - link "Post-processing" [ref=f9e168]:
+            - /url: post-processing-and-full-screen-effects.html
+        - listitem [ref=f9e169]:
+          - button [ref=f9e170]
+          - link "Gameplay programming" [ref=f9e171]:
+            - /url: scripting.html
+        - listitem [ref=f9e172]:
+          - button [ref=f9e173]
+          - link "Unity programming environment" [ref=f9e174]:
+            - /url: programming-environment.html
+        - listitem [ref=f9e175]:
+          - button [ref=f9e176]
+          - link "Extending the Unity Editor" [ref=f9e177]:
+            - /url: extending-the-editor.html
+        - listitem [ref=f9e178]:
+          - button [ref=f9e179]
+          - link "Optimization" [ref=f9e180]:
+            - /url: analysis.html
+        - listitem [ref=f9e181]:
+          - button [ref=f9e182]
+          - link "Building and publishing" [ref=f9e183]:
+            - /url: building-and-publishing.html
+        - listitem [ref=f9e184]:
+          - link "Unity Services" [ref=f9e186]:
+            - /url: UnityServices.html
+        - listitem [ref=f9e187]:
+          - button [ref=f9e188]
+          - link "Best practice guides" [ref=f9e189]:
+            - /url: best-practice-guides.html
+        - listitem [ref=f9e190]:
+          - link "Troubleshooting" [ref=f9e192]:
+            - /url: TroubleShooting.html
+        - listitem [ref=f9e193]:
+          - link "Glossary" [ref=f9e195]:
+            - /url: Glossary.html
+    - generic [ref=f9e198]:
+      - generic [ref=f9e199]:
+        - generic [ref=f9e200]:
+          - list:
+            - listitem [ref=f9e201]:
+              - link "Platform development" [ref=f9e202] [cursor=pointer]:
+                - /url: PlatformSpecific.html
+              - text: /
+            - listitem [ref=f9e203]: Web
+        - generic [ref=f9e205]:
+          - generic [ref=f9e206]:
+            - link "go to the previous page" [ref=f9e208] [cursor=pointer]:
+              - /url: visionOS.html
+            - generic [ref=f9e209]: visionOS
+          - generic [ref=f9e210]:
+            - link "go to the next page" [ref=f9e212] [cursor=pointer]:
+              - /url: webgl-intro.html
+            - generic [ref=f9e213]: Web introduction
+        - heading "Web" [level=1] [ref=f9e214]
+        - paragraph [ref=f9e215]:
+          - text: Unity provides support for developing games on the Web platform.
+          - link "WebGL" [ref=f9e216] [cursor=pointer]:
+            - /url: https://www.khronos.org/webgl/
+          - text: lets you publish real-time interactive 3D graphics into a browser.
+        - paragraph [ref=f9e217]: "For information on getting started with a Web application, refer to the following sections:"
+        - table [ref=f9e218]:
+          - rowgroup [ref=f9e222]:
+            - row [ref=f9e223]:
+              - columnheader [ref=f9e224]:
+                - strong [ref=f9e225]: Topic
+              - columnheader [ref=f9e226]:
+                - strong [ref=f9e227]: Description
+          - rowgroup [ref=f9e228]:
+            - row [ref=f9e229]:
+              - cell [ref=f9e230]:
+                - strong [ref=f9e231]:
+                  - link "Introduction" [ref=f9e232] [cursor=pointer]:
+                    - /url: webgl-intro.html
+              - cell "Introduction to Web development in Unity." [ref=f9e233]
+            - row [ref=f9e234]:
+              - cell [ref=f9e235]:
+                - strong [ref=f9e236]:
+                  - link "Web development" [ref=f9e237] [cursor=pointer]:
+                    - /url: webgl-develop.html
+              - cell "Web specific development information such as memory, input, and networking." [ref=f9e238]
+            - row [ref=f9e239]:
+              - cell [ref=f9e240]:
+                - strong [ref=f9e241]:
+                  - link "Build and distribute a Web application" [ref=f9e242] [cursor=pointer]:
+                    - /url: webgl-building-distribution.html
+              - cell "Information about building and testing your content for Web." [ref=f9e243]
+        - separator [ref=f9e244]
+        - generic [ref=f9e245]:
+          - generic [ref=f9e246]:
+            - paragraph [ref=f9e247]: "Did you find this page useful? Please give it a rating:"
+            - list [ref=f9e249]:
+              - button [ref=f9e250] [cursor=pointer]
+              - button [ref=f9e251] [cursor=pointer]
+              - button [ref=f9e252] [cursor=pointer]
+              - button [ref=f9e253] [cursor=pointer]
+              - button [ref=f9e254] [cursor=pointer]
+          - paragraph [ref=f9e256]:
+            - button "Report a problem on this page" [ref=f9e257] [cursor=pointer]
+          - text: • • • • • • •
+        - generic [ref=f9e258]:
+          - generic [ref=f9e259]:
+            - link "go to the previous page" [ref=f9e261] [cursor=pointer]:
+              - /url: visionOS.html
+            - generic [ref=f9e262]: visionOS
+          - generic [ref=f9e263]:
+            - link "go to the next page" [ref=f9e265] [cursor=pointer]:
+              - /url: webgl-intro.html
+            - generic [ref=f9e266]: Web introduction
+      - generic [ref=f9e268]:
+        - generic [ref=f9e269]: "Copyright ©2005-2026 Unity Technologies. All rights reserved. Built from job ID 77535509. Built on: 2026-10-14."
+        - generic [ref=f9e270]:
+          - link "Tutorials" [ref=f9e271] [cursor=pointer]:
+            - /url: https://learn.unity.com/?ampDeviceId=2a0ed08b-e39f-403f-bef3-29e1e3d94e70&ampSessionId=1792029532259&ampTimestamp=1792115932263
+          - link "Community Answers" [ref=f9e272] [cursor=pointer]:
+            - /url: https://answers.unity3d.com/?ampDeviceId=2a0ed08b-e39f-403f-bef3-29e1e3d94e70&ampSessionId=1792029532259&ampTimestamp=1792115932263
+          - link "Knowledge Base" [ref=f9e273] [cursor=pointer]:
+            - /url: https://support.unity3d.com/hc/en-us?ampDeviceId=2a0ed08b-e39f-403f-bef3-29e1e3d94e70&ampSessionId=1792029532259&ampTimestamp=1792115932263
+          - link "Forums" [ref=f9e274] [cursor=pointer]:
+            - /url: https://forum.unity3d.com/?ampDeviceId=2a0ed08b-e39f-403f-bef3-29e1e3d94e70&ampSessionId=1792029532259&ampTimestamp=1792115932263
+          - link "Asset Store" [ref=f9e275] [cursor=pointer]:
+            - /url: https://unity3d.com/asset-store?ampDeviceId=2a0ed08b-e39f-403f-bef3-29e1e3d94e70&ampSessionId=1792029532259&ampTimestamp=1792115932263
+          - link "Terms of use" [ref=f9e276] [cursor=pointer]:
+            - /url: https://docs.unity3d.com/Manual/TermsOfUse.html
+          - link "Legal" [ref=f9e277] [cursor=pointer]:
+            - /url: https://unity.com/legal?ampDeviceId=2a0ed08b-e39f-403f-bef3-29e1e3d94e70&ampSessionId=1792029532259&ampTimestamp=1792115932263
+          - link "Privacy Policy" [ref=f9e278] [cursor=pointer]:
+            - /url: https://unity.com/legal/privacy-policy?ampDeviceId=2a0ed08b-e39f-403f-bef3-29e1e3d94e70&ampSessionId=1792029532259&ampTimestamp=1792115932263
+          - link "Cookies" [ref=f9e279] [cursor=pointer]:
+            - /url: https://unity.com/legal/cookie-policy?ampDeviceId=2a0ed08b-e39f-403f-bef3-29e1e3d94e70&ampSessionId=1792029532259&ampTimestamp=1792115932263
+          - link "Documentation Terms of Use" [ref=f9e280] [cursor=pointer]:
+            - /url: https://unity.com/legal/docs-terms?ampDeviceId=2a0ed08b-e39f-403f-bef3-29e1e3d94e70&ampSessionId=1792029532259&ampTimestamp=1792115932263
+          - link "Do Not Sell or Share My Personal Information" [ref=f9e281] [cursor=pointer]:
+            - /url: https://unity.com/legal/do-not-sell-my-personal-information?ampDeviceId=2a0ed08b-e39f-403f-bef3-29e1e3d94e70&ampSessionId=1792029532259&ampTimestamp=1792115932263
+          - link "Your Privacy Choices (Cookie Settings)" [ref=f9e283] [cursor=pointer]:
+            - /url: javascript:void(0);
+  - generic "Privacy" [ref=f9e284]:
+    - dialog "Privacy" [ref=f9e285]:
+      - generic [ref=f9e287]:
+        - generic [ref=f9e288]: This website uses cookies or similar technologies to enhance user experience and to analyze performance and traffic on our website. We also share information about your use of our site with our social media, advertising, and analytics partners.
+        - generic [ref=f9e292]:
+          - button "Cookie Settings, Opens the preference center dialog" [active] [ref=f9e293] [cursor=pointer]: Cookie Settings
+          - button "Reject All" [ref=f9e294] [cursor=pointer]
+          - button "Accept All Cookies" [ref=f9e295] [cursor=pointer]
+      - button "Close" [ref=f9e297] [cursor=pointer]

@@ -2,10 +2,10 @@ FROM python:3.11-slim-bookworm
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    R2S_PROJECT_ROOT=/app \
-    R2S_ARTIFACT_ROOT=scenarios \
-    R2S_OUTPUT_ROOT=reports \
-    R2S_METADATA_CACHE=/var/cache/real2scenario
+    PROJECT_N3_ROOT=/app \
+    PROJECT_N3_ARTIFACT_ROOT=scenarios \
+    PROJECT_N3_OUTPUT_ROOT=reports \
+    PROJECT_N3_METADATA_CACHE=/var/cache/real2scenario
 
 WORKDIR /app
 COPY pyproject.toml README.md ./
@@ -27,7 +27,7 @@ RUN apt-get update \
 
 # Run as a non-root user, matching the production image. The project tree is
 # bind-mounted from the host, so compose.dev.yml overrides the uid with
-# $R2S_UID/$R2S_GID to match the host owner; the cache directory is created
+# $PROJECT_N3_UID/$PROJECT_N3_GID to match the host owner; the cache directory is created
 # world-writable so it stays usable under either uid. See
 # docs/guides/security-deployment.md S-4 and docs/guides/datastreaming.md D-4.
 RUN useradd --create-home --uid 10001 appuser \

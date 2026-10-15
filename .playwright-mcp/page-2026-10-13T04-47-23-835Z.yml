@@ -1,0 +1,99 @@
+- generic [ref=f13e2]:
+  - generic [ref=f13e3]:
+    - link "Skip to content" [ref=f13e4] [cursor=pointer]:
+      - /url: "#start-of-content"
+    - banner [ref=f13e9]:
+      - heading "Navigation Menu" [level=2] [ref=f13e10]
+      - generic [ref=f13e11]:
+        - link "Homepage" [ref=f13e13] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f13e16]:
+          - navigation "Global" [ref=f13e17]:
+            - list [ref=f13e18]:
+              - listitem [ref=f13e19]:
+                - button "Platform" [ref=f13e21] [cursor=pointer]
+              - listitem [ref=f13e24]:
+                - button "Solutions" [ref=f13e26] [cursor=pointer]
+              - listitem [ref=f13e29]:
+                - button "Resources" [ref=f13e31] [cursor=pointer]
+              - listitem [ref=f13e34]:
+                - button "Open Source" [ref=f13e36] [cursor=pointer]
+              - listitem [ref=f13e39]:
+                - button "Enterprise" [ref=f13e41] [cursor=pointer]
+              - listitem [ref=f13e44]:
+                - link "Pricing" [ref=f13e45] [cursor=pointer]:
+                  - /url: https://github.com/pricing
+          - generic [ref=f13e46]:
+            - button "Search or jump to, type / to search" [ref=f13e48] [cursor=pointer]
+            - link "Sign in" [ref=f13e55] [cursor=pointer]:
+              - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DnuScenes%2BCARLA%26type%3Dcode
+            - link "Sign up" [ref=f13e58] [cursor=pointer]:
+              - /url: /signup?ref_cta=Sign+up&ref_loc=header+logged+out&ref_page=%2Fsearch&source=header
+            - button "Appearance settings" [ref=f13e61] [cursor=pointer]
+  - main [ref=f13e67]:
+    - generic [ref=f13e70]:
+      - heading "code Search Results · nuScenes CARLA" [level=1] [ref=f13e71]
+      - generic [ref=f13e74]:
+        - generic [ref=f13e75]:
+          - generic [ref=f13e76]:
+            - heading "Filter by" [level=2] [ref=f13e77]
+            - list "Filter by" [ref=f13e82]:
+              - listitem [ref=f13e83]:
+                - list [ref=f13e84]:
+                  - listitem [ref=f13e85]:
+                    - link "Code (...) results" [ref=f13e86] [cursor=pointer]:
+                      - /url: https://github.com/search?q=nuScenes+CARLA&type=code
+                      - generic [ref=f13e87]:
+                        - generic [ref=f13e88]: Code
+                        - generic:
+                          - generic [aria-hidden]: ...
+                          - generic: (...)
+                          - generic: results
+                  - listitem [ref=f13e89]:
+                    - link "Repositories results" [ref=f13e90] [cursor=pointer]:
+                      - /url: https://github.com/search?q=nuScenes+CARLA&type=repositories
+                      - generic [ref=f13e91]:
+                        - generic [ref=f13e92]: Repositories
+                        - generic: results
+                  - listitem [ref=f13e93]:
+                    - link "Issues results" [ref=f13e94] [cursor=pointer]:
+                      - /url: https://github.com/search?q=nuScenes+CARLA&type=issues
+                      - generic [ref=f13e95]:
+                        - generic [ref=f13e96]: Issues
+                        - generic: results
+                  - listitem [ref=f13e97]:
+                    - link "Pull requests results" [ref=f13e98] [cursor=pointer]:
+                      - /url: https://github.com/search?q=nuScenes+CARLA&type=pullrequests
+                      - generic [ref=f13e99]:
+                        - generic [ref=f13e100]: Pull requests
+                        - generic: results
+                  - listitem [ref=f13e101]:
+                    - link "Discussions results" [ref=f13e102] [cursor=pointer]:
+                      - /url: https://github.com/search?q=nuScenes+CARLA&type=discussions
+                      - generic [ref=f13e103]:
+                        - generic [ref=f13e104]: Discussions
+                        - generic: results
+                  - listitem [ref=f13e105]:
+                    - link "Users results" [ref=f13e106] [cursor=pointer]:
+                      - /url: https://github.com/search?q=nuScenes+CARLA&type=users
+                      - generic [ref=f13e107]:
+                        - generic [ref=f13e108]: Users
+                        - generic: results
+                  - listitem [ref=f13e109]:
+                    - button "More" [ref=f13e110] [cursor=pointer]
+              - listitem [aria-hidden] [ref=f13e113]
+              - listitem [ref=f13e114]:
+                - link "Advanced search" [ref=f13e115] [cursor=pointer]:
+                  - /url: /search/advanced
+          - slider "Draggable pane splitter" [ref=f13e119]
+        - generic [ref=f13e123]:
+          - button "Open column options" [ref=f13e128] [cursor=pointer]
+          - generic [ref=f13e133]:
+            - img "Mona looking through a globe hologram for code" [ref=f13e135]
+            - generic [ref=f13e136]: Sign in to search code on GitHub
+            - generic [ref=f13e137]: Before you can access our code search functionality please sign in or create a free account.
+            - generic [ref=f13e138]:
+              - link "Sign in" [ref=f13e139] [cursor=pointer]:
+                - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DnuScenes%2BCARLA%26type%3Dcode
+              - link "Sign up" [ref=f13e142] [cursor=pointer]:
+                - /url: /signup?source=code_search_results

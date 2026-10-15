@@ -1,0 +1,294 @@
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: R2S
+      - generic [ref=e7]:
+        - strong [ref=e8]: project-N3
+        - generic [ref=e9]: untitled scenario document
+    - generic [ref=e10]:
+      - generic [ref=e11]: Simulation Off
+      - generic [ref=e12]: Dataset Off
+      - button "Switch to dark mode" [ref=e13] [cursor=pointer]
+  - navigation "Workspace toolbar" [ref=e16]:
+    - generic [ref=e17]:
+      - generic [ref=e19]:
+        - button "Undo" [disabled] [ref=e21]
+        - button "Redo" [disabled] [ref=e26]
+      - generic [ref=e31]:
+        - button "Import scene" [ref=e33] [cursor=pointer]
+        - button "Export" [ref=e38] [cursor=pointer]
+      - generic [ref=e43]:
+        - button "Select actors" [ref=e45] [cursor=pointer]
+        - button "Edit motion" [ref=e49] [cursor=pointer]
+        - button "Behavior mode" [disabled] [ref=e54]
+      - generic [ref=e60]:
+        - button "Validate" [disabled] [ref=e62]
+        - button "Replay" [disabled] [ref=e67]
+      - generic [ref=e72]:
+        - button "Measure" [ref=e74] [cursor=pointer]
+        - button "Compare" [ref=e81] [cursor=pointer]
+      - button "Add view" [ref=e88] [cursor=pointer]
+    - generic [ref=e91]:
+      - button "More tools" [disabled] [ref=e93]
+      - button "Search commands" [ref=e98] [cursor=pointer]:
+        - text: Search commands
+        - generic [ref=e104]: Alt+C
+      - button "Minimize header" [expanded] [ref=e105] [cursor=pointer]
+  - generic [ref=e108]:
+    - complementary "Workspace navigation" [ref=e109]:
+      - button "Recipe" [ref=e110] [cursor=pointer]
+      - button "Catalog" [pressed] [ref=e114] [cursor=pointer]
+      - button "Map layers" [ref=e120] [cursor=pointer]
+      - button "Comments" [ref=e125] [cursor=pointer]
+    - complementary "catalog panel" [ref=e128]:
+      - generic [ref=e129]:
+        - generic [ref=e130]:
+          - generic [ref=e131]: CATALOG
+          - generic [ref=e132]: 7/7
+        - textbox "Filter scenarios" [ref=e133]
+        - generic [ref=e134]:
+          - button "nuscenes-73030fb67d3c46cfb5e590168088ae39-e93e98b63d3b40209056d129dc53ceee-40e413c922184255a94f08d3c10037e0 baseline / 19.50 s :" [active] [ref=e209] [cursor=pointer]:
+            - generic [ref=e210]:
+              - strong [ref=e211]: nuscenes-73030fb67d3c46cfb5e590168088ae39-e93e98b63d3b40209056d129dc53ceee-40e413c922184255a94f08d3c10037e0
+              - generic [ref=e212]: baseline / 19.50 s
+            - emphasis [ref=e213]: ":"
+          - button "nuscenes-cc8c0bf57f984915a77078b10eb33198-ca9a282c9e77460f8360f564131a8af5-ed5fc18c31904f96a8f0dbb99ff069c0 baseline / 19.15 s :" [ref=e214] [cursor=pointer]:
+            - generic [ref=e215]:
+              - strong [ref=e216]: nuscenes-cc8c0bf57f984915a77078b10eb33198-ca9a282c9e77460f8360f564131a8af5-ed5fc18c31904f96a8f0dbb99ff069c0
+              - generic [ref=e217]: baseline / 19.15 s
+            - emphasis [ref=e218]: ":"
+          - button "nuscenes-fcbccedd61424f1b85dcbf8f897f9754-3e8750f331d7499e9b5123e9eb70f2e2-281b92269fd648d4b52d06ac06ca6d65 baseline / 19.40 s :" [ref=e219] [cursor=pointer]:
+            - generic [ref=e220]:
+              - strong [ref=e221]: nuscenes-fcbccedd61424f1b85dcbf8f897f9754-3e8750f331d7499e9b5123e9eb70f2e2-281b92269fd648d4b52d06ac06ca6d65
+              - generic [ref=e222]: baseline / 19.40 s
+            - emphasis [ref=e223]: ":"
+          - button "nuscenes-6f83169d067343658251f72e1dd17dbc-8687ba92abd3406aa797115b874ebeba-dcbe451d383e450786aaad04ab9d3790 baseline / 19.90 s :" [ref=e224] [cursor=pointer]:
+            - generic [ref=e225]:
+              - strong [ref=e226]: nuscenes-6f83169d067343658251f72e1dd17dbc-8687ba92abd3406aa797115b874ebeba-dcbe451d383e450786aaad04ab9d3790
+              - generic [ref=e227]: baseline / 19.90 s
+            - emphasis [ref=e228]: ":"
+          - button "nuscenes-bebf5f5b2a674631ab5c88fd1aa9e87a-5991fad3280c4f84b331536c32001a04-35833ae5808e4ef186d1fdebac3d9cf6 baseline / 19.80 s :" [ref=e229] [cursor=pointer]:
+            - generic [ref=e230]:
+              - strong [ref=e231]: nuscenes-bebf5f5b2a674631ab5c88fd1aa9e87a-5991fad3280c4f84b331536c32001a04-35833ae5808e4ef186d1fdebac3d9cf6
+              - generic [ref=e232]: baseline / 19.80 s
+            - emphasis [ref=e233]: ":"
+          - button "nuscenes-325cef682f064c55a255f2625c533b75-b5989651183643369174912bc5641d3b-b4ff30109dd14c89b24789dc5713cf8c baseline / 19.90 s :" [ref=e234] [cursor=pointer]:
+            - generic [ref=e235]:
+              - strong [ref=e236]: nuscenes-325cef682f064c55a255f2625c533b75-b5989651183643369174912bc5641d3b-b4ff30109dd14c89b24789dc5713cf8c
+              - generic [ref=e237]: baseline / 19.90 s
+            - emphasis [ref=e238]: ":"
+          - button "nuscenes-e233467e827140efa4b42d2b4c435855-a480496a5988410fbe3d8ed6c84da996-abf3d91d3c28407e80e3334fe89c03cb baseline / 19.50 s :" [ref=e239] [cursor=pointer]:
+            - generic [ref=e240]:
+              - strong [ref=e241]: nuscenes-e233467e827140efa4b42d2b4c435855-a480496a5988410fbe3d8ed6c84da996-abf3d91d3c28407e80e3334fe89c03cb
+              - generic [ref=e242]: baseline / 19.50 s
+            - emphasis [ref=e243]: ":"
+    - separator "Resize side panel" [ref=e138]
+    - region "View manager" [ref=e139]:
+      - generic [ref=e140]:
+        - generic [ref=e141]:
+          - text: SCENARIO STUDIO
+          - strong [ref=e142]: nuscenes-73030fb67d3c46cfb5e590168088ae39-e93e98b63d3b40209056d129dc53ceee-40e413c922184255a94f08d3c10037e0
+        - generic "Mode" [ref=e143]:
+          - button "select" [pressed] [ref=e144] [cursor=pointer]
+          - button "edit" [ref=e145] [cursor=pointer]
+          - button "measure" [ref=e146] [cursor=pointer]
+          - button "compare" [ref=e147] [cursor=pointer]
+        - button "Reset layout" [ref=e148] [cursor=pointer]
+      - article [ref=e150]:
+        - generic [ref=e151]:
+          - strong [ref=e155]: Top-down
+          - generic [ref=e156]: "- nuscenes-73030fb67d3c46cfb5e590168088ae39-e93e98b63d3b40209056d129dc53ceee-40e413c922184255a94f08d3c10037e0"
+          - combobox "Camera preset" [ref=e157]:
+            - option "Auto-fit" [selected]
+            - option "North-up"
+            - option "Ego-up"
+          - button "Layers" [ref=e159] [cursor=pointer]
+          - button "Make main" [ref=e160] [cursor=pointer]
+          - button "Maximize" [ref=e161] [cursor=pointer]
+          - 'button "Close view: Top-down" [ref=e162] [cursor=pointer]': x
+        - generic [ref=e163]:
+          - img "Top-down trajectory view at 0.00 seconds, camera preset default" [ref=e244]:
+            - generic [ref=e245]:
+              - 'generic "ego at 0.00 s: speed 4.17 m/s, acceleration -0.142 m/s2, braking n/a" [ref=e250] [cursor=pointer]'
+              - 'generic "instance-c8ac146d6cef45bfadbec2f08737c79f at 1.50 s: speed 0.27 m/s, acceleration -0.051 m/s2, braking n/a" [ref=e253] [cursor=pointer]'
+              - 'generic "instance-b3bd430657754a16b32c7674507dba80 at 10.10 s: speed 0.19 m/s, acceleration -0.195 m/s2, braking n/a" [ref=e256] [cursor=pointer]'
+          - generic [ref=e257]:
+            - generic [ref=e258]: recorded
+            - generic [ref=e260]: generated
+            - generic [ref=e262]: replayed
+            - generic [ref=e264]: sensor-evidence
+            - generic [ref=e266]: playhead t=0.00 s
+      - region "Time-indexed actor timeline and gate lane" [ref=e164]:
+        - generic [ref=e165]:
+          - strong [ref=e166]: playhead 0.00 s
+          - generic [ref=e167]: of 19.50 s
+          - button "Step playhead back" [ref=e168] [cursor=pointer]: <
+          - button "Step playhead forward" [ref=e169] [cursor=pointer]: ">"
+          - slider "Playhead" [ref=e170]: "0"
+          - generic [ref=e171]: "selection: none"
+        - list "Actor state tracks" [ref=e267]:
+          - listitem [ref=e268]:
+            - button "ego (ego)" [ref=e269] [cursor=pointer]
+            - generic [ref=e270]: t=0.00 s
+            - generic [ref=e271]:
+              - generic [ref=e272]: Position
+              - img "ego position over time; at playhead 0.00 m" [ref=e273]
+              - generic [ref=e274]: 0.00 m
+            - generic [ref=e275]:
+              - generic [ref=e276]: Heading
+              - img "ego heading over time; at playhead 0.000 rad" [ref=e277]
+              - generic [ref=e278]: 0.000 rad
+            - generic [ref=e279]:
+              - generic [ref=e280]: Speed
+              - img "ego speed over time; at playhead 4.17 m/s" [ref=e281]
+              - generic [ref=e282]: 4.17 m/s
+            - generic [ref=e283]:
+              - generic [ref=e284]: Acceleration
+              - img "ego acceleration over time; at playhead -0.142 m/s2" [ref=e285]
+              - generic [ref=e286]: "-0.142 m/s2"
+            - generic [ref=e287]:
+              - generic [ref=e288]: Braking
+              - generic "recorded_brake_channel_absent_for_source_scene" [ref=e289]: n/a
+              - generic [ref=e290]: n/a
+          - listitem [ref=e291]:
+            - button "instance-c8ac146d6cef45bfadbec2f08737c79f" [ref=e292] [cursor=pointer]
+            - generic [ref=e293]: t=1.50 s
+            - generic [ref=e294]:
+              - generic [ref=e295]: Position
+              - img "instance-c8ac146d6cef45bfadbec2f08737c79f position over time; at playhead 85.52 m" [ref=e296]
+              - generic [ref=e297]: 85.52 m
+            - generic [ref=e298]:
+              - generic [ref=e299]: Heading
+              - img "instance-c8ac146d6cef45bfadbec2f08737c79f heading over time; at playhead 1.053 rad" [ref=e300]
+              - generic [ref=e301]: 1.053 rad
+            - generic [ref=e302]:
+              - generic [ref=e303]: Speed
+              - img "instance-c8ac146d6cef45bfadbec2f08737c79f speed over time; at playhead 0.27 m/s" [ref=e304]
+              - generic [ref=e305]: 0.27 m/s
+            - generic [ref=e306]:
+              - generic [ref=e307]: Acceleration
+              - img "instance-c8ac146d6cef45bfadbec2f08737c79f acceleration over time; at playhead -0.051 m/s2" [ref=e308]
+              - generic [ref=e309]: "-0.051 m/s2"
+            - generic [ref=e310]:
+              - generic [ref=e311]: Braking
+              - generic "recorded_brake_channel_records_ego_only" [ref=e312]: n/a
+              - generic [ref=e313]: n/a
+          - listitem [ref=e314]:
+            - button "instance-b3bd430657754a16b32c7674507dba80" [ref=e315] [cursor=pointer]
+            - generic [ref=e316]: t=10.10 s
+            - generic [ref=e317]:
+              - generic [ref=e318]: Position
+              - img "instance-b3bd430657754a16b32c7674507dba80 position over time; at playhead 73.62 m" [ref=e319]
+              - generic [ref=e320]: 73.62 m
+            - generic [ref=e321]:
+              - generic [ref=e322]: Heading
+              - img "instance-b3bd430657754a16b32c7674507dba80 heading over time; at playhead 0.990 rad" [ref=e323]
+              - generic [ref=e324]: 0.990 rad
+            - generic [ref=e325]:
+              - generic [ref=e326]: Speed
+              - img "instance-b3bd430657754a16b32c7674507dba80 speed over time; at playhead 0.19 m/s" [ref=e327]
+              - generic [ref=e328]: 0.19 m/s
+            - generic [ref=e329]:
+              - generic [ref=e330]: Acceleration
+              - img "instance-b3bd430657754a16b32c7674507dba80 acceleration over time; at playhead -0.195 m/s2" [ref=e331]
+              - generic [ref=e332]: "-0.195 m/s2"
+            - generic [ref=e333]:
+              - generic [ref=e334]: Braking
+              - generic "recorded_brake_channel_records_ego_only" [ref=e335]: n/a
+              - generic [ref=e336]: n/a
+        - list "Gate lane" [ref=e337]:
+          - 'listitem "G1: unsupported (xosc_subset_not_evaluated_in_workspace_surface)" [ref=e338]':
+            - generic [ref=e339]: G1
+            - generic [ref=e340]: unsupported
+            - generic [ref=e341]: G1 unsupported from 0.00 to 19.50 seconds; reasons xosc_subset_not_evaluated_in_workspace_surface
+          - 'listitem "G2: unsupported (simulator_replay_not_recorded_for_this_scenario)" [ref=e342]':
+            - generic [ref=e343]: G2
+            - generic [ref=e344]: unsupported
+            - generic [ref=e345]: G2 unsupported from 0.00 to 19.50 seconds; reasons simulator_replay_not_recorded_for_this_scenario
+          - 'listitem "G3: skipped (lane_road_match_evidence_not_supplied_for_this_scenario)" [ref=e346]':
+            - generic [ref=e347]: G3
+            - generic [ref=e348]: skipped
+            - generic [ref=e349]: PROVISIONAL
+            - generic [ref=e350]: G3 skipped from 0.00 to 19.50 seconds; reasons lane_road_match_evidence_not_supplied_for_this_scenario; PROVISIONAL
+          - 'listitem "G4: pass" [ref=e351]':
+            - generic [ref=e352]: G4
+            - generic [ref=e353]: pass
+            - generic [ref=e354]: G4 pass from 0.00 to 19.50 seconds
+          - 'listitem "G5: skipped (event_definition_not_declared)" [ref=e355]':
+            - generic [ref=e356]: G5
+            - generic [ref=e357]: skipped
+            - generic [ref=e358]: G5 skipped from 0.00 to 19.50 seconds; reasons event_definition_not_declared
+          - 'listitem "G6: fail (collision_status_unverified)" [ref=e359]':
+            - generic [ref=e360]: G6
+            - generic [ref=e361]: fail
+            - generic [ref=e362]: PROVISIONAL
+            - generic [ref=e363]: G6 fail from 0.00 to 19.50 seconds; reasons collision_status_unverified; PROVISIONAL
+          - 'listitem "G7: pass" [ref=e364]':
+            - generic [ref=e365]: G7
+            - generic [ref=e366]: pass
+            - generic [ref=e367]: PROVISIONAL
+            - generic [ref=e368]: G7 pass from 0.00 to 19.50 seconds; PROVISIONAL
+        - list "Gate status list" [ref=e369]:
+          - listitem [ref=e370]:
+            - strong [ref=e371]: G1
+            - generic [ref=e372]: unsupported
+            - generic [ref=e373]: 0.00-19.50 s
+            - generic [ref=e374]: xosc_subset_not_evaluated_in_workspace_surface
+          - listitem [ref=e375]:
+            - strong [ref=e376]: G2
+            - generic [ref=e377]: unsupported
+            - generic [ref=e378]: 0.00-19.50 s
+            - generic [ref=e379]: simulator_replay_not_recorded_for_this_scenario
+          - listitem [ref=e380]:
+            - strong [ref=e381]: G3
+            - generic [ref=e382]: skipped
+            - generic [ref=e383]: PROVISIONAL
+            - generic [ref=e384]: 0.00-19.50 s
+            - generic [ref=e385]: lane_road_match_evidence_not_supplied_for_this_scenario
+          - listitem [ref=e386]:
+            - strong [ref=e387]: G4
+            - generic [ref=e388]: pass
+            - generic [ref=e389]: 0.00-19.50 s
+            - generic [ref=e390]: no reasons
+          - listitem [ref=e391]:
+            - strong [ref=e392]: G5
+            - generic [ref=e393]: skipped
+            - generic [ref=e394]: 0.00-19.50 s
+            - generic [ref=e395]: event_definition_not_declared
+          - listitem [ref=e396]:
+            - strong [ref=e397]: G6
+            - generic [ref=e398]: fail
+            - generic [ref=e399]: PROVISIONAL
+            - generic [ref=e400]: 0.00-19.50 s
+            - generic [ref=e401]: collision_status_unverified
+          - listitem [ref=e402]:
+            - strong [ref=e403]: G7
+            - generic [ref=e404]: pass
+            - generic [ref=e405]: PROVISIONAL
+            - generic [ref=e406]: 0.00-19.50 s
+            - generic [ref=e407]: no reasons
+        - paragraph [ref=e173]: "Measure at 0.00 s: 85.52 m ego -> instance-c8ac146d6cef45bfadbec2f08737c79f at 0.00 s; bearing 0.939 rad; heading delta 1.053 rad; sample offset 1.50 s"
+    - complementary "Inspection navigation" [ref=e174]:
+      - button "Metrics" [ref=e175] [cursor=pointer]:
+        - generic [ref=e177]: "0"
+      - button "Gates" [ref=e178] [cursor=pointer]:
+        - generic [ref=e182]: "7"
+      - button "Provenance" [ref=e183] [cursor=pointer]
+      - button "Artifacts" [ref=e188] [cursor=pointer]
+  - generic [ref=e192]:
+    - generic [ref=e193]:
+      - button "Scenario studio" [ref=e194] [cursor=pointer]
+      - button "Variant studio" [ref=e195] [cursor=pointer]
+      - button "Replay" [ref=e196] [cursor=pointer]
+      - button "Report" [ref=e197] [cursor=pointer]
+    - generic [ref=e198]:
+      - generic [ref=e199]: "selection: nuscenes-73030fb67d3c46cfb5e590168088ae39-e93e98b63d3b40209056d129dc53ceee-40e413c922184255a94f08d3c10037e0"
+      - generic [ref=e200]: "artifacts: 1"
+      - generic [ref=e201]: "branch: branch-nuscenes-73030fb67d3c46cfb5e590168088ae39-e93e98b63d3b40209056d129dc53ceee-40e413c922184255a94f08d3c10037e0"
+      - generic [ref=e202]: "config hash: n/a"
+      - generic [ref=e203]: "rollback: none"
+      - generic [ref=e204]: "recipe: 0/0 steps"
+      - generic [ref=e205]: "time: 0.00 s / 19.50 s"
+      - generic [ref=e206]: "PROVISIONAL: 3"
+      - generic [ref=e207]: "POV: internal-kinematic-preview"
+      - generic [ref=e208]: "frame: local_road_aligned"

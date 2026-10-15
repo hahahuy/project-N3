@@ -39,7 +39,7 @@ cost without addressing any of the above.
 compose.dev.yml
   api      python:3.11-slim-bookworm   Dockerfile.dev
            - .:/app                          bind mount (source + HMR)
-           - r2s-reports:/app/reports        named volume
+           - project-n3-prod-reports:/app/reports        named volume
            - /mnt/backup/nuscenes:/...:ro     read-only bind mount
            - ~/esmini:/opt/esmini:ro          read-only bind mount
            CMD uvicorn --host 0.0.0.0 --port 8000 --reload
@@ -111,15 +111,15 @@ Add a named volume at the cache path.
   api:
     volumes:
       - .:/app
-      - r2s-reports:/app/reports
-      - r2s-metadata-cache:/root/.cache/real2scenario   # add
+      - project-n3-prod-reports:/app/reports
+      - project-n3-metadata-cache:/root/.cache/real2scenario   # add
       - /mnt/backup/nuscenes:/mnt/backup/nuscenes:ro
       - ${HOME}/esmini:/opt/esmini:ro
 
 volumes:
   frontend-node-modules:
-  r2s-reports:
-  r2s-metadata-cache:                                     # add
+  project-n3-prod-reports:
+  project-n3-metadata-cache:                                     # add
 ```
 
 More portable than hardcoding `/root`, and independent of D-4:
@@ -128,7 +128,7 @@ More portable than hardcoding `/root`, and independent of D-4:
     environment:
       R2S_METADATA_CACHE: /var/cache/real2scenario        # add
     volumes:
-      - r2s-metadata-cache:/var/cache/real2scenario       # add
+      - project-n3-metadata-cache:/var/cache/real2scenario       # add
 ```
 
 This key is already honoured at `src/real2scenario/metadata_index.py:30-33`.
@@ -148,7 +148,7 @@ still match the mounted source.
 ### D-2 — Build the index at startup, not inside the first request
 
 `/api/health` → `_settings_view()` → `SourceSceneAdapter.discover()` →
-`shared_metadata_index()` (`src/r2s_web/source_scenes.py:36-52`) constructs the
+`shared_metadata_index()` (`src/PROJECT_N3_WEB/source_scenes.py:36-52`) constructs the
 index synchronously. The first caller absorbs the entire build cost.
 
 Move construction into the FastAPI lifespan/startup hook, so that:
@@ -163,7 +163,7 @@ must never degrade silently.
 
 ### D-3 — Paginate scene discovery
 
-`GET /api/source-scenes` (`src/r2s_web/app.py:234-239`) returns all scenes and is
+`GET /api/source-scenes` (`src/PROJECT_N3_WEB/app.py:234-239`) returns all scenes and is
 consumed by `fetchSourceScenarios` (`frontend/src/api.ts:110`) with no paging.
 
 Add `?limit=&offset=&q=` server-side, returning a total count for the UI. Pair
@@ -195,7 +195,7 @@ The current mount exposes all of nuScenes, including `samples/` and `sweeps/`
 ```
 
 Smaller blast radius, faster cold starts. Note `WebSettings.__post_init__`
-(`src/r2s_web/config.py:22-27`) already falls back from `v1.0-trainval` to
+(`src/PROJECT_N3_WEB/config.py:22-27`) already falls back from `v1.0-trainval` to
 `v1.0-mini` when the former is absent, so this layout stays compatible.
 
 ---
@@ -247,9 +247,9 @@ O(n) to O(1), no schema change.
 
 ### D-9 — Cache the artifact catalog
 
-`ArtifactAdapter.discover()` (`src/r2s_web/adapter.py:51-73`) performs
+`ArtifactAdapter.discover()` (`src/PROJECT_N3_WEB/adapter.py:51-73`) performs
 `artifact_root.rglob("*.json")` and fully parses **every** artifact on **every**
-call. It is reached by `GET /api/scenarios` (`src/r2s_web/app.py:260-262`) and
+call. It is reached by `GET /api/scenarios` (`src/PROJECT_N3_WEB/app.py:260-262`) and
 by `/api/health` (`:77`).
 
 Currently 6 artifacts / 180 KB, so negligible. It becomes the dominant cost as

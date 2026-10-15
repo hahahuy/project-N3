@@ -31,7 +31,7 @@ _INDEX_CACHE_LOCK = threading.RLock()
 
 def metadata_cache_dir() -> Path:
     """Return the local metadata cache directory for scene import."""
-    configured = os.environ.get("R2S_METADATA_CACHE")
+    configured = os.environ.get("PROJECT_N3_METADATA_CACHE")
     return Path(configured).expanduser() if configured else default_cache_dir()
 
 
