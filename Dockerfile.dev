@@ -1,0 +1,39 @@
+FROM python:3.11-slim-bookworm
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PROJECT_N3_ROOT=/app \
+    PROJECT_N3_ARTIFACT_ROOT=scenarios \
+    PROJECT_N3_OUTPUT_ROOT=reports \
+    PROJECT_N3_METADATA_CACHE=/var/cache/real2scenario
+
+WORKDIR /app
+COPY pyproject.toml README.md ./
+COPY src/ ./src/
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+        libgl1 \
+        libglib2.0-0 \
+        libx11-6 \
+        libxext6 \
+        libxi6 \
+        libxinerama1 \
+        libxrandr2 \
+        libxrender1 \
+        libxxf86vm1 \
+        libfontconfig1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && python -m pip install --no-cache-dir ".[dev,web,devkit]"
+
+# Run as a non-root user, matching the production image. The project tree is
+# bind-mounted from the host, so compose.dev.yml overrides the uid with
+# $PROJECT_N3_UID/$PROJECT_N3_GID to match the host owner; the cache directory is created
+# world-writable so it stays usable under either uid. See
+# docs/guides/security-deployment.md S-4 and docs/guides/datastreaming.md D-4.
+RUN useradd --create-home --uid 10001 appuser \
+    && mkdir -p /var/cache/real2scenario \
+    && chmod 0777 /var/cache/real2scenario \
+    && chown -R appuser:appuser /app
+USER appuser
+
+CMD ["uvicorn", "r2s_web.app:app", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8000", "--reload"]

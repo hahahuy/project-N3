@@ -1,0 +1,791 @@
+- generic [active] [ref=f26e1]:
+  - generic [ref=f26e2]:
+    - generic [ref=f26e3]: Table of Contents
+    - list [ref=f26e4]:
+      - listitem [ref=f26e5]:
+        - link "esmini lib programming" [ref=f26e6] [cursor=pointer]:
+          - /url: "#_esmini_lib_programming"
+        - list [ref=f26e7]:
+          - listitem [ref=f26e8]:
+            - link "About the lib itself" [ref=f26e9] [cursor=pointer]:
+              - /url: "#_about_the_lib_itself"
+          - listitem [ref=f26e10]:
+            - link "How to interact with esmini lib API" [ref=f26e11] [cursor=pointer]:
+              - /url: "#_how_to_interact_with_esmini_lib_api"
+          - listitem [ref=f26e12]:
+            - link "Functionality" [ref=f26e13] [cursor=pointer]:
+              - /url: "#_functionality"
+          - listitem [ref=f26e14]:
+            - link "Simplest example" [ref=f26e15] [cursor=pointer]:
+              - /url: "#_simplest_example"
+  - generic [ref=f26e16]:
+    - generic [ref=f26e20]:
+      - paragraph [ref=f26e22]:
+        - link [ref=f26e23] [cursor=pointer]:
+          - /url: index.html
+          - strong [ref=f26e24]: Home
+      - generic [ref=f26e25]:
+        - searchbox "Search all pages..." [ref=f26e26]
+        - button "Search" [ref=f26e27] [cursor=pointer]
+      - group [ref=f26e28]:
+        - generic "Navigator" [ref=f26e29] [cursor=pointer]
+    - generic [ref=f26e30]:
+      - heading "esmini lib programming" [level=2] [ref=f26e31]
+      - generic [ref=f26e32]:
+        - generic [ref=f26e33]:
+          - heading "About the lib itself" [level=3] [ref=f26e34]
+          - paragraph [ref=f26e36]: The main idea with esmini lib is to provide a limited, simplifed but useful API to the complex world of esmini, OpenSCENARIO and traffic simulation. By making use of only standard C types it has been possible to wrap and use the library in numerous environments, like for example MATLAB, Simulink and Unity (C#).
+          - paragraph [ref=f26e38]: esmini lib is a, so called, shared library which is linked dynamically with a custom application. This means that it’s not linked statically with the application, instead it’s loaded whenever the application is launched. An obvious advantage with shared libraries is that they can be shared between multiple applications, reducing size and potentially simplify maintenance.
+          - paragraph [ref=f26e40]: An additional important advantage with dynamic linking is that the library can be updated without need to recompile the custom application making use of the library (however it can’t be updated during runtime, only in between launches). An obvious requirement is that the API is compatible when replacing a library with a different version, since the API is established at link-time. On the other side of the "same coin", a disadvantage with dynamic linking is that you need to have the shared library present at run-time.
+          - paragraph [ref=f26e42]: "Although esmini lib is a shared library itself, it includes everything needed in terms of 3rd party functionality. It’s actally linking all dependencies statically. Think about it as a single container including everything needed, e.g. support for 3D graphics, XML, expressions, and SUMO traffic simulation. There are two advantages with this approach: 1. Getting rid of dependency to hundreds of 3rd party shared libraries and 2. The linker makes sure to only include relevant functions which reduce the size by extreme (compared to bundle individual and complete shared libraries)."
+          - paragraph [ref=f26e46]:
+            - strong [ref=f26e47]: "Note:"
+            - text: esmini utilizes, in accordance with C++ standard, default values on some function parameters in the API. Those default values will work at least in any C++ context. For other environments like pure C, C# or Python it might be required to explicitly supply argument values.
+        - generic [ref=f26e48]:
+          - heading "How to interact with esmini lib API" [level=3] [ref=f26e49]
+          - paragraph [ref=f26e51]: Below is a typical interaction between a custom application (e.g. vehicle simulator) and esmini (providing simulation of the environment, like road and traffic).
+          - table [ref=f26e52]:
+            - rowgroup [ref=f26e59]:
+              - row [ref=f26e60]:
+                - columnheader "Frame" [ref=f26e61]
+                - columnheader "app time" [ref=f26e62]
+                - columnheader "app events" [ref=f26e63]
+                - columnheader "esmini time" [ref=f26e64]
+                - columnheader "esmini events" [ref=f26e65]
+            - rowgroup [ref=f26e66]:
+              - row [ref=f26e67]:
+                - cell [ref=f26e68]:
+                  - paragraph [ref=f26e69]: 0 (t=0.0)
+                - cell [ref=f26e70]:
+                  - paragraph [ref=f26e71]: "0.0"
+                - cell [ref=f26e72]:
+                  - paragraph [ref=f26e73]: Init esmini("scenario.xosc") ⇒
+                - cell [ref=f26e74]:
+                  - paragraph [ref=f26e75]: "0.0"
+                - cell [ref=f26e76]
+              - row [ref=f26e77]:
+                - cell [ref=f26e78]
+                - cell [ref=f26e79]:
+                  - paragraph [ref=f26e80]: "0.0"
+                - cell [ref=f26e81]
+                - cell [ref=f26e82]:
+                  - paragraph [ref=f26e83]: "0.0"
+                - cell [ref=f26e84]:
+                  - paragraph [ref=f26e85]: Step(dt=0.0)
+              - row [ref=f26e86]:
+                - cell [ref=f26e87]
+                - cell [ref=f26e88]:
+                  - paragraph [ref=f26e89]: "0.0"
+                - cell [ref=f26e90]
+                - cell [ref=f26e91]:
+                  - paragraph [ref=f26e92]: "0.0"
+                - cell [ref=f26e93]:
+                  - list [ref=f26e96]:
+                    - listitem [ref=f26e97]:
+                      - paragraph [ref=f26e98]: start init actions
+              - row [ref=f26e99]:
+                - cell [ref=f26e100]
+                - cell [ref=f26e101]:
+                  - paragraph [ref=f26e102]: "0.0"
+                - cell [ref=f26e103]
+                - cell [ref=f26e104]:
+                  - paragraph [ref=f26e105]: "0.0"
+                - cell [ref=f26e106]:
+                  - list [ref=f26e109]:
+                    - listitem [ref=f26e110]:
+                      - paragraph [ref=f26e111]: step default controller (establish initial positions and speed)
+              - row [ref=f26e112]:
+                - cell [ref=f26e113]
+                - cell [ref=f26e114]:
+                  - paragraph [ref=f26e115]: "0.0"
+                - cell [ref=f26e116]
+                - cell [ref=f26e117]:
+                  - paragraph [ref=f26e118]: "0.0"
+                - cell [ref=f26e119]:
+                  - list [ref=f26e122]:
+                    - listitem [ref=f26e123]:
+                      - paragraph [ref=f26e124]: evaluate triggers & start triggered actions
+              - row [ref=f26e125]:
+                - cell [ref=f26e126]
+                - cell [ref=f26e127]:
+                  - paragraph [ref=f26e128]: "0.0"
+                - cell [ref=f26e129]
+                - cell [ref=f26e130]:
+                  - paragraph [ref=f26e131]: "0.0"
+                - cell [ref=f26e132]:
+                  - list [ref=f26e135]:
+                    - listitem [ref=f26e136]:
+                      - paragraph [ref=f26e137]: save to dat, send OSI
+              - row [ref=f26e138]:
+                - cell [ref=f26e139]
+                - cell [ref=f26e140]:
+                  - paragraph [ref=f26e141]: "0.0"
+                - cell [ref=f26e142]
+                - cell [ref=f26e143]:
+                  - paragraph [ref=f26e144]: "0.0"
+                - cell [ref=f26e145]:
+                  - list [ref=f26e148]:
+                    - listitem [ref=f26e149]:
+                      - paragraph [ref=f26e150]: Draw()
+              - row [ref=f26e151]:
+                - cell [ref=f26e152]
+                - cell [ref=f26e153]:
+                  - paragraph [ref=f26e154]: "0.0"
+                - cell [ref=f26e155]:
+                  - paragraph [ref=f26e156]: Get Ego state (initial position, speed…) ⇒
+                - cell [ref=f26e157]:
+                  - paragraph [ref=f26e158]: "0.0"
+                - cell [ref=f26e159]
+              - row [ref=f26e160]:
+                - cell [ref=f26e161]
+                - cell [ref=f26e162]:
+                  - paragraph [ref=f26e163]: "0.0"
+                - cell [ref=f26e164]
+                - cell [ref=f26e165]:
+                  - paragraph [ref=f26e166]: "0.0"
+                - cell [ref=f26e167]:
+                  - paragraph [ref=f26e168]: ⇐ Return Ego initial state
+              - row [ref=f26e169]:
+                - cell [ref=f26e170]:
+                  - paragraph [ref=f26e171]: 1 (t=0.0→0.1)
+                - cell [ref=f26e172]:
+                  - paragraph [ref=f26e173]: "0.1"
+                - cell [ref=f26e174]:
+                  - paragraph [ref=f26e175]: Update Ego(dt=0.1)
+                - cell [ref=f26e176]:
+                  - paragraph [ref=f26e177]: "0.0"
+                - cell [ref=f26e178]
+              - row [ref=f26e179]:
+                - cell [ref=f26e180]
+                - cell [ref=f26e181]:
+                  - paragraph [ref=f26e182]: "0.1"
+                - cell [ref=f26e183]:
+                  - list [ref=f26e186]:
+                    - listitem [ref=f26e187]:
+                      - paragraph [ref=f26e188]: Do internal stuff, like vehicle dynamics
+                - cell [ref=f26e189]:
+                  - paragraph [ref=f26e190]: "0.0"
+                - cell [ref=f26e191]
+              - row [ref=f26e192]:
+                - cell [ref=f26e193]
+                - cell [ref=f26e194]:
+                  - paragraph [ref=f26e195]: "0.1"
+                - cell [ref=f26e196]:
+                  - paragraph [ref=f26e197]: Report Ego state(state) ⇒
+                - cell [ref=f26e198]:
+                  - paragraph [ref=f26e199]: "0.0"
+                - cell [ref=f26e200]
+              - row [ref=f26e201]:
+                - cell [ref=f26e202]
+                - cell [ref=f26e203]:
+                  - paragraph [ref=f26e204]: "0.1"
+                - cell [ref=f26e205]
+                - cell [ref=f26e206]:
+                  - paragraph [ref=f26e207]: "0.0"
+                - cell [ref=f26e208]:
+                  - paragraph [ref=f26e209]: Update state of Ego, protect it from default controller
+              - row [ref=f26e210]:
+                - cell [ref=f26e211]
+                - cell [ref=f26e212]:
+                  - paragraph [ref=f26e213]: "0.1"
+                - cell [ref=f26e214]:
+                  - paragraph [ref=f26e215]: Step esmini(dt=0.1) ⇒
+                - cell [ref=f26e216]:
+                  - paragraph [ref=f26e217]: "0.0"
+                - cell [ref=f26e218]
+              - row [ref=f26e219]:
+                - cell [ref=f26e220]
+                - cell [ref=f26e221]:
+                  - paragraph [ref=f26e222]: "0.1"
+                - cell [ref=f26e223]
+                - cell [ref=f26e224]:
+                  - paragraph [ref=f26e225]: "0.0"
+                - cell [ref=f26e226]:
+                  - paragraph [ref=f26e227]: Step(dt=0.1)
+              - row [ref=f26e228]:
+                - cell [ref=f26e229]
+                - cell [ref=f26e230]:
+                  - paragraph [ref=f26e231]: "0.1"
+                - cell [ref=f26e232]
+                - cell [ref=f26e233]:
+                  - paragraph [ref=f26e234]: "0.1"
+                - cell [ref=f26e235]:
+                  - list [ref=f26e238]:
+                    - listitem [ref=f26e239]:
+                      - paragraph [ref=f26e240]: update simulation time
+              - row [ref=f26e241]:
+                - cell [ref=f26e242]
+                - cell [ref=f26e243]:
+                  - paragraph [ref=f26e244]: "0.1"
+                - cell [ref=f26e245]
+                - cell [ref=f26e246]:
+                  - paragraph [ref=f26e247]: "0.1"
+                - cell [ref=f26e248]:
+                  - list [ref=f26e251]:
+                    - listitem [ref=f26e252]:
+                      - paragraph [ref=f26e253]: update actions
+              - row [ref=f26e254]:
+                - cell [ref=f26e255]
+                - cell [ref=f26e256]:
+                  - paragraph [ref=f26e257]: "0.1"
+                - cell [ref=f26e258]
+                - cell [ref=f26e259]:
+                  - paragraph [ref=f26e260]: "0.1"
+                - cell [ref=f26e261]:
+                  - list [ref=f26e264]:
+                    - listitem [ref=f26e265]:
+                      - paragraph [ref=f26e266]: step default controller (move entities, except Ego)
+              - row [ref=f26e267]:
+                - cell [ref=f26e268]
+                - cell [ref=f26e269]:
+                  - paragraph [ref=f26e270]: "0.1"
+                - cell [ref=f26e271]
+                - cell [ref=f26e272]:
+                  - paragraph [ref=f26e273]: "0.1"
+                - cell [ref=f26e274]:
+                  - list [ref=f26e277]:
+                    - listitem [ref=f26e278]:
+                      - paragraph [ref=f26e279]: evaluate triggers & start triggered actions
+              - row [ref=f26e280]:
+                - cell [ref=f26e281]
+                - cell [ref=f26e282]:
+                  - paragraph [ref=f26e283]: "0.1"
+                - cell [ref=f26e284]
+                - cell [ref=f26e285]:
+                  - paragraph [ref=f26e286]: "0.1"
+                - cell [ref=f26e287]:
+                  - list [ref=f26e290]:
+                    - listitem [ref=f26e291]:
+                      - paragraph [ref=f26e292]: save to dat, send OSI
+              - row [ref=f26e293]:
+                - cell [ref=f26e294]
+                - cell [ref=f26e295]:
+                  - paragraph [ref=f26e296]: "0.1"
+                - cell [ref=f26e297]
+                - cell [ref=f26e298]:
+                  - paragraph [ref=f26e299]: "0.1"
+                - cell [ref=f26e300]:
+                  - list [ref=f26e303]:
+                    - listitem [ref=f26e304]:
+                      - paragraph [ref=f26e305]: Draw()
+              - row [ref=f26e306]:
+                - cell [ref=f26e307]:
+                  - paragraph [ref=f26e308]: 2 (t=0.1→0.2)
+                - cell [ref=f26e309]:
+                  - paragraph [ref=f26e310]: "0.2"
+                - cell [ref=f26e311]:
+                  - paragraph [ref=f26e312]: Update Ego(dt=0.1)
+                - cell [ref=f26e313]:
+                  - paragraph [ref=f26e314]: "0.1"
+                - cell [ref=f26e315]
+              - row [ref=f26e316]:
+                - cell [ref=f26e317]
+                - cell [ref=f26e318]:
+                  - paragraph [ref=f26e319]: "0.2"
+                - cell [ref=f26e320]:
+                  - list [ref=f26e323]:
+                    - listitem [ref=f26e324]:
+                      - paragraph [ref=f26e325]: Do internal stuff, like vehicle dynamics
+                - cell [ref=f26e326]:
+                  - paragraph [ref=f26e327]: "0.1"
+                - cell [ref=f26e328]
+              - row [ref=f26e329]:
+                - cell [ref=f26e330]
+                - cell [ref=f26e331]:
+                  - paragraph [ref=f26e332]: "0.2"
+                - cell [ref=f26e333]:
+                  - paragraph [ref=f26e334]: Report Ego state(state) ⇒
+                - cell [ref=f26e335]:
+                  - paragraph [ref=f26e336]: "0.1"
+                - cell [ref=f26e337]
+              - row [ref=f26e338]:
+                - cell [ref=f26e339]
+                - cell [ref=f26e340]:
+                  - paragraph [ref=f26e341]: "0.2"
+                - cell [ref=f26e342]
+                - cell [ref=f26e343]:
+                  - paragraph [ref=f26e344]: "0.1"
+                - cell [ref=f26e345]:
+                  - paragraph [ref=f26e346]: Update state of Ego, protect it from default controller
+              - row [ref=f26e347]:
+                - cell [ref=f26e348]
+                - cell [ref=f26e349]:
+                  - paragraph [ref=f26e350]: "0.2"
+                - cell [ref=f26e351]:
+                  - paragraph [ref=f26e352]: Step esmini(dt=0.1) ⇒
+                - cell [ref=f26e353]:
+                  - paragraph [ref=f26e354]: "0.1"
+                - cell [ref=f26e355]
+              - row [ref=f26e356]:
+                - cell [ref=f26e357]
+                - cell [ref=f26e358]:
+                  - paragraph [ref=f26e359]: "0.2"
+                - cell [ref=f26e360]
+                - cell [ref=f26e361]:
+                  - paragraph [ref=f26e362]: "0.1"
+                - cell [ref=f26e363]:
+                  - paragraph [ref=f26e364]: Step(dt=0.1)
+              - row [ref=f26e365]:
+                - cell [ref=f26e366]
+                - cell [ref=f26e367]:
+                  - paragraph [ref=f26e368]: "0.2"
+                - cell [ref=f26e369]
+                - cell [ref=f26e370]:
+                  - paragraph [ref=f26e371]: "0.2"
+                - cell [ref=f26e372]:
+                  - list [ref=f26e375]:
+                    - listitem [ref=f26e376]:
+                      - paragraph [ref=f26e377]: update simulation time
+              - row [ref=f26e378]:
+                - cell [ref=f26e379]
+                - cell [ref=f26e380]:
+                  - paragraph [ref=f26e381]: "0.2"
+                - cell [ref=f26e382]
+                - cell [ref=f26e383]:
+                  - paragraph [ref=f26e384]: "0.2"
+                - cell [ref=f26e385]:
+                  - list [ref=f26e388]:
+                    - listitem [ref=f26e389]:
+                      - paragraph [ref=f26e390]: update actions
+              - row [ref=f26e391]:
+                - cell [ref=f26e392]
+                - cell [ref=f26e393]:
+                  - paragraph [ref=f26e394]: "0.2"
+                - cell [ref=f26e395]
+                - cell [ref=f26e396]:
+                  - paragraph [ref=f26e397]: "0.2"
+                - cell [ref=f26e398]:
+                  - list [ref=f26e401]:
+                    - listitem [ref=f26e402]:
+                      - paragraph [ref=f26e403]: step default controller (move entities, except Ego)
+              - row [ref=f26e404]:
+                - cell [ref=f26e405]
+                - cell [ref=f26e406]:
+                  - paragraph [ref=f26e407]: "0.2"
+                - cell [ref=f26e408]
+                - cell [ref=f26e409]:
+                  - paragraph [ref=f26e410]: "0.2"
+                - cell [ref=f26e411]:
+                  - list [ref=f26e414]:
+                    - listitem [ref=f26e415]:
+                      - paragraph [ref=f26e416]: evaluate triggers & start triggered actions
+              - row [ref=f26e417]:
+                - cell [ref=f26e418]
+                - cell [ref=f26e419]:
+                  - paragraph [ref=f26e420]: "0.2"
+                - cell [ref=f26e421]
+                - cell [ref=f26e422]:
+                  - paragraph [ref=f26e423]: "0.2"
+                - cell [ref=f26e424]:
+                  - list [ref=f26e427]:
+                    - listitem [ref=f26e428]:
+                      - paragraph [ref=f26e429]: save to dat, send OSI
+              - row [ref=f26e430]:
+                - cell [ref=f26e431]
+                - cell [ref=f26e432]:
+                  - paragraph [ref=f26e433]: "0.2"
+                - cell [ref=f26e434]
+                - cell [ref=f26e435]:
+                  - paragraph [ref=f26e436]: "0.2"
+                - cell [ref=f26e437]:
+                  - list [ref=f26e440]:
+                    - listitem [ref=f26e441]:
+                      - paragraph [ref=f26e442]: Draw()
+              - row [ref=f26e443]:
+                - cell [ref=f26e444]:
+                  - paragraph [ref=f26e445]: and so on…
+                - cell [ref=f26e446]
+                - cell [ref=f26e447]
+                - cell [ref=f26e448]
+                - cell [ref=f26e449]
+        - generic [ref=f26e450]:
+          - heading "Functionality" [level=3] [ref=f26e451]
+          - paragraph [ref=f26e453]:
+            - text: No systematic documentation available. See header files
+            - link "esminiLib.hpp" [ref=f26e454] [cursor=pointer]:
+              - /url: https://github.com/esmini/esmini/blob/master/EnvironmentSimulator/Libraries/esminiLib/esminiLib.hpp
+            - text: and
+            - link "esminiRMLib.hpp" [ref=f26e455] [cursor=pointer]:
+              - /url: https://github.com/esmini/esmini/blob/master/EnvironmentSimulator/Libraries/esminiRMLib/esminiRMLib.hpp
+            - text: for API details.
+          - paragraph [ref=f26e457]: The following section covers some specific use cases of the library.
+          - generic [ref=f26e458]:
+            - heading "Save or grab images" [level=4] [ref=f26e459]
+            - paragraph [ref=f26e461]: "Screenshots can be controlled via the API:"
+            - code [ref=f26e465]: int SE_SaveImagesToFile(int nrOfFrames);
+            - paragraph [ref=f26e467]: "nrOfFrames: -1 ⇒ continuously, 0 ⇒ stop, > 0 ⇒ number of frames, e.g. 1=next frame only, 2=next two frames"
+            - paragraph [ref=f26e469]:
+              - text: Images will be stored in current folder with name
+              - code [ref=f26e470]: screen_shot_*.tga
+              - text: (* = counter) for post processing.
+            - paragraph [ref=f26e472]: "Images can also be saved to memory for instant processing. Control the feature with:"
+            - code [ref=f26e476]: int SE_SaveImagesToRAM(bool state);
+            - paragraph [ref=f26e478]: "state: true ⇒ capture images, false ⇒ don’t capture (default, might improve performance on some systems)"
+            - paragraph [ref=f26e480]: "Grab image with:"
+            - code [ref=f26e484]: int SE_FetchImage(SE_Image *image);
+            - paragraph [ref=f26e486]: image is a reference to a SE_Image struct which will contain the image meta and image data
+            - paragraph [ref=f26e488]:
+              - text: See
+              - link "image-capture" [ref=f26e489] [cursor=pointer]:
+                - /url: https://github.com/esmini/esmini/tree/master/EnvironmentSimulator/code-examples/image-capture
+              - text: code example.
+            - generic [ref=f26e491]:
+              - paragraph [ref=f26e493]:
+                - strong [ref=f26e494]: "Note:"
+                - text: In order to grab a rendered frame image, it must have been saved to RAM during the post rendering phase. First frame will be saved to RAM by default. The SE_SaveImagesToRAM() function must be used to enable the feature for frames > 0.
+              - paragraph [ref=f26e496]: The reason for not enable always by default is performance savings. On some system the operation to read back rendered pixels from graphics frame buffer to application RAM memory is not neglectable (depending on whether color coding or byte order transformation is needed). So a compromize is to have the feature enabled for the first init frame, and then activate by user when needed.
+            - paragraph [ref=f26e498]: "Finally, to disable esmini image handling altogether and revert to OSG default handling, make the following call before SE_Init():"
+            - paragraph [ref=f26e500]:
+              - code [ref=f26e501]: SE_SetOffScreenRendering(false);
+            - paragraph [ref=f26e503]: Note that disabling the this will permanently disable the callback mechanism for the complete esmini session (overriding any SE_SaveImagesToRAM() call).
+          - generic [ref=f26e504]:
+            - heading "Custom camera positions" [level=4] [ref=f26e505]
+            - paragraph [ref=f26e507]:
+              - text: Similarly as with camera related launch arguments,
+              - link "camera positioning" [ref=f26e508] [cursor=pointer]:
+                - /url: use-cases.html#_camera_control
+              - text: can be controlled via esmini lib API.
+            - list [ref=f26e510]:
+              - listitem [ref=f26e511]:
+                - paragraph [ref=f26e512]:
+                  - code [ref=f26e513]: SE_AddCustomCamera()
+                  - text: Add a camera with relative position and orientation (heading and pitch)
+              - listitem [ref=f26e514]:
+                - paragraph [ref=f26e515]:
+                  - code [ref=f26e516]: SE_AddCustomFixedCamera()
+                  - text: Add a fixed camera at custom global position and orientation (heading and pitch)
+              - listitem [ref=f26e517]:
+                - paragraph [ref=f26e518]:
+                  - code [ref=f26e519]: SE_AddCustomAimingCamera()
+                  - text: Add a camera with relative position looking at current entity
+              - listitem [ref=f26e520]:
+                - paragraph [ref=f26e521]:
+                  - code [ref=f26e522]: SE_AddCustomFixedAimingCamera()
+                  - text: Add a camera at fixed location but always looking at current entity
+              - listitem [ref=f26e523]:
+                - paragraph [ref=f26e524]:
+                  - code [ref=f26e525]: SE_AddCustomFixedTopCamera()
+                  - text: Add a top view camera with fixed position and rotation
+              - listitem [ref=f26e526]:
+                - paragraph [ref=f26e527]:
+                  - code [ref=f26e528]: SE_SetCameraObjectFocus
+                  - text: Set/change object to focus on
+            - paragraph [ref=f26e530]:
+              - text: More info, see
+              - link "headerfile" [ref=f26e531] [cursor=pointer]:
+                - /url: https://github.com/esmini/esmini/blob/91c82fb78deb4355f736f87510069f52cc0e6be5/EnvironmentSimulator/Libraries/esminiLib/esminiLib.hpp#L1519C1-L1582C59
+              - text: .
+            - paragraph [ref=f26e533]:
+              - text: "Any number of cameras can be defined. These cameras can then be activated via function:"
+              - code [ref=f26e534]: SE_SetCameraMode()
+              - text: .
+            - paragraph [ref=f26e536]:
+              - text: Applications can even loop through the camera modes to produce images from several cameras. See code example
+              - link "multiple-cameras.cpp" [ref=f26e537] [cursor=pointer]:
+                - /url: https://github.com/esmini/esmini/blob/master/EnvironmentSimulator/code-examples/image-capture/multiple-cameras.cpp
+              - text: .
+          - generic [ref=f26e538]:
+            - heading "OSI data" [level=4] [ref=f26e539]
+            - paragraph [ref=f26e541]: "OSI data can be retrieved in three ways:"
+            - list [ref=f26e543]:
+              - listitem [ref=f26e544]:
+                - paragraph [ref=f26e545]: Storing OSI tracefile
+              - listitem [ref=f26e546]:
+                - paragraph [ref=f26e547]: Receive in UDP packages
+              - listitem [ref=f26e548]:
+                - paragraph [ref=f26e549]: Receive via API call
+            - generic [ref=f26e550]:
+              - heading "OSI tracefile" [level=5] [ref=f26e551]
+              - paragraph [ref=f26e553]:
+                - text: Call
+                - code [ref=f26e554]: SE_EnableOSIFile(filename)
+                - text: in order to create a OSI tracefile. Specify custom filename or set 0 or "" to use default filename (currently "ground_truth.osi").
+            - generic [ref=f26e555]:
+              - heading "OSI timestamps" [level=5] [ref=f26e556]
+              - paragraph [ref=f26e558]:
+                - text: By default, the OSI timestamps are set to the same value as the simulation time. The timestamps can be explicity set for each frame via
+                - code [ref=f26e559]: SE_SetOSITimeStamp(unsigned long long int nanoseconds)
+                - text: . This will set the time for the upcoming frame, and should thus be set prior to each call to
+                - code [ref=f26e560]: SE_Step*
+                - text: .
+              - paragraph [ref=f26e562]:
+                - strong [ref=f26e563]: "Note:"
+                - text: If any OSI related function call has been made prior to
+                - code [ref=f26e564]: SE_Init*
+                - text: esmini will activate OSI and the OSI data, including timestamps, will be populated during the
+                - code [ref=f26e565]: SE_Init*
+                - text: call.
+            - generic [ref=f26e566]:
+              - heading "OSI settings" [level=5] [ref=f26e567]
+              - paragraph [ref=f26e569]: "The following settings are available for OSI via API:"
+              - list [ref=f26e571]:
+                - listitem [ref=f26e572]:
+                  - paragraph [ref=f26e573]:
+                    - code [ref=f26e574]: SE_SetOSIFrequency(int frequency)
+                    - text: how frequent the OSI data shall be updated (
+                    - strong [ref=f26e575]: default
+                    - text: 1, i.e. every frame)
+                - listitem [ref=f26e576]:
+                  - paragraph [ref=f26e577]:
+                    - code [ref=f26e578]: SE_SetOSIStaticReportMode(SE_OSIStaticReportMode mode)
+                    - text: how to report and log static objects in OSI (
+                    - strong [ref=f26e579]: default
+                    - text: is to report and log only once)
+                - listitem [ref=f26e580]:
+                  - paragraph [ref=f26e581]:
+                    - code [ref=f26e582]: SE_ExcludeGhostFromGroundTruth()
+                    - text: exclude ghost object from OSI groundtruth (
+                    - strong [ref=f26e583]: default
+                    - text: is to include ghost)
+                - listitem [ref=f26e584]:
+                  - paragraph [ref=f26e585]:
+                    - code [ref=f26e586]: SE_CropOSIDynamicGroundTruth(int id, double radius)
+                    - text: crop dynamic OSI groundtruth around an entity (
+                    - strong [ref=f26e587]: default
+                    - text: is to include all)
+              - paragraph [ref=f26e589]:
+                - text: See
+                - link "esminiLib.hpp" [ref=f26e590] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/blob/dev/EnvironmentSimulator/Libraries/esminiLib/esminiLib.hpp
+                - text: for more API details.
+              - paragraph [ref=f26e592]: "Corresponding functions are available via command line arguments:"
+              - list [ref=f26e594]:
+                - listitem [ref=f26e595]:
+                  - paragraph [ref=f26e596]:
+                    - code [ref=f26e597]: "--osi_freq <frequency>"
+                - listitem [ref=f26e598]:
+                  - paragraph [ref=f26e599]:
+                    - code [ref=f26e600]: "--osi_static_reporting_mode <mode>"
+                - listitem [ref=f26e601]:
+                  - paragraph [ref=f26e602]:
+                    - code [ref=f26e603]: "--osi_exclude_ghost"
+              - paragraph [ref=f26e605]:
+                - text: See
+                - link "_esmini" [ref=f26e606] [cursor=pointer]:
+                  - /url: command-reference.html#_esmini
+                - text: ", or run:"
+                - code [ref=f26e607]: esmini --help
+                - text: ", for full option description."
+            - generic [ref=f26e608]:
+              - heading "OSI via UDP" [level=5] [ref=f26e609]
+              - paragraph [ref=f26e611]:
+                - text: By launch argument
+                - code [ref=f26e612]: "--osi_receiver_ip <ip addr>"
+                - text: you can have esmini sending OSI packeges in UDP frames. The socket port is hardcoded but can of course be changed in the code (OSI_OUT_PORT in
+                - link "OSIReporter.cpp" [ref=f26e613] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/blob/dev/EnvironmentSimulator/Modules/ScenarioEngine/SourceFiles/OSIReporter.cpp
+                - text: ).
+              - paragraph [ref=f26e615]:
+                - text: See receiver side code example
+                - link "osi_receiver.cpp" [ref=f26e616] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/blob/dev/EnvironmentSimulator/Applications/replayer/osi_receiver.cpp
+                - text: .
+            - generic [ref=f26e617]:
+              - heading "OSI data via API call" [level=5] [ref=f26e618]
+              - paragraph [ref=f26e620]: "Fetch OSI data by either one of the API calls:"
+              - list [ref=f26e622]:
+                - listitem [ref=f26e623]:
+                  - paragraph [ref=f26e624]:
+                    - code [ref=f26e625]: SE_GetOSIGroundTruthRaw()
+                - listitem [ref=f26e626]:
+                  - paragraph [ref=f26e627]:
+                    - code [ref=f26e628]: SE_GetOSIGroundTruth(int* size)
+              - paragraph [ref=f26e630]: The "raw" version will simply return a pointer to the already existing OSI data structure, no additional data copying will be performed. The "raw" option is the preferered option if the application is coded in C++, making the Protobuf data structures fully compatible.
+              - paragraph [ref=f26e632]:
+                - text: "See code example:"
+                - link "osi-groundtruth" [ref=f26e633] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/blob/dev/EnvironmentSimulator/code-examples/osi-groundtruth
+                - text: ", also covered in User guide - Hello world tutorial"
+                - link "OSI groundtruth" [ref=f26e634] [cursor=pointer]:
+                  - /url: https://esmini.github.io/#_osi_groundtruth
+                - text: .
+              - paragraph [ref=f26e636]: The second function will fetch the OSI data serialized into a string. This will be a true copy and also generic format which can be parsed in any environment, independent of OS and programming language. The backside is additional resources needed for the copying and serialization.
+              - paragraph [ref=f26e638]:
+                - text: "See code examples in ScenarioEngineDLL test cases, e.g:"
+                - link "receive_GroundTruth" [ref=f26e639] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/blob/97d5f6216c53655545b5466400d00e98d99d25c2/EnvironmentSimulator/Unittest/ScenarioEngineDll_test.cpp#L933-L975
+                - text: .
+              - generic [ref=f26e641]:
+                - paragraph [ref=f26e643]:
+                  - strong [ref=f26e644]: "Note:"
+                - paragraph [ref=f26e646]: OSI groundtruth always contains all dynamics objects. Static objects, by default, will be reported only the very frame they are created. OpenDRIVE objects are always created during initialization. OpenSCENARIO MiscObjects are also normally created during initialization. However, they can be added by AddEntityAction or AddObject() API function, hence, from esmini v2.57.0, MiscObjects can be added at any time to groundtruth.
+                - paragraph [ref=f26e648]: To summarize the default behavior, first frame will include all dynamic and static objects created during the initialization of the scenario. Subsequent frames will include all dynamics objects available at that time plus any static MiscObjects created that very frame.
+                - paragraph [ref=f26e650]: The same data is also stored in the OSI log file, given that the log file is enabled.
+                - paragraph [ref=f26e652]:
+                  - text: The behavior regarding static content, described above, can be configured by
+                  - code [ref=f26e653]: SE_SetOSIStaticReportMode
+                  - text: function. The available options are according to the enum
+                  - code [ref=f26e654]: SE_OSIStaticReportMode
+                  - text: ":"
+                - list [ref=f26e656]:
+                  - listitem [ref=f26e657]:
+                    - paragraph [ref=f26e658]:
+                      - code [ref=f26e659]: SE_OSIStaticReportMode::DEFAULT
+                      - text: "- Report and log static objects only once"
+                  - listitem [ref=f26e660]:
+                    - paragraph [ref=f26e661]:
+                      - code [ref=f26e662]: SE_OSIStaticReportMode::API
+                      - text: "- Report static objects in every frame, but only once in the log file"
+                  - listitem [ref=f26e663]:
+                    - paragraph [ref=f26e664]:
+                      - code [ref=f26e665]: SE_OSIStaticReportMode::API_AND_LOG
+                      - text: "- Report and log static objects every frame"
+                - paragraph [ref=f26e667]:
+                  - text: OSI groundtruth will be up to date automatically after each
+                  - code [ref=f26e668]: SE_Step*
+                  - text: "depending on the OSI frequency, which can be changed to facilitate use-cases where esmini is running at much higher frequency than needed for OSI data (e.g. for vehicle dynamics purposes). To optimize performance, OSI update can then be skipped most frames and only run when needed. For example:"
+                  - code [ref=f26e669]: SE_SetOSIFrequency(20);
+                  - text: will update OSI data only every 20th frame.
+          - generic [ref=f26e670]:
+            - heading "Program Options" [level=4] [ref=f26e671]
+            - paragraph [ref=f26e673]: "On top of setting options from command line, esmini (from v2.41.0) supports setting options from esminiLib and esminiRMLib as well. This new functionality is added to set and unset options during runtime. This is useful, for example, to enable or disable logging to console, or to change log level etc between scenario runs via API. In addition, it is now possible to make option settings persistent over multiple runs of scenarios. There are two variants of the API functions i.e. one to set option value with persistence and one without. The API functions are:"
+            - paragraph [ref=f26e675]:
+              - code [ref=f26e676]: SE_DLL_API int SE_SetOption(const char *name);
+            - paragraph [ref=f26e678]:
+              - code [ref=f26e679]: SE_DLL_API int SE_SetOptionPersistent(const char *name);
+            - paragraph [ref=f26e681]:
+              - code [ref=f26e682]: SE_DLL_API int SE_SetOptionValue(const char *name, const char *value);
+            - paragraph [ref=f26e684]:
+              - code [ref=f26e685]: SE_DLL_API int SE_SetOptionValuePersistent(const char *name, const char *value);
+            - paragraph [ref=f26e687]:
+              - code [ref=f26e688]: SE_DLL_API int SE_UnsetOption(const char *name);
+            - paragraph [ref=f26e690]:
+              - code [ref=f26e691]: SE_DLL_API const char *SE_GetOptionValue(const char *name);
+            - paragraph [ref=f26e693]:
+              - code [ref=f26e694]: SE_DLL_API const char *SE_GetOptionValueByEnum(unsigned int);
+              - text: (see
+              - link "Using options (in code)" [ref=f26e695] [cursor=pointer]:
+                - /url: developers-contributors.html#_using_options_in_code
+              - text: )
+            - paragraph [ref=f26e697]: Any setting done in between runs, i.e. after any SE_Close() and before SE_Init(), will apply to the next run, at least. The persistent variant will apply for all future runs until unset or other setting overrides it. The effect of settings done during a scenario run will depend on the option itself. For example, anti-aliasing mode for the rendering will not change during a scenario, while logfile path can change during a scenario run (which will close current and open a new file with specified path and name). So, to be sure, set options before SE_Init() and after any SE_Close().
+          - generic [ref=f26e698]:
+            - heading "Simple ideal sensors" [level=4] [ref=f26e699]
+            - paragraph [ref=f26e701]:
+              - text: "OSI provides information needed for sensor models at bounding box level for both moving and stationary objects, including ones defined in OpenDRIVE. Sensor models can then detect overlap, occlusion and collisions between those bounding boxes. Although sensor models are not within scope of esmini, there is a code example on how to retrieve and extract OSI data. It can perhaps be a starting point:"
+              - link "osi-groundtruth.cpp" [ref=f26e702] [cursor=pointer]:
+                - /url: https://github.com/esmini/esmini/blob/dev/EnvironmentSimulator/code-examples/osi-groundtruth/osi-groundtruth.cpp
+            - paragraph [ref=f26e704]: For even simpler use cases esmini provides a sensor mechanism, basically collecting scenario objects which reference point is within a sensor view frustum. This is too rough for collision detection, but can be useful for low-pass features like adaptive cruse control (ACC) or just optimizing CPU load by filtering objects for some processing.
+            - paragraph [ref=f26e706]:
+              - text: The view frustum is defined by a horizontal
+              - code [ref=f26e707]: field of view
+              - text: combined with
+              - code [ref=f26e708]: near
+              - text: and
+              - code [ref=f26e709]: far
+              - text: "limits. Basically an object is detected by a ideal sensor if the object reference point is within the view frustum, i.e:"
+            - list [ref=f26e711]:
+              - listitem [ref=f26e712]:
+                - paragraph [ref=f26e713]:
+                  - text: angle from sensor mounting point is within the
+                  - code [ref=f26e714]: field of view
+              - listitem [ref=f26e715]:
+                - paragraph [ref=f26e716]:
+                  - text: distance from sensor mounting point is larger than
+                  - code [ref=f26e717]: near
+                  - text: and less than
+                  - code [ref=f26e718]: far
+            - generic [ref=f26e719]:
+              - img "ideal sensors" [ref=f26e721]
+              - generic [ref=f26e722]: A few ideal sensors mounted at various positions and orientations
+            - paragraph [ref=f26e724]:
+              - text: The sensors are added from the code, see the
+              - link "esmini-dyn" [ref=f26e725] [cursor=pointer]:
+                - /url: https://github.com/esmini/esmini/blob/dev/EnvironmentSimulator/Applications/esmini-dyn
+              - text: code example. API is found
+              - link "here" [ref=f26e726] [cursor=pointer]:
+                - /url: https://github.com/esmini/esmini/blob/dev/EnvironmentSimulator/Libraries/esminiLib/esminiLib.hpp#L1082-L1095
+              - text: .
+            - paragraph [ref=f26e728]: "Limitations:"
+            - list [ref=f26e730]:
+              - listitem [ref=f26e731]:
+                - paragraph [ref=f26e732]: OpenDRIVE stationary objects not considered
+              - listitem [ref=f26e733]:
+                - paragraph [ref=f26e734]: Only reference point checking (part of the object can be inside frustum and still not detected)
+          - generic [ref=f26e735]:
+            - heading "Logging" [level=4] [ref=f26e736]
+            - paragraph [ref=f26e738]:
+              - text: By default, both file and console logging are enabled. Default log filename is
+              - code [ref=f26e739]: log.txt
+              - text: . Default location is current folder, normally the folder from which the application was started.
+            - paragraph [ref=f26e741]:
+              - text: All this can be controlled and modified through the API. Full details see log related functions in
+              - link "esminiLib.hpp" [ref=f26e742] [cursor=pointer]:
+                - /url: https://github.com/esmini/esmini/blob/master/EnvironmentSimulator/Libraries/esminiLib/esminiLib.hpp
+              - text: ". Following is a brief overview:"
+            - generic [ref=f26e743]:
+              - heading "Enable or disable logging to console" [level=5] [ref=f26e744]
+              - code [ref=f26e748]: void SE_LogToConsole(bool mode);
+              - paragraph [ref=f26e750]:
+                - text: An additional way to control console logging is to set or unset the launch option
+                - code [ref=f26e751]: "--disable_stdout"
+                - text: "using the API functions:"
+              - code [ref=f26e755]: int SE_SetOption(const char *name); int SE_UnsetOption(const char *name);
+              - paragraph [ref=f26e757]:
+                - text: with
+                - code [ref=f26e758]: "--disable_stdout"
+                - text: as argument.
+            - generic [ref=f26e759]:
+              - heading "Change log filename and/or location" [level=5] [ref=f26e760]
+              - code [ref=f26e764]: void SE_SetLogFilePath(const char *logFilePath);
+              - list [ref=f26e766]:
+                - listitem [ref=f26e767]:
+                  - paragraph [ref=f26e768]:
+                    - text: Full path (relative or absolute) can be provided, e.g.
+                    - code [ref=f26e769]: "\"../myresult/scenario_2.txt\""
+                    - text: .
+                - listitem [ref=f26e770]:
+                  - paragraph [ref=f26e771]: If only directory provided, default filename will be used.
+                - listitem [ref=f26e772]:
+                  - paragraph [ref=f26e773]: If only filename provided, default location will be used.
+                - listitem [ref=f26e774]:
+                  - paragraph [ref=f26e775]:
+                    - text: if empty string
+                    - code [ref=f26e776]: "\"\""
+                    - text: is provided, log file will not be created.
+              - paragraph [ref=f26e778]:
+                - text: It should be called before SE_Init(). If called during the run of a scenario, the current log file will be closed and a new with the specified name and/or location will be created, unless
+                - code [ref=f26e779]: "--log_append"
+                - text: option has been set.
+            - generic [ref=f26e780]:
+              - heading "Log single message" [level=5] [ref=f26e781]
+              - code [ref=f26e785]: void SE_LogMessage(const char *message);
+              - paragraph [ref=f26e787]: the provided string will be posted to console and file according to settings.
+        - generic [ref=f26e788]:
+          - heading "Simplest example" [level=3] [ref=f26e789]
+          - paragraph [ref=f26e791]:
+            - text: Below example is just to show the simplicity of using esmini library. For more information and realistic examples, e.g. involving cmake, please go ahead to
+            - link "Hello World programming tutorial" [ref=f26e792] [cursor=pointer]:
+              - /url: hello-world-tutorial.html#_hello_world_programming_tutorial
+            - text: .
+          - paragraph [ref=f26e794]:
+            - text: If not already done, download and unpack
+            - link "latest esmini demo" [ref=f26e795] [cursor=pointer]:
+              - /url: https://github.com/esmini/esmini/releases/latest
+            - text: . Make sure to pick demo, not bin, for your platform.
+          - paragraph [ref=f26e797]:
+            - text: In esmini root folder, create a file named
+            - code [ref=f26e798]: main.cpp
+            - text: "and add the following lines:"
+          - paragraph [ref=f26e800]:
+            - strong [ref=f26e801]: "Code:"
+          - code [ref=f26e805]:
+            - text: "#include \"./EnvironmentSimulator/Libraries/esminiLib/esminiLib.hpp\" int main() { SE_Init("
+            - generic [ref=f26e806]: "\"./resources/xosc/cut-in.xosc\""
+            - text: ", 0, 1, 0, 0); while (SE_GetQuitFlag() == 0) SE_Step(); SE_Close(); return 0; }"
+          - paragraph [ref=f26e808]:
+            - strong [ref=f26e809]: "Compile:"
+          - list [ref=f26e811]:
+            - listitem [ref=f26e812]:
+              - paragraph [ref=f26e813]:
+                - text: "Linux:"
+                - code [ref=f26e814]: gcc main.cpp ./bin/libesminiLib.so -Wl,-rpath,\$ORIGIN -o bin/my_player
+            - listitem [ref=f26e815]:
+              - paragraph [ref=f26e816]:
+                - text: "Windows (x64 Native Tools Command Prompt for Visual Studio):"
+                - code [ref=f26e817]: cl main.cpp ./bin/esminiLib.lib /Fe:bin/my_player
+          - paragraph [ref=f26e819]:
+            - strong [ref=f26e820]: "Run:"
+          - paragraph [ref=f26e822]:
+            - text: "from Linux terminal or Windows PowerShell:"
+            - code [ref=f26e823]: ./bin/my_player
+  - generic [ref=f26e824]: Last updated 2026-10-12 14:39:14 +0200

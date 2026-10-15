@@ -1,0 +1,9 @@
+Real2Scenario
+
+Copyright 2026 Real2Scenario contributors.
+
+This NOTICE applies to the project source code distributed under Apache-2.0.
+It does not relicense nuScenes data, nuScenes map assets, or any trajectory,
+OpenSCENARIO, OpenDRIVE, replay, image, video, or other artifact derived from
+nuScenes. Those materials remain subject to their own terms and are local-only
+unless a separate written release decision authorizes distribution.

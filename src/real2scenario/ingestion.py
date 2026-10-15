@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from .models import Actor, Scenario, State
+from .nuscenes_backend import NuScenesSourceAdapter, nearest_can_poses
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,6 +37,8 @@ def extract_scenario(
     actor_instance_tokens: Sequence[str],
     *,
     version: str = "v1.0-mini",
+    tables: Mapping[str, Sequence[Mapping[str, Any]]] | None = None,
+    use_devkit_sources: bool = True,
 ) -> Scenario:
     """Extract global-frame ego and explicitly selected actor trajectories.
 
@@ -44,6 +47,12 @@ def extract_scenario(
     interaction ranking and automatic selection belong to R2S-103. Positions
     remain in nuScenes global coordinates. R2S-201 converts them to the local
     road-aligned frame used by simulation.
+
+    ``tables`` optionally supplies already loaded or cached metadata records for
+    the same dataset version. It must contain every table required below and must
+    be a subset of the requested window's scenes; it exists so repeated scene
+    preparation does not rescan the source tables. Supplying tables never changes
+    the canonical result.
     """
     if not version:
         raise ValueError("version must not be empty.")
@@ -53,21 +62,7 @@ def extract_scenario(
         raise ValueError("actor_instance_tokens must be unique.")
 
     root = Path(dataset_root).expanduser()
-    tables = _load_tables(
-        root,
-        version,
-        (
-            "scene",
-            "sample",
-            "sample_data",
-            "sample_annotation",
-            "instance",
-            "ego_pose",
-            "calibrated_sensor",
-            "sensor",
-            "category",
-        ),
-    )
+    tables = _validated_tables(root, version, tables)
     scenes = _index_by_token(tables["scene"], "scene")
     samples = _index_by_token(tables["sample"], "sample")
     instances = _index_by_token(tables["instance"], "instance")
@@ -87,6 +82,7 @@ def extract_scenario(
     )
     ego_positions: list[tuple[float, float]] = []
     ego_yaws: list[float] = []
+    ego_tokens: list[str] = []
     for sample in sample_window:
         sample_token = _required_string(sample, "token", "sample")
         lidar = _required_record(lidar_by_sample, sample_token, "LIDAR_TOP sample_data")
@@ -97,6 +93,17 @@ def extract_scenario(
         )
         ego_positions.append(_translation_xy(pose, "ego_pose"))
         ego_yaws.append(_yaw_from_record(pose, "ego_pose"))
+        ego_tokens.append(_required_string(lidar, "ego_pose_token", "LIDAR_TOP sample_data"))
+
+    can_samples = ()
+    source_adapter = NuScenesSourceAdapter(root)
+    scene_name = _required_string(scene, "name", "scene") if scene.get("name") else window.scene_token
+    if use_devkit_sources:
+        can_samples = source_adapter.can_pose(scene_name)
+    can_matches = nearest_can_poses(
+        [round(timestamp_s * 1_000_000) for timestamp_s in timestamps_s], can_samples
+    )
+    matched_can = any(match is not None and match.speed_mps is not None for match in can_matches)
 
     actors = [
         _build_actor(
@@ -114,7 +121,14 @@ def extract_scenario(
         actor_id="ego",
         actor_type="vehicle.ego",
         trajectory=_states_from_positions(
-            timestamps_s, ego_positions, ego_yaws, origin_time_s=timestamps_s[0]
+            timestamps_s,
+            ego_positions,
+            ego_yaws,
+            origin_time_s=timestamps_s[0],
+            source_tokens=ego_tokens,
+            measured_speeds=[match.speed_mps if match is not None else None for match in can_matches]
+            if can_matches
+            else None,
         ),
     )
     duration_s = timestamps_s[-1] - timestamps_s[0]
@@ -136,8 +150,50 @@ def extract_scenario(
             "map_reconstruction_version": "not-applicable",
             "generator_version": "real2scenario-ingestion-v1",
             "selected_instance_tokens": ",".join(actor_instance_tokens),
+            **source_adapter.provenance(
+                scene_name=scene_name, used=matched_can, sample_count=len(can_samples)
+            ),
         },
     )
+
+
+def source_reference_convention() -> dict[str, str]:
+    """Return the immutable nuScenes reference-point convention used at CP1."""
+    return {
+        "trajectory_position": "sample_annotation.translation_xy",
+        "annotation_box_origin": "3D bounding-box center translation",
+        "annotation_heading": "sample_annotation.rotation yaw",
+        "lane_reference": "map discretized centerline pose",
+        "footprint_origin": "annotation box center when dimensions are available",
+        "correction": "none",
+        "version": "source-reference-convention-v1",
+    }
+
+
+_REQUIRED_TABLES = (
+    "scene",
+    "sample",
+    "sample_data",
+    "sample_annotation",
+    "instance",
+    "ego_pose",
+    "calibrated_sensor",
+    "sensor",
+    "category",
+)
+
+
+def _validated_tables(
+    root: Path,
+    version: str,
+    tables: Mapping[str, Sequence[Mapping[str, Any]]] | None,
+) -> Mapping[str, Sequence[Mapping[str, Any]]]:
+    if tables is not None:
+        missing = [name for name in _REQUIRED_TABLES if name not in tables]
+        if missing:
+            raise ValueError(f"Supplied tables are missing {', '.join(missing)}.")
+        return tables
+    return _load_tables(root, version, _REQUIRED_TABLES)
 
 
 def _load_tables(
@@ -243,6 +299,7 @@ def _build_actor(
     positions: list[tuple[float, float]] = []
     yaws: list[float] = []
     actor_timestamps: list[float] = []
+    actor_tokens: list[str] = []
     dimensions: tuple[float, float] | None = None
     for sample, timestamp_s in zip(samples, timestamps_s):
         annotation = annotation_index.get((_required_string(sample, "token", "sample"), instance_token))
@@ -251,6 +308,7 @@ def _build_actor(
         positions.append(_translation_xy(annotation, "sample_annotation"))
         yaws.append(_yaw_from_record(annotation, "sample_annotation"))
         actor_timestamps.append(timestamp_s)
+        actor_tokens.append(_required_string(annotation, "token", "sample_annotation"))
         size = _size(annotation)
         if dimensions is None:
             dimensions = size
@@ -262,7 +320,11 @@ def _build_actor(
     if not positions:
         raise ValueError(f"Instance {instance_token!r} has no annotations in the source window.")
     states = _states_from_positions(
-        actor_timestamps, positions, yaws, origin_time_s=origin_time_s
+        actor_timestamps,
+        positions,
+        yaws,
+        origin_time_s=origin_time_s,
+        source_tokens=actor_tokens,
     )
     length_m, width_m = dimensions or (None, None)
     return Actor(
@@ -280,14 +342,25 @@ def _states_from_positions(
     yaws: Sequence[float],
     *,
     origin_time_s: float | None = None,
+    source_tokens: Sequence[str] | None = None,
+    measured_speeds: Sequence[float | None] | None = None,
 ) -> tuple[State, ...]:
     if not (len(timestamps_s) == len(positions) == len(yaws)):
         raise ValueError("Trajectory timestamps, positions, and yaws must have equal length.")
     if not timestamps_s:
         raise ValueError("Trajectory must contain at least one state.")
+    if source_tokens is not None and len(source_tokens) != len(timestamps_s):
+        raise ValueError("Trajectory source tokens must match state count.")
+    if measured_speeds is not None and len(measured_speeds) != len(timestamps_s):
+        raise ValueError("Measured speeds must match trajectory state count.")
     start_time_s = timestamps_s[0] if origin_time_s is None else origin_time_s
     relative_times = [timestamp_s - start_time_s for timestamp_s in timestamps_s]
     speeds = _finite_difference_speeds(relative_times, positions)
+    if measured_speeds is not None:
+        speeds = [
+            measured if measured is not None and measured >= 0 else fallback
+            for measured, fallback in zip(measured_speeds, speeds)
+        ]
     return tuple(
         State(
             time_s=time_s,
@@ -295,8 +368,12 @@ def _states_from_positions(
             y_m=position[1],
             yaw_rad=yaw,
             speed_mps=speed,
+            source_timestamp_us=round(timestamp_s * 1_000_000),
+            source_record_token=None if source_tokens is None else source_tokens[index],
         )
-        for time_s, position, yaw, speed in zip(relative_times, positions, yaws, speeds)
+        for index, (time_s, timestamp_s, position, yaw, speed) in enumerate(
+            zip(relative_times, timestamps_s, positions, yaws, speeds)
+        )
     )
 
 

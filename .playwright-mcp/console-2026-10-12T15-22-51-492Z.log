@@ -1,0 +1,2 @@
+[      33ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://127.0.0.1:5173/@fs/tmp/opencode/r2s-frontend/.vite-cache/deps/react-dom_client.js?v=ae01e6a8:15860
+[   56145ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://127.0.0.1:5173/api/scenarios/synthetic-variant-001/variants/preview:0

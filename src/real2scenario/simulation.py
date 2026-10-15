@@ -56,6 +56,8 @@ class EsminiConfig:
     trace_converter: str | Path | tuple[str, ...] | None = None
     timeout_s: float = 30.0
     fixed_timestep_s: float = 0.05
+    capture_images: bool = False
+    camera_mode: str = "orbit"
 
     def __post_init__(self) -> None:
         for field_name, value in (
@@ -64,6 +66,8 @@ class EsminiConfig:
         ):
             if not isfinite(value) or value <= 0:
                 raise ValueError(f"EsminiConfig {field_name} must be finite and positive.")
+        if self.camera_mode not in {"orbit", "driver"}:
+            raise ValueError("EsminiConfig camera_mode must be 'orbit' or 'driver'.")
 
     def resolve_command(self) -> tuple[str, ...]:
         """Resolve an explicit executable or the caller-provided ``ESMINI_BIN``."""
@@ -104,6 +108,8 @@ class ReplayReport:
     tool_version: str | None
     trace_path: Path
     trace: ReplayTrace | None
+    failure_code: str | None = None
+    failure_message: str | None = None
 
 
 def run_esmini(
@@ -118,7 +124,10 @@ def run_esmini(
     ``dat2csv`` companion command.
     A failed invocation returns an auditable report instead of hiding stderr.
     """
-    executable_command = config.resolve_command()
+    try:
+        executable_command = config.resolve_command()
+    except ValueError as error:
+        return ReplayReport((), False, False, None, "", str(error), None, Path(trace_path), None, "missing_esmini_bin", str(error))
     scenario = Path(scenario_path)
     trace = Path(trace_path)
     if not scenario.is_file():
@@ -129,12 +138,24 @@ def run_esmini(
         *executable_command,
         "--osc",
         str(scenario),
-        "--headless",
         "--fixed_timestep",
         format(config.fixed_timestep_s, ".12g"),
         "--record",
         str(recording_path),
     )
+    if config.capture_images:
+        command += (
+            "--capture_screen",
+            "--camera_mode",
+            config.camera_mode,
+            "--window",
+            "0",
+            "0",
+            "640",
+            "480",
+        )
+    else:
+        command += ("--headless",)
     tool_version = _tool_version(executable_command, config.timeout_s)
     try:
         completed = subprocess.run(
@@ -143,6 +164,7 @@ def run_esmini(
             check=False,
             text=True,
             timeout=config.timeout_s,
+            cwd=trace.parent,
         )
     except subprocess.TimeoutExpired as error:
         return ReplayReport(
@@ -155,6 +177,7 @@ def run_esmini(
             tool_version=tool_version,
             trace_path=trace,
             trace=None,
+            failure_code="timeout", failure_message="esmini replay timed out.",
         )
     except OSError as error:
         return ReplayReport(
@@ -167,9 +190,14 @@ def run_esmini(
             tool_version=tool_version,
             trace_path=trace,
             trace=None,
+            failure_code="missing_esmini_bin", failure_message=str(error),
         )
 
     if completed.returncode != 0:
+        failure_message = f"esmini exited with code {completed.returncode}."
+        combined_output = f"{completed.stdout}\n{completed.stderr}".lower()
+        if "viewer initialization failed" in combined_output or "failed to create window" in combined_output:
+            failure_message = "esmini image capture requires a usable viewer/display; headless capture is unavailable."
         return ReplayReport(
             command=command,
             completed=False,
@@ -180,9 +208,14 @@ def run_esmini(
             tool_version=tool_version,
             trace_path=trace,
             trace=None,
+            failure_code="capture_viewer_unavailable" if config.capture_images else "esmini_exit",
+            failure_message=failure_message,
         )
     try:
-        converter_command = config.resolve_trace_converter_command()
+        try:
+            converter_command = config.resolve_trace_converter_command()
+        except ValueError as error:
+            return ReplayReport(command, False, False, completed.returncode, completed.stdout, completed.stderr, tool_version, trace, None, "missing_dat2csv", str(error))
         conversion = subprocess.run(
             (
                 *converter_command,
@@ -197,6 +230,7 @@ def run_esmini(
             check=False,
             text=True,
             timeout=config.timeout_s,
+            cwd=trace.parent,
         )
         if conversion.returncode != 0:
             raise ValueError(
@@ -214,6 +248,7 @@ def run_esmini(
             tool_version=tool_version,
             trace_path=trace,
             trace=None,
+            failure_code="malformed_trace", failure_message=str(error),
         )
     return ReplayReport(
         command=command,

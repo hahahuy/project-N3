@@ -1,0 +1,448 @@
+- document [active] [ref=f31e1]:
+  - generic [ref=f31e2]:
+    - navigation [ref=f31e3]:
+      - generic [ref=f31e4]:
+        - generic [ref=f31e5]:
+          - link " CARLA Simulator" [ref=f31e6] [cursor=pointer]:
+            - /url: ..
+          - search [ref=f31e7]:
+            - textbox "Search docs" [ref=f31e9]
+        - navigation "Navigation menu" [ref=f31e10]:
+          - list [ref=f31e11]:
+            - listitem [ref=f31e12]:
+              - link "Home" [ref=f31e13] [cursor=pointer]:
+                - /url: ..
+          - paragraph [ref=f31e14]: Getting started
+          - list [ref=f31e15]:
+            - listitem [ref=f31e16]:
+              - link "Introduction" [ref=f31e17] [cursor=pointer]:
+                - /url: ../start_introduction/
+            - listitem [ref=f31e18]:
+              - link "Quick start package installation" [ref=f31e19] [cursor=pointer]:
+                - /url: ../start_quickstart/
+            - listitem [ref=f31e20]:
+              - link "First steps" [ref=f31e21] [cursor=pointer]:
+                - /url: ../tuto_first_steps/
+            - listitem [ref=f31e22]:
+              - link "Building CARLA" [ref=f31e23] [cursor=pointer]:
+                - /url: ../build_carla/
+          - paragraph [ref=f31e24]: Next steps
+          - list [ref=f31e25]:
+            - listitem [ref=f31e26]:
+              - link "Content authoring - maps" [ref=f31e27] [cursor=pointer]:
+                - /url: ../tuto_content_authoring_maps/
+            - listitem [ref=f31e28]:
+              - link "Content authoring - vehicles" [ref=f31e29] [cursor=pointer]:
+                - /url: ../tuto_content_authoring_vehicles/
+            - listitem [ref=f31e30]:
+              - link "Content authoring - props" [ref=f31e31] [cursor=pointer]:
+                - /url: ../content_authoring_props/
+          - paragraph [ref=f31e32]: CARLA topics
+          - list [ref=f31e33]:
+            - listitem [ref=f31e34]:
+              - link "Coordinates and transformations" [ref=f31e35] [cursor=pointer]:
+                - /url: ../coordinates/
+            - listitem [ref=f31e36]:
+              - link "Foundations" [ref=f31e37] [cursor=pointer]:
+                - /url: ../foundations/
+            - listitem [ref=f31e38]:
+              - link "Actors" [ref=f31e39] [cursor=pointer]:
+                - /url: ../core_actors/
+            - listitem [ref=f31e40]:
+              - link "Maps" [ref=f31e41] [cursor=pointer]:
+                - /url: ../core_map/
+            - listitem [ref=f31e42]:
+              - link "Sensors and data" [ref=f31e43] [cursor=pointer]:
+                - /url: ../core_sensors/
+            - listitem [ref=f31e44]:
+              - link "Traffic" [ref=f31e45] [cursor=pointer]:
+                - /url: ../ts_traffic_simulation_overview/
+            - listitem [ref=f31e46]:
+              - link "AI rendering" [ref=f31e47] [cursor=pointer]:
+                - /url: ../ai_rendering/
+            - listitem [ref=f31e48]:
+              - link "Development" [ref=f31e49] [cursor=pointer]:
+                - /url: ../development_tutorials/
+            - listitem [ref=f31e50]:
+              - link "Custom assets" [ref=f31e51] [cursor=pointer]:
+                - /url: ../custom_assets_tutorials/
+          - paragraph [ref=f31e52]: Resources
+          - list [ref=f31e53]:
+            - listitem [ref=f31e54]:
+              - link "Python API" [ref=f31e55] [cursor=pointer]:
+                - /url: ../python_api/
+            - listitem [ref=f31e56]:
+              - link "Catalogue" [ref=f31e57] [cursor=pointer]:
+                - /url: ../catalogue/
+            - listitem [ref=f31e58]:
+              - link "C++ reference" [ref=f31e59] [cursor=pointer]:
+                - /url: ../ref_cpp/
+            - listitem [ref=f31e60]:
+              - link "Blueprint library" [ref=f31e61] [cursor=pointer]:
+                - /url: ../bp_library/
+            - listitem [ref=f31e62]:
+              - link "Tutorials" [ref=f31e63] [cursor=pointer]:
+                - /url: ../tutorials/
+            - listitem [ref=f31e64]:
+              - link "Extended documentation" [ref=f31e65] [cursor=pointer]:
+                - /url: ../ext_docs/
+            - listitem [ref=f31e66]:
+              - link "Downloads" [ref=f31e67] [cursor=pointer]:
+                - /url: ../download/
+          - paragraph [ref=f31e68]: CARLA Ecosystem
+          - list [ref=f31e69]:
+            - listitem [ref=f31e70]:
+              - link "ANSYS" [ref=f31e71] [cursor=pointer]:
+                - /url: ../ecosys_ansys/
+            - listitem [ref=f31e72]:
+              - link "AWS" [ref=f31e73] [cursor=pointer]:
+                - /url: ../tuto_G_rllib_integration/
+            - listitem [ref=f31e74]:
+              - link "CarSIM" [ref=f31e75] [cursor=pointer]:
+                - /url: ../tuto_G_carsim_integration/
+            - listitem [ref=f31e76]:
+              - link "Chrono" [ref=f31e77] [cursor=pointer]:
+                - /url: ../tuto_G_chrono/
+            - listitem [ref=f31e78]:
+              - link "MathWorks" [ref=f31e79] [cursor=pointer]:
+                - /url: ../large_map_roadrunner/
+            - listitem [ref=f31e80]:
+              - link "Inverted AI" [ref=f31e81] [cursor=pointer]:
+                - /url: ../inverted_ai/
+            - listitem [ref=f31e82]:
+              - link "NVIDIA" [ref=f31e83] [cursor=pointer]:
+                - /url: ../nvidia/
+            - listitem [ref=f31e84]:
+              - link "ASAM OpenDRIVE" [ref=f31e85] [cursor=pointer]:
+                - /url: ../adv_opendrive/
+            - listitem [ref=f31e86]:
+              - link "PTV Vissim" [ref=f31e87] [cursor=pointer]:
+                - /url: ../adv_ptv/
+            - listitem [ref=f31e88]:
+              - link "RSS" [ref=f31e89] [cursor=pointer]:
+                - /url: ../adv_rss/
+            - listitem [ref=f31e90]:
+              - link "ROS" [ref=f31e91] [cursor=pointer]:
+                - /url: https://carla.readthedocs.io/projects/ros-bridge/en/latest/
+            - listitem [ref=f31e92]:
+              - link "Scenic" [ref=f31e93] [cursor=pointer]:
+                - /url: ../tuto_G_scenic/
+            - listitem [ref=f31e94]:
+              - link "SUMO" [ref=f31e95] [cursor=pointer]:
+                - /url: ../adv_sumo/
+            - listitem [ref=f31e96]:
+              - link "SYNKROTRON" [ref=f31e97] [cursor=pointer]:
+                - /url: ../ecosys_synkrotron/
+          - paragraph [ref=f31e98]: Contributing
+          - list [ref=f31e99]:
+            - listitem [ref=f31e100]:
+              - link "Guidelines" [ref=f31e101] [cursor=pointer]:
+                - /url: ../cont_contribution_guidelines/
+            - listitem [ref=f31e102]:
+              - link "Coding standards" [ref=f31e103] [cursor=pointer]:
+                - /url: ../cont_coding_standard/
+            - listitem [ref=f31e104]:
+              - link "Documentation standard" [ref=f31e105] [cursor=pointer]:
+                - /url: ../cont_doc_standard/
+            - listitem [ref=f31e106]:
+              - link [ref=f31e107] [cursor=pointer]:
+                - /url: ..
+    - generic [ref=f31e108]:
+      - text: 
+      - generic [ref=f31e110]:
+        - navigation "breadcrumbs navigation" [ref=f31e111]:
+          - list [ref=f31e112]:
+            - listitem [ref=f31e113]:
+              - link "Docs" [ref=f31e114] [cursor=pointer]:
+                - /url: ..
+                - text: 
+            - listitem [ref=f31e115]: /Synchrony and time-step
+            - listitem [ref=f31e116]:
+              - link " Edit on GitHub" [ref=f31e117] [cursor=pointer]:
+                - /url: https://github.com/carla-simulator/carla/edit/master/Docs/adv_synchrony_timestep.md
+          - separator [ref=f31e118]
+        - main [ref=f31e119]:
+          - generic [ref=f31e120]:
+            - generic [ref=f31e121]: You are currently reading documentation for the "dev" branch of CARLA. This documentation refers to features currently in development and may result in unexpected behaviour. To read documentation for previous releases, select the desired version in the bottom, right-hand corner of the screen.
+            - heading "Synchrony and time-step" [level=1] [ref=f31e122]
+            - paragraph [ref=f31e123]: This section deals with two fundamental concepts in CARLA. Their configuration defines how does time go by in the simulation, and how does the server make the simulation move forward.
+            - list [ref=f31e124]:
+              - listitem [ref=f31e125]:
+                - link [ref=f31e126] [cursor=pointer]:
+                  - /url: "#simulation-time-step"
+                  - strong [ref=f31e127]: Simulation time-step
+                - list [ref=f31e128]:
+                  - listitem [ref=f31e129]:
+                    - link "Variable time-step" [ref=f31e130] [cursor=pointer]:
+                      - /url: "#variable-time-step"
+                  - listitem [ref=f31e131]:
+                    - link "Fixed time-step" [ref=f31e132] [cursor=pointer]:
+                      - /url: "#fixed-time-step"
+                  - listitem [ref=f31e133]:
+                    - link "Tips when recording the simulation" [ref=f31e134] [cursor=pointer]:
+                      - /url: "#tips-when-recording-the-simulation"
+                  - listitem [ref=f31e135]:
+                    - link "Physics substepping" [ref=f31e136] [cursor=pointer]:
+                      - /url: "#physics-substepping"
+              - listitem [ref=f31e137]:
+                - link [ref=f31e138] [cursor=pointer]:
+                  - /url: "#client-server-synchrony"
+                  - strong [ref=f31e139]: Client-server synchrony
+                - list [ref=f31e140]:
+                  - listitem [ref=f31e141]:
+                    - link "Setting synchronous mode" [ref=f31e142] [cursor=pointer]:
+                      - /url: "#setting-synchronous-mode"
+                  - listitem [ref=f31e143]:
+                    - link "Using synchronous mode" [ref=f31e144] [cursor=pointer]:
+                      - /url: "#using-synchronous-mode"
+              - listitem [ref=f31e145]:
+                - link [ref=f31e146] [cursor=pointer]:
+                  - /url: "#possible-configurations"
+                  - strong [ref=f31e147]: Possible configurations
+              - listitem [ref=f31e148]:
+                - link [ref=f31e149] [cursor=pointer]:
+                  - /url: "#physics-determinism"
+                  - strong [ref=f31e150]: Physics determinism
+            - separator [ref=f31e151]
+            - heading "Simulation time-step" [level=2] [ref=f31e152]
+            - paragraph [ref=f31e153]: There is a difference between real time, and simulation time. The simulated world has its own clock and time, conducted by the server. Computing two simulation steps takes some real time. However, there is also the time span that went by between those two simulation moments, the time-step.
+            - paragraph [ref=f31e154]: To clarify, the server can take a few milliseconds to compute two steps of a simulation. However, the time-step between those two simulation moments can be configured to be, for instance, always a second.
+            - paragraph [ref=f31e155]: Time-step can be fixed or variable depending on user preferences.
+            - generic [ref=f31e156]:
+              - paragraph [ref=f31e157]:  Note
+              - paragraph [ref=f31e158]: Time-step and synchrony are intertwined concepts. Make sure to read both sections to get a full understanding of how does CARLA work.
+            - heading "Variable time-step" [level=3] [ref=f31e159]
+            - paragraph [ref=f31e160]: The default mode in CARLA. The simulation time that goes by between steps will be the time that the server takes to compute these.
+            - code [ref=f31e162]: "settings = world.get_settings() settings.fixed_delta_seconds = None # Set a variable time-step world.apply_settings(settings)"
+            - paragraph [ref=f31e163]:
+              - code [ref=f31e164]: PythonAPI/util/config.py
+              - text: sets the time-step using an argument. Zero equals variable time-step.
+            - code [ref=f31e166]: cd PythonAPI/util && python3 config.py --delta-seconds 0
+            - heading "Fixed time-step" [level=3] [ref=f31e167]
+            - paragraph [ref=f31e168]: The elapsed time remains constant between steps. If it is set to 0.5 seconds, there will be two frames per simulated second. Using the same time increment on each step is the best way to gather data from the simulation. Physics and sensor data will correspond to an easy to comprehend moment of the simulation. Also, if the server is fast enough, it makes possible to simulate longer time periods in less real time.
+            - paragraph [ref=f31e169]: Fixed delta seconds can be set in the world settings. To run the simulation at a fixed time-step of 0.05 seconds apply the following settings. In this case, the simulator will take twenty steps (1/0.05) to recreate one second of the simulated world.
+            - code [ref=f31e171]: settings = world.get_settings() settings.fixed_delta_seconds = 0.05 world.apply_settings(settings)
+            - paragraph [ref=f31e172]:
+              - text: This can also be set using the provided script
+              - code [ref=f31e173]: PythonAPI/util/config.py
+              - text: .
+            - code [ref=f31e175]: cd PythonAPI/util && python3 config.py --delta-seconds 0.05
+            - heading "Tips when recording the simulation" [level=3] [ref=f31e176]
+            - paragraph [ref=f31e177]:
+              - text: CARLA has a
+              - link "recorder feature" [ref=f31e178] [cursor=pointer]:
+                - /url: ../adv_recorder/
+              - text: that allows a simulation to be recorded and then reenacted. However, when looking for precision, some things need to be taken into account.
+            - list [ref=f31e179]:
+              - listitem [ref=f31e180]:
+                - paragraph [ref=f31e181]:
+                  - text: With a
+                  - strong [ref=f31e182]: fixed time-step
+                  - text: ", reenacting it will be easy. The server can be set to the same time-step used in the original simulation."
+              - listitem [ref=f31e183]:
+                - paragraph [ref=f31e184]:
+                  - text: With a
+                  - strong [ref=f31e185]: variable time-step
+                  - text: ", things are a bit more complicated."
+                - list [ref=f31e186]:
+                  - listitem [ref=f31e187]:
+                    - paragraph [ref=f31e188]:
+                      - text: If the
+                      - strong [ref=f31e189]: server runs with a variable time-step
+                      - text: ", the time-steps will be different from the original one, as logic cycles differ from time to time. The information will then be interpolated using the recorded data."
+                  - listitem [ref=f31e190]:
+                    - paragraph [ref=f31e191]:
+                      - text: If the
+                      - strong [ref=f31e192]: server is forced to reproduce the exact same time-steps
+                      - text: ", the steps simulated will be the same, but the real time between them changes. Time-steps should be passed one by one. Those original time-steps were the result of the original simulation running as fast as possible. As the time taken to represent these will mostly be different, the simulation is bound to be reproduced with weird time fluctuations."
+                  - listitem [ref=f31e193]:
+                    - paragraph [ref=f31e194]:
+                      - text: There is also a
+                      - strong [ref=f31e195]: float-point arithmetic error
+                      - text: that variable time-step introduces. The simulation is running with a time-step equal to the real one. Real time is a continuous variable, represented in the simulation with a
+                      - code [ref=f31e196]: float
+                      - text: value, which has decimal limitations. The time that is cropped for each step accumulates, and prevents the simulation from a precise repetition of what has happened.
+            - heading "Physics substepping" [level=3] [ref=f31e197]
+            - paragraph [ref=f31e198]: Physics must be computed within very low time steps to be precise. This can be an issue when selecting a delta time for our simulation in which we usually perform multiple computations at each frame, for example with sensor rendering. As this limitation only happens due to the physics simulation, we can apply substeps to only the physical computations. This is enabled by default and is set to have a maximum of 10 physics substeps with a maximum physical delta time of 0.01.
+            - paragraph [ref=f31e199]: "These options can be changed through the API in the world settings as:"
+            - code [ref=f31e201]: settings = world.get_settings() settings.substepping = True settings.max_substep_delta_time = 0.01 settings.max_substeps = 10 world.apply_settings(settings)
+            - paragraph [ref=f31e202]: "Be aware that if you have set synchronous mode and the fixed time step then substepping options need to be consistent with the value of the fixed delta seconds. The condition to be fulfilled is:"
+            - code [ref=f31e204]: fixed_delta_seconds <= max_substep_delta_time * max_substeps
+            - paragraph [ref=f31e205]:
+              - text: In order to have an optimal physical simulation, the substep delta time should at least be below
+              - code [ref=f31e206]: "0.01666"
+              - text: and ideally below
+              - code [ref=f31e207]: "0.01"
+              - text: .
+            - paragraph [ref=f31e208]:
+              - text: To demonstrate the effect of optimal physical sub-stepping, consider the following graphs. The first graph shown below illustrates velocity over time in simulations with different fixed simulation time steps. The physical delta time is constant in all simulations at the default value of
+              - code [ref=f31e209]: "0.01"
+              - text: . We can see that velocity is not affected by the difference in simulation time steps only.
+            - blockquote [ref=f31e210]:
+              - blockquote [ref=f31e211]:
+                - blockquote [ref=f31e212]:
+                  - blockquote [ref=f31e213]:
+                    - blockquote [ref=f31e214]:
+                      - paragraph [ref=f31e215]:
+                        - img "velocity with fixed physical delta time" [ref=f31e216]
+            - paragraph [ref=f31e217]:
+              - text: The second graph shows velocity over time in simulations with a fixed simulation time step of
+              - code [ref=f31e218]: "0.04"
+              - text: . We can see that once the physical delta time surpasses
+              - code [ref=f31e219]: "0.01"
+              - text: ", deviations start to occur in the constancy of velocity, increasing in severity as physical delta time increases."
+            - blockquote [ref=f31e220]:
+              - blockquote [ref=f31e221]:
+                - blockquote [ref=f31e222]:
+                  - blockquote [ref=f31e223]:
+                    - blockquote [ref=f31e224]:
+                      - paragraph [ref=f31e225]:
+                        - img "velocity with varied physical delta time" [ref=f31e226]
+            - paragraph [ref=f31e227]:
+              - text: We can demonstrate this deviation again by showing the effect of the same difference in physical delta time with a fixed simulation time step in the measurement of z-acceleration, with convergence occurring only when the physical delta time is
+              - code [ref=f31e228]: "0.01"
+              - text: or less.
+            - blockquote [ref=f31e229]:
+              - blockquote [ref=f31e230]:
+                - blockquote [ref=f31e231]:
+                  - blockquote [ref=f31e232]:
+                    - blockquote [ref=f31e233]:
+                      - paragraph [ref=f31e234]:
+                        - img "physics convergence z acceleration" [ref=f31e235]
+            - separator [ref=f31e236]
+            - heading "Client-server synchrony" [level=2] [ref=f31e237]
+            - paragraph [ref=f31e238]: CARLA is built over a client-server architecture. The server runs the simulation. The client retrieves information, and demands for changes in the world. This section deals with communication between client and server.
+            - paragraph [ref=f31e239]:
+              - text: By default, CARLA runs in
+              - strong [ref=f31e240]: asynchronous mode
+              - text: . The server runs the simulation as fast as possible, without waiting for the client. On
+              - strong [ref=f31e241]: synchronous mode
+              - text: ", the server waits for a client tick, a \"ready to go\" message, before updating to the following simulation step."
+            - generic [ref=f31e242]:
+              - paragraph [ref=f31e243]:  Note
+              - paragraph [ref=f31e244]: In a multiclient architecture, only one client should tick. The server reacts to every tick received as if it came from the same client. Many client ticks will make the create inconsistencies between server and clients.
+            - heading "Setting synchronous mode" [level=3] [ref=f31e245]
+            - paragraph [ref=f31e246]: Changing between synchronous and asynchronous mode is just a matter of a boolean state.
+            - code [ref=f31e248]: "settings = world.get_settings() settings.synchronous_mode = True # Enables synchronous mode world.apply_settings(settings)"
+            - generic [ref=f31e249]:
+              - paragraph [ref=f31e250]:  Warning
+              - paragraph [ref=f31e251]:
+                - text: If synchronous mode is enabled, and there is a Traffic Manager running, this must be set to sync mode too. Read
+                - link "this" [ref=f31e252] [cursor=pointer]:
+                  - /url: ../adv_traffic_manager/#synchronous-mode
+                - text: to learn how to do it.
+            - paragraph [ref=f31e253]:
+              - text: To disable synchronous mode just set the variable to false or use the script
+              - code [ref=f31e254]: PythonAPI/util/config.py
+              - text: .
+            - code [ref=f31e256]: "cd PythonAPI/util && python3 config.py --no-sync # Disables synchronous mode"
+            - paragraph [ref=f31e257]: Synchronous mode cannot be enabled using the script, only disabled. Enabling the synchronous mode makes the server wait for a client tick. Using this script, the user cannot send ticks when desired.
+            - heading "Using synchronous mode" [level=3] [ref=f31e258]
+            - paragraph [ref=f31e259]: The synchronous mode becomes specially relevant with slow client applications, and when synchrony between different elements, such as sensors, is needed. If the client is too slow and the server does not wait, there will be an overflow of information. The client will not be able to manage everything, and it will be lost or mixed. On a similar tune, with many sensors and asynchrony, it would be impossible to know if all the sensors are using data from the same moment in the simulation.
+            - paragraph [ref=f31e260]:
+              - text: The following fragment of code extends the previous one. The client creates a camera sensor, stores the image data of the current step in a queue, and ticks the server after retrieving it from the queue. A more complex example regarding several sensors can be found
+              - link "here" [ref=f31e261] [cursor=pointer]:
+                - /url: https://github.com/carla-simulator/carla/blob/master/PythonAPI/examples/synchronous_mode.py
+              - text: .
+            - code [ref=f31e263]: "settings = world.get_settings() settings.synchronous_mode = True world.apply_settings(settings) camera = world.spawn_actor(blueprint, transform) image_queue = queue.Queue() camera.listen(image_queue.put) while True: world.tick() image = image_queue.get()"
+            - generic [ref=f31e264]:
+              - paragraph [ref=f31e265]:  Important
+              - paragraph [ref=f31e266]: Data coming from GPU-based sensors, mostly cameras, is usually generated with a delay of a couple of frames. Synchrony is essential here.
+            - paragraph [ref=f31e267]: The world has asynchrony methods to make the client wait for a server tick, or do something when it is received.
+            - code [ref=f31e269]: "# Wait for the next tick and retrieve the snapshot of the tick. world_snapshot = world.wait_for_tick() # Register a callback to get called every time we receive a new snapshot. world.on_tick(lambda world_snapshot: do_something(world_snapshot))"
+            - separator [ref=f31e270]
+            - heading "Possible configurations" [level=2] [ref=f31e271]
+            - paragraph [ref=f31e272]: The configuration of time-step and synchrony, leads for different settings. Here is a brief summary on the possibilities.
+            - table [ref=f31e274]:
+              - rowgroup [ref=f31e275]:
+                - row [ref=f31e276]:
+                  - columnheader [ref=f31e277]
+                  - columnheader [ref=f31e278]:
+                    - strong [ref=f31e279]: Fixed time-step
+                  - columnheader [ref=f31e280]:
+                    - strong [ref=f31e281]: Variable time-step
+              - rowgroup [ref=f31e282]:
+                - row [ref=f31e283]:
+                  - cell [ref=f31e284]:
+                    - strong [ref=f31e285]: Synchronous mode
+                  - cell "Client is in total control over the simulation and its information." [ref=f31e286]
+                  - cell "Risk of non reliable simulations." [ref=f31e287]
+                - row [ref=f31e288]:
+                  - cell [ref=f31e289]:
+                    - strong [ref=f31e290]: Asynchronous mode
+                  - cell "Good time references for information. Server runs as fast as possible." [ref=f31e291]
+                  - cell "Non easily repeatable simulations." [ref=f31e292]
+            - paragraph [ref=f31e293]
+            - list [ref=f31e294]:
+              - listitem [ref=f31e295]:
+                - paragraph [ref=f31e296]:
+                  - strong [ref=f31e297]: Synchronous mode + variable time-step.
+                  - text: This is almost for sure a non-desirable state. Physics cannot run properly when the time-step is bigger than 0.1s and. If the server has to wait for the client to compute the steps, this is likely to happen. Simulation time and physics will not be in synchrony. The simulation will not be reliable.
+              - listitem [ref=f31e298]:
+                - paragraph [ref=f31e299]:
+                  - strong [ref=f31e300]: Asynchronous mode + variable time-step.
+                  - text: This is the default CARLA state. Client and server are asynchronous. The simulation time flows according to the real time. Reenacting the simulation needs to take into account float-arithmetic error, and possible differences in time steps between servers.
+              - listitem [ref=f31e301]:
+                - paragraph [ref=f31e302]:
+                  - strong [ref=f31e303]: Asynchronous mode + fixed time-step.
+                  - text: The server will run as fast as possible. The information retrieved will be easily related with an exact moment in the simulation. This configuration makes possible to simulate long periods of time in much less real time, if the server is fast enough.
+              - listitem [ref=f31e304]:
+                - paragraph [ref=f31e305]:
+                  - strong [ref=f31e306]: Synchronous mode + fixed time-step.
+                  - text: The client will rule the simulation. The time step will be fixed. The server will not compute the following step until the client sends a tick. This is the best mode when synchrony and precision is relevant. Especially when dealing with slow clients or different elements retrieving information.
+            - generic [ref=f31e307]:
+              - paragraph [ref=f31e308]:  Warning
+              - paragraph [ref=f31e309]:
+                - strong [ref=f31e310]: In synchronous mode, always use a fixed time-step
+                - text: . If the server has to wait for the user, and it is using a variable time-step, time-steps will be too big. Physics will not be reliable. This issue is better explained in the
+                - strong [ref=f31e311]: time-step limitations
+                - text: section.
+            - separator [ref=f31e312]
+            - heading "Physics determinism" [level=2] [ref=f31e313]
+            - paragraph [ref=f31e314]: "CARLA supports physics and collision determinism under specific circumstances:"
+            - list [ref=f31e315]:
+              - listitem [ref=f31e316]:
+                - strong [ref=f31e317]: "Synchronous mode and fixed delta seconds must be enabled:"
+                - text: Determinism requires the client to be in perfect sync with the server to ensure that commands are applied correctly and to produce accurate and reproducible results. A constant time step must be enforced by setting
+                - code [ref=f31e318]: fixed_delta_seconds
+                - text: . If this is not set, the time step will be automatically computed at each step depending on the simulation performance.
+              - listitem [ref=f31e319]:
+                - strong [ref=f31e320]: "Synchronous mode must be enabled before loading or reloading the world:"
+                - text: Differing timestamps can arise if the world is not in synchronous mode from the very beginning. This can generate small differences in physics simulation and in the life cycle of objects such as traffics lights.
+              - listitem [ref=f31e321]:
+                - strong [ref=f31e322]: "The world must be reloaded for each new repetition:"
+                - text: Reload the world each time you want to reproduce a simulation.
+              - listitem [ref=f31e323]:
+                - strong [ref=f31e324]: "Commands should be batched instead of issued one at a time:"
+                - text: Although rare, in a busy simulation or overloaded server, single issued commands can become lost. If commands are batched in a
+                - link [ref=f31e325] [cursor=pointer]:
+                  - /url: ../python_api/#carla.Client.apply_batch_sync
+                  - code [ref=f31e326]: apply_batch_sync
+                - text: command, the command is guaranteed to be executed or return a failure response.
+            - paragraph [ref=f31e327]: "Here is an example of the steps mentioned above:"
+            - code [ref=f31e329]: "client = carla.Client(HOST, PORT) # connect to the server client.set_timeout(10.0) world = client.get_world() # Load the desired map client.load_world(\"Town10HD_Opt\") # Set synchronous mode settings new_settings = world.get_settings() new_settings.synchronous_mode = True new_settings.fixed_delta_seconds = 0.05 world.apply_settings(new_settings) client.reload_world(False) # reload map keeping the world settings # Set up the traffic manager traffic_manager = client.get_trafficmanager(TM_PORT) traffic_manager.set_synchronous_mode(True) traffic_manager.set_random_device_seed(SEED) # define TM seed for determinism # Spawn your vehicles, pedestrians, etc. # Simulation loop while True: # Your code world.tick()"
+            - paragraph [ref=f31e330]: "And a particular example for the playback feature:"
+            - code [ref=f31e332]: "client = carla.Client(HOST, PORT) # connect to the server client.set_timeout(10.0) world = client.get_world() # Load the desired map client.load_world(\"Town10HD_Opt\") # Set synchronous mode settings new_settings = world.get_settings() new_settings.synchronous_mode = True new_settings.fixed_delta_seconds = 0.05 world.apply_settings(new_settings) client.reload_world(False) # reload map keeping the world settings client.replay_file(FILE_TO_PLAY, 0, 0, 0, False) world.tick() # a tick is necessary for the server to process the replay_file command # Simulation loop while True: # Your code world.tick()"
+            - paragraph [ref=f31e333]: Running these steps will ensure the same outcome for every simulation run.
+            - separator [ref=f31e334]
+            - paragraph [ref=f31e335]: That is all there is to know about the roles of simulation time and client-server synchrony in CARLA.
+            - paragraph [ref=f31e336]: Open CARLA and mess around for a while. Any suggestions or doubts are welcome in the forum.
+            - paragraph [ref=f31e338]:
+              - link "CARLA forum" [ref=f31e339] [cursor=pointer]:
+                - /url: https://github.com/carla-simulator/carla/discussions/
+        - generic [ref=f31e340]:
+          - separator [ref=f31e341]
+          - contentinfo
+          - text: Built with
+          - link "MkDocs" [ref=f31e342] [cursor=pointer]:
+            - /url: https://www.mkdocs.org/
+          - text: using a
+          - link "theme" [ref=f31e343] [cursor=pointer]:
+            - /url: https://github.com/readthedocs/sphinx_rtd_theme
+          - text: provided by
+          - link "Read the Docs" [ref=f31e344] [cursor=pointer]:
+            - /url: https://readthedocs.org
+          - text: .
+  - banner [ref=f31e346] [cursor=pointer]:
+    - img "Read the Docs" [ref=f31e347]
+    - generic [ref=f31e348]: latest

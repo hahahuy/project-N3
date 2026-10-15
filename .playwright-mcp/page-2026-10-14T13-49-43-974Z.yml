@@ -1,0 +1,140 @@
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: R2S
+      - generic [ref=e7]:
+        - strong [ref=e8]: project-N3
+        - generic [ref=e9]: untitled scenario document
+    - generic [ref=e10]:
+      - generic [ref=e11]: Simulation On
+      - generic [ref=e12]: Dataset On
+      - button "Switch to dark mode" [ref=e13] [cursor=pointer]
+  - navigation "Workspace toolbar" [ref=e16]:
+    - generic [ref=e17]:
+      - generic [ref=e19]:
+        - button "Undo" [ref=e21] [cursor=pointer]
+        - button "Redo" [disabled] [ref=e26]
+      - generic [ref=e31]:
+        - button "Import scene" [ref=e33] [cursor=pointer]
+        - button "Export" [ref=e38] [cursor=pointer]
+      - generic [ref=e43]:
+        - button "Select actors" [ref=e45] [cursor=pointer]
+        - button "Edit motion" [ref=e49] [cursor=pointer]
+        - button "Behavior mode" [disabled] [ref=e54]
+      - generic [ref=e60]:
+        - button "Validate" [disabled] [ref=e62]
+        - button "Replay" [disabled] [ref=e67]
+      - generic [ref=e72]:
+        - button "Measure" [ref=e74] [cursor=pointer]
+        - button "Compare" [disabled] [ref=e81]
+      - button "Add view" [ref=e88] [cursor=pointer]
+    - generic [ref=e91]:
+      - button "More tools" [disabled] [ref=e93]
+      - button "Search commands" [ref=e98] [cursor=pointer]:
+        - text: Search commands
+        - generic [ref=e104]: Alt+C
+      - button "Minimize header" [expanded] [ref=e105] [cursor=pointer]
+  - generic [ref=e108]:
+    - complementary "Workspace navigation" [ref=e109]:
+      - button "Recipe" [active] [pressed] [ref=e110] [cursor=pointer]
+      - button "Catalog" [ref=e114] [cursor=pointer]
+      - button "Map layers" [ref=e120] [cursor=pointer]
+      - button "Comments" [ref=e125] [cursor=pointer]
+    - complementary "recipe panel" [ref=e2457]:
+      - generic [ref=e2458]:
+        - text: RECIPE
+        - heading "Named steps" [level=2] [ref=e2459]
+        - generic [ref=e2461]:
+          - strong [ref=e2462]: 1. Brake for merge
+          - generic [ref=e2463]: ego / 0.1s-1.5 / active
+    - separator "Resize side panel" [ref=e138]
+    - region "View manager" [ref=e139]:
+      - generic [ref=e140]:
+        - generic [ref=e141]:
+          - text: SCENARIO STUDIO
+          - strong [ref=e142]: nuscenes-73030fb67d3c46cfb5e590168088ae39-e93e98b63d3b40209056d129dc53ceee-40e413c922184255a94f08d3c10037e0
+        - generic "Mode" [ref=e143]:
+          - button "select" [ref=e144] [cursor=pointer]
+          - button "edit" [disabled] [ref=e145] [cursor=pointer]
+          - button "measure" [ref=e146] [cursor=pointer]
+          - button "compare" [disabled] [ref=e147] [cursor=pointer]
+        - button "Reset layout" [ref=e148] [cursor=pointer]
+      - alert [ref=e2456]: "Request failed: 500 Internal Server Error"
+      - article [ref=e150]:
+        - generic [ref=e151]:
+          - strong [ref=e155]: Top-down
+          - generic [ref=e156]: "- nuscenes-73030fb67d3c46cfb5e590168088ae39-e93e98b63d3b40209056d129dc53ceee-40e413c922184255a94f08d3c10037e0"
+          - combobox "Camera preset" [ref=e157]:
+            - option "Auto-fit" [selected]
+            - option "North-up"
+            - option "Ego-up"
+          - button "Layers" [ref=e159] [cursor=pointer]
+          - button "Make main" [ref=e160] [cursor=pointer]
+          - button "Maximize" [ref=e161] [cursor=pointer]
+          - 'button "Close view: Top-down" [ref=e162] [cursor=pointer]': x
+        - generic [ref=e163]:
+          - img "Top-down trajectory view, camera preset default" [ref=e237]
+          - generic [ref=e2429]:
+            - generic [ref=e2430]: recorded
+            - generic [ref=e2432]: generated
+            - generic [ref=e2434]: t=0.00 s
+      - generic [ref=e164]:
+        - generic [ref=e165]: G1-G7 gate lane
+        - generic [ref=e166]: pass
+        - generic [ref=e167]: skipped
+        - generic [ref=e168]: not measured
+        - generic [ref=e169]:
+          - text: playhead
+          - slider "Playhead" [ref=e170]: "0"
+        - strong [ref=e171]: 0.00 s
+    - complementary "Inspection navigation" [ref=e172]:
+      - button "Metrics" [ref=e173] [cursor=pointer]:
+        - generic [ref=e175]: "0"
+      - button "Gates" [ref=e176] [cursor=pointer]:
+        - generic [ref=e180]: "0"
+      - button "Provenance" [ref=e181] [cursor=pointer]
+      - button "Artifacts" [ref=e186] [cursor=pointer]
+    - region "Constrained maneuver editor" [ref=e2435]:
+      - generic [ref=e2436]: MANEUVER STEP
+      - heading "Constrained edit" [level=2] [ref=e2437]
+      - paragraph [ref=e2438]: "Tier 1: kinematic-open-loop-v1. Displacement and per-axis velocity are rejected, never rewritten."
+      - generic [ref=e2439]:
+        - text: Step name
+        - textbox "Step name" [ref=e2440]: Brake for merge
+      - generic [ref=e2441]:
+        - text: Actor
+        - combobox "Actor" [ref=e2442]:
+          - option "ego" [selected]
+          - option "instance-c8ac146d6cef45bfadbec2f08737c79f"
+          - option "instance-b3bd430657754a16b32c7674507dba80"
+      - generic [ref=e2443]:
+        - text: Steering / heading
+        - spinbutton "Steering / heading" [ref=e2444]: "0"
+      - generic [ref=e2445]:
+        - text: Acceleration
+        - spinbutton "Acceleration" [ref=e2446]: "1.5"
+      - generic [ref=e2447]:
+        - text: Braking
+        - spinbutton "Braking" [ref=e2448]: "0.2"
+      - generic [ref=e2449]:
+        - text: Target speed
+        - spinbutton "Target speed" [ref=e2450]: "8"
+      - generic [ref=e2451]:
+        - text: Time range start
+        - spinbutton "Time range start" [ref=e2452]: "0.1"
+      - generic [ref=e2453]:
+        - text: Time range end
+        - spinbutton "Time range end" [ref=e2454]: "1.5"
+      - button "Add step and preview Tier 1" [ref=e2455] [cursor=pointer]
+  - generic [ref=e190]:
+    - generic [ref=e191]:
+      - button "Scenario studio" [ref=e192] [cursor=pointer]
+      - button "Variant studio" [ref=e193] [cursor=pointer]
+      - button "Replay" [ref=e194] [cursor=pointer]
+      - button "Report" [ref=e195] [cursor=pointer]
+    - generic [ref=e196]:
+      - generic [ref=e197]: "selection: nuscenes-73030fb67d3c46cfb5e590168088ae39-e93e98b63d3b40209056d129dc53ceee-40e413c922184255a94f08d3c10037e0"
+      - generic [ref=e198]: "artifacts: 1"
+      - generic [ref=e199]: "rollback: n/a"
+      - generic [ref=e200]: "PROVISIONAL: 0"
+      - generic [ref=e201]: "frame: local_road_aligned"

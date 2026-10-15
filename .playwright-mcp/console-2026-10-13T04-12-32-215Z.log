@@ -1,0 +1,2 @@
+[     117ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=ee2e17b5:15804
+[  150929ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/scenarios/nuscenes-cc8c0bf57f984915a77078b10eb33198-ca9a282c9e77460f8360f564131a8af5-ed5fc18c31904f96a8f0dbb99ff069c0--variant-15968331a5fb891f:0

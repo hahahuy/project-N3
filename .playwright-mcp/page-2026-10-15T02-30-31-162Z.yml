@@ -1,0 +1,143 @@
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: R2S
+      - generic [ref=e7]:
+        - strong [ref=e8]: project-N3
+        - generic [ref=e9]: untitled scenario document
+    - generic [ref=e10]:
+      - generic [ref=e11]: Simulation On
+      - generic [ref=e12]: Dataset On
+      - button "Switch to dark mode" [ref=e13] [cursor=pointer]
+  - navigation "Workspace toolbar" [ref=e16]:
+    - generic [ref=e17]:
+      - generic [ref=e19]:
+        - button "Undo" [disabled] [ref=e21]
+        - button "Redo" [disabled] [ref=e26]
+      - generic [ref=e31]:
+        - button "Import scene" [ref=e33] [cursor=pointer]
+        - button "Export" [disabled] [ref=e38]
+      - generic [ref=e43]:
+        - button "Select actors" [ref=e45] [cursor=pointer]
+        - button "Edit motion" [disabled] [ref=e49]
+        - button "Behavior mode" [disabled] [ref=e54]
+      - generic [ref=e60]:
+        - button "Validate" [disabled] [ref=e62]
+        - button "Replay" [disabled] [ref=e67]
+      - generic [ref=e72]:
+        - button "Measure" [ref=e74] [cursor=pointer]
+        - button "Compare" [disabled] [ref=e81]
+      - button "Add view" [ref=e88] [cursor=pointer]
+    - generic [ref=e91]:
+      - button "More tools" [disabled] [ref=e93]
+      - button "Search commands" [ref=e98] [cursor=pointer]:
+        - text: Search commands
+        - generic [ref=e104]: Alt+C
+      - button "Minimize header" [expanded] [ref=e105] [cursor=pointer]
+  - generic [ref=e108]:
+    - complementary "Workspace navigation" [ref=e109]:
+      - button "Recipe" [ref=e110] [cursor=pointer]
+      - button "Catalog" [pressed] [ref=e114] [cursor=pointer]
+      - button "Map layers" [ref=e120] [cursor=pointer]
+      - button "Comments" [ref=e125] [cursor=pointer]
+    - complementary "catalog panel" [ref=e128]:
+      - generic [ref=e129]:
+        - generic [ref=e130]:
+          - generic [ref=e131]: CATALOG
+          - generic [ref=e132]: 7/7
+        - textbox "Filter scenarios" [ref=e133]
+        - generic [ref=e134]:
+          - button "nuscenes-73030fb67d3c46cfb5e590168088ae39-e93e98b63d3b40209056d129dc53ceee-40e413c922184255a94f08d3c10037e0 baseline / 19.50 s :" [ref=e209] [cursor=pointer]:
+            - generic [ref=e210]:
+              - strong [ref=e211]: nuscenes-73030fb67d3c46cfb5e590168088ae39-e93e98b63d3b40209056d129dc53ceee-40e413c922184255a94f08d3c10037e0
+              - generic [ref=e212]: baseline / 19.50 s
+            - emphasis [ref=e213]: ":"
+          - button "nuscenes-cc8c0bf57f984915a77078b10eb33198-ca9a282c9e77460f8360f564131a8af5-ed5fc18c31904f96a8f0dbb99ff069c0 baseline / 19.15 s :" [ref=e214] [cursor=pointer]:
+            - generic [ref=e215]:
+              - strong [ref=e216]: nuscenes-cc8c0bf57f984915a77078b10eb33198-ca9a282c9e77460f8360f564131a8af5-ed5fc18c31904f96a8f0dbb99ff069c0
+              - generic [ref=e217]: baseline / 19.15 s
+            - emphasis [ref=e218]: ":"
+          - button "nuscenes-fcbccedd61424f1b85dcbf8f897f9754-3e8750f331d7499e9b5123e9eb70f2e2-281b92269fd648d4b52d06ac06ca6d65 baseline / 19.40 s :" [ref=e219] [cursor=pointer]:
+            - generic [ref=e220]:
+              - strong [ref=e221]: nuscenes-fcbccedd61424f1b85dcbf8f897f9754-3e8750f331d7499e9b5123e9eb70f2e2-281b92269fd648d4b52d06ac06ca6d65
+              - generic [ref=e222]: baseline / 19.40 s
+            - emphasis [ref=e223]: ":"
+          - button "nuscenes-6f83169d067343658251f72e1dd17dbc-8687ba92abd3406aa797115b874ebeba-dcbe451d383e450786aaad04ab9d3790 baseline / 19.90 s :" [ref=e224] [cursor=pointer]:
+            - generic [ref=e225]:
+              - strong [ref=e226]: nuscenes-6f83169d067343658251f72e1dd17dbc-8687ba92abd3406aa797115b874ebeba-dcbe451d383e450786aaad04ab9d3790
+              - generic [ref=e227]: baseline / 19.90 s
+            - emphasis [ref=e228]: ":"
+          - button "nuscenes-bebf5f5b2a674631ab5c88fd1aa9e87a-5991fad3280c4f84b331536c32001a04-35833ae5808e4ef186d1fdebac3d9cf6 baseline / 19.80 s :" [ref=e229] [cursor=pointer]:
+            - generic [ref=e230]:
+              - strong [ref=e231]: nuscenes-bebf5f5b2a674631ab5c88fd1aa9e87a-5991fad3280c4f84b331536c32001a04-35833ae5808e4ef186d1fdebac3d9cf6
+              - generic [ref=e232]: baseline / 19.80 s
+            - emphasis [ref=e233]: ":"
+          - button "nuscenes-325cef682f064c55a255f2625c533b75-b5989651183643369174912bc5641d3b-b4ff30109dd14c89b24789dc5713cf8c baseline / 19.90 s :" [ref=e234] [cursor=pointer]:
+            - generic [ref=e235]:
+              - strong [ref=e236]: nuscenes-325cef682f064c55a255f2625c533b75-b5989651183643369174912bc5641d3b-b4ff30109dd14c89b24789dc5713cf8c
+              - generic [ref=e237]: baseline / 19.90 s
+            - emphasis [ref=e238]: ":"
+          - button "nuscenes-e233467e827140efa4b42d2b4c435855-a480496a5988410fbe3d8ed6c84da996-abf3d91d3c28407e80e3334fe89c03cb baseline / 19.50 s :" [ref=e239] [cursor=pointer]:
+            - generic [ref=e240]:
+              - strong [ref=e241]: nuscenes-e233467e827140efa4b42d2b4c435855-a480496a5988410fbe3d8ed6c84da996-abf3d91d3c28407e80e3334fe89c03cb
+              - generic [ref=e242]: baseline / 19.50 s
+            - emphasis [ref=e243]: ":"
+    - separator "Resize side panel" [ref=e138]
+    - region "View manager" [ref=e139]:
+      - generic [ref=e140]:
+        - generic [ref=e141]:
+          - text: SCENARIO STUDIO
+          - strong [ref=e142]: No scenario selected
+        - generic "Mode" [ref=e143]:
+          - button "select" [pressed] [ref=e144] [cursor=pointer]
+          - button "edit" [ref=e145] [cursor=pointer]
+          - button "measure" [ref=e146] [cursor=pointer]
+          - button "compare" [disabled] [ref=e147] [cursor=pointer]
+        - button "Reset layout" [ref=e148] [cursor=pointer]
+      - article [ref=e150]:
+        - generic [ref=e151]:
+          - strong [ref=e155]: Top-down
+          - generic [ref=e156]: "- empty"
+          - combobox "Camera preset" [ref=e157]:
+            - option "Auto-fit" [selected]
+            - option "North-up"
+            - option "Ego-up"
+          - button "Layers" [ref=e159] [cursor=pointer]
+          - button "Make main" [ref=e160] [cursor=pointer]
+          - button "Maximize" [ref=e161] [cursor=pointer]
+          - 'button "Close view: Top-down" [ref=e162] [cursor=pointer]': x
+        - generic [ref=e163]: Select an imported scenario
+      - region "Time-indexed actor timeline and gate lane" [ref=e164]:
+        - generic [ref=e165]:
+          - strong [ref=e166]: playhead 0.00 s
+          - generic [ref=e167]: of 0.00 s
+          - button "Step playhead back" [disabled] [ref=e168]: <
+          - button "Step playhead forward" [disabled] [ref=e169]: ">"
+          - slider "Playhead" [disabled] [ref=e170]: "0"
+          - generic [ref=e171]: "selection: none"
+        - paragraph [ref=e172]: Select an imported scenario to load time-indexed actor tracks.
+        - paragraph [ref=e173]: "Measure at 0.00 s: n/a (requires_at_least_two_actor_tracks)"
+    - complementary "Inspection navigation" [ref=e174]:
+      - button "Metrics" [ref=e175] [cursor=pointer]:
+        - generic [ref=e177]: "0"
+      - button "Gates" [ref=e178] [cursor=pointer]:
+        - generic [ref=e182]: "0"
+      - button "Provenance" [ref=e183] [cursor=pointer]
+      - button "Artifacts" [ref=e188] [cursor=pointer]
+  - generic [ref=e192]:
+    - generic [ref=e193]:
+      - button "Scenario studio" [ref=e194] [cursor=pointer]
+      - button "Variant studio" [ref=e195] [cursor=pointer]
+      - button "Replay" [ref=e196] [cursor=pointer]
+      - button "Report" [ref=e197] [cursor=pointer]
+    - generic [ref=e198]:
+      - generic [ref=e199]: "selection: none"
+      - generic [ref=e200]: "artifacts: 0"
+      - generic [ref=e201]: "branch: n/a"
+      - generic [ref=e202]: "config hash: n/a"
+      - generic [ref=e203]: "rollback: n/a"
+      - generic [ref=e204]: "recipe: n/a"
+      - generic [ref=e205]: "time: 0.00 s / 0.00 s"
+      - generic [ref=e206]: "PROVISIONAL: n/a"
+      - generic [ref=e207]: "POV: n/a"
+      - generic [ref=e208]: "frame: n/a"

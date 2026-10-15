@@ -1,6 +1,6 @@
 import pytest
 
-from real2scenario import Actor, Scenario, State, VariantConfig
+from real2scenario import Actor, ActorMotionEdit, Scenario, State, VariantConfig, preview_variant
 
 
 def _state(time_s: float = 0.0) -> State:
@@ -53,6 +53,21 @@ def test_state_rejects_non_finite_values(value: float) -> None:
 def test_state_rejects_negative_time() -> None:
     with pytest.raises(ValueError, match="non-negative"):
         _state(-0.1)
+
+
+def test_state_accepts_optional_raw_source_provenance() -> None:
+    state = State(
+        time_s=0.0,
+        x_m=0.0,
+        y_m=0.0,
+        yaw_rad=0.0,
+        speed_mps=0.0,
+        source_timestamp_us=123,
+        source_record_token="annotation-token",
+    )
+
+    assert state.source_timestamp_us == 123
+    assert state.source_record_token == "annotation-token"
 
 
 @pytest.mark.parametrize(
@@ -157,3 +172,20 @@ def test_variant_config_requires_a_positive_speed_multiplier() -> None:
 def test_variant_config_rejects_non_finite_offsets(field: str) -> None:
     with pytest.raises(ValueError, match=field):
         VariantConfig(**{field: float("nan")})
+
+
+def test_preview_variant_is_actor_scoped_deterministic_and_immutable() -> None:
+    ego = Actor("ego", "vehicle", (State(0.0, 0.0, 0.0, 0.0, 2.0), State(1.0, 2.0, 0.0, 0.0, 2.0)))
+    lead = Actor("lead", "vehicle", (State(0.0, 5.0, 0.0, 0.0, 3.0), State(1.0, 8.0, 0.0, 0.0, 3.0)))
+    parent = Scenario("scene", 1.0, "ego", (ego, lead), "local", {"dataset_name": "fixture"})
+    edit = ActorMotionEdit("lead", speed_multiplier=1.2, heading_offset_rad=0.1, initial_gap_delta_m=-1.0)
+
+    first = preview_variant(parent, (edit,), seed=7)
+    second = preview_variant(parent, (edit,), seed=7)
+
+    assert first == second
+    assert first.scenario_id.startswith("scene--preview-")
+    assert parent.actors == (ego, lead)
+    assert first.actors[0] == ego
+    assert first.actors[1].trajectory[0].x_m == 4.0
+    assert first.actors[1].trajectory[0].yaw_rad == 0.1

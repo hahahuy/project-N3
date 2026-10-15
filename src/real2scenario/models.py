@@ -15,6 +15,8 @@ class State:
     y_m: float
     yaw_rad: float
     speed_mps: float
+    source_timestamp_us: int | None = None
+    source_record_token: str | None = None
 
     def __post_init__(self) -> None:
         values = (self.time_s, self.x_m, self.y_m, self.yaw_rad, self.speed_mps)
@@ -22,6 +24,14 @@ class State:
             raise ValueError("State values must be finite.")
         if self.time_s < 0:
             raise ValueError("State time_s must be non-negative.")
+        if self.source_timestamp_us is not None and (
+            isinstance(self.source_timestamp_us, bool)
+            or not isinstance(self.source_timestamp_us, int)
+            or self.source_timestamp_us < 0
+        ):
+            raise ValueError("State source_timestamp_us must be a non-negative integer.")
+        if self.source_record_token is not None and not self.source_record_token:
+            raise ValueError("State source_record_token must not be empty.")
 
 
 @dataclass(frozen=True, slots=True)
