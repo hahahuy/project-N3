@@ -3,6 +3,35 @@
 Status: `READY FOR ACCEPTANCE / OWNER REVIEW`
 Primary next work: execute private runtime acceptance and obtain the documented owner decisions
 
+## Blocked On First: An Uncommitted Working Tree
+
+Before any acceptance work, note that the checkout is **not** the committed
+baseline. `git status --short` shows 15 modified tracked files plus untracked
+`docs/audits/` and `docs/guides/production-push.md`. `gitnexus detect_changes`
+reports `risk_level: critical`, 59 changed symbols, 53 affected processes.
+
+The uncommitted work is substantive and partly **corrects real defects**:
+
+- `source_window` provenance stores *sample* tokens, but LiDAR, Sensor Evidence,
+  sensor-status, evidence-layer and scenario routes were passing them where a
+  *sample_data* token was required — every one of those routes addressed the
+  wrong record.
+- `sweep_records` walked `sample_data.prev`, which is empty for `LIDAR_TOP`
+  keyframes, so recorded sweep history truncated after one sweep.
+- A new `GET /api/workspace/scenarios/{id}/top-down` route serves the official
+  devkit map-underlay render. It has a frontend caller but **no backend test**.
+- The view grid becomes `MAX_VIEWS = 3` with a 3rd-person POV default, superseding
+  the committed "four panes, Top-down default" description.
+- `react-grab` is added as a dependency without a recorded approval decision.
+- Demo `api` memory is capped at 12G, superseding the "limit removed" note in
+  `docs/current/demo-hardening-backlog.md`.
+
+Do not commit this tree as-is without (a) confirming the recorded-evidence fixes
+against real private data, (b) adding `/top-down` backend coverage, and (c) an
+owner decision on the tracked generated files. Passing tests do not establish
+that these fixes behave correctly on the real dataset: the entire existing suite
+passes both before and after the token bug was present.
+
 ## Mission
 
 The approved backend and Workspace implementation is complete for the current
@@ -117,7 +146,12 @@ WebRTC remote rendering are future alternatives, not current scope.
 ```bash
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/check_docs_consistency.py
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider
+cd frontend && npm test -- --run && npm run build
 ```
+
+Current measured result: **322 passed / 48 passed / build clean**. Note that
+`322 / 40` appears in several committed documents and in `docs/guides/production-push.md`;
+the frontend count is now 48.
 
 Before handoff, update the active work, project status, evidence index and track
 disposition. State exactly which capability is implemented, fallback, unavailable

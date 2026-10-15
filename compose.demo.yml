@@ -21,6 +21,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
+    # Drop the image default's `--reload`. This image is shared with the dev
+    # stack and its CMD runs uvicorn in reload mode; because prod bind-mounts
+    # the repository at /app, every host source edit was restarting the judge-
+    # facing API. Prod must only change code on a deliberate redeploy.
+    command: ["uvicorn", "r2s_web.app:app", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8000"]
     user: "${PROJECT_N3_UID:-1000}:${PROJECT_N3_GID:-1000}"
     restart: unless-stopped
     environment:
@@ -49,17 +54,22 @@ services:
     # Raised from 2.0 to 4 by owner request; the recorded-LiDAR and workspace
     # paths are CPU-bound when decoding point-cloud sweeps.
     #
-    # Memory is deliberately UNBOUNDED. A 4G limit was OOM-killed serving
-    # `/api/workspace/scenarios/{id}/sensor-evidence` and `.../lidar`, which
-    # decode recorded point-cloud sweeps. Because uvicorn runs with `--reload`,
-    # the killed worker is not respawned: the container stays "Up" while nothing
-    # listens on 8000, so the whole product route returns 502 with a
-    # healthy-looking container. The owner accepted the host-memory risk in
-    # preference to that failure mode. See docs/current/demo-hardening-backlog.md.
+    # Memory is capped at 12G by owner request (2026-10-15). An earlier 4G limit
+    # was OOM-killed serving `/api/workspace/scenarios/{id}/sensor-evidence` and
+    # `.../lidar`, which decode recorded point-cloud sweeps; those workloads
+    # peaked near 25G. Unbounded memory was then tried instead, but on
+    # 2026-10-15 a worker grew to ~25G anon-rss and the kernel performed four
+    # GLOBAL OOM kills, taking down unrelated containers on the host. Because
+    # uvicorn runs with `--reload`, the killed worker is not respawned: the
+    # container stays "Up" while nothing listens on 8000, so the whole product
+    # route returns 502 with a healthy-looking container. 12G bounds the blast
+    # radius to this container while leaving headroom for the LiDAR paths.
+    # See docs/current/demo-hardening-backlog.md.
     deploy:
       resources:
         limits:
           cpus: "4.0"
+          memory: 12G
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
       interval: 10s

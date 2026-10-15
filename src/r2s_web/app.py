@@ -514,7 +514,7 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
         try:
             record = adapter.get(scenario_id)
             source_window = record.scenario.provenance.get("source_window", "")
-            sample_data_token = source_window.split(":", 1)[0]
+            sample_data_token = lidar.sample_data_token(source_window.split(":", 1)[0])
             if not sample_data_token:
                 raise ValueError("recorded_lidar_sample_unavailable")
             return {**lidar.descriptor(sample_data_token), "sample_data_token": sample_data_token, "payload_url": f"/api/workspace/lidar/{sample_data_token}"}
@@ -526,7 +526,7 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
         try:
             record = adapter.get(scenario_id)
             source_window = record.scenario.provenance.get("source_window", "")
-            sample_data_token = source_window.split(":", 1)[0]
+            sample_data_token = lidar.sample_data_token(source_window.split(":", 1)[0])
             if not sample_data_token:
                 raise ValueError("recorded_lidar_sample_unavailable")
             return lidar.sensor_evidence(sample_data_token, nsweeps)
@@ -539,6 +539,21 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
                 "sweeps": [],
                 "artifact_visibility": "local_private",
             }
+
+    @app.get("/api/workspace/scenarios/{scenario_id}/top-down")
+    def workspace_top_down(scenario_id: str, source: str = "lidar", nsweeps: int = 5):
+        try:
+            record = adapter.get(scenario_id)
+            sample_data_token = lidar.sample_data_token(record.scenario.provenance.get("source_window", "").split(":", 1)[0])
+            if not sample_data_token:
+                raise ValueError("recorded_sensor_sample_unavailable")
+            return Response(
+                content=lidar.topdown(sample_data_token, source=source, nsweeps=nsweeps),
+                media_type="image/png",
+                headers={"Cache-Control": "private, max-age=60"},
+            )
+        except (KeyError, FileNotFoundError, ImportError, OSError, RuntimeError, ValueError) as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
 
     @app.get("/api/workspace/scenarios/{scenario_id}", response_model=ScenarioViewPayload)
     def workspace_scenario(scenario_id: str) -> ScenarioViewPayload:

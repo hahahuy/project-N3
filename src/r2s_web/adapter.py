@@ -47,6 +47,7 @@ class ArtifactAdapter:
 
     def __init__(self, settings: WebSettings):
         self.settings = settings
+        self._map_names: dict[str, str] | None = None
 
     def discover(self) -> tuple[ArtifactRecord, ...]:
         if not self.settings.artifact_root.is_dir():
@@ -93,6 +94,12 @@ class ArtifactAdapter:
         return candidate
 
     def summary(self, record: ArtifactRecord) -> ScenarioSummary:
+        provenance = dict(record.scenario.provenance)
+        source_scene = provenance.get("source_scene_token")
+        if source_scene and "map_name" not in provenance:
+            map_name = self._map_name(source_scene)
+            if map_name:
+                provenance["map_name"] = map_name
         return ScenarioSummary(
             scenario_id=record.scenario.scenario_id,
             parent_scenario_id=record.parent_scenario_id,
@@ -100,9 +107,31 @@ class ArtifactAdapter:
             duration_s=record.scenario.duration_s,
             coordinate_frame=record.scenario.coordinate_frame,
             actors=[_actor_summary(actor) for actor in record.scenario.actors],
-            provenance=dict(record.scenario.provenance),
+            provenance=provenance,
             available_artifacts=self.artifact_links(record),
         )
+
+    def _map_name(self, scene_token: str) -> str | None:
+        if self._map_names is None:
+            self._map_names = {}
+            root = self.settings.dataset_root
+            if root is None:
+                return None
+            try:
+                from nuscenes.nuscenes import NuScenes
+
+                version = self.settings.dataset_version
+                metadata = root / version
+                if not (metadata / "attribute.json").is_file() and (root / "v1.0-trainval" / "attribute.json").is_file():
+                    version = "v1.0-trainval"
+                nusc = NuScenes(version=version, dataroot=str(root), verbose=False)
+                self._map_names = {
+                    scene.get("token"): nusc.get("log", scene["log_token"]).get("location", "")
+                    for scene in nusc.scene
+                }
+            except (ImportError, OSError, RuntimeError, ValueError, TypeError, KeyError):
+                return None
+        return self._map_names.get(scene_token) or None
 
     def detail(self, record: ArtifactRecord) -> ScenarioDetail:
         summary = self.summary(record)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import bisect
+import tempfile
 import threading
 from pathlib import Path
 from typing import Any
@@ -64,6 +65,26 @@ class NuScenesDatasetAdapter:
             raise ValueError("sample_data calibration is not LIDAR_TOP")
         return record
 
+    def lidar_sample_data_token(self, token: str) -> str:
+        """Resolve a provenance window token to its LIDAR_TOP ``sample_data`` token.
+
+        ``source_window`` stores sample tokens, while every sensor consumer needs the
+        LIDAR_TOP ``sample_data`` token of the first sample in that window. A token that
+        already addresses a recorded sweep is returned unchanged.
+        """
+        if not token:
+            raise ValueError("recorded_lidar_sample_unavailable")
+        try:
+            return str(self.sample_data(token)["token"])
+        except (KeyError, ValueError):
+            pass
+        sample = self.nusc.get("sample", token)
+        lidar_token = str(sample.get("data", {}).get("LIDAR_TOP") or "")
+        if not lidar_token:
+            raise ValueError("recorded_lidar_sample_unavailable")
+        self.sample_data(lidar_token)
+        return lidar_token
+
     def records(self, token: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], Path]:
         sample_data = self.sample_data(token)
         calibration = self.nusc.get("calibrated_sensor", sample_data["calibrated_sensor_token"])
@@ -74,14 +95,24 @@ class NuScenesDatasetAdapter:
         return sample_data, calibration, ego_pose, path
 
     def sweep_records(self, token: str, limit: int) -> list[tuple[dict[str, Any], dict[str, Any], dict[str, Any], Path]]:
+        """Walk recorded history exactly as the devkit multisweep walk does.
+
+        LIDAR_TOP keyframes carry no ``sample_data.prev`` chain, so history has to be
+        walked through ``sample.prev`` and the LIDAR_TOP sweep of each earlier sample.
+        """
         result = []
-        current = token
-        for _ in range(limit):
-            record = self.records(current)
-            result.append(record)
-            current = str(record[0].get("prev") or "")
-            if not current:
+        current = self.sample_data(token)
+        seen: set[str] = set()
+        while len(result) < limit and current["token"] not in seen:
+            seen.add(current["token"])
+            result.append(self.records(current["token"]))
+            previous_sample = str(self.nusc.get("sample", current["sample_token"]).get("prev") or "")
+            if not previous_sample:
                 break
+            previous_token = str(self.nusc.get("sample", previous_sample).get("data", {}).get("LIDAR_TOP") or "")
+            if not previous_token:
+                break
+            current = self.sample_data(previous_token)
         return result
 
     def multisweep(self, token: str, nsweeps: int) -> tuple[Any, np.ndarray]:
@@ -121,9 +152,10 @@ class NuScenesDatasetAdapter:
         boxes = self.nusc.get_boxes(sample_data_token)
         output = []
         for box in boxes:
+            annotation = self.nusc.get("sample_annotation", box.token)
             output.append({
                 "token": box.token,
-                "instance_token": box.instance_token,
+                "instance_token": annotation.get("instance_token"),
                 "category_name": box.name,
                 "translation_m": [float(x) for x in box.center],
                 "size_m": [float(x) for x in box.wlh],
@@ -162,6 +194,26 @@ class NuScenesDatasetAdapter:
             return {"available": True, "source": "NuScenesMap", "map_name": map_name, "patch": list(patch), "layers": {name: list(selected.get(name, [])) for name in layers}, "provenance": {"map_api": "nuscenes-devkit-NuScenesMap-v1", "reference_sample_data_token": sample_data["token"]}, "artifact_visibility": "local_private"}
         except (ImportError, OSError, RuntimeError, ValueError, KeyError) as error:
             return {"available": False, "source": "NuScenesMap", "unavailable_reason": f"map_unavailable:{type(error).__name__}", "provenance": {}}
+
+    def render_topdown(self, sample_data_token: str, *, nsweeps: int = 5, radar: bool = False) -> bytes:
+        """Render the official devkit sample view, including its map underlay."""
+        sample_data = self.nusc.get("sample_data", sample_data_token) if radar else self.sample_data(sample_data_token)
+        if radar and sample_data.get("channel") != "RADAR_FRONT":
+            raise ValueError("sample_data calibration is not RADAR_FRONT")
+        try:
+            from nuscenes.utils.data_classes import RadarPointCloud
+        except ImportError as error:
+            raise RuntimeError("nuscenes_devkit_not_installed") from error
+        with tempfile.NamedTemporaryFile(suffix=".png") as output:
+            try:
+                if radar:
+                    RadarPointCloud.disable_filters()
+                self.explorer.render_sample_data(sample_data_token, nsweeps=nsweeps, underlay_map=True, out_path=output.name)
+                output.flush()
+                return Path(output.name).read_bytes()
+            finally:
+                if radar:
+                    RadarPointCloud.default_filters()
 
     def can_alignment(self, sample_data_token: str) -> dict[str, Any]:
         sample_data, _, _, _ = self.records(sample_data_token)

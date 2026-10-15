@@ -205,7 +205,7 @@ rebinding protection is not disabled; the host is allowlisted explicitly, and
 | Published ports (demo stack) | only `0.0.0.0:8443→443` |
 | S-1/S-2 under the gateway | `400 artifact_root must stay inside an allowed root` |
 | TLS | TLSv1.3, `CN=project-n3.hahuy.cloud`, expires 2026-11-14 |
-| Python / frontend suites | 322 passed / 40 passed, build clean |
+| Python / frontend suites | 322 passed / 48 passed, build clean |
 
 ### Live risk: a memory limit silently took the whole route down
 
@@ -230,17 +230,38 @@ killed worker**. Result:
 - every public request returned `502` or timed out
 - `docker stats` showed ~3 MB RSS, which reads as "idle", not "dead"
 
-**Fix applied.** The memory limit was removed. The owner accepted the
-host-memory risk in preference to this failure mode. CPU remains bounded at
-**4.0** so a batch cannot saturate all 12 cores.
+**Fix history — three states, only the last is current.** This section previously
+read "the memory limit was removed"; that statement is **stale**.
 
-| Service | CPU | Memory |
-|---|---|---|
-| `api` | 4.0 | unbounded |
-| `gateway` | 0.5 | 256M |
-| `cloudflared` | 0.25 | 128M |
+1. The 4 GB cap was removed, and the owner accepted host-memory risk in
+   preference to the silent-failure mode. CPU stayed bounded at 4.0.
+2. Unbounded memory was then tried. On 2026-10-15 a worker grew to ~25 GB
+   anon-rss and the kernel performed four GLOBAL OOM kills, which took down
+   **unrelated containers on the host**. The `--reload` supervisor still did not
+   respawn the killed worker, so the container stayed `Up` while nothing listened
+   on 8000 and the whole product route returned 502 behind a healthy-looking
+   container.
+3. **Current, in the uncommitted working tree of `compose.demo.yml`:** memory is
+   capped at **12G** by owner request (2026-10-15). This bounds the blast radius
+   to this container while leaving headroom above the observed LiDAR-path peak.
 
-Observed peak for the product `api` on the LiDAR path: **~7.7 GB**.
+| Service | CPU | Memory | State |
+|---|---|---|---|
+| `api` | 4.0 | 12G | current (uncommitted) |
+| `gateway` | 0.5 | 256M | current |
+| `cloudflared` | 0.25 | 128M | current |
+
+Observed peak for the product `api` on the LiDAR path: **~7.7 GB** (4 GB era) and
+**~25 GB** (unbounded era, 2026-10-15). The 12G cap sits between the two; it is
+an owner decision recorded in the compose comment, not a measured optimum.
+
+**The underlying hazard is not solved by any of the three states:** `uvicorn
+--reload` in `Dockerfile.dev` does not respawn a killed worker, so any memory
+limit or any kernel OOM kill presents as a healthy container serving 502s. The
+durable fixes are removing `--reload` from a long-running environment and adding
+a restart policy, neither of which is implemented. Until then, treat the demo
+route as capable of silent total failure and monitor with an actual request, not
+container status.
 
 Two lessons:
 

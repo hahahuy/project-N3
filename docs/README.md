@@ -34,6 +34,7 @@ Controlling documents for deployment state:
 - `docs/current/product-scene-exposure.md` - whether to expose all 850 scenes
 - `docs/current/naming-migration.md` - `r2s` to `project-N3` rename record
 - `docs/current/mission-batch-concurrency-benchmark.md` - S-6 cap selection
+- `docs/guides/production-push.md` - promote and rollback command helper
 - `docs/current/local-artifact-bundles.md` - local/private evidence index
 
 ## Documentation Rules

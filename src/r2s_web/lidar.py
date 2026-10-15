@@ -50,6 +50,10 @@ class LidarService:
             raise RuntimeError(f"lidar_payload_unavailable:{type(error).__name__}") from error
         return ({**self._metadata(sample_data, calibration, ego_pose, contract), "decimation": decimation, "total_count": total_count, "returned_count": int(len(points))}, payload)
 
+    def sample_data_token(self, window_token: str) -> str:
+        """Resolve a scenario window token to the LIDAR_TOP sweep it stands for."""
+        return self._adapter().lidar_sample_data_token(window_token)
+
     def availability(self, sample_data_token: str) -> dict[str, object]:
         """Return only whether the recorded sweep can be addressed, plus a reason."""
         if not sample_data_token:
@@ -117,6 +121,18 @@ class LidarService:
             },
             "artifact_visibility": "local_private",
         }
+
+    def topdown(self, sample_data_token: str, source: str = "lidar", nsweeps: int = 5) -> bytes:
+        if source not in {"lidar", "radar"}:
+            raise ValueError("unsupported_top_down_source")
+        dataset = self._adapter()
+        if source == "radar":
+            sample_data = dataset.sample_data(sample_data_token)
+            sample = dataset.nusc.get("sample", sample_data["sample_token"])
+            sample_data_token = sample["data"].get("RADAR_FRONT", "")
+            if not sample_data_token:
+                raise ValueError("RADAR_FRONT_sample_unavailable")
+        return dataset.render_topdown(sample_data_token, nsweeps=nsweeps, radar=source == "radar")
 
     def _metadata(self, sample_data: dict[str, Any], calibration: dict[str, Any], ego_pose: dict[str, Any], contract: Any) -> dict[str, object]:
         return {

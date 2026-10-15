@@ -31,10 +31,10 @@ import {
   fetchTrajectory,
   fetchVariantLineage,
   fetchWorkspaceScenario,
-  GateSegment,
   GateTimeline,
   LidarDescriptor,
   SensorEvidence,
+  topDownImageUrl,
   lidarPayloadUrl,
   moveRecipeStep,
   POVFrame,
@@ -64,16 +64,21 @@ type ViewType = "top-down" | "third-person" | "in-car" | "lidar" | "sensor-evide
 type View = { id: number; type: ViewType };
 type Panel = "recipe" | "catalog" | "layers" | "comments";
 type Flyout = "metrics" | "gates" | "provenance" | "artifacts";
-type Tool = { icon: IconName; label: string; shortcut?: string; disabled?: boolean; onClick?: () => void; menu?: React.ReactNode };
+type Tool = { icon: IconName; label: string; shortcut?: string; disabled?: boolean; badge?: string; note?: string; onClick?: () => void; menu?: React.ReactNode };
 type StatusLine = { label: string; available: boolean; note?: string };
 type CameraPreset = "default" | "north-up" | "ego-up";
 type Command = { label: string; group: string; icon: IconName; shortcut?: string; disabled?: boolean; run: () => void };
 
 const viewLabels: Record<ViewType, string> = { "top-down": "Top-down", "third-person": "3rd-person POV", "in-car": "In-car POV", lidar: "LiDAR 3D", "sensor-evidence": "Sensor Evidence" };
+const MAIN_VIEW: ViewType = "third-person";
+const MAX_VIEWS = 3;
 const DOCUMENT_TABS = ["Scenario studio", "Variant studio", "Replay", "Report"] as const;
 const PANEL_DEFAULT_WIDTH = 270;
 const PANEL_MIN_WIDTH = 180;
 const PANEL_MAX_WIDTH = 520;
+const TIMELINE_DEFAULT_HEIGHT = 236;
+const TIMELINE_MIN_HEIGHT = 120;
+const TIMELINE_MAX_HEIGHT = 520;
 const PLAYHEAD_STEP_S = 0.05;
 const LIDAR_SYNC_TOLERANCE_S = 0.25;
 const CHANNELS = ["position", "heading", "speed", "acceleration", "braking"] as const;
@@ -109,6 +114,26 @@ function formatChannelValue(channel: ChannelName, value: number | null): string 
 
 function formatTimestamp(timeS: number | undefined): string {
   return timeS === undefined ? MISSING : timeS.toFixed(2);
+}
+
+function displayScenarioId(scenarioId: string): string {
+  if (!scenarioId.startsWith("nuscenes-")) return scenarioId;
+  const firstHash = scenarioId.slice("nuscenes-".length).split("-", 1)[0];
+  return `nuscenes-${firstHash.slice(0, 6)}`;
+}
+
+function displayBranchId(branchId: string): string {
+  if (!branchId.startsWith("branch-")) return branchId;
+  return `branch-${displayScenarioId(branchId.slice("branch-".length))}`;
+}
+
+function displayMapName(scenario: ScenarioSummary): string {
+  const mapName = scenario.provenance.map_name?.toLowerCase() ?? "";
+  if (mapName.includes("boston")) return "Boston Seaport";
+  if (mapName.includes("queenstown")) return "Singapore Queenstown";
+  if (mapName.includes("one-north") || mapName.includes("onenorth")) return "Singapore One North";
+  if (mapName.includes("holland")) return "Singapore Holland Village";
+  return scenario.provenance.map_name || "Map unavailable";
 }
 
 type ActiveTrack = { track: ActorTrack; sample: TimelineSample | undefined };
@@ -153,7 +178,7 @@ function App() {
   const [workspace, setWorkspace] = useState<WorkspaceScenario | null>(null);
   const [panel, setPanel] = useState<Panel>("catalog");
   const [flyout, setFlyout] = useState<Flyout | null>(null);
-  const [views, setViews] = useState<View[]>([{ id: 1, type: "top-down" }]);
+  const [views, setViews] = useState<View[]>([{ id: 1, type: MAIN_VIEW }]);
   const [nextViewId, setNextViewId] = useState(2);
   const [activeTab, setActiveTab] = useState("Scenario studio");
   const [mode, setMode] = useState("select");
@@ -174,6 +199,10 @@ function App() {
   const [panelWidth, setPanelWidth] = useState(PANEL_DEFAULT_WIDTH);
   const [resizing, setResizing] = useState(false);
   const dragRef = useRef({ startX: 0, startWidth: PANEL_DEFAULT_WIDTH });
+  const [timelineHeight, setTimelineHeight] = useState(TIMELINE_DEFAULT_HEIGHT);
+  const [timelineOpen, setTimelineOpen] = useState(true);
+  const [timelineResizing, setTimelineResizing] = useState(false);
+  const timelineDragRef = useRef({ startY: 0, startHeight: TIMELINE_DEFAULT_HEIGHT });
   const [overflowOpen, setOverflowOpen] = useState(false);
   const groupsRef = useRef<HTMLDivElement | null>(null);
   const [hiddenTools, setHiddenTools] = useState<string[]>([]);
@@ -210,11 +239,11 @@ function App() {
 
   const toolbarGroups: { label: string; tools: Tool[] }[] = [
     { label: "History", tools: [{ icon: "undo", label: "Undo", shortcut: "Ctrl+Z", disabled: !recipe?.history.undoable, onClick: () => runRecipe(undoRecipe) }, { icon: "redo", label: "Redo", shortcut: "Ctrl+Shift+Z", disabled: !recipe?.history.redoable, onClick: () => runRecipe(redoRecipe) }] },
-    { label: "Import", tools: [{ icon: "import", label: "Import scene", shortcut: "I", onClick: () => openPanel("catalog") }, { icon: "export", label: "Export", onClick: exportSelected, disabled: !selected }] },
+    { label: "Import", tools: [{ icon: "import", label: "Import scene", shortcut: "I", disabled: true, onClick: () => openPanel("catalog") }, { icon: "export", label: "Export", onClick: exportSelected, disabled: !selected }] },
     { label: "Edit", tools: [{ icon: "cursor", label: "Select actors", shortcut: "S", onClick: () => setMode("select") }, { icon: "edit", label: "Edit motion", shortcut: "E", onClick: () => setMode("edit"), disabled: !selected }, { icon: "behavior", label: "Behavior mode", disabled: true }] },
     { label: "Check / Run", tools: [{ icon: "validate", label: "Validate", shortcut: "V", disabled: true }, { icon: "replay", label: "Replay", disabled: true }] },
     { label: "Inspect", tools: [{ icon: "measure", label: "Measure", shortcut: "M", onClick: () => setMode("measure") }, { icon: "compare", label: "Compare", shortcut: "C", onClick: () => setMode("compare"), disabled: !selected }] },
-    { label: "View", tools: [{ icon: "add-view", label: "Add view", shortcut: "Shift+V", onClick: () => setAddViewOpen(!addViewOpen), menu: addViewOpen ? <AddViewMenu viewCount={views.length} onAdd={addView} /> : undefined }] },
+     { label: "View", tools: [{ icon: "add-view", label: "Add view", shortcut: "Shift+V", disabled: views.length >= MAX_VIEWS, badge: `${MAX_VIEWS - views.length}/${MAX_VIEWS}`, note: views.length >= MAX_VIEWS ? `view grid locked at ${MAX_VIEWS} panels, close one to add another` : `${MAX_VIEWS - views.length} of ${MAX_VIEWS} view panels available`, onClick: () => setAddViewOpen(!addViewOpen), menu: addViewOpen && views.length < MAX_VIEWS ? <AddViewMenu viewCount={views.length} replayMode={activeTab === "Replay"} onAdd={selectAddedView} /> : undefined }] },
   ];
 
   useLayoutEffect(() => {
@@ -254,7 +283,16 @@ function App() {
     window.localStorage.setItem("r2s-theme", dark ? "dark" : "light");
   }, [dark]);
 
-  useEffect(() => { fetchScenarios().then(setScenarios).catch((e) => setError(e.message)).finally(() => setLoading(false)); }, []);
+  const refreshScenarios = () => {
+    setLoading(true);
+    fetchScenarios().then(setScenarios).catch((e) => setError(e.message)).finally(() => setLoading(false));
+  };
+  useEffect(() => {
+    refreshScenarios();
+    const refreshOnFocus = () => refreshScenarios();
+    window.addEventListener("focus", refreshOnFocus);
+    return () => window.removeEventListener("focus", refreshOnFocus);
+  }, []);
   useEffect(() => {
     fetchEsminiCapability().then(setCapability).catch(() => setCapability(null));
     fetchLiveCapability().then(setLiveCapability).catch(() => setLiveCapability(null));
@@ -264,8 +302,9 @@ function App() {
     if (!selected) { setArtifacts(null); setLidar(null); setSensorEvidence(null); return; }
     fetchScenarioArtifacts(selected.scenario_id).then((payload) => setArtifacts(payload.artifacts)).catch(() => setArtifacts(null));
     fetchLidarDescriptor(selected.scenario_id).then(setLidar).catch(() => setLidar({ available: false, unavailable_reason: "lidar_descriptor_request_failed" }));
+    if (!views.some((view) => view.type === "sensor-evidence")) { setSensorEvidence(null); return; }
     fetchSensorEvidence(selected.scenario_id, sensorSweeps).then(setSensorEvidence).catch(() => setSensorEvidence({ contract_version: "nuscenes-sensor-evidence-v1", channel: "LIDAR_TOP", status: "unavailable", unavailable_reason: "sensor_evidence_request_failed", sweeps: [], map_underlay: { available: false, source: "nuscenes-devkit-sensor-evidence", unavailable_reason: "sensor_evidence_request_failed" }, can_telemetry: { available: false, source: "nuScenes_CAN_bus", unavailable_reason: "sensor_evidence_request_failed" }, synchronization: { status: "unavailable", historical_sweep_smearing: "not_available" }, provenance: {}, artifact_visibility: "local_private" }));
-  }, [selected?.scenario_id, sensorSweeps]);
+  }, [selected?.scenario_id, sensorSweeps, views]);
   useEffect(() => {
     if (!liveSessionId) return;
     let cancelled = false;
@@ -334,13 +373,22 @@ function App() {
   function openPanel(next: Panel) { setFlyout(null); setLeftOpen(true); setPanel(next); }
   function openFlyout(next: Flyout) { setFlyout(flyout === next ? null : next); }
   function addView(type: ViewType) {
-    if (views.length >= 4) return;
-    setViews([...views, { id: nextViewId, type }]); setNextViewId(nextViewId + 1);
+    if (views.length >= MAX_VIEWS) return null;
+    const id = nextViewId;
+    setViews([...views, { id, type }]); setNextViewId(id + 1);
     setAddViewOpen(false);
+    return id;
+  }
+  function selectAddedView(type: ViewType) {
+    setAddViewOpen(false);
+    // Recorded sensor evidence belongs to replay: open the Replay tab for it rather
+    // than leaving the third grid slot unreachable from the authoring tab.
+    if (type === "sensor-evidence" && activeTab !== "Replay") setActiveTab("Replay");
+    addView(type);
   }
   function closeView(id: number) { setViews(views.filter((view) => view.id !== id)); if (maximized === id) setMaximized(null); }
   function makeMain(id: number) { setViews((current) => { const chosen = current.find((view) => view.id === id); return chosen ? [chosen, ...current.filter((view) => view.id !== id)] : current; }); }
-  function resetLayout() { setViews([{ id: 1, type: "top-down" }]); setNextViewId(2); setMaximized(null); setHiddenKinds([]); }
+  function resetLayout() { setViews([{ id: 1, type: MAIN_VIEW }]); setNextViewId(2); setMaximized(null); setHiddenKinds([]); }
   function exportSelected() {
     if (!selected) { setError("Select a scenario before exporting."); return; }
     const payload = { exported_at: new Date().toISOString(), source: "project-N3 local workspace", scenario: selected, trajectory };
@@ -417,8 +465,44 @@ function App() {
     return () => { window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onRelease); window.removeEventListener("pointercancel", onRelease); };
   }, [resizing]);
 
-  const bodyClass = `workspace-body${leftOpen ? "" : " left-collapsed"}`;
-  const bodyStyle = { "--panel-width": `${leftOpen ? panelWidth : 0}px` } as React.CSSProperties;
+  function startTimelineResize(event: React.PointerEvent<HTMLDivElement>) {
+    event.preventDefault();
+    timelineDragRef.current = { startY: event.clientY, startHeight: timelineHeight };
+    setTimelineResizing(true);
+  }
+
+  function resizeTimelineByKeyboard(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setTimelineOpen(true);
+      setTimelineHeight(Math.min(TIMELINE_MAX_HEIGHT, timelineHeight + 16));
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      if (timelineHeight - 16 < TIMELINE_MIN_HEIGHT) { setTimelineOpen(false); return; }
+      setTimelineOpen(true);
+      setTimelineHeight(timelineHeight - 16);
+    }
+  }
+
+  useEffect(() => {
+    if (!timelineResizing) return;
+    const onMove = (event: PointerEvent) => {
+      const next = timelineDragRef.current.startHeight - (event.clientY - timelineDragRef.current.startY);
+      if (next < TIMELINE_MIN_HEIGHT) { setTimelineHeight(TIMELINE_MIN_HEIGHT); setTimelineOpen(false); setTimelineResizing(false); return; }
+      setTimelineOpen(true);
+      setTimelineHeight(Math.min(TIMELINE_MAX_HEIGHT, next));
+    };
+    const onRelease = () => setTimelineResizing(false);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onRelease);
+    window.addEventListener("pointercancel", onRelease);
+    return () => { window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onRelease); window.removeEventListener("pointercancel", onRelease); };
+  }, [timelineResizing]);
+
+  const bodyClass = `workspace-body${leftOpen ? "" : " left-collapsed"}${timelineOpen ? "" : " timeline-collapsed"}`;
+  const bodyStyle = { "--panel-width": `${leftOpen ? panelWidth : 0}px`, "--timeline-height": `${timelineOpen ? timelineHeight : 0}px` } as React.CSSProperties;
   const esminiAvailable = capability?.available === true;
   const datasetAvailable = settings?.dataset_root_exists === true;
   const simulatorLines: StatusLine[] = [
@@ -499,15 +583,14 @@ function App() {
         <IconButton icon="comments" label="Comments" active={leftOpen && panel === "comments"} onClick={() => selectPanel("comments")} />
       </aside>
       <aside className="left-panel" aria-label={`${panel} panel`}>
-         {panel === "catalog" && <Catalog scenarios={scenarios} selected={selected} loading={loading} filter={catalogFilter} onFilter={setCatalogFilter} onSelect={setSelected} />}{panel === "recipe" && <RecipePanel recipe={recipe} preview={preview} markerName={markerName} onMarkerName={setMarkerName} onAddMarker={(name) => runRecipe((id) => addRollbackMarker(id, name))} onRestore={(markerId) => runRecipe((id) => restoreRollbackMarker(id, markerId))} onToggleStep={(stepId, active) => runRecipe((id) => setRecipeStepActive(id, stepId, active))} onRemoveStep={(stepId) => runRecipe((id) => removeRecipeStep(id, stepId))} onMoveStep={(stepId, direction) => runRecipe((id) => moveRecipeStep(id, stepId, direction))} onUndo={() => runRecipe(undoRecipe)} onRedo={() => runRecipe(redoRecipe)} />}{panel === "layers" && <EvidenceLayerPanel evidence={evidence} workspace={workspace} />}{panel === "comments" && <EmptyPanel title="Comments" copy="No comments in this document." />}
+         {panel === "catalog" && <Catalog scenarios={scenarios} selected={selected} loading={loading} filter={catalogFilter} onFilter={setCatalogFilter} onSelect={setSelected} onRefresh={refreshScenarios} />}{panel === "recipe" && <RecipePanel recipe={recipe} preview={preview} markerName={markerName} onMarkerName={setMarkerName} onAddMarker={(name) => runRecipe((id) => addRollbackMarker(id, name))} onRestore={(markerId) => runRecipe((id) => restoreRollbackMarker(id, markerId))} onToggleStep={(stepId, active) => runRecipe((id) => setRecipeStepActive(id, stepId, active))} onRemoveStep={(stepId) => runRecipe((id) => removeRecipeStep(id, stepId))} onMoveStep={(stepId, direction) => runRecipe((id) => moveRecipeStep(id, stepId, direction))} onUndo={() => runRecipe(undoRecipe)} onRedo={() => runRecipe(redoRecipe)} />}{panel === "layers" && <EvidenceLayerPanel evidence={evidence} workspace={workspace} />}{panel === "comments" && <EmptyPanel title="Comments" copy="No comments in this document." />}
       </aside>
       <div className={`split-handle left${resizing ? " dragging" : ""}`} role="separator" aria-orientation="vertical" aria-label="Resize side panel" aria-valuenow={leftOpen ? panelWidth : 0} aria-valuemin={PANEL_MIN_WIDTH} aria-valuemax={PANEL_MAX_WIDTH} tabIndex={0} onPointerDown={startResize} onKeyDown={resizeByKeyboard} />
       <section className="view-manager" aria-label="View manager">
-        <div className="view-manager-head"><div><span className="section-kicker">{activeTab.toUpperCase()}</span><strong>{selected?.scenario_id ?? "No scenario selected"}</strong></div><div className="mode-switcher" aria-label="Mode">{["select", "edit", "measure", "compare"].map((item) => <button key={item} className={mode === item ? "active" : ""} aria-pressed={mode === item} onClick={() => setMode(item)} disabled={item === "compare" && (!selected || scenarios.length < 2)} title={item === "compare" && scenarios.length < 2 ? "Compare needs two scenarios in the catalog" : undefined}>{item}</button>)}</div><button className="reset-button" onClick={resetLayout}>Reset layout</button></div>
         {error && <div className="inline-error" role="alert">{error}</div>}
          {mode === "compare"
           ? <CompareSurface payload={compare} error={compareError} selected={selected} scenarios={scenarios} against={compareAgainst} onAgainst={setCompareAgainst} playhead={playhead} />
-           : activeTab === "Scenario studio"
+           : activeTab === "Scenario studio" || activeTab === "Replay"
            ? <div className={`view-grid count-${views.length}${maximized !== null ? " maximized" : ""}`}>
                {views.map((view) => <ViewPane key={view.id} view={view} selected={selected} workspace={workspace} frame={povFrames[view.type]} imageFrame={povImages[view.type]} liveState={liveState} liveCapability={liveCapability} onStartNativeSession={startNativeSession} lidar={lidar} sensorEvidence={sensorEvidence} onSensorSweeps={setSensorSweeps} decimation={lidarDecimation} onDecimation={setLidarDecimation} trajectory={preview?.paths.length ? { ...trajectory!, paths: preview.paths } : trajectory} timeline={playhead} activeTracks={activeTracks} selectedActor={selectedActor} measurement={measurement} mode={mode} onSelectActor={setSelectedActor} preset={presets[view.id] ?? "default"} onPreset={(next) => setPresets({ ...presets, [view.id]: next })} hiddenKinds={hiddenKinds} onToggleKind={toggleKind} layersOpen={layersOpen === view.id} onToggleLayers={() => setLayersOpen(layersOpen === view.id ? null : view.id)} maximized={maximized === view.id} onToggleMaximize={() => setMaximized(maximized === view.id ? null : view.id)} onMakeMain={() => makeMain(view.id)} onClose={() => closeView(view.id)} />)}
             {views.length === 0 && <div className="empty-view"><strong>No views open.</strong><span>Add a view.</span><button onClick={() => addView("top-down")}>Add a Top-down view</button></div>}
@@ -515,6 +598,7 @@ function App() {
           : activeTab === "Variant studio"
           ? <VariantStudio selected={selected} lineage={lineage} evidence={evidence} workspace={workspace} />
           : <div className="view-grid count-1"><div className="empty-view"><strong>{activeTab}</strong><span>Not available in this build.</span><button onClick={() => setActiveTab("Scenario studio")}>Back to Scenario studio</button></div></div>}
+        <div className={`split-handle top${timelineResizing ? " dragging" : ""}`} role="separator" aria-orientation="horizontal" aria-label="Resize timeline" aria-valuenow={timelineOpen ? timelineHeight : 0} aria-valuemin={TIMELINE_MIN_HEIGHT} aria-valuemax={TIMELINE_MAX_HEIGHT} tabIndex={0} onPointerDown={startTimelineResize} onKeyDown={resizeTimelineByKeyboard} />
         <TimelineSurface
           timeline={actorTimeline}
           gates={gateTimeline}
@@ -542,7 +626,7 @@ function App() {
        </aside>
         {mode === "edit" && <section className="maneuver-dock" aria-label="Constrained maneuver editor"><span className="section-kicker">MANEUVER STEP</span><h2>Constrained edit</h2><p>Tier 1: kinematic-open-loop-v1. Displacement and per-axis velocity are rejected, never rewritten.</p><label>Step name <input value={stepName} onChange={(e) => setStepName(e.target.value)} /></label><label>Actor<select value={maneuver.actor_id} onChange={(e) => setManeuver({ ...maneuver, actor_id: e.target.value })}>{workspace?.actors.map((actor) => <option key={actor.actor_id}>{actor.actor_id}</option>)}</select></label><label>Steering / heading <input type="number" step="0.01" value={maneuver.steering_angle_rad} onChange={(e) => setManeuver({ ...maneuver, steering_angle_rad: Number(e.target.value) })} /></label><label>Acceleration <input type="number" step="0.1" value={maneuver.acceleration_mps2} onChange={(e) => setManeuver({ ...maneuver, acceleration_mps2: Number(e.target.value) })} /></label><label>Braking <input type="number" step="0.1" min="0" value={maneuver.braking_mps2} onChange={(e) => setManeuver({ ...maneuver, braking_mps2: Number(e.target.value) })} /></label><label>Target speed <input type="number" step="0.1" min="0" value={maneuver.target_speed_mps ?? ""} onChange={(e) => setManeuver({ ...maneuver, target_speed_mps: e.target.value === "" ? null : Number(e.target.value) })} /></label><label>Time range start <input type="number" step="0.05" min="0" value={maneuver.start_time_s} onChange={(e) => setManeuver({ ...maneuver, start_time_s: Number(e.target.value) })} /></label><label>Time range end <input type="number" step="0.05" min="0" value={maneuver.end_time_s ?? ""} onChange={(e) => setManeuver({ ...maneuver, end_time_s: e.target.value === "" ? null : Number(e.target.value) })} /></label><button onClick={applyManeuver}>Add step and preview Tier 1</button>{preview && <><StatusBadge status={preview.status} /><small>Limits: {String(preview.limits?.max_acceleration_mps2)} m/s2 accel, {String(preview.limits?.max_deceleration_mps2)} m/s2 brake. Violations: {preview.violations.length}. Parent immutable.</small></>}</section>}
     </div>
-    <footer className="document-footer"><div className="document-tabs">{DOCUMENT_TABS.map((tab) => <button className={activeTab === tab ? "active" : ""} key={tab} onClick={() => setActiveTab(tab)}>{tab}</button>)}</div><div className="status-bar"><span>selection: {selected?.scenario_id ?? "none"}</span><span>artifacts: {artifacts?.length ?? 0}</span><span>branch: {lineage?.branch?.branch_id ?? MISSING}</span><span>config hash: {lineage?.fields?.config_hash ? String(lineage.fields.config_hash).slice(0, 12) : MISSING}</span><span>rollback: {recipe ? recipe.active_marker_id ?? "none" : MISSING}</span><span>recipe: {recipe ? `${recipe.active_step_count}/${recipe.step_count} steps` : MISSING}</span><span>time: {playhead.toFixed(2)} s / {durationS.toFixed(2)} s</span><span>PROVISIONAL: {gateTimeline?.provisional_count ?? "n/a"}</span><span>POV: {povFrames["in-car"]?.simulator ?? povFrames["third-person"]?.simulator ?? MISSING}</span><span>frame: {selected?.coordinate_frame ?? MISSING}</span></div></footer>
+     <footer className="document-footer"><div className="document-tabs">{DOCUMENT_TABS.map((tab) => <button className={activeTab === tab ? "active" : ""} key={tab} onClick={() => setActiveTab(tab)}>{tab}</button>)}</div><div className="status-bar"><span>artifacts: {artifacts?.length ?? 0}</span><span>branch: {lineage?.branch?.branch_id ? displayBranchId(lineage.branch.branch_id) : MISSING}</span><span>config hash: {lineage?.fields?.config_hash ? String(lineage.fields.config_hash).slice(0, 12) : MISSING}</span><span>rollback: {recipe ? recipe.active_marker_id ?? "none" : MISSING}</span><span>recipe: {recipe ? `${recipe.active_step_count}/${recipe.step_count} steps` : MISSING}</span><span>time: {playhead.toFixed(2)} s / {durationS.toFixed(2)} s</span><span>PROVISIONAL: {gateTimeline?.provisional_count ?? "n/a"}</span><span>POV: {povFrames["in-car"]?.simulator ?? povFrames["third-person"]?.simulator ?? MISSING}</span><span>frame: {selected?.coordinate_frame ?? MISSING}</span></div></footer>
     {commandOpen && <CommandPalette commands={visibleCommands} query={commandQuery} onQuery={setCommandQuery} onClose={() => { setCommandOpen(false); setCommandQuery(""); }} />}
   </main>;
 }
@@ -564,7 +648,7 @@ function StatusChip({ label, tone, lines, openDelay = 500 }: { label: string; to
 
 function HeaderToggle({ open, onToggle }: { open: boolean; onToggle: () => void }) { return <button className={`toolbar-toggle${open ? " active" : ""}`} aria-label={open ? "Minimize header" : "Restore header"} aria-expanded={open} title={open ? "Minimize header" : "Restore header"} onClick={onToggle}><Icon name={open ? "chevron-up" : "chevron-down"} /></button>; }
 function ToolbarGroup({ children }: { children: React.ReactNode }) { return <div className="toolbar-group"><div>{children}</div></div>; }
-function ToolButton({ icon, label, shortcut, disabled, onClick, menu }: Tool) { return <div className="add-view-control"><button className="tool-button" data-tool={label} disabled={disabled} title={`${label}${shortcut ? ` (${shortcut})` : ""}${disabled ? " - unavailable in this build" : ""}`} onClick={onClick}><Icon name={icon} />{label}</button>{menu}</div>; }
+function ToolButton({ icon, label, shortcut, disabled, badge, note, onClick, menu }: Tool) { return <div className="add-view-control"><button className={`tool-button${badge ? " badged" : ""}`} data-tool={label} disabled={disabled} title={`${label}${shortcut ? ` (${shortcut})` : ""}${note ? ` - ${note}` : disabled ? " - unavailable in this build" : ""}`} onClick={onClick}><Icon name={icon} />{label}{badge && <b className={`tool-badge${disabled ? " locked" : ""}`} aria-hidden="true">{badge}</b>}</button>{menu}</div>; }
 function IconButton({ label, icon, badge, active, onClick }: { label: string; icon: IconName; badge?: string; active?: boolean; onClick: () => void }) { return <button className={`icon-button ${active ? "active" : ""}`} aria-label={label} title={label} aria-pressed={active} onClick={onClick}><Icon name={icon} />{badge && <b>{badge}</b>}</button>; }
 function StatusBadge({ status }: { status: string }) { return <span className={`status-badge ${status}`}>{status}</span>; }
 function EmptyPanel({ title, copy }: { title: string; copy: string }) { return <div className="panel-content"><span className="section-kicker">LEFT PANEL</span><h2>{title}</h2><p>{copy}</p></div>; }
@@ -688,10 +772,10 @@ function VariantStudio({ selected, lineage, evidence, workspace }: { selected: S
     <div className="variant-lineage">
       <span className="section-kicker">LINEAGE</span>
       {lineage ? <>
-        <p>branch {lineage.branch.branch_id} / root {lineage.branch.root_scenario_id} / depth {lineage.lineage_depth}</p>
-        <ol aria-label="Variant lineage path">{lineage.lineage_path.map((node) => <li key={node.scenario_id}>{node.scenario_id} <StatusBadge status={node.present ? "available" : "unavailable"} />{node.unavailable_reason ? <small>{node.unavailable_reason}</small> : null}</li>)}</ol>
+        <p>branch {lineage.branch.branch_id} / root {displayScenarioId(lineage.branch.root_scenario_id)} / depth {lineage.lineage_depth}</p>
+        <ol aria-label="Variant lineage path">{lineage.lineage_path.map((node) => <li key={node.scenario_id} title={node.scenario_id}>{displayScenarioId(node.scenario_id)} <StatusBadge status={node.present ? "available" : "unavailable"} />{node.unavailable_reason ? <small>{node.unavailable_reason}</small> : null}</li>)}</ol>
         {["branch_name", "parent_scenario_id", "seed", "config_hash", "run_id", "variant_configuration", "dataset_version", "generator_version", "transform_version", "source_scene_token"].map(field)}
-        {lineage.child_scenario_ids.length > 0 && <p>children: {lineage.child_scenario_ids.join(", ")}</p>}
+        {lineage.child_scenario_ids.length > 0 && <p>children: {lineage.child_scenario_ids.map(displayScenarioId).join(", ")}</p>}
       </> : <p><StatusBadge status="unavailable" />lineage was not returned by the API</p>}
     </div>
     <div className="variant-layers">
@@ -702,7 +786,7 @@ function VariantStudio({ selected, lineage, evidence, workspace }: { selected: S
 
 function CompareSide({ side, label, playhead }: { side: ComparePayload["sides"][number]; label: string; playhead: number }) {
   return <article className="compare-side" aria-label={`${label} side of the comparison`}>
-    <header><strong>{side.scenario_id}</strong><span>{side.artifact_type}</span><StatusBadge status={side.branch_name ? "available" : "unsupported"} /></header>
+    <header><strong title={side.scenario_id}>{displayScenarioId(side.scenario_id)}</strong><span>{side.artifact_type}</span><StatusBadge status={side.branch_name ? "available" : "unsupported"} /></header>
     <dl>
       <dt>branch</dt><dd>{side.branch_id}{side.branch_name ? ` (${side.branch_name})` : " (name n/a)"}</dd>
       <dt>seed</dt><dd>{side.seed ?? MISSING}</dd>
@@ -721,8 +805,8 @@ function CompareSurface({ payload, error, selected, scenarios, against, onAgains
   if (!selected) return <div className="view-grid count-1"><div className="empty-view"><strong>Compare</strong><span>Select a scenario to compare.</span></div></div>;
   return <section className="compare-surface" aria-label="Compare mode">
     <div className="compare-controls">
-      <label>Left <input readOnly value={selected.scenario_id} aria-label="Left scenario" /></label>
-      <label>Right <select aria-label="Right scenario" value={against} onChange={(event) => onAgainst(event.target.value)}>{candidates.length === 0 ? <option value="">no second scenario</option> : candidates.map((item) => <option key={item.scenario_id} value={item.scenario_id}>{item.scenario_id}</option>)}</select></label>
+      <label>Left <input readOnly value={displayScenarioId(selected.scenario_id)} aria-label="Left scenario" title={selected.scenario_id} /></label>
+      <label>Right <select aria-label="Right scenario" value={against} onChange={(event) => onAgainst(event.target.value)}>{candidates.length === 0 ? <option value="">no second scenario</option> : candidates.map((item) => <option key={item.scenario_id} value={item.scenario_id}>{displayScenarioId(item.scenario_id)}</option>)}</select></label>
       <small>{payload ? `synchronized on ${payload.synchronization.mode} t=${payload.synchronization.time_s.toFixed(2)} s over 0.00-${payload.synchronization.time_domain.end_s.toFixed(2)} s` : "comparison payload not loaded"}</small>
     </div>
     {error && <p className="inline-error" role="alert">{error}</p>}
@@ -760,13 +844,13 @@ function CompareSurface({ payload, error, selected, scenarios, against, onAgains
     </>}
   </section>;
 }
-function Catalog({ scenarios, selected, loading, filter, onFilter, onSelect }: { scenarios: ScenarioSummary[]; selected: ScenarioSummary | null; loading: boolean; filter: string; onFilter: (value: string) => void; onSelect: (scenario: ScenarioSummary) => void }) { const visible = scenarios.filter((scenario) => scenario.scenario_id.toLowerCase().includes(filter.toLowerCase())); return <div className="panel-content"><div className="panel-title"><span className="section-kicker">CATALOG</span><span className="count">{visible.length}/{scenarios.length}</span></div><input className="filter" value={filter} onChange={(event) => onFilter(event.target.value)} placeholder="Filter scenarios" aria-label="Filter scenarios" />{loading ? <div className="skeleton-list"><i /><i /><i /></div> : scenarios.length === 0 ? <div className="panel-empty">Import a scene to start a scenario.</div> : visible.length === 0 ? <div className="panel-empty">No scenarios match this filter.</div> : <div className="scenario-list">{visible.map((scenario) => <button className={selected?.scenario_id === scenario.scenario_id ? "selected" : ""} key={scenario.scenario_id} onClick={() => onSelect(scenario)}><span><strong>{scenario.scenario_id}</strong><small>{scenario.artifact_type} / {scenario.duration_s.toFixed(2)} s</small></span><em>:</em></button>)}</div>}</div>; }
-function AddViewMenu({ viewCount, onAdd }: { viewCount: number; onAdd: (type: ViewType) => void }) { const atLimit = viewCount >= 4; return <div className="add-view-menu" role="menu"><button disabled={atLimit} onClick={() => onAdd("top-down")}><strong>Top-down</strong><small>{atLimit ? "maximum 4 views reached" : "authoring and map trajectory"}</small></button><button disabled={atLimit} onClick={() => onAdd("sensor-evidence")}><strong>Sensor Evidence</strong><small>nuScenes LIDAR_TOP, 5 historical sweeps</small></button><button disabled={atLimit} onClick={() => onAdd("lidar")}><strong>LiDAR 3D</strong><small>single recorded LIDAR_TOP sweep</small></button><button disabled={atLimit} onClick={() => onAdd("third-person")}><strong>3rd-person POV</strong><small>simulator capability determines availability</small></button><button disabled={atLimit} onClick={() => onAdd("in-car")}><strong>In-car POV</strong><small>simulator capability determines availability</small></button></div>; }
+function Catalog({ scenarios, selected, loading, filter, onFilter, onSelect, onRefresh }: { scenarios: ScenarioSummary[]; selected: ScenarioSummary | null; loading: boolean; filter: string; onFilter: (value: string) => void; onSelect: (scenario: ScenarioSummary) => void; onRefresh: () => void }) { const visible = scenarios.filter((scenario) => scenario.scenario_id.toLowerCase().includes(filter.toLowerCase())); return <div className="panel-content"><div className="panel-title"><span className="count">{scenarios.length}</span><span className="section-kicker">CATALOG</span><button className="catalog-refresh" onClick={onRefresh} disabled={loading} aria-label="Refresh catalog" title="Refresh catalog"><Icon name="reload" size={14} /></button></div><input className="filter" value={filter} onChange={(event) => onFilter(event.target.value)} placeholder="Filter scenarios" aria-label="Filter scenarios" />{loading ? <div className="skeleton-list"><i /><i /><i /></div> : scenarios.length === 0 ? <div className="panel-empty">Import a scene to start a scenario.</div> : visible.length === 0 ? <div className="panel-empty">No scenarios match this filter.</div> : <div className="scenario-list">{visible.map((scenario) => <button className={selected?.scenario_id === scenario.scenario_id ? "selected" : ""} key={scenario.scenario_id} onClick={() => onSelect(scenario)}><span><strong title={scenario.scenario_id}>{displayScenarioId(scenario.scenario_id)}</strong><small>{scenario.artifact_type} / {scenario.duration_s.toFixed(2)} s</small><small>{displayMapName(scenario)}</small></span></button>)}</div>}</div>; }
+function AddViewMenu({ viewCount, replayMode, onAdd }: { viewCount: number; replayMode: boolean; onAdd: (type: ViewType) => void }) { const atLimit = viewCount >= MAX_VIEWS; const slot = (index: number) => atLimit ? `maximum ${MAX_VIEWS} views reached` : `view panel ${index} of ${MAX_VIEWS}`; return <div className="add-view-menu" role="menu"><button disabled={atLimit} onClick={() => onAdd("top-down")}><strong>Top-down</strong><small>{atLimit ? slot(0) : `${slot(2)} · nuScenes devkit map and point cloud`}</small></button><button disabled={atLimit} onClick={() => onAdd("sensor-evidence")}><strong>Sensor Evidence</strong><small>{atLimit ? slot(0) : replayMode ? `${slot(3)} · nuScenes LIDAR_TOP recorded sweeps` : `${slot(3)} · opens Replay, recorded sweeps`}</small></button><button disabled={atLimit} onClick={() => onAdd("third-person")}><strong>3rd-person POV</strong><small>{atLimit ? slot(0) : `${slot(1)} · esmini runner render, main pane`}</small></button></div>; }
 function ViewPane({ view, selected, workspace, frame, imageFrame, liveState, liveCapability, onStartNativeSession, lidar, sensorEvidence, onSensorSweeps, decimation, onDecimation, trajectory, timeline, activeTracks, selectedActor, measurement, mode, onSelectActor, preset, onPreset, hiddenKinds, onToggleKind, layersOpen, onToggleLayers, maximized, onToggleMaximize, onMakeMain, onClose }: { view: View; selected: ScenarioSummary | null; workspace: WorkspaceScenario | null; frame?: POVFrame | null; imageFrame?: POVImageFrame | null; liveState: LiveState | null; liveCapability: LiveCapability | null; onStartNativeSession: () => void; lidar: LidarDescriptor | null; sensorEvidence: SensorEvidence | null; onSensorSweeps: (value: number) => void; decimation: number; onDecimation: (value: number) => void; trajectory: TrajectoryResponse | null; timeline: number; activeTracks: ActiveTrack[]; selectedActor: string | null; measurement: Measurement | null; mode: string; onSelectActor: (actorId: string) => void; preset: CameraPreset; onPreset: (next: CameraPreset) => void; hiddenKinds: string[]; onToggleKind: (kind: string) => void; layersOpen: boolean; onToggleLayers: () => void; maximized: boolean; onToggleMaximize: () => void; onMakeMain: () => void; onClose: () => void }) {
   const kinds = trajectory ? Array.from(new Set(trajectory.paths.map((path) => path.path_kind))) : [];
   return <article className={`view-pane${maximized ? " maximized" : ""}`}>
     <header>
-      <span className="view-icon"><Icon name={view.type} /></span><strong>{viewLabels[view.type]}</strong><span className="view-target">{selected ? ` - ${selected.scenario_id}` : " - empty"}</span>
+       <span className="view-icon"><Icon name={view.type} /></span><strong>{viewLabels[view.type]}</strong>
        <select aria-label="Camera preset" value={preset} onChange={(event) => onPreset(event.target.value as CameraPreset)}><option value="default">Auto-fit</option><option value="north-up">North-up</option><option value="ego-up">Ego-up</option></select>
       <div className="layers-control"><button className={`view-action${layersOpen ? " active" : ""}`} aria-expanded={layersOpen} onClick={onToggleLayers}>Layers</button>{layersOpen && <div className="layers-menu" role="menu">{kinds.length === 0 ? <p>No trajectory layers loaded.</p> : kinds.map((kind) => <button key={kind} role="menuitemcheckbox" aria-checked={!hiddenKinds.includes(kind)} onClick={() => onToggleKind(kind)}><span className={`status-dot ${hiddenKinds.includes(kind) ? "off" : "on"}`} />{kind}</button>)}</div>}</div>
        <button className="view-action" onClick={onMakeMain}>Make main</button><button className={`view-action${maximized ? " active" : ""}`} onClick={onToggleMaximize}>{maximized ? "Restore" : "Maximize"}</button>
@@ -844,10 +928,11 @@ function LidarView({ descriptor, decimation, onDecimation, playhead }: { descrip
 function POVView({ frame, imageFrame, playhead }: { frame: POVFrame; imageFrame?: POVImageFrame | null; playhead: number }) {
   const camera = frame.camera_transform;
   const delta = Math.abs(frame.timestamp_s - playhead);
-  return <div className="pov-view" role="img" aria-label={`${frame.mode} simulator frame at ${frame.timestamp_s.toFixed(2)} seconds for playhead ${playhead.toFixed(2)} seconds`}>{imageFrame?.status === "rendered" && imageFrame.artifact ? <img className="pov-artifact" src={apiUrl(`/artifacts/${imageFrame.artifact.path}`)} alt={`${frame.mode} esmini image frame at ${imageFrame.timestamp_s?.toFixed(2)} seconds`} /> : <><div className="pov-horizon" /><div className="pov-road" />{frame.actors.map((actor) => <span key={actor.actor_id} className={`pov-actor${actor.actor_id === "ego" ? " ego" : ""}`} style={{ left: `${50 + ((actor.transform.x_m - Number(camera.x_m)) * 2)}%`, top: `${58 - ((actor.transform.y_m - Number(camera.y_m)) * 2)}%` }} title={`${actor.actor_id} ${actor.actor_type}`} />)}</>}<div className="view-legend"><span>{imageFrame?.status === "rendered" ? "esmini-image-artifact" : frame.simulator}</span><span>{frame.mode}</span><span>playhead t={playhead.toFixed(2)} s</span><span>frame t={imageFrame?.timestamp_s?.toFixed(2) ?? frame.timestamp_s.toFixed(2)} s</span><span>{delta <= 0.001 ? "at playhead" : `nearest frame +${delta.toFixed(2)} s`}</span><span>{imageFrame?.frame_id ?? frame.frame_id}</span></div></div>;
+  return <div className="pov-view" role="img" aria-label={`${frame.mode} simulator frame at ${frame.timestamp_s.toFixed(2)} seconds for playhead ${playhead.toFixed(2)} seconds`}>{imageFrame?.status === "rendered" && imageFrame.artifact ? <img className="pov-artifact" src={apiUrl(`/artifacts/${imageFrame.artifact.path}`)} alt={`${frame.mode} esmini image frame at ${imageFrame.timestamp_s?.toFixed(2)} seconds`} /> : <><div className="pov-horizon" /><div className="pov-road" />{frame.actors.map((actor) => <span key={actor.actor_id} className={`pov-actor${actor.actor_id === "ego" ? " ego" : ""}`} style={{ left: `${50 + ((actor.transform.x_m - Number(camera.x_m)) * 2)}%`, top: `${58 - ((actor.transform.y_m - Number(camera.y_m)) * 2)}%` }} title={`${actor.actor_id} ${actor.actor_type}`} />)}</>}<div className="view-legend"><span>{imageFrame?.status === "rendered" ? "esmini-image-artifact" : frame.simulator}</span><span>{frame.mode}</span><span>playhead t={playhead.toFixed(2)} s</span><span>frame t={imageFrame?.timestamp_s?.toFixed(2) ?? frame.timestamp_s.toFixed(2)} s</span><span>{delta <= 0.001 ? "at playhead" : `nearest frame +${delta.toFixed(2)} s`}</span></div></div>;
 }
 
 function TopDownView({ selected, workspace, trajectory, timeline, activeTracks, selectedActor, measurement, mode, onSelectActor, preset, hiddenKinds }: { selected: ScenarioSummary | null; workspace: WorkspaceScenario | null; trajectory: TrajectoryResponse | null; timeline: number; activeTracks: ActiveTrack[]; selectedActor: string | null; measurement: Measurement | null; mode: string; onSelectActor: (actorId: string) => void; preset: CameraPreset; hiddenKinds: string[] }) {
+  const [pointCloud, setPointCloud] = useState<"none" | "lidar" | "radar">("lidar");
   if (!selected) return <div className="canvas-empty">Select an imported scenario</div>;
   if (!trajectory) return <div className="canvas-empty">Loading Top-down view</div>;
   const paths = trajectory.paths.filter((path) => !hiddenKinds.includes(path.path_kind));
@@ -858,8 +943,9 @@ function TopDownView({ selected, workspace, trajectory, timeline, activeTracks, 
   const point = (x: number, y: number) => `${((x - minX) / Math.max(1, maxX - minX)) * 82 + 9},${91 - ((y - minY) / Math.max(1, maxY - minY)) * 80}`;
   const ego = trajectory.paths.find((path) => path.actor_type === "vehicle") ?? trajectory.paths[0];
   const rotation = preset === "ego-up" && ego?.states.length ? -(ego.states[0].yaw_rad * 180) / Math.PI - 90 : 0;
-   const mapLines = Object.values(workspace?.native_map?.layers ?? {}).flatMap((records) => records.flatMap((record) => Array.isArray(record.geometry) ? [record.geometry as [number, number][]] : []));
-   return <div className="top-down">
+    const mapLines: [number, number][][] = [];
+    const mapImage = selected && pointCloud !== "none" ? topDownImageUrl(selected.scenario_id, pointCloud) : null;
+    return <div className="top-down">{mapImage && <img className="top-down-map" src={mapImage} alt={`nuScenes devkit ${pointCloud.toUpperCase()} top-down map underlay`} />}<div className="top-down-controls"><label>point cloud <select value={pointCloud} onChange={(event) => setPointCloud(event.target.value as "none" | "lidar" | "radar")}><option value="none">none</option><option value="lidar">LiDAR</option><option value="radar">Radar</option></select></label></div>
      <svg viewBox="0 0 100 100" role="img" aria-label={`Top-down trajectory view at ${timeline.toFixed(2)} seconds, camera preset ${preset}`}><g transform={`rotate(${rotation} 50 50)`}>{mapLines.map((line, index) => <polyline key={`map-${index}`} className="native-map-line" points={line.map(([x, y]) => point(x, y)).join(" ")} />)}{paths.map((path) => <polyline key={path.actor_id} className={path.path_kind} points={path.states.map((state) => point(state.x_m, state.y_m)).join(" ")} />)}{mode === "measure" && measurement?.status === "measured" && <line className="measure-line" x1={point(measurement.from.x_m, measurement.from.y_m).split(",")[0]} y1={point(measurement.from.x_m, measurement.from.y_m).split(",")[1]} x2={point(measurement.to.x_m, measurement.to.y_m).split(",")[0]} y2={point(measurement.to.x_m, measurement.to.y_m).split(",")[1]} />}{activeTracks.length === 0 && paths.map((path) => { const state = nearestSample(path.states.map((item) => ({ ...item, acceleration_mps2: null, acceleration_source: null, braking_pressure: null, braking_source: null })), timeline); return state === undefined ? null : <circle key={`fallback-${path.actor_id}`} className="actor-state" cx={point(state.x_m, state.y_m).split(",")[0]} cy={point(state.x_m, state.y_m).split(",")[1]} r="1.2" />; })}{activeTracks.map(({ track, sample }) => sample === undefined ? null : <g key={track.actor_id} className={selectedActor === track.actor_id ? "actor-marker selected" : "actor-marker"} onClick={() => onSelectActor(track.actor_id)}><line className="actor-heading" x1={point(sample.x_m, sample.y_m).split(",")[0]} y1={point(sample.x_m, sample.y_m).split(",")[1]} x2={point(sample.x_m + Math.cos(sample.yaw_rad) * 6, sample.y_m + Math.sin(sample.yaw_rad) * 6).split(",")[0]} y2={point(sample.x_m + Math.cos(sample.yaw_rad) * 6, sample.y_m + Math.sin(sample.yaw_rad) * 6).split(",")[1]} /><circle cx={point(sample.x_m, sample.y_m).split(",")[0]} cy={point(sample.x_m, sample.y_m).split(",")[1]} r={track.role === "ego" ? 1.5 : 1.2}><title>{`${track.actor_id} at ${sample.time_s.toFixed(2)} s: speed ${formatChannelValue("speed", sample.speed_mps)}, acceleration ${formatChannelValue("acceleration", sample.acceleration_mps2)}, braking ${formatChannelValue("braking", sample.braking_pressure)}`}</title></circle></g>)}</g></svg>
     <div className="view-legend"><span><i className="recorded-line" /> recorded</span><span><i className="generated-line" /> generated</span><span><i className="replayed-line" /> replayed</span><span><i className="sensor-line" /> sensor-evidence</span><span>playhead t={timeline.toFixed(2)} s</span>{mode === "measure" && <span>measure: {measurement ? measureSummary(measurement) : "n/a"}</span>}</div>
   </div>;
@@ -907,11 +993,6 @@ function TimelineSurface({ timeline, gates, error, playhead, durationS, activeTr
         </div>;
       })}
     </li>)}</ol>}
-    {timeline && <ul className="gate-lane" aria-label="Gate lane">{(gates?.gates ?? []).map((gate: GateSegment) => <li key={gate.gate_id} className={`gate-segment ${gate.status}`} style={{ left: `${at(gate.start_s)}%`, width: `${Math.max(1.5, ((gate.end_s - gate.start_s) / span) * 100)}%` }} title={`${gate.gate_id}: ${gate.status}${gate.reasons.length ? ` (${gate.reasons.join(", ")})` : ""}`}>
-      <span className="gate-id">{gate.gate_id}</span><span className="gate-status">{gate.status}</span>{gate.scientific_status === "PROVISIONAL" && <span className="gate-provisional">PROVISIONAL</span>}
-      <span className="sr-only">{`${gate.gate_id} ${gate.status} from ${gate.start_s.toFixed(2)} to ${gate.end_s.toFixed(2)} seconds${gate.reasons.length ? `; reasons ${gate.reasons.join(", ")}` : ""}${gate.scientific_status === "PROVISIONAL" ? "; PROVISIONAL" : ""}`}</span>
-    </li>)}</ul>}
-    {timeline && <ul className="gate-lane-status" aria-label="Gate status list">{(gates?.gates ?? []).map((gate: GateSegment) => <li key={`${gate.gate_id}-status`}><strong>{gate.gate_id}</strong> <StatusBadge status={gate.status} />{gate.scientific_status === "PROVISIONAL" && <StatusBadge status="PROVISIONAL" />}<span>{gate.start_s.toFixed(2)}-{gate.end_s.toFixed(2)} s</span><span>{gate.reasons.join(", ") || "no reasons"}</span></li>)}</ul>}
     {measurement && <p className="measure-readout">Measure at {playhead.toFixed(2)} s: {measureSummary(measurement)}{measurement.status === "measured" ? `; bearing ${measurement.bearing_rad.toFixed(3)} rad; heading delta ${measurement.heading_delta_rad.toFixed(3)} rad; sample offset ${measurement.time_offset_s.toFixed(2)} s` : ""}</p>}
   </section>;
 }

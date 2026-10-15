@@ -360,6 +360,7 @@ export const fetchLidarCapability = () => request<Availability & { channel?: str
 export const lidarPayloadUrl = (token: string, decimation = 8) => apiUrl(`/workspace/lidar/${encodeURIComponent(token)}?decimation=${decimation}`);
 export const fetchLidarDescriptor = (id: string) => request<LidarDescriptor>(`/workspace/scenarios/${encodeURIComponent(id)}/lidar`);
 export const fetchSensorEvidence = (id: string, nsweeps = 5) => request<SensorEvidence>(`/workspace/scenarios/${encodeURIComponent(id)}/sensor-evidence?nsweeps=${nsweeps}`);
+export const topDownImageUrl = (id: string, source: "lidar" | "radar", nsweeps = 5) => apiUrl(`/workspace/scenarios/${encodeURIComponent(id)}/top-down?source=${source}&nsweeps=${nsweeps}`);
 
 export const fetchRecipe = (id: string) => request<RecipeDocument>(`/workspace/scenarios/${encodeURIComponent(id)}/recipe`);
 const recipeUrl = (id: string, suffix = "") => `/workspace/scenarios/${encodeURIComponent(id)}/recipe${suffix}`;

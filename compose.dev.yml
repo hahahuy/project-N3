@@ -29,6 +29,7 @@ services:
       ESMINILIB_PATH: ${ESMINILIB_PATH:-/opt/esmini/bin/libesminiLib.so}
       ESMINILIB_VERSION: ${ESMINILIB_VERSION:-configured-esminiLib}
       ESMINI_CAPTURE_IMAGES: ${ESMINI_CAPTURE_IMAGES:-0}
+      MPLCONFIGDIR: /tmp/matplotlib
     ports:
       - "${PROJECT_N3_WEB_API_PORT:-8001}:8000"
     volumes:

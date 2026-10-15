@@ -16,7 +16,11 @@ REASON_PARENT_SWEEP_UNAVAILABLE = "recorded_parent_sweep_unavailable"
 
 def variant_sensor_status(record: ArtifactRecord, lidar: LidarService) -> dict[str, object]:
     """Return post-edit status without turning a parent sweep into a variant frame."""
-    token = record.scenario.provenance.get("source_window", "").split(":", 1)[0]
+    window_token = record.scenario.provenance.get("source_window", "").split(":", 1)[0]
+    try:
+        token = lidar.sample_data_token(window_token)
+    except (FileNotFoundError, ImportError, KeyError, OSError, RuntimeError, ValueError):
+        token = window_token
     availability = lidar.availability(token)
     descriptor = None
     if availability["available"]:

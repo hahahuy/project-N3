@@ -349,35 +349,73 @@ describe("actor timeline and gate lane", () => {
     expect(screen.queryByText("G1-G7 gate lane")).toBeNull();
   });
 
-  it("replaces placeholder segments with backend gate statuses and extents", async () => {
+  it("keeps the timeline free of gate overlays and reports gate detail from the Gates flyout", async () => {
     const surface = await renderWorkspace();
-    const lane = within(surface).getByRole("list", { name: "Gate lane" });
 
+    expect(within(surface).queryByRole("list", { name: "Gate lane" })).toBeNull();
+    expect(within(surface).queryByRole("list", { name: "Gate status list" })).toBeNull();
+    expect(within(surface).queryAllByRole("listitem", { name: /G\d/ })).toHaveLength(0);
+
+    fireEvent.click(screen.getByRole("button", { name: "Gates" }));
+    const flyout = await screen.findByRole("heading", { name: "G1-G7 gates" });
+    const rows = Array.from((flyout.parentElement as HTMLElement).querySelectorAll(".flyout-row"));
+    expect(rows).toHaveLength(gateTimeline.gates.length);
     for (const gate of gateTimeline.gates) {
-      const segment = within(lane).getByText(gate.gate_id).closest("li");
-      expect(segment?.textContent).toContain(gate.status);
-      expect(segment?.getAttribute("title")).toContain(`${gate.gate_id}: ${gate.status}`);
+      const row = rows.find((item) => item.textContent?.includes(gate.gate_id));
+      expect(row?.textContent).toContain(gate.status);
+      expect(row?.textContent).toContain(`${gate.start_s.toFixed(2)}-${gate.end_s.toFixed(2)} s`);
     }
-    expect(within(lane).getAllByText("PROVISIONAL").length).toBe(3);
-    expect(within(surface).getByRole("list", { name: "Gate status list" }).textContent).toContain("lane_road_match_evidence_not_supplied_for_this_scenario");
+    expect(within(flyout.parentElement as HTMLElement).getByText(/lane_road_match_evidence_not_supplied_for_this_scenario/)).toBeTruthy();
   });
 
-  it("synchronizes the playhead across the timeline, top-down, POV and LiDAR panels", async () => {
+  it("counts the view panels available in the grid lock", async () => {
+    await renderWorkspace();
+    const addView = () => screen.getByRole("button", { name: "Add view" });
+    const badge = () => addView().querySelector(".tool-badge")?.textContent;
+
+    expect(badge()).toBe("2/3");
+    expect((addView() as HTMLButtonElement).disabled).toBe(false);
+    expect(addView().getAttribute("title")).toContain("2 of 3 view panels available");
+
+    fireEvent.click(addView());
+    fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /Top-down/ }));
+    expect(badge()).toBe("1/3");
+
+    fireEvent.click(addView());
+    fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /3rd-person POV/ }));
+    expect(badge()).toBe("0/3");
+    expect((addView() as HTMLButtonElement).disabled).toBe(true);
+    expect(addView().getAttribute("title")).toContain("view grid locked at 3 panels, close one to add another");
+
+    fireEvent.click(screen.getByRole("button", { name: "Close view: Top-down" }));
+    expect(badge()).toBe("1/3");
+    expect((addView() as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("synchronizes the playhead across the main POV, top-down and replay-only sensor panes", async () => {
     await renderWorkspace();
 
     const playhead = screen.getByLabelText("Playhead") as HTMLInputElement;
     fireEvent.change(playhead, { target: { value: "1" } });
 
     await waitFor(() => expect(screen.getByText("playhead 1.00 s")).toBeTruthy());
-    expect(screen.getByRole("img", { name: /Top-down trajectory view at 1.00 seconds/ })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Add view" }));
-    fireEvent.click(screen.getByRole("button", { name: /3rd-person POV/ }));
     expect(screen.getByRole("img", { name: /playhead 1.00 seconds/ })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Add view" }));
-    fireEvent.click(screen.getByRole("button", { name: /LiDAR 3D/ }));
-    expect(screen.getAllByText("playhead t=1.00 s").length).toBeGreaterThan(0);
+    fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /Top-down/ }));
+    expect(screen.getByRole("img", { name: /Top-down trajectory view at 1.00 seconds/ })).toBeTruthy();
+    fireEvent.click(replayTab());
+    fireEvent.click(screen.getByRole("button", { name: "Add view" }));
+    fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /Sensor Evidence/ }));
+    expect(await screen.findByRole("img", { name: /nuScenes Sensor Evidence view with 2 LIDAR_TOP sweeps/ })).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Add view" }) as HTMLButtonElement).disabled).toBe(true);
   });
 });
+
+function replayTab(): HTMLElement {
+  const tabs = document.querySelector(".document-tabs");
+  if (!tabs) throw new Error("document tabs are not rendered");
+  return within(tabs as HTMLElement).getByRole("button", { name: "Replay" });
+}
 
 describe("measure mode", () => {
   it("measures against the active timestamp and follows the playhead", async () => {
@@ -404,12 +442,11 @@ describe("keyboard operation", () => {
   it("switches modes from the keyboard and clears selection with Escape", async () => {
     const surface = await renderWorkspace();
 
-    fireEvent.keyDown(window, { key: "m" });
-    expect(screen.getByRole("button", { name: "measure" }).getAttribute("aria-pressed")).toBe("true");
-    fireEvent.keyDown(window, { key: "s" });
-    expect(screen.getByRole("button", { name: "select" }).getAttribute("aria-pressed")).toBe("true");
     fireEvent.keyDown(window, { key: "e" });
-    expect(screen.getByRole("button", { name: "edit" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("region", { name: "Constrained maneuver editor" })).toBeTruthy();
+    fireEvent.keyDown(window, { key: "m" });
+    expect(screen.queryByRole("region", { name: "Constrained maneuver editor" })).toBeNull();
+    fireEvent.keyDown(window, { key: "s" });
 
     fireEvent.click(within(surface).getByRole("button", { name: /^ego/ }));
     expect(within(surface).getByText("selection: ego")).toBeTruthy();
@@ -437,6 +474,53 @@ describe("keyboard operation", () => {
   });
 });
 
+describe("timeline sizing", () => {
+  it("resizes the timeline by dragging its top edge", async () => {
+    await renderWorkspace();
+    const handle = screen.getByRole("separator", { name: "Resize timeline" });
+
+    expect(handle.getAttribute("aria-valuenow")).toBe("236");
+    fireEvent.pointerDown(handle, { clientY: 900 });
+    fireEvent.pointerMove(window, { clientY: 700 });
+    expect(handle.getAttribute("aria-valuenow")).toBe("436");
+
+    fireEvent.pointerUp(window);
+    fireEvent.pointerDown(handle, { clientY: 700 });
+    fireEvent.pointerMove(window, { clientY: 400 });
+    expect(handle.getAttribute("aria-valuenow")).toBe("520");
+    expect(handle.getAttribute("aria-valuemax")).toBe("520");
+  });
+
+  it("collapses the timeline when dragged below its minimum and restores it", async () => {
+    await renderWorkspace();
+    const handle = screen.getByRole("separator", { name: "Resize timeline" });
+
+    fireEvent.pointerDown(handle, { clientY: 700 });
+    fireEvent.pointerMove(window, { clientY: 2000 });
+    expect(document.querySelector(".workspace-body")?.className).toContain("timeline-collapsed");
+    expect(handle.getAttribute("aria-valuenow")).toBe("0");
+
+    fireEvent.pointerUp(window);
+    fireEvent.pointerDown(handle, { clientY: 2000 });
+    fireEvent.pointerMove(window, { clientY: 1800 });
+    expect(document.querySelector(".workspace-body")?.className).not.toContain("timeline-collapsed");
+    expect(handle.getAttribute("aria-valuenow")).toBe("320");
+  });
+
+  it("collapses and restores the timeline from the keyboard", async () => {
+    await renderWorkspace();
+    const handle = screen.getByRole("separator", { name: "Resize timeline" });
+
+    fireEvent.keyDown(handle, { key: "ArrowDown" });
+    for (let step = 0; step < 10; step += 1) fireEvent.keyDown(handle, { key: "ArrowDown" });
+    expect(document.querySelector(".workspace-body")?.className).toContain("timeline-collapsed");
+
+    fireEvent.keyDown(handle, { key: "ArrowUp" });
+    expect(document.querySelector(".workspace-body")?.className).not.toContain("timeline-collapsed");
+    expect(handle.getAttribute("aria-valuenow")).toBe("140");
+  });
+});
+
 describe("accessibility", () => {
   it("gives every timeline control an accessible name and a keyboard role", async () => {
     const surface = await renderWorkspace();
@@ -451,13 +535,17 @@ describe("accessibility", () => {
 
   it("states every status as text rather than colour only", async () => {
     const surface = await renderWorkspace();
-    const lane = within(surface).getByRole("list", { name: "Gate status list" });
 
-    for (const status of ["pass", "fail", "skipped", "error", "unsupported"]) {
-      expect(lane.textContent).toContain(status);
-    }
-    expect(lane.textContent).toContain("PROVISIONAL");
     expect(within(surface).getAllByText("Braking")[0].closest(".track-channel")?.textContent).toContain("n/a");
+
+    fireEvent.click(screen.getByRole("button", { name: "Gates" }));
+    const flyout = await screen.findByRole("heading", { name: "G1-G7 gates" });
+    const text = flyout.parentElement?.textContent ?? "";
+    for (const status of ["pass", "fail", "skipped", "error", "unsupported"]) {
+      expect(text).toContain(status);
+    }
+    expect(text).toContain("PROVISIONAL");
+    expect(text).toContain("xosc_subset_not_evaluated_in_workspace_surface");
   });
 
   it("exposes a text equivalent for every timeline visualization", async () => {
@@ -475,12 +563,12 @@ describe("accessibility", () => {
 });
 
 describe("mobile layout", () => {
-  it("keeps the actor tracks, gate lane and playhead usable at a narrow viewport", async () => {
+  it("keeps the actor tracks and playhead usable at a narrow viewport", async () => {
     window.innerWidth = 390;
     const surface = await renderWorkspace();
 
     expect(within(surface).getByRole("list", { name: "Actor state tracks" })).toBeTruthy();
-    expect(within(surface).getByRole("list", { name: "Gate lane" })).toBeTruthy();
+    expect(within(surface).queryByRole("list", { name: "Gate lane" })).toBeNull();
     expect(screen.getByLabelText("Playhead")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Catalog" })).toBeTruthy();
   });
@@ -548,6 +636,20 @@ describe("recipe, rollback and lineage surfaces", () => {
 
     expect(screen.getByText("branch: branch-synthetic-root")).toBeTruthy();
     expect(screen.getByText("config hash: sha256:01234")).toBeTruthy();
+  });
+
+  it("keeps the footer free of full scenario ids", async () => {
+    await renderWorkspace();
+    const footer = document.querySelector(".status-bar") as HTMLElement;
+
+    expect(footer.textContent).not.toContain(SCENARIO_ID);
+    expect(document.querySelector(".status-bar span[title]")).toBeNull();
+    const pov = await screen.findByRole("img", { name: /simulator frame/ });
+    expect(pov.textContent).not.toContain("frame-t0000");
+  });
+
+  it("shows branch identity, seed and config hash in the variant studio", async () => {
+    await renderWorkspace();
 
     fireEvent.click(screen.getByRole("button", { name: "Variant studio" }));
     const studio = await screen.findByRole("region", { name: "Variant studio" });
@@ -588,6 +690,8 @@ describe("evidence layers", () => {
 
   it("keeps the four evidence layers in the top-down legend", async () => {
     await renderWorkspace();
+    fireEvent.click(screen.getByRole("button", { name: "Add view" }));
+    fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /Top-down/ }));
 
     const legend = screen.getByRole("img", { name: /Top-down trajectory view/ }).parentElement;
     for (const label of ["recorded", "generated", "replayed", "sensor-evidence"]) {
@@ -599,15 +703,27 @@ describe("evidence layers", () => {
 describe("recorded sensor evidence and native live session", () => {
   it("keeps Sensor Evidence separate and starts a native state session", async () => {
     await renderWorkspace();
+    fireEvent.click(replayTab());
     fireEvent.click(screen.getByRole("button", { name: "Add view" }));
     fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /Sensor Evidence/ }));
     expect(await screen.findByRole("img", { name: /nuScenes Sensor Evidence view with 2 LIDAR_TOP sweeps/ })).toBeTruthy();
     expect(screen.getByText("historical sweep smearing expected")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Add view" }));
-    fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /3rd-person POV/ }));
     fireEvent.click(screen.getByRole("button", { name: "Start native session" }));
     expect(await screen.findByText("native esminiLib state")).toBeTruthy();
+  });
+
+  it("opens Replay when Sensor Evidence is added from the authoring tab", async () => {
+    await renderWorkspace();
+    fireEvent.click(screen.getByRole("button", { name: "Add view" }));
+    const entry = within(screen.getByRole("menu")).getByRole("button", { name: /Sensor Evidence/ });
+
+    expect(entry).toHaveProperty("disabled", false);
+    expect(entry.textContent).toContain("opens Replay");
+    fireEvent.click(entry);
+
+    expect(await screen.findByRole("img", { name: /nuScenes Sensor Evidence view/ })).toBeTruthy();
+    expect(document.querySelector(".document-tabs button.active")?.textContent).toBe("Replay");
   });
 });
 
@@ -615,7 +731,7 @@ describe("compare mode", () => {
   it("compares two documents side by side on a shared timestamp", async () => {
     await renderWorkspace();
 
-    fireEvent.click(screen.getByRole("button", { name: "compare" }));
+    fireEvent.click(screen.getByRole("button", { name: "Compare" }));
     const surface = await screen.findByRole("region", { name: "Compare mode" });
 
     expect(within(surface).getByLabelText("Left scenario").getAttribute("value")).toBe(SCENARIO_ID);
@@ -630,7 +746,7 @@ describe("compare mode", () => {
   it("shows metric and gate comparisons with status and scientific status", async () => {
     await renderWorkspace();
 
-    fireEvent.click(screen.getByRole("button", { name: "compare" }));
+    fireEvent.click(screen.getByRole("button", { name: "Compare" }));
     const surface = await screen.findByRole("region", { name: "Compare mode" });
 
     const metrics = within(surface).getByRole("list", { name: "Metric comparison" });
@@ -644,7 +760,7 @@ describe("compare mode", () => {
   it("follows the playhead when the comparison is re-synchronized", async () => {
     await renderWorkspace();
 
-    fireEvent.click(screen.getByRole("button", { name: "compare" }));
+    fireEvent.click(screen.getByRole("button", { name: "Compare" }));
     const surface = await screen.findByRole("region", { name: "Compare mode" });
     await within(surface).findByText(/synchronized on scenario_time/);
     fireEvent.change(screen.getByLabelText("Playhead"), { target: { value: "2" } });
@@ -661,8 +777,29 @@ describe("compare mode", () => {
     }) as typeof fetch);
     await renderWorkspace();
 
-    fireEvent.click(screen.getByRole("button", { name: "compare" }));
+    fireEvent.click(screen.getByRole("button", { name: "Compare" }));
 
     expect(await screen.findByRole("alert")).toHaveProperty("textContent", "Scenario 'absent' was not found.");
+  });
+});
+
+describe("fixed working space", () => {
+  it("pins the app to the viewport and keeps the view grid scroll-free", () => {
+    const styles = css;
+
+    // The app is exactly the viewport tall, so nothing can push a page scrollbar.
+    expect(styles).toMatch(/\.workspace-app \{[^}]*height: 100dvh/);
+    expect(styles).toMatch(/html, body, #root \{ height: 100%; \}/);
+    expect(styles).toMatch(/body \{[^}]*overflow: hidden/);
+    expect(styles).toMatch(/\.workspace-app \{[^}]*grid-template-rows: 48px 52px minmax\(0, 1fr\) 34px/);
+
+    // Every stage from the body down to a pane clips instead of scrolling.
+    for (const selector of [".workspace-body", ".view-manager", ".view-grid", ".view-pane", ".timeline-surface"]) {
+      const rule = styles.match(new RegExp("\\" + selector + "\\s*\\{[^}]*\\}"));
+      expect(rule?.[0]).toMatch(/overflow: hidden/);
+    }
+
+    // Panes may shrink with the grid rather than enforcing a floor.
+    expect(styles).toMatch(/\.view-pane \{ min-width: 0; min-height: 0;/);
   });
 });

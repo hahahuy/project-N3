@@ -175,7 +175,7 @@ def _sensor_layer(
     provenance: Mapping[str, str],
 ) -> EvidenceLayer:
     """Report recorded sensor evidence, or the explicit post-edit gap."""
-    token = _source_window_token(scenario)
+    token = _source_window_token(scenario, lidar)
     availability = lidar.availability(token)
     reference = f"{reference_prefix}/{scenario.scenario_id}/lidar"
     if artifact_type == "variant":
@@ -205,8 +205,15 @@ def _sensor_layer(
     )
 
 
-def _source_window_token(scenario: Scenario) -> str:
-    return scenario.provenance.get("source_window", "").split(":", 1)[0]
+def _source_window_token(scenario: Scenario, lidar: LidarService) -> str:
+    """Return the recorded LIDAR_TOP sweep addressed by the scenario source window."""
+    window_token = scenario.provenance.get("source_window", "").split(":", 1)[0]
+    if not window_token:
+        return ""
+    try:
+        return lidar.sample_data_token(window_token)
+    except (FileNotFoundError, ImportError, KeyError, OSError, RuntimeError, ValueError):
+        return window_token
 
 
 def _scenario_provenance(scenario: Scenario) -> dict[str, str]:

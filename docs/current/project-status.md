@@ -86,6 +86,8 @@ silently reuse nuScenes-specific assumptions.
 - Browser acceptance now covers the real local recipe editor, Tier 1 steering/acceleration/braking/target-speed preview, rollback/undo state, synchronized Compare, timeline/gate text equivalents, evidence layers and keyboard/mobile-capable controls. The no-dataset runtime correctly reports LiDAR and esmini image artifacts unavailable.
 - Variant sensor status is explicit through `workspace-variant-sensor-v1`: post-edit frames remain `unsupported` until generated artifacts exist, while a recorded parent sweep is reported separately with provenance. `workspace-pov-image-v1` serves only real private esmini capture artifacts; transform-only internal POV remains distinct and is never mislabeled as an image.
 - The separate Sensor Evidence view preserves Top-down as the authoring/map/trajectory pane. Its `nuscenes-sensor-evidence-v1` contract follows nuScenes `LIDAR_TOP` recorded-history semantics equivalent to five-sweep `render_sample_data`: sweep tokens/timestamps, calibration and ego poses, private payload links, decimation, layer controls, synchronization status and honest historical-sweep smearing are exposed. Map underlay and CAN telemetry are independently reported unavailable unless configured; post-edit sensor frames remain unsupported.
+- Recorded `LIDAR_TOP` token resolution and multisweep history are now devkit-correct in the current working tree and **not yet committed**. Two defects were corrected: scenario `source_window` provenance stores *sample* tokens, but every sensor consumer was passing them directly where a *sample_data* token was required, so LiDAR, Sensor Evidence, sensor-status, evidence-layer and scenario routes all addressed the wrong record; and `sweep_records` walked `sample_data.prev`, which is empty for `LIDAR_TOP` keyframes, so recorded sweep history silently truncated after one sweep. History is now walked through `sample.prev` to each earlier sample's `LIDAR_TOP` sweep, matching the devkit multisweep walk, with a cycle guard. `instance_token` is now read from the sample annotation rather than from `Boxes`. This is a recorded-evidence correctness fix; it does not create post-edit sensor output and does not change any canonical schema or provenance contract.
+- A recorded-evidence top-down image route `GET /api/workspace/scenarios/{id}/top-down` (`source=lidar|radar`, `nsweeps`) is present in the working tree and **not yet committed**. It serves the official devkit `render_sample_data` view with `underlay_map=True` for the recorded sweep. This is recorded nuScenes evidence rendering only. It is not a simulator render, not a post-edit artifact, and not a substitute for esmini image capture. The radar source is an independent availability path and is not a post-edit radar artifact. **This route currently has no backend test coverage.**
 - The approved next simulator architecture is a native, bounded `esminiLib` live-session adapter with WebSocket-friendly state/control messages and a browser-native Three.js/PlayCanvas renderer. The existing subprocess/image-capture path remains for replay, validation and evidence; it is not the primary live 3D interaction path. Full esmini WebAssembly, Unity WebGL and WebRTC remote rendering are deferred alternatives.
 - `esmini-live-session-v1` is now implemented as a bounded optional native-binding service with XOSC/XODR confinement and SHA-256 identity, lifecycle/control/camera validation, REST commands and a WebSocket-friendly state stream. Upstream esmini v3.10.0 was cloned outside the repository, host v3.9 and v3.10 shared-library load/step smokes pass, and Compose container load/step returned four named private scenario objects at `t=0.05s`. Browser camera state is separate from the native viewer. No kinematic or screenshot fallback is claimed as esmini state.
 - Native reset now reloads the same confined XOSC/XODR pair because the public esminiLib ABI has no stable reset symbol. Native control remains explicitly unavailable with `esminiLib_control_abi_unavailable`; camera commands remain browser-renderer state.
@@ -94,7 +96,8 @@ silently reuse nuScenes-specific assumptions.
 - Behavior, Validate and Replay toolbar controls remain intentionally disabled in the current build: Behavior has no executor, Validate has no connected workspace validation action, and Replay requires an accepted replay/capture flow. They are not hidden or silently mapped to another mode; the UI labels them unavailable and the backend contracts remain fail-closed.
 - Compose now exposes `ESMINILIB_PATH` alongside `ESMINI_BIN` and `ESMINI_DAT2CSV`; the mounted `/opt/esmini` tree must include the executable, shared library, catalogs/models and compatible runtime assets.
 - The browser POV surface includes a native-state renderer path that consumes timestamped live objects when a live session is available and labels it separately from internal transform preview and `workspace-pov-image-v1` artifacts. The UI now creates a private scenario pair and polls the bounded native session when live capability is available; unavailable capability leaves the action disabled. CARLA remains post-MVP and variant post-edit sensor frames remain unsupported.
-- The add-view flow is wired for up to four panes with Top-down, 3rd-person POV, In-car POV and LiDAR 3D types; close, make-main, maximize/restore, reset-layout and responsive arrangements are covered. The current default Top-down is the authoring/map/trajectory view. The approved nuScenes devkit-style `LIDAR_TOP` multi-sweep evidence view (`nsweeps=5`, map underlay, ego pose/calibration and CAN telemetry) is a separate next view mode, not a replacement for authoring Top-down.
+- The add-view flow currently supports up to **three** panes (`MAX_VIEWS = 3`) and offers Top-down, 3rd-person POV and Sensor Evidence in the add-view menu; close, make-main, maximize/restore, reset-layout and responsive arrangements are covered. The earlier four-pane contract including In-car POV and LiDAR 3D add-view entries is **no longer the current build**; those view *types* still exist in the pane renderer, they are not offered as add-view menu entries. The default main pane is now 3rd-person POV (`MAIN_VIEW = "third-person"`), so the previous statement that the default view is Top-down is stale. Top-down remains the authoring/map/trajectory view and is unchanged in meaning. The nuScenes devkit-style `LIDAR_TOP` multi-sweep evidence view (`nsweeps=5`, map underlay, ego pose/calibration and CAN telemetry) remains a separate view mode, not a replacement for authoring Top-down.
+- The add-view control now carries an explicit capacity badge (`n-3`) and a note when the grid is locked; adding Sensor Evidence from the authoring tab switches to Replay first. These are presentation/UX changes only and do not alter any capability contract.
 - The approved optimization is recorded in `docs/current/nuscenes-devkit-optimization-decision.md` and implemented provisionally in the cached adapter: use cached devkit semantics for multisweep LiDAR, official transforms/boxes/maps/projections and CAN, then use NumPy/vectorized payloads and measured spatial indexing while keeping application contracts and provenance separate.
 - ADE/FDE scientific thresholds are not finalized.
 
@@ -322,8 +325,13 @@ contract, license boundary or scientific thresholds.
   separates synthetic, local nuScenes and simulator classes, aggregates
   provisional ADE/FDE and G1-G7 counts, and excludes host paths/raw artifacts.
   An agent-selected five-scene Singapore One-North metadata index now exists
-  privately without owner approval; canonical preparation exceeded the current
-  execution window, so no real multi-scene metrics or acceptance claim exists.
+  privately without owner approval. The preparation blocker recorded earlier in
+  this list (canonical preparation exceeding the execution window) was cleared by
+  the `nuscenes-metadata-index-v1` cache, and the real five-scene provisional
+  run described further below supersedes it. **Earlier bullets in this file that
+  state "no real multi-scene metrics or acceptance claim exists" are stale and
+  are superseded by this one and by the CP3 run evidence bullet; they are retained
+  only as chronological record.**
 - The backend Workspace contract slice implements B-WORKSPACE-01, B-WORKSPACE-02
   and B-WORKSPACE-06 through read-only document/scenario endpoints. Actor roles,
   dimensions, paths, provenance and metric availability are explicit; map, 3D
@@ -357,9 +365,18 @@ the cache provider is disabled because the default pytest cache path is not
 writable in this worktree.
 
 cd frontend && npm test && npm run build
-  40 tests passed across the API boundary and the Workspace keyboard, mobile and
-accessibility suites; the production build succeeds.
+  48 tests passed across the API boundary and the Workspace keyboard, mobile and
+  accessibility suites; the production build succeeds. The count moved from 40 to
+  48 in the current working tree, where timeline resize/collapse, playhead
+  synchronization across panes, view-grid capacity, footer id truncation,
+  variant-studio branch identity and Replay tab entry are newly covered.
 ```
+
+The verification above was run against the **uncommitted working tree**, not
+against `HEAD`. `git status --short` shows 15 modified tracked files and two
+untracked documentation paths; the committed tree does not contain the
+`LIDAR_TOP` token-resolution fix, the multisweep history fix or the top-down
+route described above.
 
 ## Acceptance Readiness
 
