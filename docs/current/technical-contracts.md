@@ -424,6 +424,44 @@ described as one. CARLA same-XOSC remains out of scope.
 `unsupported` until actual calibrated frame generation exists. A recorded parent
 LiDAR sweep is a separate fallback and never a generated variant frame.
 
+## Live Esmini Adapter Contract
+
+The approved live 3D architecture uses esmini as a native authoritative simulation
+adapter and a browser-native renderer for presentation. The browser must not depend
+on a stream of esmini screenshots for normal editing or timeline interaction.
+
+```text
+React + Three.js/PlayCanvas
+  <-> WebSocket state/control transport
+  <-> bounded native esminiLib session
+        -> OpenSCENARIO/OpenDRIVE/OSI state
+```
+
+The adapter session is responsible for loading a validated XOSC/XODR pair, stepping
+with an explicit timestep, pause/resume/reset semantics, validated actor/control
+commands, camera state, object transforms, scenario time and capability metadata.
+The browser renderer is responsible for road/actor meshes, camera presentation,
+interpolation, trajectories and sensor overlays. A state frame from this adapter is
+not an image artifact.
+
+Every live session must identify at least:
+
+- esmini/esminiLib version and adapter version;
+- XOSC and XODR content hashes;
+- simulation time, timestep and coordinate/transform versions;
+- session id, scenario id and authoritative state source;
+- supported commands and rendering/sensor capabilities;
+- explicit `running`, `paused`, `reset`, `unavailable` or `failed` status.
+
+The existing `workspace-pov-image-v1` route remains the image/evidence contract.
+It may use esmini off-screen capture and private manifests, but it is separate from
+the live state transport. A browser transform renderer remains an internal preview
+when the native adapter is unavailable. CARLA same-XOSC remains post-MVP.
+
+The first implementation may use JSON over WebSocket or an equivalent polling
+transport behind the same typed contract. Binary state encoding, WebRTC data/video,
+Unity WebGL and direct esmini WebAssembly are future optimizations, not prerequisites.
+
 ## CP3 Replay and Gate Reporting
 
 - Variant and batch reports may include per-actor replay metrics and ADE/FDE

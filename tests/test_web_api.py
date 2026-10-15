@@ -61,6 +61,24 @@ def test_empty_artifact_root_is_a_valid_health_state(tmp_path: Path) -> None:
     }
 
 
+def test_settings_fails_closed_when_dataset_directory_has_no_scene_metadata(tmp_path: Path) -> None:
+    dataset_root = tmp_path / "dataset"
+    (dataset_root / "v1.0-trainval").mkdir(parents=True)
+    settings = WebSettings(
+        project_root=tmp_path,
+        artifact_root=tmp_path / "scenarios",
+        output_root=tmp_path / "reports",
+        dataset_root=dataset_root,
+        esmini_bin=None,
+        esmini_dat2csv=None,
+    )
+
+    response = TestClient(create_app(settings)).get("/api/settings")
+
+    assert response.status_code == 200
+    assert response.json()["source_scene_count"] == 0
+
+
 def test_cp1_review_dashboard_is_read_only_and_preserves_baseline(tmp_path: Path) -> None:
     client = _client(tmp_path)
 

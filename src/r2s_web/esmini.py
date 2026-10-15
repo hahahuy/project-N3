@@ -96,7 +96,11 @@ class EsminiBackend:
         """Resolve a real private capture manifest; never use a transform as an image."""
         if mode not in {"third-person", "in-car"}:
             raise ValueError("Unsupported POV mode.")
-        manifests = sorted(self.settings.output_root.glob("replay-*/image-frames.json"))
+        # The driver-camera capture is stored below the replay job's mode
+        # directory, while orbit capture is stored at the job root. Search both
+        # locations, but continue to accept only manifests and files beneath
+        # the private output root.
+        manifests = sorted(self.settings.output_root.glob("replay-*/**/image-frames.json"))
         for manifest_path in manifests:
             try:
                 payload = json.loads(manifest_path.read_text(encoding="utf-8"))

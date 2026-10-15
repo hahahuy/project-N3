@@ -161,7 +161,10 @@ class SourceSceneAdapter:
         if self.settings.dataset_root is None:
             return None
         path = self.settings.dataset_root / self.settings.dataset_version
-        return path if path.is_dir() else None
+        # A mounted release directory can exist while its metadata tables are
+        # incomplete. Treat that state as unavailable so settings/health remain
+        # fail-closed instead of surfacing a 500 from MetadataIndex.
+        return path if (path / "scene.json").is_file() else None
 
 
 def _source_scene(index: MetadataIndex, record: dict[str, Any]) -> SourceScene:

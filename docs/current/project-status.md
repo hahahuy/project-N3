@@ -85,6 +85,7 @@ silently reuse nuScenes-specific assumptions.
 - Constrained maneuver authoring now uses named recipe steps and explicit time ranges, with Tier 1 `kinematic-open-loop-v1` limits, violations, provenance and immutable-parent rollback markers visible in the local preview UI; CP1 remains `20/143 = 13.99%` provisional.
 - Browser acceptance now covers the real local recipe editor, Tier 1 steering/acceleration/braking/target-speed preview, rollback/undo state, synchronized Compare, timeline/gate text equivalents, evidence layers and keyboard/mobile-capable controls. The no-dataset runtime correctly reports LiDAR and esmini image artifacts unavailable.
 - Variant sensor status is explicit through `workspace-variant-sensor-v1`: post-edit frames remain `unsupported` until generated artifacts exist, while a recorded parent sweep is reported separately with provenance. `workspace-pov-image-v1` serves only real private esmini capture artifacts; transform-only internal POV remains distinct and is never mislabeled as an image.
+- The approved next simulator architecture is a native, bounded `esminiLib` live-session adapter with WebSocket-friendly state/control messages and a browser-native Three.js/PlayCanvas renderer. The existing subprocess/image-capture path remains for replay, validation and evidence; it is not the primary live 3D interaction path. Full esmini WebAssembly, Unity WebGL and WebRTC remote rendering are deferred alternatives.
 - ADE/FDE scientific thresholds are not finalized.
 
 ## Execution Order
@@ -340,7 +341,7 @@ contract, license boundary or scientific thresholds.
 
 ```text
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider
- 308 passed, 1 warning. The warning is the existing Starlette/httpx deprecation;
+  310 passed, 1 warning. The warning is the existing Starlette/httpx deprecation;
 the cache provider is disabled because the default pytest cache path is not
 writable in this worktree.
 
