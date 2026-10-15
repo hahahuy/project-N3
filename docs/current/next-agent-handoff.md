@@ -68,11 +68,15 @@ renderer/sensor gaps, not redesign those contracts. The bounded live-session
 4. **Post-edit sensors:** implement or formally scope camera/LiDAR/radar frame
    generation. Until calibrated artifacts exist, keep variant sensor status
    `unsupported` and use only the explicit parent-sweep fallback.
-5. **Runtime acceptance:** complete private dataset/browser acceptance with a
+5. **Devkit optimization:** follow `docs/current/nuscenes-devkit-optimization-decision.md`.
+   Replace repeated metadata scans/manual transforms with cached `NuScenes` access,
+   `from_file_multisweep`, official boxes/map/projection helpers, vectorized NumPy
+   payloads and cached CAN timestamp lookup. Add SciPy only after measured need.
+6. **Runtime acceptance:** complete private dataset/browser acceptance with a
    configured esmini capture runtime, retaining fail-closed unavailable states.
-6. **Engineering closure:** finish owner-gated CP1 semantic/map review, CP3
+7. **Engineering closure:** finish owner-gated CP1 semantic/map review, CP3
    benchmark index/scientific policy, and CP4/CP5 evidence and release sign-off.
-7. **Paper closure:** complete CP6 research questions, final evidence bundle and
+8. **Paper closure:** complete CP6 research questions, final evidence bundle and
    reproducibility narrative without promoting provisional metrics to final claims.
 
 CARLA same-XOSC remains explicitly post-MVP and is not part of tracks 1-6.

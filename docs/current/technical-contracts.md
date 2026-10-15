@@ -424,6 +424,20 @@ described as one. CARLA same-XOSC remains out of scope.
 `unsupported` until actual calibrated frame generation exists. A recorded parent
 LiDAR sweep is a separate fallback and never a generated variant frame.
 
+## nuScenes Devkit Evidence Adapter Contract
+
+The official nuScenes devkit is the semantic authority for recorded sensor,
+annotation, map and CAN interpretation. The backend must use a cached dataset
+adapter rather than reload metadata tables or reimplement transforms per request.
+The approved implementation and optimization order are defined in
+`docs/current/nuscenes-devkit-optimization-decision.md`.
+
+The `nuscenes-sensor-evidence-v1` surface may include multisweep `LIDAR_TOP`,
+map, annotation and telemetry layers, but every layer must retain source tokens,
+timestamps, coordinate/transform versions, availability and local-private
+provenance. Historical sweeps are not instantaneous generated sensor output.
+CAN telemetry does not replace nuScenes `ego_pose` for spatial placement.
+
 ## Live Esmini Adapter Contract
 
 The approved live 3D architecture uses esmini as a native authoritative simulation
