@@ -86,8 +86,9 @@ silently reuse nuScenes-specific assumptions.
 - Browser acceptance now covers the real local recipe editor, Tier 1 steering/acceleration/braking/target-speed preview, rollback/undo state, synchronized Compare, timeline/gate text equivalents, evidence layers and keyboard/mobile-capable controls. The no-dataset runtime correctly reports LiDAR and esmini image artifacts unavailable.
 - Variant sensor status is explicit through `workspace-variant-sensor-v1`: post-edit frames remain `unsupported` until generated artifacts exist, while a recorded parent sweep is reported separately with provenance. `workspace-pov-image-v1` serves only real private esmini capture artifacts; transform-only internal POV remains distinct and is never mislabeled as an image.
 - The approved next simulator architecture is a native, bounded `esminiLib` live-session adapter with WebSocket-friendly state/control messages and a browser-native Three.js/PlayCanvas renderer. The existing subprocess/image-capture path remains for replay, validation and evidence; it is not the primary live 3D interaction path. Full esmini WebAssembly, Unity WebGL and WebRTC remote rendering are deferred alternatives.
-- `esmini-live-session-v1` is now implemented as a bounded optional native-binding service with XOSC/XODR confinement and SHA-256 identity, lifecycle/control/camera validation, REST commands and a WebSocket-friendly state stream. The current environment has no compatible configured `esminiLib`, so native execution remains explicitly unavailable; no kinematic or screenshot fallback is claimed as esmini state.
-- The browser POV surface includes a native-state renderer path that consumes timestamped live objects when a live session is available and labels it separately from internal transform preview and `workspace-pov-image-v1` artifacts. CARLA remains post-MVP and variant post-edit sensor frames remain unsupported.
+- `esmini-live-session-v1` is now implemented as a bounded optional native-binding service with XOSC/XODR confinement and SHA-256 identity, lifecycle/control/camera validation, REST commands and a WebSocket-friendly state stream. Upstream esmini v3.10.0 was cloned outside the repository, host v3.9 and v3.10 shared-library load/step smokes pass, and Compose container load/step returned four named private scenario objects at `t=0.05s`. Browser camera state is separate from the native viewer. No kinematic or screenshot fallback is claimed as esmini state.
+- Compose now exposes `ESMINILIB_PATH` alongside `ESMINI_BIN` and `ESMINI_DAT2CSV`; the mounted `/opt/esmini` tree must include the executable, shared library, catalogs/models and compatible runtime assets.
+- The browser POV surface includes a native-state renderer path that consumes timestamped live objects when a live session is available and labels it separately from internal transform preview and `workspace-pov-image-v1` artifacts. Frontend API coverage keeps the live-state contract separate from image-frame requests; full browser session walkthrough remains open because the UI does not fabricate a session without an exposed artifact pair. CARLA remains post-MVP and variant post-edit sensor frames remain unsupported.
 - ADE/FDE scientific thresholds are not finalized.
 
 ## Remaining Work Order
@@ -352,6 +353,34 @@ accessibility suites; the production build succeeds.
 ```
 
 ## Next Safe Work
+
+### Tracks 1-6 disposition
+
+- Track 1 native runtime proof: `HOST-AND-COMPOSE-SMOKE-VERIFIED`. Upstream
+  v3.10 release artifacts were cloned outside the repository, the v3.10 ctypes
+  ABI was wired, and both v3.10 and host v3.9 load/step smokes return two objects.
+  Compose exposes `ESMINILIB_PATH`, mounts `/opt/esmini`, and a container session
+  loaded/stepped a private XOSC/XODR pair with four named objects. Native control
+  and reset remain ABI-scoped unavailable; browser camera state is renderer-owned.
+- Track 2 browser live 3D: `IMPLEMENTED-PARTIAL/HOST-NATIVE-SMOKE`. The browser
+  state renderer, capability/state API clients and timeline-bound POV surface are
+  wired; full browser acceptance against an actual native session remains open.
+- Track 3 post-edit sensors: `UNSUPPORTED-EXACT-REASON`. No calibrated post-edit
+  camera/LiDAR/radar generator or generated artifact manifest exists. Variant
+  status remains `unsupported` with `post_edit_sensor_frames_not_generated`; only
+  the explicit recorded parent-sweep fallback is allowed.
+- Track 4 private runtime acceptance: `PARTIAL/PROVISIONAL`. Private native
+  map/state/LiDAR and browser acceptance are recorded; Compose assets/configuration
+  are verified and native replay reaches esmini, but image capture fails closed
+  with `Viewer initialization failed` because the container has no usable display.
+- Track 5 engineering closure: `PARTIAL/PENDING-OWNER`. CP1 remains the immutable
+  `20/143 = 13.99%` provisional baseline; CP3 scene/index/scientific policy,
+  CP4 scientific gate policy and CP5 owner sign-off remain open. Working-tree
+  release verification passes, but committed-HEAD proof still depends on commit
+  and owner sign-off.
+- Track 6 paper closure: `OPEN/OWNER-REQUIRED`. Existing CP1/CP3/CP4/CP5
+  engineering evidence is inventory only; final research questions and final
+  scientific results are not approved, so no paper claim is promoted.
 
 1. Review the recorded CAN pedal channel where a source scene declares recorded
    timestamps and complete any remaining per-sample text-equivalent review.

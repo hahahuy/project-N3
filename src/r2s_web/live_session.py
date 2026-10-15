@@ -41,7 +41,48 @@ class CtypesEsminiBinding:
     builds remain unavailable rather than being called unsafely.
     """
 
-    REQUIRED = ("SE_Init", "SE_Step", "SE_Close")
+    REQUIRED = (
+        "SE_Init",
+        "SE_StepDT",
+        "SE_Close",
+        "SE_GetSimulationTime",
+        "SE_GetNumberOfObjects",
+        "SE_GetId",
+        "SE_GetObjectState",
+        "SE_GetObjectName",
+    )
+
+    class ScenarioObjectState(ctypes.Structure):
+        _fields_ = [
+            ("id", ctypes.c_int),
+            ("model_id", ctypes.c_int),
+            ("ctrl_type", ctypes.c_int),
+            ("timestamp", ctypes.c_double),
+            ("x", ctypes.c_double),
+            ("y", ctypes.c_double),
+            ("z", ctypes.c_double),
+            ("h", ctypes.c_double),
+            ("p", ctypes.c_double),
+            ("r", ctypes.c_double),
+            ("road_id", ctypes.c_uint32),
+            ("junction_id", ctypes.c_uint32),
+            ("t", ctypes.c_double),
+            ("lane_id", ctypes.c_int),
+            ("lane_offset", ctypes.c_double),
+            ("s", ctypes.c_double),
+            ("speed", ctypes.c_double),
+            ("center_offset_x", ctypes.c_double),
+            ("center_offset_y", ctypes.c_double),
+            ("center_offset_z", ctypes.c_double),
+            ("width", ctypes.c_double),
+            ("length", ctypes.c_double),
+            ("height", ctypes.c_double),
+            ("object_type", ctypes.c_int),
+            ("object_category", ctypes.c_int),
+            ("wheel_angle", ctypes.c_double),
+            ("wheel_rot", ctypes.c_double),
+            ("visibility_mask", ctypes.c_int),
+        ]
 
     def __init__(self, library_path: str | Path):
         self.library_path = str(library_path)
@@ -50,29 +91,73 @@ class CtypesEsminiBinding:
         if missing:
             raise RuntimeError(f"esminiLib_required_symbols_missing:{','.join(missing)}")
         self.version = os.environ.get("ESMINILIB_VERSION", "unknown")
+        self.library.SE_Init.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
+        self.library.SE_Init.restype = ctypes.c_int
+        self.library.SE_StepDT.argtypes = [ctypes.c_double]
+        self.library.SE_StepDT.restype = ctypes.c_int
+        self.library.SE_Close.argtypes = []
+        self.library.SE_Close.restype = None
+        self.library.SE_GetNumberOfObjects.argtypes = []
+        self.library.SE_GetNumberOfObjects.restype = ctypes.c_int
+        self.library.SE_GetSimulationTime.argtypes = []
+        self.library.SE_GetSimulationTime.restype = ctypes.c_double
+        self.library.SE_GetId.argtypes = [ctypes.c_int]
+        self.library.SE_GetId.restype = ctypes.c_int
+        self.library.SE_GetObjectState.argtypes = [ctypes.c_int, ctypes.POINTER(self.ScenarioObjectState)]
+        self.library.SE_GetObjectState.restype = ctypes.c_int
+        self.library.SE_GetObjectName.argtypes = [ctypes.c_int]
+        self.library.SE_GetObjectName.restype = ctypes.c_char_p
         self._loaded = False
 
     def load(self, xosc_path: str, xodr_path: str, timestep_s: float) -> None:
-        # The public C ABI is version-dependent; do not guess argument layouts.
-        raise RuntimeError("esminiLib_abi_requires_versioned_native_binding")
+        result = self.library.SE_Init(xosc_path.encode(), 0, 0, 0, 0)
+        if result != 0:
+            raise RuntimeError(f"esminiLib_init_failed:{result}")
+        self._loaded = True
 
     def step(self, timestep_s: float) -> None:
-        raise RuntimeError("esminiLib_abi_requires_versioned_native_binding")
+        if not self._loaded or self.library.SE_StepDT(float(timestep_s)) != 0:
+            raise RuntimeError("esminiLib_step_failed")
 
     def close(self) -> None:
         self.library.SE_Close()
 
     def state(self) -> dict[str, Any]:
-        raise RuntimeError("esminiLib_state_abi_unavailable")
+        if not self._loaded:
+            raise RuntimeError("esminiLib_state_abi_unavailable")
+        objects = []
+        for index in range(self.library.SE_GetNumberOfObjects()):
+            object_id = self.library.SE_GetId(index)
+            state = self.ScenarioObjectState()
+            if object_id < 0 or self.library.SE_GetObjectState(object_id, ctypes.byref(state)) != 0:
+                continue
+            name = self.library.SE_GetObjectName(object_id)
+            objects.append({
+                "id": name.decode(errors="replace") if name else str(object_id),
+                "x_m": state.x,
+                "y_m": state.y,
+                "z_m": state.z,
+                "yaw_rad": state.h,
+                "pitch_rad": state.p,
+                "roll_rad": state.r,
+                "speed_mps": state.speed,
+                "length_m": state.length,
+                "width_m": state.width,
+                "height_m": state.height,
+            })
+        return {"objects": objects, "events": []}
 
     def reset(self) -> None:
-        raise RuntimeError("esminiLib_reset_abi_unavailable")
+        raise RuntimeError("esminiLib_reset_requires_reload")
 
     def control(self, command: dict[str, Any]) -> None:
         raise RuntimeError("esminiLib_control_abi_unavailable")
 
     def camera(self, command: dict[str, Any]) -> None:
-        raise RuntimeError("esminiLib_camera_abi_unavailable")
+        # Camera presentation belongs to the browser-native renderer. Live
+        # sessions disable the native viewer and therefore must not require an
+        # X11/display context for camera state updates.
+        del command
 
 
 @dataclass(slots=True)
@@ -115,6 +200,8 @@ class LiveSession:
 
     def frame(self) -> dict[str, Any]:
         payload = self.binding.state() if self.binding else {"objects": [], "events": []}
+        if self.binding:
+            self.simulation_time_s = float(self.binding.library.SE_GetSimulationTime()) if hasattr(self.binding, "library") else self.simulation_time_s
         return {
             **self.metadata(),
             "message_type": "state",
@@ -212,6 +299,12 @@ class LiveSessionService:
                     binding.load(str(xosc), str(xodr), timestep_s)
                     status, reason = "paused", None
                 except (OSError, RuntimeError) as error:
+                    if binding is not None:
+                        try:
+                            binding.close()
+                        except (OSError, RuntimeError):
+                            pass
+                    binding = None
                     reason = str(error)
             session = LiveSession(
                 session_id=f"live-{uuid.uuid4().hex[:12]}",

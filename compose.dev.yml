@@ -23,6 +23,9 @@ services:
       NUSCENES_VERSION: v1.0-trainval
       ESMINI_BIN: ${ESMINI_BIN:-/opt/esmini/bin/esmini}
       ESMINI_DAT2CSV: ${ESMINI_DAT2CSV:-/opt/esmini/bin/dat2csv}
+      ESMINILIB_PATH: ${ESMINILIB_PATH:-/opt/esmini/bin/libesminiLib.so}
+      ESMINILIB_VERSION: ${ESMINILIB_VERSION:-configured-esminiLib}
+      ESMINI_CAPTURE_IMAGES: ${ESMINI_CAPTURE_IMAGES:-0}
     ports:
       - "${R2S_WEB_API_PORT:-8001}:8000"
     volumes:

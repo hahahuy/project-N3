@@ -54,8 +54,9 @@ versioned esminiLib binding is configured.
 
 ## Remaining Work: Tracks 1-6
 
-1. **Native runtime proof:** complete the version-compatible native `esminiLib`
-   binding and run proof for `B-WORKSPACE-19`. The bounded service, validation,
+1. **Native runtime completion:** preserve the verified host/Compose load-step
+   smoke, then finish ABI-scoped control/reset behavior and expose a safe scenario
+   artifact-pair flow for the browser session. The bounded service, validation,
    hashes, REST/WebSocket transport and browser native-state path already exist.
 2. **Browser live 3D:** complete live-state interaction and visual rendering against
    an actual native session; do not use screenshot streaming as the editor path.
@@ -129,8 +130,10 @@ is implemented, fallback, unavailable or unverified.
 > that esmini is only an asynchronous image/replay subprocess with a bounded native
 > `esminiLib` session/service that can load an XOSC/XODR pair, step/pause/reset,
 > accept validated control/camera commands, and expose timestamped object state and
-> Start with native esminiLib runtime proof, then complete browser live 3D, post-edit
-> sensor generation, private runtime acceptance, CP1/CP3/CP4/CP5 engineering
+> Start with the verified host/Compose native load-step path: finish ABI-scoped
+> control/reset behavior and expose a safe scenario artifact-pair flow. Then
+> complete browser live 3D, post-edit sensor generation, private runtime acceptance,
+> CP1/CP3/CP4/CP5 engineering
 > closure, and CP6 paper evidence. The bounded live-session service and browser
 > state contract already exist partially. Do not stream screenshots as the editor
 > path or claim transform data is an esmini image. Preserve fail-closed behavior,

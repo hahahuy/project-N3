@@ -6,6 +6,8 @@ import {
   fetchActorTimeline,
   fetchCompare,
   fetchEsminiCapability,
+  fetchLiveCapability,
+  fetchLiveState,
   fetchEvidenceLayers,
   fetchGateTimeline,
   fetchLidarCapability,
@@ -81,6 +83,14 @@ describe("API boundary", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ status: "rendered" }), { status: 200 }));
     await fetchPOVFrame("scene 1", "third-person", 1.25);
     expect(fetch).toHaveBeenCalledWith("/api/workspace/scenarios/scene%201/frames/third-person?time_s=1.25", undefined);
+  });
+
+  it("keeps live esmini capability and state requests separate from image frames", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response(JSON.stringify({ contract_version: "esmini-live-session-v1", status: "unavailable" }), { status: 200 }));
+    await fetchLiveCapability();
+    await fetchLiveState("live-1");
+    expect(fetch).toHaveBeenNthCalledWith(1, "/api/esmini/live/capability", undefined);
+    expect(fetch).toHaveBeenNthCalledWith(2, "/api/esmini/live/sessions/live-1", undefined);
   });
 
   it("requests explicit image-frame and variant sensor-status contracts", async () => {
