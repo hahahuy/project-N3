@@ -144,3 +144,36 @@ def test_actor_timestamps_remain_relative_to_the_source_window(tmp_path: Path) -
     scenario = extract_scenario(tmp_path, window, ["instance-1"])
 
     assert scenario.actors[1].trajectory[0].time_s == 1.0
+
+
+def test_can_pose_is_preferred_for_ego_speed_and_recorded_in_provenance(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    window = _write_tables(tmp_path)
+
+    class FakeAdapter:
+        def __init__(self, root):
+            self.root = root
+
+        def can_pose(self, scene_name):
+            from real2scenario.nuscenes_backend import CanPoseSample
+
+            return (CanPoseSample(1_000_000, 4.5, 0.2, 0.01), CanPoseSample(2_000_000, 5.5, 0.3, 0.02))
+
+        def provenance(self, **kwargs):
+            return {"can_pose_status": "used", "can_pose_sample_count": "2"}
+
+    monkeypatch.setattr("real2scenario.ingestion.NuScenesSourceAdapter", FakeAdapter)
+
+    scenario = extract_scenario(tmp_path, window, ["instance-1"])
+
+    assert [state.speed_mps for state in scenario.actors[0].trajectory] == [4.5, 5.5]
+    assert scenario.provenance["can_pose_status"] == "used"
+
+
+def test_devkit_sources_can_be_disabled_for_metadata_only_ingestion(tmp_path: Path) -> None:
+    window = _write_tables(tmp_path)
+
+    scenario = extract_scenario(tmp_path, window, ["instance-1"], use_devkit_sources=False)
+
+    assert scenario.provenance["can_pose_status"] == "fallback_finite_difference"

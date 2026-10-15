@@ -1,4 +1,8 @@
-# Plan B -> Plan A Migration Checklist
+# Historical Plan B -> Plan A Migration Checklist
+
+> **Historical migration ledger:** this checklist records the earlier Plan A
+> migration and is not the active implementation plan. The active plan is
+> `docs/current/nuscenes-devkit-makeover-handoff.md`.
 
 > **Baseline:** `MVP&ProjectSummary.md` (Plan A) thắng các tài liệu cũ khi có mâu thuẫn.
 >

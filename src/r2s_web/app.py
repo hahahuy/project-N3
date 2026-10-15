@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -38,14 +39,39 @@ from .schemas import (
     ScenarioLayerView,
     MetricAvailabilityView,
     TrajectoryState,
+    SimulatorCapabilityView,
+    POVFrameView,
+    ActorTimelineView,
+    GateTimelineView,
+    RecipeDocumentView,
+    RecipeStepRequest,
+    RecipeStepStateRequest,
+    StepMoveRequest,
+    RollbackMarkerRequest,
+    VariantLineageView,
+    EvidenceLayersView,
+    CompareView,
 )
+from .actor_timeline import actor_timeline
+from .compare import compare_payload
+from .evidence_layers import evidence_layers
+from .gate_timeline import gate_timeline
+from .lineage import variant_lineage
+from .recipe import RecipeStore
 from .source_scenes import SourceSceneAdapter
+from .native_map import NativeMapService
+from .lidar import LidarService
+from .frames import capability as frame_capability, frame as render_frame
+from fastapi.responses import Response
 
 
 def create_app(settings: WebSettings | None = None) -> FastAPI:
     resolved_settings = settings or WebSettings.from_environment()
     adapter = ArtifactAdapter(resolved_settings)
     source_scenes = SourceSceneAdapter(resolved_settings)
+    native_maps = NativeMapService(resolved_settings)
+    lidar = LidarService(resolved_settings)
+    recipes = RecipeStore()
     batches = BatchService(resolved_settings, adapter)
     previews = PreviewService(resolved_settings, adapter)
     esmini = EsminiBackend(resolved_settings, adapter)
@@ -55,6 +81,9 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
     app.state.batches = batches
     app.state.previews = previews
     app.state.source_scenes = source_scenes
+    app.state.native_maps = native_maps
+    app.state.lidar = lidar
+    app.state.recipes = recipes
     app.state.esmini = esmini
     app.add_middleware(
         CORSMiddleware,
@@ -62,6 +91,46 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
         allow_methods=["GET", "POST"],
         allow_headers=["*"],
     )
+
+    def record_for(scenario_id: str):
+        """Resolve one artifact or fail with the API-owned message."""
+        try:
+            return adapter.get(scenario_id)
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+
+    def layers_for(record) -> dict[str, object]:
+        """Evidence layers for one artifact, derived from its own files."""
+        replay_path = record.path.with_name(f"{record.path.stem}.replay.json")
+        return evidence_layers(
+            record.scenario,
+            artifact_type=record.artifact_type,
+            replay_trace_available=replay_path.is_file(),
+            replay_artifact=adapter.relative_path(replay_path) if replay_path.is_file() else None,
+            lidar=lidar,
+            settings=resolved_settings,
+            parent_scenario_id=record.parent_scenario_id,
+        )
+
+    def metric_availability(record) -> MetricAvailabilityView:
+        """Replay metric availability with provenance and scientific status."""
+        trajectory = adapter.trajectory(record)
+        metrics = trajectory.replay_metrics
+        return MetricAvailabilityView(
+            available=bool(metrics),
+            unavailable_reason=None if metrics else "replay_trace_not_available",
+            source="replay_trace" if metrics else "none",
+            alignment_method=(
+                next(iter(metrics.values())).alignment_method if metrics else None
+            ),
+            scientific_status="PROVISIONAL",
+            provenance={
+                key: record.scenario.provenance[key]
+                for key in ("dataset_version", "source_scene_token", "coordinate_transform_version")
+                if key in record.scenario.provenance
+            },
+            per_actor=metrics,
+        )
 
     @app.get("/api/health")
     def health() -> dict[str, object]:
@@ -216,7 +285,7 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
 
     @app.post("/api/settings", response_model=SettingsView)
     def update_settings(request: SettingsUpdateRequest) -> SettingsView:
-        nonlocal resolved_settings, adapter, source_scenes, batches, previews, esmini
+        nonlocal resolved_settings, adapter, source_scenes, batches, previews, esmini, native_maps, lidar, recipes
         try:
             resolved_settings = resolved_settings.with_paths(
                 artifact_root=request.artifact_root,
@@ -229,12 +298,18 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
             batches = BatchService(resolved_settings, adapter)
             previews = PreviewService(resolved_settings, adapter)
             esmini = EsminiBackend(resolved_settings, adapter)
+            native_maps = NativeMapService(resolved_settings)
+            lidar = LidarService(resolved_settings)
             app.state.settings = resolved_settings
             app.state.adapter = adapter
             app.state.source_scenes = source_scenes
             app.state.batches = batches
             app.state.previews = previews
             app.state.esmini = esmini
+            app.state.native_maps = native_maps
+            app.state.lidar = lidar
+            recipes = RecipeStore()
+            app.state.recipes = recipes
         except (OSError, ValueError) as error:
             raise HTTPException(status_code=400, detail=str(error)) from error
         return _settings_view(resolved_settings, source_scenes)
@@ -301,7 +376,58 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
             coordinate_frame=scenario.coordinate_frame,
             transform_version=provenance.get("coordinate_transform_version"),
             provenance=provenance,
+            native_map=AvailabilityView(**native_maps.capability(provenance.get("map_name", "singapore-onenorth"))),
+            simulator_frames=SimulatorCapabilityView(**frame_capability(scenario)),
         )
+
+    @app.get("/api/workspace/maps/{map_name}/capability")
+    def native_map_capability(map_name: str = "singapore-onenorth") -> dict[str, object]:
+        return native_maps.capability(map_name)
+
+    @app.get("/api/workspace/maps/{map_name}/patch")
+    def native_map_patch_query(
+        map_name: str,
+        x_min: float,
+        y_min: float,
+        x_max: float,
+        y_max: float,
+        layers: str = "road_segment,road_block,stop_line,traffic_light,ped_crossing,walkway,lane_divider,road_divider,drivable_area",
+    ) -> dict[str, object]:
+        try:
+            return native_maps.patch(map_name, (x_min, y_min, x_max, y_max), [item for item in layers.split(",") if item])
+        except (ImportError, OSError, RuntimeError, ValueError) as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+
+    @app.get("/api/workspace/maps/{map_name}/road-ahead")
+    def native_map_road_ahead(map_name: str, x_m: float, y_m: float) -> dict[str, object]:
+        try:
+            return native_maps.road_ahead(map_name, x_m, y_m)
+        except (ImportError, OSError, RuntimeError, ValueError) as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+
+    @app.get("/api/workspace/lidar/capability")
+    def lidar_capability() -> dict[str, object]:
+        return lidar.capability()
+
+    @app.get("/api/workspace/lidar/{sample_data_token}")
+    def lidar_payload(sample_data_token: str, decimation: int = 8):
+        try:
+            metadata, payload = lidar.payload(sample_data_token, decimation)
+        except (FileNotFoundError, ImportError, KeyError, OSError, RuntimeError, ValueError) as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        return Response(content=payload, media_type="application/octet-stream", headers={"X-R2S-Lidar-Metadata": json.dumps(metadata, separators=(",", ":"))})
+
+    @app.get("/api/workspace/scenarios/{scenario_id}/lidar")
+    def workspace_lidar(scenario_id: str) -> dict[str, object]:
+        try:
+            record = adapter.get(scenario_id)
+            source_window = record.scenario.provenance.get("source_window", "")
+            sample_data_token = source_window.split(":", 1)[0]
+            if not sample_data_token:
+                raise ValueError("recorded_lidar_sample_unavailable")
+            return {**lidar.descriptor(sample_data_token), "sample_data_token": sample_data_token, "payload_url": f"/api/workspace/lidar/{sample_data_token}"}
+        except (KeyError, FileNotFoundError, ImportError, OSError, RuntimeError, ValueError) as error:
+            return {"available": False, "unavailable_reason": str(error)}
 
     @app.get("/api/workspace/scenarios/{scenario_id}", response_model=ScenarioViewPayload)
     def workspace_scenario(scenario_id: str) -> ScenarioViewPayload:
@@ -310,6 +436,15 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
         except KeyError as error:
             raise HTTPException(status_code=404, detail=str(error)) from error
         trajectory = adapter.trajectory(record)
+        map_name = record.scenario.provenance.get("map_name", "singapore-onenorth")
+        map_payload = None
+        map_capability = native_maps.capability(map_name)
+        frames = SimulatorCapabilityView(**frame_capability(record.scenario))
+        if map_capability["available"]:
+            try:
+                map_payload = native_maps.layers(map_name)
+            except (ImportError, OSError, RuntimeError, ValueError):
+                map_payload = None
         actors = [
             ActorPoseView(
                 actor_id=actor.actor_id,
@@ -339,15 +474,194 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
                     unavailable_reason=None if all(actor.length_m is not None and actor.width_m is not None for actor in record.scenario.actors) else "one_or_more_actor_dimensions_unavailable",
                 ),
                 xodr_geometry=AvailabilityView(available=False, unavailable_reason="xodr_viewer_geometry_not_available"),
-                lidar=AvailabilityView(available=False, unavailable_reason="recorded_lidar_layer_not_implemented"),
+                lidar=AvailabilityView(**{key: value for key, value in lidar.capability().items() if key in {"available", "unavailable_reason"}}),
+                third_person=frames,
+                in_car=frames,
             ),
-            metrics=MetricAvailabilityView(
-                available=bool(trajectory.replay_metrics),
-                unavailable_reason=None if trajectory.replay_metrics else "replay_trace_not_available",
-                source="replay_trace" if trajectory.replay_metrics else "none",
-                per_actor=trajectory.replay_metrics,
-            ),
+            metrics=metric_availability(record),
+            evidence_layers=EvidenceLayersView(**layers_for(record)),
+            native_map=map_payload,
+            gates=gate_timeline(record.scenario)["gates"],
+            time_s=0.0,
+            simulator_frames=frames,
         )
+
+    @app.get("/api/workspace/scenarios/{scenario_id}/timeline", response_model=ActorTimelineView)
+    def workspace_timeline(scenario_id: str) -> ActorTimelineView:
+        """Time-indexed actor state tracks with explicit channel availability."""
+        try:
+            record = adapter.get(scenario_id)
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        return ActorTimelineView(**actor_timeline(record.scenario, resolved_settings))
+
+    @app.get("/api/workspace/scenarios/{scenario_id}/gate-timeline", response_model=GateTimelineView)
+    def workspace_gate_timeline(scenario_id: str) -> GateTimelineView:
+        """Gate lane segments with backend statuses, reasons and time extents."""
+        try:
+            record = adapter.get(scenario_id)
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        return GateTimelineView(**gate_timeline(record.scenario))
+
+    @app.get("/api/workspace/scenarios/{scenario_id}/lineage", response_model=VariantLineageView)
+    def workspace_lineage(scenario_id: str) -> VariantLineageView:
+        """Parent chain, branch identity, seed and configuration hash."""
+        try:
+            record = adapter.get(scenario_id)
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        return VariantLineageView(
+            **variant_lineage(record, records=adapter.discover())
+        )
+
+    @app.get(
+        "/api/workspace/scenarios/{scenario_id}/evidence-layers",
+        response_model=EvidenceLayersView,
+    )
+    def workspace_evidence_layers(scenario_id: str) -> EvidenceLayersView:
+        """Recorded, generated, replayed and sensor-evidence layers, separately."""
+        try:
+            record = adapter.get(scenario_id)
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        return EvidenceLayersView(**layers_for(record))
+
+    @app.get(
+        "/api/workspace/scenarios/{scenario_id}/compare",
+        response_model=CompareView,
+    )
+    def workspace_compare(scenario_id: str, against: str, time_s: float = 0.0) -> CompareView:
+        """Synchronized side-by-side comparison against another scenario."""
+        if against == scenario_id:
+            raise HTTPException(status_code=422, detail="compare_requires_two_different_scenarios")
+        try:
+            left = adapter.get(scenario_id)
+            right = adapter.get(against)
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        return CompareView(
+            **compare_payload(
+                left,
+                right,
+                time_s=time_s,
+                left_metrics=metric_availability(left).model_dump(),
+                right_metrics=metric_availability(right).model_dump(),
+                left_evidence=layers_for(left),
+                right_evidence=layers_for(right),
+            )
+        )
+
+    @app.get(
+        "/api/workspace/scenarios/{scenario_id}/recipe",
+        response_model=RecipeDocumentView,
+    )
+    def workspace_recipe(scenario_id: str) -> RecipeDocumentView:
+        """Ordered recipe steps, rollback markers and non-destructive history."""
+        return RecipeDocumentView(**recipes.view(record_for(scenario_id)))
+
+    @app.post(
+        "/api/workspace/scenarios/{scenario_id}/recipe/steps",
+        response_model=RecipeDocumentView,
+    )
+    def workspace_recipe_add_step(
+        scenario_id: str, request: RecipeStepRequest
+    ) -> RecipeDocumentView:
+        record = record_for(scenario_id)
+        if any(step.step_id == request.step_id for step in recipes.document(record).current.steps):
+            raise HTTPException(status_code=409, detail=f"step_id {request.step_id!r} already exists")
+        return RecipeDocumentView(**recipes.add_step(record, request))
+
+    @app.post(
+        "/api/workspace/scenarios/{scenario_id}/recipe/steps/{step_id}/active",
+        response_model=RecipeDocumentView,
+    )
+    def workspace_recipe_step_state(
+        scenario_id: str, step_id: str, request: RecipeStepStateRequest
+    ) -> RecipeDocumentView:
+        record = record_for(scenario_id)
+        try:
+            return RecipeDocumentView(**recipes.set_step_active(record, step_id, request))
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+
+    @app.post(
+        "/api/workspace/scenarios/{scenario_id}/recipe/steps/{step_id}/remove",
+        response_model=RecipeDocumentView,
+    )
+    def workspace_recipe_remove_step(
+        scenario_id: str, step_id: str
+    ) -> RecipeDocumentView:
+        record = record_for(scenario_id)
+        try:
+            return RecipeDocumentView(**recipes.remove_step(record, step_id))
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+
+    @app.post(
+        "/api/workspace/scenarios/{scenario_id}/recipe/steps/move",
+        response_model=RecipeDocumentView,
+    )
+    def workspace_recipe_move_step(
+        scenario_id: str, request: StepMoveRequest
+    ) -> RecipeDocumentView:
+        record = record_for(scenario_id)
+        try:
+            return RecipeDocumentView(**recipes.move_step(record, request))
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+
+    @app.post(
+        "/api/workspace/scenarios/{scenario_id}/recipe/markers",
+        response_model=RecipeDocumentView,
+    )
+    def workspace_recipe_add_marker(
+        scenario_id: str, request: RollbackMarkerRequest
+    ) -> RecipeDocumentView:
+        return RecipeDocumentView(**recipes.add_marker(record_for(scenario_id), request))
+
+    @app.post(
+        "/api/workspace/scenarios/{scenario_id}/recipe/markers/{marker_id}/restore",
+        response_model=RecipeDocumentView,
+    )
+    def workspace_recipe_restore_marker(
+        scenario_id: str, marker_id: str
+    ) -> RecipeDocumentView:
+        record = record_for(scenario_id)
+        try:
+            return RecipeDocumentView(**recipes.restore_marker(record, marker_id))
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+
+    @app.post("/api/workspace/scenarios/{scenario_id}/recipe/undo", response_model=RecipeDocumentView)
+    def workspace_recipe_undo(scenario_id: str) -> RecipeDocumentView:
+        record = record_for(scenario_id)
+        try:
+            return RecipeDocumentView(**recipes.undo(record))
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+
+    @app.post("/api/workspace/scenarios/{scenario_id}/recipe/redo", response_model=RecipeDocumentView)
+    def workspace_recipe_redo(scenario_id: str) -> RecipeDocumentView:
+        record = record_for(scenario_id)
+        try:
+            return RecipeDocumentView(**recipes.redo(record))
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+
+    @app.get("/api/workspace/scenarios/{scenario_id}/frames/{mode}", response_model=POVFrameView)
+    def workspace_frame(scenario_id: str, mode: str, time_s: float = 0.0) -> POVFrameView:
+        if mode not in {"third-person", "in-car"}:
+            raise HTTPException(status_code=422, detail="Unsupported POV mode.")
+        try:
+            payload = render_frame(adapter.get(scenario_id).scenario, mode=mode, time_s=time_s)
+        except (KeyError, ValueError) as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        return POVFrameView(**payload)
 
     @app.get("/api/scenarios/{scenario_id}/artifacts")
     def scenario_artifacts(scenario_id: str):

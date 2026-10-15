@@ -26,6 +26,7 @@ const icons = {
   artifacts: <><path d="M8 2.2 13.4 5v6L8 13.8 2.6 11V5z" /><path d="m2.6 5 5.4 2.9L13.4 5" /><path d="M8 7.9v5.9" /></>,
   "top-down": <><path d="m2.6 4 3.4-1.5 4 1.5 3.4-1.5v9L9.6 13 5.6 11.5 2.6 13z" /><path d="M6 2.5v9" /><path d="M10 4v9.5" /></>,
   "third-person": <><circle cx="8" cy="4.6" r="2.3" /><path d="M3.6 13.6a4.4 4.4 0 0 1 8.8 0" /></>,
+  "in-car": <><path d="M2.5 10.8h11" /><path d="m4 10.8 1.2-4h5.6l1.2 4" /><circle cx="4.5" cy="12.5" r="1" /><circle cx="11.5" cy="12.5" r="1" /></>,
   lidar: <><circle cx="8" cy="8" r="1.7" /><path d="M4.7 6.3a4.8 4.8 0 0 0 0 3.4" /><path d="M11.3 6.3a4.8 4.8 0 0 1 0 3.4" /><path d="M8 2.4v1.6" /><path d="M8 12v1.6" /><path d="M2.4 8H4" /><path d="M12 8h1.6" /></>,
   "chevron-left": <><path d="m9.5 4-4 4 4 4" /></>,
   "chevron-right": <><path d="m6.5 4 4 4-4 4" /></>,

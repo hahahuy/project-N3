@@ -1,7 +1,7 @@
 ---
 report_type: current_status
 status: CURRENT
-updated_at: 2026-10-12
+updated_at: 2026-10-15
 ---
 
 # Project Status
@@ -78,29 +78,51 @@ silently reuse nuScenes-specific assumptions.
 - CP2-A exact-pose planning and strict XOSC interpretation are implemented and
   tested; CARLA remains environment-deferred and no same-XOSC claim is made.
 - G6/G7 temporary funnel results are diagnostic and `PROVISIONAL`.
+- Workspace recipe, variant lineage, synchronized Compare and evidence-layer
+  workflows are implemented as additive contracts. Recipe history is explicitly
+  in-process and non-destructive; replay metrics remain `PROVISIONAL`; no final
+  scientific threshold or canonical recorded scenario was changed.
+- Constrained maneuver authoring now uses named recipe steps and explicit time ranges, with Tier 1 `kinematic-open-loop-v1` limits, violations, provenance and immutable-parent rollback markers visible in the local preview UI; CP1 remains `20/143 = 13.99%` provisional.
 - ADE/FDE scientific thresholds are not finalized.
 
 ## Execution Order
 
 The Wave 3A backend and U0 showcase slice is implemented and verified. U0 is a
-showcase, not the complete MVP authoring workspace. The remaining current-MVP
-  work is CP1/CP3/CP4/CP5 evidence/sign-off closure plus the Tier 1 internal
-  kinematic simulator,
-full 2D/3D authoring workspace, frame-aware timeline and optional recorded LiDAR
-evidence. CARLA runtime and same-XOSC remain post-MVP.
+showcase, not the complete MVP authoring workspace. Phase 2 of the approved
+nuScenes-devkit backend makeover has tested additive source-state, native
+map/query, private LiDAR descriptor and advisory prediction contracts. Tier 1
+propagation, diagnostics and collision pre-checks are tested. The active work
+is now live Workspace wiring: native map/time-indexed actor state, constrained
+maneuver editing, LiDAR payloads and simulator-backed POVs. Esmini comparison,
+final acceptance evidence and CARLA same-XOSC remain open/post-MVP.
 
 ```text
-CP1 semantic-alignment owner review and diagnostics
-  -> CP3 benchmark evidence + CP4 G1-G7 orchestration + CP5 reproducibility
-  -> internal kinematic simulator
-  -> full 2D/3D authoring workspace + frame-aware timeline
-  -> optional recorded LiDAR evidence + CP6 paper bundle
+Workspace wiring for completed devkit Phase 2 contracts
+  -> native map/time-indexed actor state in Top-down
+  -> constrained maneuver editor and Tier 1 preview
+  -> private LiDAR payload/POV and simulator-backed POV capability
+  -> advisory prediction surface and CP3 source-contract update
+  -> resume CP1/CP3/CP4/CP5 closure tracks
   -> post-MVP CP2 same-XOSC CARLA execution
 ```
 
 CP1, CP3, CP4, CP5 and UI/sensor work continue as separate gated tracks. No UI,
 sensor or POV implementation may redefine the canonical scenario, same-XOSC
 contract, license boundary or scientific thresholds.
+
+## Workspace Wiring Checkpoint
+
+- Workspace now consumes real native map geometry and time-indexed actor state
+  when the configured nuScenes dataset/devkit supplies them.
+- Constrained maneuver fields are wired to preview requests; arbitrary
+  displacement and per-axis velocity edits remain outside the API schema.
+- Private decimated `LIDAR_TOP` serving and browser canvas rendering are
+  implemented with API calibration/ego-pose transforms, timestamp, frame,
+  decimation and count provenance. Post-edit sensor frames are not generated or
+  claimed; variant views must remain on the explicit parent-sweep/unavailable
+  contract until backend support exists. CARLA remains post-MVP.
+- Local runtime acceptance verified real `scene-0001` actor/map Workspace data
+  and a binary decimated LiDAR payload; evidence is provisional and private.
 
 ## Wave 3A Checkpoint Started
 
@@ -121,14 +143,22 @@ contract, license boundary or scientific thresholds.
   artifact. The approved internal kinematic simulator/frame-producing preview
   remains incomplete: U0 does not yet generate post-edit camera/LiDAR/radar
   frames, and its timeline is a path-view timestamp control, not a frame
-  renderer.
+  renderer. The target workspace now explicitly includes simulator third-person
+  and in-car POVs, native map POV, recorded LiDAR POV and time-indexed actor
+  state; these are not yet fully wired.
 - Full 2D/3D authoring workspace remains unfinished MVP work. U0 currently
   provides catalog/review, parameterized trajectory preview, path overlay and a
-  timeline label, but not the complete simulator-backed authoring POV.
+  timeline label, but not the complete simulator-backed authoring POV, native
+  map POV, recorded LiDAR POV or constrained maneuver editor.
 - UI0 interaction audit on `review/ui0-interaction-audit` exercised the desktop
   and mobile control surface. It fixed a generated-batch-result 404 caused by
   probing `/api/scenarios/{variant_id}` before loading the supported batch
   trajectory endpoint; frontend tests/build and a clean browser reload pass.
+
+- Simulator-backed POV slice now exposes `simulator-frame-v1`: the internal
+  kinematic preview returns timestamp-selected actor/camera transforms for
+  third-person and ego-mounted in-car views. esmini image frames and CARLA
+  same-XOSC remain separate; CARLA is post-MVP.
 - CP3 metric/gate wiring is verified with Python and frontend tests/build; replay
   aggregates remain diagnostic and no final ADE/FDE thresholds are set.
 - CP1 arc-fitting is integrated behind an explicit `geometry_mode="line_arc"`
@@ -297,43 +327,39 @@ contract, license boundary or scientific thresholds.
   depending on scene, G3 stays skipped for missing road-match evidence and G5
   errors on missing event definitions. All values remain `PROVISIONAL`; no CP3
   acceptance, threshold or benchmark-index approval is claimed.
+- Owner-approved nuScenes-devkit backend makeover Phase 1 is implemented: CAN
+  `pose` optionally supplies matched ego speed with explicit finite-difference
+  fallback, and polygon lane widths prefer a sampled cross-section median. The
+  canonical State schema, CP1 baseline and scientific thresholds remain unchanged;
+  CAN acceleration/yaw-rate promotion and sensor/map APIs are later slices.
 
 ## Latest Verification
 
 ```text
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider
-259 passed, 1 warning. The warning is the existing Starlette/httpx deprecation;
+ 307 passed, 1 warning. The warning is the existing Starlette/httpx deprecation;
 the cache provider is disabled because the default pytest cache path is not
 writable in this worktree.
+
+cd frontend && npm test && npm run build
+ 36 tests passed across the API boundary and the Workspace keyboard, mobile and
+accessibility suites; the production build succeeds.
 ```
 
 ## Next Safe Work
 
-1. Start the CP1 semantic-alignment diagnostic from
-   `docs/current/next-agent-handoff.md` and
-   `docs/current/cp1-agent-handoff-next.md`.
-2. Owner confirm the remaining CP1 policy decisions recorded in
-   `docs/reports/cp1-private-sequence-self-verification.md`; no broad visual
-   review is required unless classifications are disputed.
-3. Close CP3 benchmark evidence with owner review of the completed provisional
-   multi-scene run and of the agent-selected scene index; do not turn provisional
-   metrics into final thresholds.
-4. Commit the verified tree and repeat clean-checkout release verification so
-   the `HEAD` bundle can pass, then attribute the low per-scene road-match rates
-   across native, canonical and corridor references without changing provisional
-   policy, tolerances or artifact boundaries.
-5. Implement the internal fixed-timestep kinematic simulator and its normalized
-   preview trace/collision pre-check contract, then build the 2D/3D workspace
-   against `docs/current/ui-mvp-flow-spec.md`.
-6. Build the full 2D/3D authoring workspace: scene layers, actor selection and
-   editing, follow/orbit/analyst POV, vectors, timeline cursor and provenance.
-7. Add post-edit frame generation/timestamp-addressable artifacts and the
-   optional recorded LiDAR evidence layer where approved local data exists.
-8. Complete the CP6 paper evidence bundle from accepted, reproducible results.
-9. Implement the CP2 XOSC interpreter and CARLA custom-map execution path only
-   as post-MVP work.
-10. Defer full Singapore One-North coverage and alternate LiDAR/map-source
-   adapters until the corridor path is accepted.
-11. Late-future multi-dataset platform work is defined in
-   `docs/current/late-future-platform-plan.md` and is not part of current
-   CP0-CP6 acceptance.
+1. Extend the actor timeline with a per-sample text equivalent for every
+   visualization and review the recorded CAN pedal channel where a source scene
+   declares recorded timestamps.
+2. Implement constrained steering/acceleration/braking/speed maneuver editing
+   with Tier 1 preview and explicit limits.
+3. Extend private decimated LiDAR payloads with variant sensor status only when
+   post-edit frame generation is actually implemented; keep parent-sweep and
+   unavailable states explicit.
+4. Add simulator-backed third-person/in-car POV capability and frame contracts.
+5. Add advisory nuScenes prediction evaluation without mixing metric roles.
+6. Resume CP1/CP3/CP4/CP5 closure tracks after source/UI contracts stabilize.
+7. Complete the CP6 paper evidence bundle from accepted, reproducible results.
+8. Implement CP2 same-XOSC CARLA execution only as post-MVP work.
+9. Defer full Singapore One-North coverage and alternate providers until the
+   active source and corridor contracts are accepted.

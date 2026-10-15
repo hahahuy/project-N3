@@ -3,11 +3,23 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
+    # Run as the host owner so the bind-mounted project tree stays writable
+    # for HMR and imported scenarios. The image still defaults to a non-root
+    # user; this only avoids running as root. See docs/guides/datastreaming.md D-4.
+    user: "${R2S_UID:-1000}:${R2S_GID:-1000}"
     environment:
       R2S_PROJECT_ROOT: /app
       R2S_ARTIFACT_ROOT: scenarios
       R2S_OUTPUT_ROOT: reports
-      NUSCENES_ROOT: /mnt/backup/nuscenes
+      # Explicit cache path. Without this the index lands in $HOME inside the
+      # container and is destroyed on every recreate, forcing a re-read of the
+      # full nuScenes metadata tables. See docs/guides/datastreaming.md D-1.
+      R2S_METADATA_CACHE: /var/cache/real2scenario
+      # Operator-declared external roots the local UI may select. The nuScenes
+      # metadata release lives outside the project tree, so it must be listed
+      # here for the LOCAL PATHS flow to accept it.
+      R2S_EXTRA_DATA_ROOTS: ${R2S_EXTRA_DATA_ROOTS:-/mnt/backup/nuscenes}
+      NUSCENES_ROOT: ${NUSCENES_ROOT:-/mnt/backup/nuscenes}
       NUSCENES_VERSION: v1.0-trainval
       ESMINI_BIN: ${ESMINI_BIN:-/opt/esmini/bin/esmini}
       ESMINI_DAT2CSV: ${ESMINI_DAT2CSV:-/opt/esmini/bin/dat2csv}
@@ -16,6 +28,13 @@ services:
     volumes:
       - .:/app
       - r2s-reports:/app/reports
+      # Persist the metadata index across container recreation.
+      - r2s-metadata-cache:/var/cache/real2scenario
+      # Read-only dataset mount. It must expose can_bus/ and samples/, not just
+      # the metadata tables: Phase 1 reads can_bus/ for CAN ego speed, and the
+      # U6 recorded-LiDAR POV in docs/current/ui-mvp-flow-spec.md reads
+      # samples/LIDAR_TOP/. Trimming this mount silently degrades CAN to the
+      # finite-difference fallback, so it is mounted whole.
       - /mnt/backup/nuscenes:/mnt/backup/nuscenes:ro
       - ${HOME}/esmini:/opt/esmini:ro
     healthcheck:
@@ -43,3 +62,4 @@ services:
 volumes:
   frontend-node-modules:
   r2s-reports:
+  r2s-metadata-cache:

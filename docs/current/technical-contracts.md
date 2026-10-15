@@ -40,6 +40,50 @@ produce the same canonical scenario. The cache is an engineering artifact, is
 kept outside the repository and never becomes access control or scientific
 evidence.
 
+### nuScenes-devkit Source Measurements
+
+The optional source adapter contract is `nuscenes-can-pose-v1`:
+
+```yaml
+source_adapter: real2scenario.nuscenes_backend.NuScenesSourceAdapter
+can_message: pose
+matching: nearest_timestamp
+max_timestamp_gap_us: 100000
+extrapolation: forbidden
+ego_speed_precedence: can_then_finite_difference
+missing_can: explicit_finite_difference_fallback
+artifact_visibility: local_private
+```
+
+CAN is an ego measurement source, not a replacement for raw annotation or ego
+pose ground truth. The canonical `State` schema remains unchanged in Phase 1;
+acceleration and yaw rate are retained at the adapter boundary for later Tier 1
+kinematic integration. Every extracted scenario records the adapter version,
+CAN status and matched sample count in provenance. Synthetic fixtures and
+scenes without `can_bus/` must remain reproducible through finite-difference
+fallback.
+
+### Phase 2 Source-State Extension
+
+The versioned extension is `source-state-extension-v1`. It is adapter/Tier 1
+data and is deliberately not part of canonical `State` or replay metrics.
+It carries `timestamp_us`, `acceleration_mps2` and `yaw_rate_radps`, with
+`can_pose_then_finite_difference` precedence and explicit fallback provenance.
+`integrate_kinematic_open_loop()` consumes it at a fixed `0.05 s` timestep and
+returns ordinary canonical `State` records plus source/simulator provenance.
+
+### Native Map, LiDAR and Prediction Capabilities
+
+`native_map_records()` and `road_ahead_query()` expose read-only devkit oracle
+data under `nuscenes-native-map-query-v1` for the nine approved native layers;
+they do not replace the OpenDRIVE builder or alter CP1 matching. The LiDAR
+descriptor `nuscenes-lidar-payload-v1` requires `LIDAR_TOP`, timestamp,
+calibration, source filename and decimation, and is always `local_private`.
+Point-cloud bytes and derived payloads remain outside the repository.
+`evaluate_prediction_advisory()` emits `nuscenes-prediction-advisory-v1` with
+minADE/minFDE and `metric_role=advisory_prediction_only`; these values are not
+combined with replay fidelity metrics or CP3 acceptance evidence.
+
 ## CP1 Map
 
 - Source: nuScenes vector expansion, Singapore One-North.
@@ -105,9 +149,12 @@ per-edge position/heading gaps and reciprocal-link failures. It does not change
 OpenDRIVE topology or imply junction correctness or lane-level road-match.
 
 Connector junction and polygon-width output is currently conservative and
-synthetic-tested. Width manifests preserve whether a polygon or labeled fallback
-source was used. Full connector graph semantics, cross-section width estimation
-and lane-level road-match remain required before CP1 acceptance.
+synthetic-tested. Polygon widths now prefer the versioned
+`polygon-cross-section-median-v1` estimator, with area-over-centerline and
+constant-width fallbacks recorded separately. This is an additive CP1
+diagnostic change; it does not alter the immutable road-match baseline or imply
+lane-level acceptance. Full connector graph semantics and lane-level road-match
+remain required before CP1 acceptance.
 
 Lane road-match diagnostic version is `lane-road-match-v1`. Inputs are directed
 centerline records and Scenario states in the same coordinate frame. Matching
@@ -294,6 +341,76 @@ per-timestamp visual frame artifacts. It also does not expose a frame cursor or
 frame retrieval API. Frame generation/sensor reprojection is therefore an open
 post-U0 implementation item, separate from trajectory-state generation.
 
+## Workspace Actor Timeline and Gate Lane Contracts
+
+The Workspace gate lane and actor tracks are additive read-only contracts. They
+consume canonical scenario evidence and never compute or infer gate outcomes in
+the browser.
+
+`workspace-actor-timeline-v1` returns one time-indexed track per actor with an
+explicit availability block per channel:
+
+```yaml
+contract_version: workspace-actor-timeline-v1
+time_domain: {start_s: float, end_s: float}
+channels:
+  position: canonical-state-v1
+  heading: canonical-state-v1
+  speed: canonical-state-v1
+  acceleration: workspace-finite-difference-acceleration-v1
+  braking: nuscenes-can-vehicle-monitor-v1
+```
+
+- Position, heading and speed are canonical `State` values.
+- Acceleration is a declared deterministic derivative of the canonical speed
+  series. It is labelled `finite_difference`, is never clamped, and requires at
+  least two strictly increasing timestamps; otherwise the channel reports
+  `insufficient_states_for_finite_difference`.
+- Braking is the recorded nuScenes CAN `vehicle_monitor.brake` pedal channel and
+  exists for the ego actor only. Non-ego tracks report
+  `recorded_brake_channel_records_ego_only`, and the channel reports
+  `scenario_provenance_declares_no_can_scene`, `dataset_not_configured`,
+  `canonical_states_missing_source_timestamp_us` or
+  `recorded_brake_channel_absent_for_source_scene` when it cannot be resolved.
+- Pedal samples are matched by nearest recorded timestamp with a fixed
+  `100000 us` gap. Unmatched timestamps are `null`, which the browser renders as
+  `n/a`; a missing channel is never rendered as zero.
+- The contract carries no scientific claim. It does not change `State`,
+  `source-state-extension-v1`, CP1, or any threshold.
+
+`workspace-gate-timeline-v1` projects G1-G7 onto the scenario time domain:
+
+```yaml
+contract_version: workspace-gate-timeline-v1
+gates:
+  - {gate_id: G1, status: unsupported | skipped | pass | fail | error,
+     scientific_status: string, reasons: [string], start_s: float, end_s: float,
+     extent_source: scenario_time_domain | declared_main_event_window}
+```
+
+- The segment status vocabulary adds `unsupported` to the CP4 gate vocabulary
+  for a capability this surface does not evaluate. `unsupported` is never `pass`.
+- G1 and G2 are `unsupported` here because the Workspace surface does not
+  evaluate the OpenSCENARIO subset or record a simulator run for the canonical
+  scenario. G3 is `skipped` because no lane road-match evidence is supplied to
+  this surface; CP1 evidence remains a separate flow.
+- G4, G5, G6 and G7 reuse the CP4 implementations and therefore reuse their
+  statuses, reasons, observed values and `PROVISIONAL` scientific status.
+- Extents are the scenario time domain unless G5 records a declared main event
+  window, which is then used verbatim. No gate receives an invented window.
+
+## Simulator Frame Contract
+
+The additive `simulator-frame-v1` contract is the first supported POV frame
+boundary. The internal `kinematic-open-loop-v1` renderer selects the nearest
+canonical actor state to the requested Workspace playhead and returns a
+transform-backed frame, not an image placeholder. Each frame includes simulator
+identity/version, mode (`third-person` or `in-car`), timestamp, coordinate and
+transform versions, camera and actor transforms, and local-private provenance.
+The browser may render these transforms as a POV scene only when the capability
+block is available. esmini-rendered image frames and CARLA same-XOSC remain
+separate capabilities; CARLA remains post-MVP.
+
 ## CP3 Replay and Gate Reporting
 
 - Variant and batch reports may include per-actor replay metrics and ADE/FDE
@@ -348,7 +465,7 @@ lane_road_match_evidence:
 ```
 
 Candidate road-match evidence is produced by
-`scripts/build_benchmark_gate_evidence.py`, which builds the declared
+`scripts/archive/cp1/build_benchmark_gate_evidence.py`, which builds the declared
 scene-local corridor, expresses it in the candidates' frame and measures every
 candidate with the unchanged tolerances. Supplying evidence must not change
 generation, validation, replay or metric values.

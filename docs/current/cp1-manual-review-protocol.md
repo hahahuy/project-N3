@@ -435,7 +435,7 @@ The repository includes a setup helper for the first four files. Run it once:
 ```bash
 cd "$PROJECT_ROOT"
 
-.venv/bin/python scripts/setup_cp1_manual_review.py \
+.venv/bin/python scripts/archive/cp1/setup_cp1_manual_review.py \
   --dataset-root "$NUSCENES_ROOT" \
   --dataset-version v1.0-trainval \
   --scene scene-0061 \

@@ -24,9 +24,14 @@ export type ReplayMetric = { sample_count: number; position_rmse_m: number; fina
 export type MetricDistribution = { mean: number; median: number; p95: number; max: number };
 export type ReplayMetricAggregate = { actor_count: number; ade_m: MetricDistribution; fde_m: MetricDistribution | null };
 export type Availability = { available: boolean; unavailable_reason: string | null };
+export type SimulatorCapability = Availability & { simulator: string; version: string | null; frame_contract: string | null; modes: string[]; rendering: string | null };
+export type POVFrame = { contract_version: string; frame_id: string; mode: "third-person" | "in-car"; status: "rendered" | "unavailable" | "error"; simulator: string; simulator_version: string | null; timestamp_s: number; coordinate_frame: string; transform_version: string | null; camera_transform: Record<string, number | string>; actors: Array<{ actor_id: string; actor_type: string; transform: Record<string, number>; speed_mps: number; dimensions: Record<string, number | null> }>; provenance: Record<string, string> };
 export type WorkspaceLayer = Availability;
-export type WorkspaceDocument = { document_name: string; branch: string; version: string; active_scenario_id: string; connection: Availability; dataset: Availability; esmini: Availability; dataset_version: string | null; esmini_version: string | null; coordinate_frame: string; transform_version: string | null; provenance: Record<string, string> };
-export type WorkspaceScenario = { scenario: ScenarioSummary; actors: Array<ActorSummary & { role: "ego" | "actor"; states: TrajectoryState[]; dimensions: Availability }>; paths: TrajectoryPath[]; layers: { recorded_path: WorkspaceLayer; generated_path: WorkspaceLayer; map_lanes: WorkspaceLayer; actor_dimensions: WorkspaceLayer; xodr_geometry: WorkspaceLayer; lidar: WorkspaceLayer }; metrics: { available: boolean; unavailable_reason: string | null; source: "replay_trace" | "none"; per_actor: Record<string, ReplayMetric> }; gates: GateResult[] };
+export type LidarTransform = { translation_m: number[]; rotation_wxyz: number[] };
+export type LidarDescriptor = Availability & { sample_data_token?: string; payload_url?: string; version?: string; channel?: "LIDAR_TOP"; timestamp_us?: number; frame?: string; coordinate_frame?: string; calibration_token?: string; calibration_transform?: LidarTransform; ego_pose_transform?: LidarTransform; transform_version?: string; source_file?: string; decimation?: number | null; total_count?: number | null; returned_count?: number | null; artifact_visibility?: string };
+export type NativeMap = { version: string; status: string; map_name: string; layers: Record<string, Array<Record<string, unknown>>>; artifact_visibility: string };
+export type WorkspaceDocument = { document_name: string; branch: string; version: string; active_scenario_id: string; connection: Availability; dataset: Availability; esmini: Availability; native_map: Availability; simulator_frames: SimulatorCapability; dataset_version: string | null; esmini_version: string | null; coordinate_frame: string; transform_version: string | null; provenance: Record<string, string> };
+export type WorkspaceScenario = { scenario: ScenarioSummary; actors: Array<ActorSummary & { role: "ego" | "actor"; states: TrajectoryState[]; dimensions: Availability }>; paths: TrajectoryPath[]; layers: { recorded_path: WorkspaceLayer; generated_path: WorkspaceLayer; map_lanes: WorkspaceLayer; actor_dimensions: WorkspaceLayer; xodr_geometry: WorkspaceLayer; lidar: WorkspaceLayer; third_person: SimulatorCapability; in_car: SimulatorCapability }; metrics: MetricAvailability; evidence_layers: EvidenceLayers | null; gates: GateSegment[]; native_map: NativeMap | null; time_s: number; simulator_frames: SimulatorCapability };
 export type TrajectoryResponse = {
   scenario_id: string;
   coordinate_frame: string;
@@ -42,9 +47,17 @@ export type ActorMotionEdit = {
   heading_offset_rad: number;
   timing_offset_s: number;
   initial_gap_delta_m: number;
+  steering_angle_rad?: number;
+  acceleration_mps2?: number | null;
+  braking_mps2?: number | null;
+  target_speed_mps?: number | null;
+  start_time_s?: number;
+  end_time_s?: number | null;
 };
+export type RecipeStepRequest = { step_id: string; name: string; kind?: "constrained-maneuver"; actor_edit: ActorMotionEdit; active?: boolean };
 export type PreviewRequest = {
   actor_edits: ActorMotionEdit[];
+  recipe_steps?: RecipeStepRequest[];
   replay_mode?: "waypoint";
   behavior?: "parameterized" | "behavior";
   seed: number;
@@ -57,6 +70,38 @@ export type GateResult = {
   observed: Record<string, unknown> | null;
   scientific_status: string;
 };
+export type GateSegmentStatus = "pass" | "fail" | "skipped" | "error" | "unsupported";
+export type GateSegment = {
+  gate_id: string;
+  status: GateSegmentStatus;
+  scientific_status: string;
+  reasons: string[];
+  config_version: string | null;
+  observed: Record<string, unknown> | null;
+  start_s: number;
+  end_s: number;
+  extent_source: string;
+};
+export type GateTimeline = {
+  contract_version: string;
+  scenario_id: string;
+  coordinate_frame: string;
+  time_domain: { start_s: number; end_s: number };
+  gates: GateSegment[];
+  counts: Record<GateSegmentStatus, number>;
+  provisional_count: number;
+  artifact_visibility: string;
+};
+export type ChannelAvailability = { available: boolean; unavailable_reason: string | null; version: string; coverage: number | null };
+export type TimelineSample = { time_s: number; x_m: number; y_m: number; yaw_rad: number; speed_mps: number; acceleration_mps2: number | null; acceleration_source: string | null; braking_pressure: number | null; braking_source: string | null };
+export type ActorTrack = {
+  actor_id: string;
+  actor_type: string;
+  role: "ego" | "actor";
+  channels: { position: ChannelAvailability; heading: ChannelAvailability; speed: ChannelAvailability; acceleration: ChannelAvailability; braking: ChannelAvailability };
+  samples: TimelineSample[];
+};
+export type ActorTimeline = { contract_version: string; scenario_id: string; coordinate_frame: string; time_domain: { start_s: number; end_s: number }; tracks: ActorTrack[]; artifact_visibility: string };
 export type PreviewResponse = {
   parent_scenario_id: string;
   variant_id: string | null;
@@ -69,6 +114,180 @@ export type PreviewResponse = {
   gates: GateResult[];
   replay_metrics: Record<string, ReplayMetric>;
   artifacts: ArtifactLink[];
+  recipe_steps: RecipeStepRequest[];
+  limits: Record<string, unknown>;
+  violations: Array<Record<string, unknown>>;
+  rollback_marker: { parent_scenario_id: string; variant_id: string; immutable_parent: boolean } | null;
+};
+
+export type MetricAvailability = {
+  available: boolean;
+  unavailable_reason: string | null;
+  alignment_method: string | null;
+  source: "replay_trace" | "none";
+  scientific_status: string;
+  provenance: Record<string, string>;
+  per_actor: Record<string, ReplayMetric>;
+  aggregate: ReplayMetricAggregate | null;
+};
+
+export type RecipeStepViolation = { code: string; actor_id: string; observed: number; limit: number; provenance: string };
+export type RecipeStep = {
+  index: number;
+  step_id: string;
+  name: string;
+  kind: "constrained-maneuver";
+  status: "valid" | "invalid" | "error";
+  active: boolean;
+  inactive_reason: string | null;
+  parameters: ActorMotionEdit;
+  violations: RecipeStepViolation[];
+  error: string | null;
+  artifact: ArtifactLink | null;
+  artifact_unavailable_reason: string | null;
+};
+export type RollbackMarker = { marker_id: string; name: string; step_count: number; revision: number };
+export type RecipeHistory = {
+  revision: number;
+  undo_depth: number;
+  redo_depth: number;
+  non_destructive: boolean;
+  undoable: boolean;
+  redoable: boolean;
+  undo_unavailable_reason: string | null;
+  redo_unavailable_reason: string | null;
+};
+export type RecipeDocument = {
+  contract_version: "workspace-recipe-v1";
+  scenario_id: string;
+  coordinate_frame: string;
+  parent_scenario_id: string | null;
+  parent_immutable: boolean;
+  mutation: string;
+  persistence: Availability;
+  limits: Record<string, unknown>;
+  steps: RecipeStep[];
+  step_count: number;
+  active_step_count: number;
+  rollback_markers: RollbackMarker[];
+  active_marker_id: string | null;
+  history: RecipeHistory;
+  artifact_visibility: string;
+};
+
+export type LineageNode = { scenario_id: string; artifact_type: string; present: boolean; unavailable_reason: string | null };
+export type BranchIdentity = {
+  branch_id: string;
+  branch_name: string | null;
+  root_scenario_id: string;
+  branch_id_source: string;
+  branch_name_source: string | null;
+  branch_name_unavailable_reason: string | null;
+};
+export type VariantLineage = {
+  contract_version: "workspace-variant-lineage-v1";
+  scenario_id: string;
+  artifact_type: string;
+  artifact_path: string;
+  coordinate_frame: string;
+  lineage_path: LineageNode[];
+  lineage_depth: number;
+  branch: BranchIdentity;
+  child_scenario_ids: string[];
+  fields: Record<string, unknown>;
+  unavailable_reasons: Record<string, string | null>;
+  provenance: Record<string, string>;
+  artifact_visibility: string;
+};
+
+export type EvidenceLayer = {
+  layer: "recorded" | "generated" | "replayed" | "sensor-evidence";
+  status: "available" | "unavailable" | "unsupported";
+  unavailable_reason: string | null;
+  source: string;
+  scientific_status: string;
+  provenance: Record<string, string>;
+  coverage: number | null;
+  reference: string;
+  parent_fallback: Record<string, unknown> | null;
+};
+export type EvidenceLayers = {
+  contract_version: "workspace-evidence-layers-v1";
+  scenario_id: string;
+  coordinate_frame: string;
+  layers: EvidenceLayer[];
+  available_count: number;
+  artifact_visibility: string;
+};
+
+export type CompareSide = {
+  scenario_id: string;
+  artifact_type: string;
+  parent_scenario_id: string | null;
+  branch_id: string;
+  branch_name: string | null;
+  seed: number | null;
+  config_hash: string | null;
+  coordinate_frame: string;
+  duration_s: number;
+  layer_kinds: string[];
+  evidence_layers: EvidenceLayer[];
+};
+export type CompareActorState = { status: "measured" | "unavailable"; unavailable_reason: string | null; x_m: number | null; y_m: number | null; yaw_rad: number | null; speed_mps: number | null };
+export type CompareActor = {
+  actor_id: string;
+  actor_type: string | null;
+  role: string | null;
+  left: CompareActorState;
+  right: CompareActorState;
+  position_delta_m: number | null;
+  heading_delta_rad: number | null;
+  speed_delta_mps: number | null;
+  delta_unavailable_reason: string | null;
+};
+export type CompareMetricRow = {
+  metric: string;
+  left_value: number | null;
+  left_status: string;
+  left_reason: string | null;
+  right_value: number | null;
+  right_status: string;
+  right_reason: string | null;
+  delta: number | null;
+  delta_unavailable_reason: string | null;
+  unit: string;
+  scientific_status: string;
+};
+export type CompareGateRow = {
+  gate_id: string;
+  left_status: string | null;
+  right_status: string | null;
+  differs: boolean;
+  left_scientific_status: string | null;
+  right_scientific_status: string | null;
+  left_reasons: string[];
+  right_reasons: string[];
+};
+export type ComparePayload = {
+  contract_version: "workspace-compare-v1";
+  synchronization: {
+    mode: string;
+    time_s: number;
+    requested_time_s: number;
+    time_domain: { start_s: number; end_s: number };
+    left_duration_s: number;
+    right_duration_s: number;
+    durations_differ: boolean;
+    duration_unavailable_reason: string | null;
+    reference_point: string;
+  };
+  sides: CompareSide[];
+  actors: CompareActor[];
+  metrics: CompareMetricRow[];
+  metric_provenance: Record<string, Record<string, unknown>>;
+  metric_scientific_status: string;
+  gates: CompareGateRow[];
+  artifact_visibility: string;
 };
 
 export type Validation = { valid: boolean; validation_version: string; reasons: Array<{ code: string; category: string; actor_id: string | null; state_index: number | null; observed: number | null; limit: number | null; message: string }> };
@@ -105,6 +324,9 @@ export const fetchScenarios = () => request<ScenarioSummary[]>("/scenarios");
 export const fetchScenario = (id: string) => request<ScenarioSummary>(`/scenarios/${encodeURIComponent(id)}`);
 export const fetchWorkspaceDocument = (id: string) => request<WorkspaceDocument>(`/workspace/documents/${encodeURIComponent(id)}`);
 export const fetchWorkspaceScenario = (id: string) => request<WorkspaceScenario>(`/workspace/scenarios/${encodeURIComponent(id)}`);
+export const fetchActorTimeline = (id: string) => request<ActorTimeline>(`/workspace/scenarios/${encodeURIComponent(id)}/timeline`);
+export const fetchGateTimeline = (id: string) => request<GateTimeline>(`/workspace/scenarios/${encodeURIComponent(id)}/gate-timeline`);
+export const fetchPOVFrame = (id: string, mode: "third-person" | "in-car", timeS: number) => request<POVFrame>(`/workspace/scenarios/${encodeURIComponent(id)}/frames/${mode}?time_s=${encodeURIComponent(timeS)}`);
 export const fetchScenarioArtifacts = (id: string) => request<{ scenario_id: string; artifacts: ArtifactLink[] }>(`/scenarios/${encodeURIComponent(id)}/artifacts`);
 export const fetchTrajectory = (id: string) => request<TrajectoryResponse>(`/scenarios/${encodeURIComponent(id)}/trajectory`);
 export const previewVariant = (scenarioId: string, body: PreviewRequest) => request<PreviewResponse>(`/scenarios/${encodeURIComponent(scenarioId)}/variants/preview`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -120,3 +342,23 @@ export const updateSettings = (body: object) => request<SettingsView>("/settings
 export const fetchSourceScenes = () => request<SourceScene[]>("/source-scenes");
 export const importSourceScene = (sceneToken: string, body: object = {}) => request<SourceSceneImportResponse>(`/source-scenes/${encodeURIComponent(sceneToken)}/import`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 export const fetchCP1Review = () => request<CP1Review>("/cp1/review");
+export const fetchNativeMapCapability = (mapName: string) => request<Availability & { map_name: string }>(`/workspace/maps/${encodeURIComponent(mapName)}/capability`);
+export const fetchLidarCapability = () => request<Availability & { channel?: string }>("/workspace/lidar/capability");
+export const lidarPayloadUrl = (token: string, decimation = 8) => apiUrl(`/workspace/lidar/${encodeURIComponent(token)}?decimation=${decimation}`);
+export const fetchLidarDescriptor = (id: string) => request<LidarDescriptor>(`/workspace/scenarios/${encodeURIComponent(id)}/lidar`);
+
+export const fetchRecipe = (id: string) => request<RecipeDocument>(`/workspace/scenarios/${encodeURIComponent(id)}/recipe`);
+const recipeUrl = (id: string, suffix = "") => `/workspace/scenarios/${encodeURIComponent(id)}/recipe${suffix}`;
+const postJson = (path: string, body: unknown) => request<RecipeDocument>(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+export const addRecipeStep = (id: string, step: RecipeStepRequest) => postJson(recipeUrl(id, "/steps"), step);
+export const setRecipeStepActive = (id: string, stepId: string, active: boolean) => postJson(recipeUrl(id, `/steps/${encodeURIComponent(stepId)}/active`), { active });
+export const removeRecipeStep = (id: string, stepId: string) => postJson(recipeUrl(id, `/steps/${encodeURIComponent(stepId)}/remove`), {});
+export const moveRecipeStep = (id: string, stepId: string, direction: "up" | "down") => postJson(recipeUrl(id, "/steps/move"), { step_id: stepId, direction });
+export const addRollbackMarker = (id: string, name: string) => postJson(recipeUrl(id, "/markers"), { name });
+export const restoreRollbackMarker = (id: string, markerId: string) => postJson(recipeUrl(id, `/markers/${encodeURIComponent(markerId)}/restore`), {});
+export const undoRecipe = (id: string) => postJson(recipeUrl(id, "/undo"), {});
+export const redoRecipe = (id: string) => postJson(recipeUrl(id, "/redo"), {});
+export const fetchVariantLineage = (id: string) => request<VariantLineage>(`/workspace/scenarios/${encodeURIComponent(id)}/lineage`);
+export const fetchEvidenceLayers = (id: string) => request<EvidenceLayers>(`/workspace/scenarios/${encodeURIComponent(id)}/evidence-layers`);
+export const fetchCompare = (id: string, against: string, timeS: number) =>
+  request<ComparePayload>(`/workspace/scenarios/${encodeURIComponent(id)}/compare?against=${encodeURIComponent(against)}&time_s=${encodeURIComponent(String(timeS))}`);

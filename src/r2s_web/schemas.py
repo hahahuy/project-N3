@@ -65,13 +65,16 @@ class MetricAvailabilityView(BaseModel):
 
     Metrics are never fabricated and never defaulted to zero. A consumer can
     always tell whether a number is missing, and why, without inspecting the
-    surrounding status fields.
+    surrounding status fields. Provenance and scientific status travel with the
+    block so a metric is never shown without them.
     """
 
     available: bool
     unavailable_reason: str | None = None
     alignment_method: str | None = None
     source: Literal["replay_trace", "none"] = "none"
+    scientific_status: Literal["PROVISIONAL"] = "PROVISIONAL"
+    provenance: dict[str, str] = Field(default_factory=dict)
     per_actor: dict[str, ReplayMetricView] = Field(default_factory=dict)
     aggregate: "ReplayMetricAggregateView | None" = None
 
@@ -100,6 +103,218 @@ class TrajectoryResponse(BaseModel):
 
 class ScenarioDetail(ScenarioSummary):
     variant_config: dict[str, float | int] | None = None
+
+
+class AvailabilityView(BaseModel):
+    available: bool
+    unavailable_reason: str | None = None
+
+
+class SimulatorCapabilityView(AvailabilityView):
+    simulator: str
+    version: str | None = None
+    frame_contract: str | None = None
+    modes: list[str] = Field(default_factory=list)
+    rendering: str | None = None
+
+
+class POVFrameView(BaseModel):
+    contract_version: str
+    frame_id: str
+    mode: Literal["third-person", "in-car"]
+    status: Literal["rendered", "unavailable", "error"]
+    simulator: str
+    simulator_version: str | None
+    timestamp_s: float
+    coordinate_frame: str
+    transform_version: str | None
+    camera_transform: dict[str, object]
+    actors: list[dict[str, object]]
+    provenance: dict[str, str]
+
+
+class WorkspaceDocumentView(BaseModel):
+    document_name: str
+    branch: str
+    version: str
+    active_scenario_id: str
+    connection: AvailabilityView
+    dataset: AvailabilityView
+    esmini: AvailabilityView
+    dataset_version: str | None
+    esmini_version: str | None
+    coordinate_frame: str
+    transform_version: str | None
+    provenance: dict[str, str]
+    native_map: AvailabilityView
+    simulator_frames: SimulatorCapabilityView
+
+
+class ActorPoseView(BaseModel):
+    actor_id: str
+    actor_type: str
+    role: Literal["ego", "actor"]
+    states: list[TrajectoryState]
+    dimensions: AvailabilityView
+    length_m: float | None
+    width_m: float | None
+
+
+class ScenarioLayerView(BaseModel):
+    recorded_path: AvailabilityView
+    generated_path: AvailabilityView
+    map_lanes: AvailabilityView
+    actor_dimensions: AvailabilityView
+    xodr_geometry: AvailabilityView
+    lidar: AvailabilityView
+    third_person: SimulatorCapabilityView
+    in_car: SimulatorCapabilityView
+
+
+class NativeMapView(BaseModel):
+    version: str
+    status: str
+    map_name: str
+    layers: dict[str, list[dict[str, object]]] = Field(default_factory=dict)
+    artifact_visibility: str = "local_private"
+
+
+class ScenarioViewPayload(BaseModel):
+    scenario: ScenarioSummary
+    actors: list[ActorPoseView]
+    paths: list[TrajectoryPath]
+    layers: ScenarioLayerView
+    metrics: MetricAvailabilityView
+    evidence_layers: "EvidenceLayersView | None" = None
+    gates: list["GateSegmentView"] = Field(default_factory=list)
+    native_map: NativeMapView | None = None
+    time_s: float = 0.0
+    simulator_frames: SimulatorCapabilityView
+
+
+class LineageNodeView(BaseModel):
+    scenario_id: str
+    artifact_type: str
+    present: bool
+    unavailable_reason: str | None = None
+
+
+class BranchIdentityView(BaseModel):
+    branch_id: str
+    branch_name: str | None = None
+    root_scenario_id: str
+    branch_id_source: str
+    branch_name_source: str | None = None
+    branch_name_unavailable_reason: str | None = None
+
+
+class VariantLineageView(BaseModel):
+    contract_version: Literal["workspace-variant-lineage-v1"]
+    scenario_id: str
+    artifact_type: str
+    artifact_path: str
+    coordinate_frame: str
+    lineage_path: list[LineageNodeView]
+    lineage_depth: int
+    branch: BranchIdentityView
+    child_scenario_ids: list[str] = Field(default_factory=list)
+    fields: dict[str, object]
+    unavailable_reasons: dict[str, str | None]
+    provenance: dict[str, str] = Field(default_factory=dict)
+    artifact_visibility: str
+
+
+class EvidenceLayerView(BaseModel):
+    layer: Literal["recorded", "generated", "replayed", "sensor-evidence"]
+    status: Literal["available", "unavailable", "unsupported"]
+    unavailable_reason: str | None = None
+    source: str
+    scientific_status: str
+    provenance: dict[str, str] = Field(default_factory=dict)
+    coverage: float | None = None
+    reference: str = ""
+    parent_fallback: dict[str, object] | None = None
+
+
+class EvidenceLayersView(BaseModel):
+    contract_version: Literal["workspace-evidence-layers-v1"]
+    scenario_id: str
+    coordinate_frame: str
+    layers: list[EvidenceLayerView]
+    available_count: int
+    artifact_visibility: str
+
+
+class CompareSideView(BaseModel):
+    scenario_id: str
+    artifact_type: str
+    parent_scenario_id: str | None = None
+    branch_id: str
+    branch_name: str | None = None
+    seed: int | None = None
+    config_hash: str | None = None
+    coordinate_frame: str
+    duration_s: float
+    layer_kinds: list[str] = Field(default_factory=list)
+    evidence_layers: list[EvidenceLayerView]
+
+
+class CompareActorStateView(BaseModel):
+    status: Literal["measured", "unavailable"]
+    unavailable_reason: str | None = None
+    x_m: float | None = None
+    y_m: float | None = None
+    yaw_rad: float | None = None
+    speed_mps: float | None = None
+
+
+class CompareActorView(BaseModel):
+    actor_id: str
+    actor_type: str | None = None
+    role: str | None = None
+    left: CompareActorStateView
+    right: CompareActorStateView
+    position_delta_m: float | None = None
+    heading_delta_rad: float | None = None
+    speed_delta_mps: float | None = None
+    delta_unavailable_reason: str | None = None
+
+
+class CompareMetricRowView(BaseModel):
+    metric: str
+    left_value: float | None = None
+    left_status: str
+    left_reason: str | None = None
+    right_value: float | None = None
+    right_status: str
+    right_reason: str | None = None
+    delta: float | None = None
+    delta_unavailable_reason: str | None = None
+    unit: str
+    scientific_status: str
+
+
+class CompareGateView(BaseModel):
+    gate_id: str
+    left_status: str | None = None
+    right_status: str | None = None
+    differs: bool
+    left_scientific_status: str | None = None
+    right_scientific_status: str | None = None
+    left_reasons: list[str] = Field(default_factory=list)
+    right_reasons: list[str] = Field(default_factory=list)
+
+
+class CompareView(BaseModel):
+    contract_version: Literal["workspace-compare-v1"]
+    synchronization: dict[str, object]
+    sides: list[CompareSideView]
+    actors: list[CompareActorView]
+    metrics: list[CompareMetricRowView]
+    metric_provenance: dict[str, object]
+    gates: list[CompareGateView]
+    metric_scientific_status: Literal["PROVISIONAL"] = "PROVISIONAL"
+    artifact_visibility: str
 
 
 class SourceScene(BaseModel):
@@ -338,6 +553,123 @@ class ActorMotionEditRequest(BaseModel):
     heading_offset_rad: float = 0.0
     timing_offset_s: float = 0.0
     initial_gap_delta_m: float = 0.0
+    steering_angle_rad: float = 0.0
+    acceleration_mps2: float | None = None
+    braking_mps2: float | None = None
+    target_speed_mps: float | None = Field(default=None, ge=0)
+    start_time_s: float = Field(default=0.0, ge=0)
+    end_time_s: float | None = Field(default=None, ge=0)
+
+    @field_validator("acceleration_mps2", "braking_mps2", "steering_angle_rad")
+    @classmethod
+    def finite_maneuver_values(cls, value):
+        if value is not None and not isinstance(value, (int, float)):
+            raise ValueError("maneuver values must be numeric")
+        return value
+
+
+class RecipeStepRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    step_id: str
+    name: str = Field(min_length=1)
+    kind: Literal["constrained-maneuver"] = "constrained-maneuver"
+    actor_edit: ActorMotionEditRequest
+    active: bool = True
+
+    @field_validator("step_id")
+    @classmethod
+    def non_empty_step_id(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("step_id must not be empty")
+        return value
+
+
+class RecipeStepStateRequest(BaseModel):
+    """Activate or deactivate one ordered step without removing it."""
+
+    model_config = ConfigDict(extra="forbid")
+    active: bool
+
+
+class StepMoveRequest(BaseModel):
+    """Move one step by exactly one position in the ordered recipe."""
+
+    model_config = ConfigDict(extra="forbid")
+    step_id: str
+    direction: Literal["up", "down"]
+
+
+class RollbackMarkerRequest(BaseModel):
+    """Name the current ordered step count as a rollback point."""
+
+    model_config = ConfigDict(extra="forbid")
+    name: str = Field(min_length=1, max_length=120)
+
+    @field_validator("name")
+    @classmethod
+    def non_empty_marker_name(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("rollback marker name must not be empty")
+        return value.strip()
+
+
+class RecipeStepViolationView(BaseModel):
+    code: str
+    actor_id: str
+    observed: float
+    limit: float
+    provenance: str
+
+
+class RecipeStepView(BaseModel):
+    index: int
+    step_id: str
+    name: str
+    kind: Literal["constrained-maneuver"]
+    status: Literal["valid", "invalid", "error"]
+    active: bool
+    inactive_reason: str | None = None
+    parameters: ActorMotionEditRequest
+    violations: list[RecipeStepViolationView] = Field(default_factory=list)
+    error: str | None = None
+    artifact: ArtifactLink | None = None
+    artifact_unavailable_reason: str | None = None
+
+
+class RollbackMarkerView(BaseModel):
+    marker_id: str
+    name: str
+    step_count: int
+    revision: int
+
+
+class RecipeHistoryView(BaseModel):
+    revision: int
+    undo_depth: int
+    redo_depth: int
+    non_destructive: bool
+    undoable: bool
+    redoable: bool
+    undo_unavailable_reason: str | None
+    redo_unavailable_reason: str | None
+
+
+class RecipeDocumentView(BaseModel):
+    contract_version: Literal["workspace-recipe-v1"]
+    scenario_id: str
+    coordinate_frame: str
+    parent_scenario_id: str | None = None
+    parent_immutable: bool
+    mutation: str
+    persistence: AvailabilityView
+    limits: dict[str, object] = Field(default_factory=dict)
+    steps: list[RecipeStepView] = Field(default_factory=list)
+    step_count: int = 0
+    active_step_count: int = 0
+    rollback_markers: list[RollbackMarkerView] = Field(default_factory=list)
+    active_marker_id: str | None = None
+    history: RecipeHistoryView
+    artifact_visibility: str
 
 
 class GateResultView(BaseModel):
@@ -349,9 +681,71 @@ class GateResultView(BaseModel):
     scientific_status: str = "not-applicable"
 
 
+class ChannelAvailabilityView(BaseModel):
+    """Explicit availability contract for one time-indexed actor channel."""
+
+    available: bool
+    unavailable_reason: str | None
+    version: str
+    coverage: float | None = None
+
+
+class TimelineSampleView(BaseModel):
+    time_s: float
+    x_m: float
+    y_m: float
+    yaw_rad: float
+    speed_mps: float
+    acceleration_mps2: float | None = None
+    acceleration_source: str | None = None
+    braking_pressure: float | None = None
+    braking_source: str | None = None
+
+
+class ActorTrackView(BaseModel):
+    actor_id: str
+    actor_type: str
+    role: Literal["ego", "actor"]
+    channels: dict[str, ChannelAvailabilityView]
+    samples: list[TimelineSampleView]
+
+
+class ActorTimelineView(BaseModel):
+    contract_version: str
+    scenario_id: str
+    coordinate_frame: str
+    time_domain: dict[str, float]
+    tracks: list[ActorTrackView]
+    artifact_visibility: str
+
+
+class GateSegmentView(BaseModel):
+    gate_id: str
+    status: Literal["pass", "fail", "skipped", "error", "unsupported"]
+    scientific_status: str
+    reasons: list[str] = Field(default_factory=list)
+    config_version: str | None = None
+    observed: dict[str, object] | None = None
+    start_s: float
+    end_s: float
+    extent_source: str
+
+
+class GateTimelineView(BaseModel):
+    contract_version: str
+    scenario_id: str
+    coordinate_frame: str
+    time_domain: dict[str, float]
+    gates: list[GateSegmentView]
+    counts: dict[str, int]
+    provisional_count: int
+    artifact_visibility: str
+
+
 class PreviewRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     actor_edits: list[ActorMotionEditRequest] = Field(min_length=1)
+    recipe_steps: list[RecipeStepRequest] = Field(default_factory=list)
     replay_mode: Literal["waypoint"] = "waypoint"
     behavior: Literal["parameterized", "behavior"] = "parameterized"
     seed: int = 0
@@ -374,3 +768,7 @@ class PreviewResponse(BaseModel):
         )
     )
     artifacts: list[ArtifactLink] = Field(default_factory=list)
+    recipe_steps: list[dict[str, object]] = Field(default_factory=list)
+    limits: dict[str, object] = Field(default_factory=dict)
+    violations: list[dict[str, object]] = Field(default_factory=list)
+    rollback_marker: dict[str, object] | None = None

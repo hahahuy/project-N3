@@ -40,7 +40,7 @@ Copy to a local ignored location. Do not commit binaries, recordings, credential
 After the preflight passes, run:
 
 ```bash
-python3 scripts/m5b_carla_spike.py scenarios/nuscenes/scene-0061.json \
+python3 scripts/archive/carla/m5b_carla_spike.py scenarios/nuscenes/scene-0061.json \
   --output reports/m5b-carla-scene-0061
 ```
 

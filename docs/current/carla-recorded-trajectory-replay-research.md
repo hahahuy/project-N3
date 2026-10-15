@@ -1,6 +1,6 @@
 # CARLA Recorded-Trajectory Replay Research
 
-Status: `RECOMMENDED IMPLEMENTATION`  
+Status: `POST-MVP RESEARCH / NOT CURRENT ASSIGNMENT`
 Updated: 2026-10-13
 
 ## Decision
@@ -127,7 +127,7 @@ replaying a recorded trajectory:
 
 ## Why the Existing Spike Is Not Enough
 
-The current `scripts/m5b_carla_spike.py` is a useful feasibility probe, but it
+The archived `scripts/archive/carla/m5b_carla_spike.py` is a useful feasibility probe, but it
 does not yet establish a production replay backend:
 
 - It loads a built-in town and chooses a spawn-point anchor, not a measured

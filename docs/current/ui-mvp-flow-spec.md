@@ -1,6 +1,6 @@
 # Workspace UI/UX Specification (CAD-style Real2Sim workspace)
 
-Status: `CURRENT / PROPOSED v2`
+Status: `CURRENT DESIGN SPEC / IMPLEMENTATION PARTIAL`
 Audience: frontend and UX engineers.
 Supersedes: the former U0 three-rail MVP flow specification.
 
@@ -13,14 +13,18 @@ forward by inventing API data.
 ## 1. Product intent
 
 The workspace lets an analyst take a recorded nuScenes interaction, rebuild it
-as an editable top-down / 3D scene, vary it parametrically, replay it in
-esmini, and audit every number back to a private artifact. The metaphor is a
+as an editable top-down, 3D, in-car or third-person scene, inspect recorded
+LiDAR and native map data, vary it through constrained driving maneuvers, replay
+it through the supported simulator path, and audit every number back to a
+private artifact. The metaphor is a
 parametric CAD document: a scenario is a document, its construction is an
 ordered recipe, variants are configurations, validation is a gate lane, and a
 scenario can be inspected through several views.
 
-Auditability beats spectacle. This is not an autonomous-driving demo or a
-sensor viewer.
+Auditability beats spectacle. This is a simulator-backed analyst workspace,
+not an autonomous-driving demo. Recorded sensor and map views must use actual
+nuScenes/devkit data; simulator POVs must identify whether they come from
+esmini, the internal preview, or CARLA.
 
 ## 2. Binding principles
 
@@ -35,7 +39,12 @@ sensor viewer.
 - One selection updates every open view, timeline, recipe, and flyout.
 - Collapsed panels retain a visible status summary or badge.
 - Direct manipulation edits recipe parameters; it never writes trajectories.
+- Steering, acceleration, braking and speed edits are constrained maneuver
+  parameters. Users must not freely displace an actor or assign arbitrary
+  per-axis velocity.
 - 3D renders only recorded or pipeline-produced data. No decorative reality.
+- Every POV identifies its source, frame, timestamp and simulator/rendering
+  status.
 
 ## 3. Exact product nouns
 
@@ -53,51 +62,65 @@ Workspace
 |-- Toolbar: History | Import | Edit | Check/Run | Inspect | View | Search commands
 |-- Left icon strip: Recipe | Catalog | Map layers | Comments
 |-- Left panel: selected strip surface, resizable, minimum 200px
-|-- View manager: 0-4 views, dominant workspace area
+|-- View manager: main view plus 0-3 side views, dominant workspace area
 |-- Right icon strip: Metrics | Gates | Provenance | Artifacts, persistent badges
 |-- Right flyouts: read-only, overlay or docked, minimum 280px
 |-- Gate lane bar and document tabs
-|-- Status bar: selection, branch, rollback, provisional count, frame, transform version
+|-- Status bar: selection, branch, rollback, time/frame, POV source, provisional count, transform version
 ```
 
-The default workspace opens with exactly one Top-down view. Closing the last
-view is allowed and shows `No views open. Add a view.`. Tablet layouts turn
-panels into overlay drawers, stack views vertically, and preserve catalog ->
-inspect -> edit order.
+The default workspace opens with exactly one Top-down main view. Users can open
+side views, rearrange which view is main, resize side panes, maximize a view and
+close views. Closing the last view is allowed and shows `No views open. Add a
+view.`. Tablet layouts turn panels into overlay drawers, stack views vertically,
+and preserve catalog -> inspect -> edit order.
 
 ## 5. Interaction contract
 
 Modes are mutually exclusive and visible: Select (`S`), Edit (`E`), Measure
 (`M`), and Compare (`C`). Icon buttons are 28px, have accessible names and
-tooltips, and explain disabled reasons. Behavior mode is visible as
-`unsupported` with: `UNSUPPORTED - executor is not implemented. No fallback is
-used.` Search commands (`Alt+C`, `Ctrl/Cmd+K`) lists enabled and unsupported
-commands.
+tooltips, and explain disabled reasons. Edit exposes constrained maneuver
+controls: steering/heading change, acceleration, braking, target speed and
+timing. It must reject arbitrary displacement edits and report the applied
+profile, limits and unsupported fields. Search commands (`Alt+C`, `Ctrl/Cmd+K`)
+lists enabled and unsupported commands.
 
 Selection is single by default; Shift adds and Escape clears. Selecting an
 actor in any surface updates every view. There is no ViewCube or corner
 orientation widget. Camera presets live in view headers; `Home` resets a camera.
-Undo/redo covers recipe edits and view-manager actions, not camera or panel
-width changes.
+Undo/redo covers recipe edits, maneuver parameter edits, rollback markers and
+view-manager actions, not camera or panel width changes.
 
 ## 6. View manager and U1 scope
 
-Every view header contains an icon, view name and target, camera preset menu,
-layers menu, maximize/restore, and close. View layouts are: one full view; two
-side-by-side; three with the earliest large and two stacked; four in a 2x2 grid.
-Panes have draggable and keyboard-operable splitters, minimum 280x200px, and
-are stored per document tab. Reset layout restores one Top-down view.
+Every view header contains an icon, view name and target, POV/source selector,
+camera preset menu, layers menu, make-main, maximize/restore, and close. View
+layouts are one main view with side views; two side-by-side; three with the main
+view large and two stacked; and four in a 2x2 grid. Panes have draggable and
+keyboard-operable splitters, minimum 280x200px, and are stored per document
+tab. Reset layout restores one Top-down main view.
 
 U1 delivers the shell, icon strips, flyout shells with badges, document tabs,
-status bar, view manager, add/close actions, 1-4 layouts, empty state, and the
-Top-down view with recorded versus generated overlays. Top-down supports map
-lanes, trajectories, actor boxes, and measure labels when supplied by the API.
-Recorded is dashed neutral; generated is solid accent. Ego and unsupported
-dimensions use shape or hatching as well as colour.
+status bar, main/side view manager, add/rearrange/close actions, 1-4 layouts,
+empty state, and the Top-down view with recorded versus generated overlays.
+Top-down supports native nuScenes map layers, trajectories, actor boxes,
+time-indexed state, and measure labels when supplied by the API. Recorded is
+dashed neutral; generated is solid accent. Ego and unsupported dimensions use
+shape or hatching as well as colour.
 
-U1 shows 3rd-person POV and LiDAR 3D in Add view but marks them unavailable
-with an honest reason. 3rd-person POV is U5. LiDAR is U6 and requires recorded
-point-cloud access; post-edit sensor frames are never fabricated.
+The view manager must expose these real view types rather than permanently
+disabling them:
+
+- Top-down map POV: native nuScenes vector/map layers and generated overlays.
+- 3rd-person POV: simulator-rendered actor/world view from esmini or CARLA when
+  that backend is available.
+- In-car POV: ego-mounted simulator camera when the backend and camera contract
+  are available.
+- LiDAR POV: recorded `LIDAR_TOP` data loaded through the devkit, with timestamp,
+  calibration, frame and decimation provenance.
+
+Unavailable states remain valid only when the relevant local data, renderer or
+simulator is genuinely unavailable, and must name that reason.
 
 ## 7. Existing tabs and inspection surfaces
 
@@ -110,15 +133,16 @@ read-only. They show status and API reasons, never guessed values.
 
 | Milestone | Deliverable |
 |---|---|
-| U1 | Workspace shell, view manager, Top-down view |
-| U2 | Recipe tree, rollback marker, edit-step dialog, live preview |
-| U3 | Gate lane, timeline, actor tracks, Measure mode |
+| U1 | Workspace shell, main/side view manager, Top-down map view |
+| U2 | Recipe tree, rollback marker, constrained maneuver edit dialog, live preview |
+| U3 | Gate lane, time-indexed timeline, actor state tracks, Measure mode |
 | U4 | Variant studio, branches, Compare, metric lane, Report |
-| U5 | 3rd-person POV, xodr map layer, 3D actor boxes |
-| U6 | Recorded LiDAR view, decimation and variant handling |
+| U5 | 3rd-person and in-car simulator POV, XODR/native map layers, 3D actor boxes |
+| U6 | Recorded LiDAR POV, devkit calibration/decimation and variant sensor status |
 
-Only the current milestone is in scope. Recipe, timeline, 3D, LiDAR, branches,
-and compare data must not be mocked as backend truth.
+These milestones define the current MVP completion scope. They may be delivered
+incrementally, but recipe, timeline, 3D, LiDAR, branches and compare data must
+not be mocked as backend truth.
 
 ## 9. State matrix
 
@@ -126,19 +150,22 @@ and compare data must not be mocked as backend truth.
 |---|---|---|---|---|---|
 | Recipe | skeleton rows | Import a scene to start a recipe | verbatim API error | inactive after marker | active steps + statuses |
 | View manager | skeleton panes | No views open. Add a view. | error per pane | unavailable types with reason | 1-4 laid out |
-| Top-down | skeleton canvas | Select an imported scenario | inline error | missing layers labelled | all available layers |
-| 3rd-person / LiDAR | skeleton or Loading sweep | unavailable + reason | API reason | decimation or unsupported label | only when data exists |
-| Timeline | skeleton tracks | n/a | error lane | skipped means not measured | tracks + gates |
+| Top-down/map | skeleton canvas | Select an imported scenario | inline error | missing layers labelled | native/generated layers |
+| 3rd-person/in-car | simulator loading | unavailable + backend reason | API reason | simulator capability label | rendered simulator POV |
+| LiDAR | loading sweep | unavailable + data reason | API reason | decimation/coverage label | recorded point cloud with provenance |
+| Timeline | skeleton tracks | n/a | error lane | skipped means not measured | time-indexed actor state and gates |
 | Metrics / Measure | n/a | n/a with reason | n/a with reason | insufficient coverage | value, unit, status |
 
 ## 10. API and backend boundary
 
 Continue consuming the existing endpoints in the prior MVP contract through
 `frontend/src/api.ts`. Add typed clients and tests before using new fields.
-Backend tasks are required for recipe/steps, branch lineage, gate extents,
-actor dimensions with availability, viewer-friendly xodr geometry, point-cloud
-sweeps and payloads, and explicit variant sensor-frame status. Do not hard-code
-missing values or reason strings beyond documented contract values.
+Backend tasks are required for recipe/steps, branch lineage, constrained
+maneuver parameters, time-indexed actor state, gate extents, actor dimensions
+with availability, native/map and viewer-friendly XODR geometry, simulator POV
+frames, point-cloud sweeps and payloads, and explicit variant sensor-frame
+status. Do not hard-code missing values or reason strings beyond documented
+contract values.
 
 ## 11. Visual and accessibility requirements
 
@@ -176,8 +203,9 @@ new UI must preserve the nouns, status vocabulary, and boundaries above.
 
 ## 14. Open decisions and defaults
 
-U1 is Top-down-only; dark mode may be deferred; branches are not UI truth until
-the backend exists; recipe authoring is deferred; react-three-fiber is the
-default future 3D stack; closing the last view is allowed; maximum open views
-is four; LiDAR variants show unsupported with an optional parent sweep banner;
-layout is stored per document tab; maximize/restore is included when available.
+Dark mode may be deferred; branches are not UI truth until the backend exists;
+react-three-fiber or an equivalent renderer is allowed for browser 3D; closing
+the last view is allowed; maximum open views is four; LiDAR variants show
+explicit post-edit sensor support or parent-sweep fallback; layout is stored per
+document tab; maximize/restore is included; the main view plus side views is the
+default layout model.

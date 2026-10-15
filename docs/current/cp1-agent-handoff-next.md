@@ -1,4 +1,8 @@
-# CP1 Agent Handoff: Next Semantic-Alignment Experiment
+# CP1 Diagnostic Handoff: Next Semantic-Alignment Experiment
+
+> **PARALLEL DIAGNOSTIC / NOT CURRENT NEXT-AGENT ASSIGNMENT.** The active
+> implementation handoff is `docs/current/nuscenes-devkit-makeover-handoff.md`.
+> This document is retained for CP1 evidence work when that track is resumed.
 
 Status: `SELF-VERIFIED-DIAGNOSTIC / OWNER-REVIEW-REQUIRED`  
 Scope: scene-0061, 40 m Singapore One-North corridor

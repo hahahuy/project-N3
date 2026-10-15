@@ -40,6 +40,7 @@ from real2scenario import (
     evaluate_temporary_g6_g7,
     variant_artifact_to_dict,
 )
+from real2scenario.kinematic import KINEMATIC_VERSION, KinematicLimits
 
 from .adapter import ArtifactAdapter
 from .config import WebSettings
@@ -156,7 +157,9 @@ class BatchService:
             "simulator_failed": aggregate.simulator_failed,
         }
         record.results = result_models
-        record.replay_metrics = _metric_availability(all_metrics, metric_aggregate)
+        record.replay_metrics = _metric_availability(
+            all_metrics, metric_aggregate, _metric_provenance(parent.scenario)
+        )
         record.aggregate = aggregate
         record.replay_metric_aggregate = metric_aggregate
         record.gate_funnel = None if aggregate.gate_funnel is None else {
@@ -414,12 +417,22 @@ class PreviewService:
         trajectory = self.adapter.trajectory_for_scenario(variant, scenario_path, path_kind="generated")
         config_hash = variant.provenance.get("preview_config_hash", "")
         artifacts = [ArtifactLink(kind="canonical-json", path=relative, url=f"/api/artifacts/{relative}")]
+        limits = KinematicLimits()
+        maneuver_violations = []
+        for edit in edits:
+            if edit.acceleration_mps2 is not None and edit.acceleration_mps2 > limits.max_acceleration_mps2:
+                maneuver_violations.append({"code": "acceleration_exceeded", "actor_id": edit.actor_id, "observed": edit.acceleration_mps2, "limit": limits.max_acceleration_mps2, "provenance": KINEMATIC_VERSION})
+            if edit.braking_mps2 is not None and edit.braking_mps2 > limits.max_deceleration_mps2:
+                maneuver_violations.append({"code": "deceleration_exceeded", "actor_id": edit.actor_id, "observed": edit.braking_mps2, "limit": limits.max_deceleration_mps2, "provenance": KINEMATIC_VERSION})
+            if abs(edit.steering_angle_rad) > limits.max_yaw_rate_radps:
+                maneuver_violations.append({"code": "yaw_rate_exceeded", "actor_id": edit.actor_id, "observed": abs(edit.steering_angle_rad), "limit": limits.max_yaw_rate_radps, "provenance": KINEMATIC_VERSION})
+        recipe_steps = [step.model_dump() for step in request.recipe_steps]
         return PreviewResponse(
             parent_scenario_id=scenario_id, variant_id=variant.scenario_id,
             status="valid" if validation.valid else "invalid",
             behavior={"requested": "parameterized", "status": "supported"},
             configuration={"actor_edits": [edit.model_dump() for edit in request.actor_edits], "replay_mode": request.replay_mode, "seed": request.seed},
-            provenance={**variant.provenance, "config_hash": config_hash},
+            provenance={**variant.provenance, "config_hash": config_hash, "simulator_version": KINEMATIC_VERSION, "preview_mode": "kinematic-open-loop-v1", "fixed_timestep_s": "0.05", "silent_clamps": "forbidden"},
             paths=trajectory.paths, validation=_validation_view(validation),
             gates=[GateResultView(gate_id=g.gate_id, status=g.status, reasons=list(g.reasons), config_version=g.config_version,
                                   observed=None if g.observed is None else dict(g.observed), scientific_status=g.scientific_status) for g in gates],
@@ -427,8 +440,17 @@ class PreviewService:
             metrics=MetricAvailabilityView(
                 available=False,
                 unavailable_reason="preview_has_no_simulator_trace",
+                scientific_status="PROVISIONAL",
+                provenance={
+                    **_metric_provenance(parent_record.scenario),
+                    "preview_mode": "kinematic-open-loop-v1",
+                },
             ),
             artifacts=artifacts,
+            recipe_steps=recipe_steps,
+            limits={"version": limits.version, "simulator": KINEMATIC_VERSION, "max_acceleration_mps2": limits.max_acceleration_mps2, "max_deceleration_mps2": limits.max_deceleration_mps2, "max_yaw_rate_radps": limits.max_yaw_rate_radps, "silent_clamps": "forbidden"},
+            violations=maneuver_violations,
+            rollback_marker={"parent_scenario_id": scenario_id, "variant_id": variant.scenario_id, "immutable_parent": True},
         )
 
 
@@ -514,17 +536,31 @@ def _ranking_view(ranking):
     )
 
 
-def _metric_availability(metrics, aggregate) -> MetricAvailabilityView:
+def _metric_provenance(scenario) -> dict[str, str]:
+    """Dataset, source-scene and transform provenance for a metric block."""
+    keys = ("dataset_version", "source_scene_token", "coordinate_transform_version")
+    return {key: scenario.provenance[key] for key in keys if key in scenario.provenance}
+
+
+def _metric_availability(metrics, aggregate, provenance=None) -> MetricAvailabilityView:
     """Expose whether replay metrics exist, and why they do not when absent."""
     if not metrics:
         return MetricAvailabilityView(
             available=False,
             unavailable_reason="no_replay_trace_was_recorded",
+            scientific_status="PROVISIONAL",
+            provenance=dict(provenance or {}),
         )
     return MetricAvailabilityView(
         available=True,
         source="replay_trace",
         alignment_method=ALIGNMENT_METHOD,
+        scientific_status="PROVISIONAL",
+        provenance={
+            "alignment_method": ALIGNMENT_METHOD,
+            "metric_status": "replay_alignment_metrics_are_provisional",
+            **dict(provenance or {}),
+        },
         per_actor={},
         aggregate=_metric_aggregate_view(aggregate),
     )

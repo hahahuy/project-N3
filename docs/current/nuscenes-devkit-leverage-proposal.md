@@ -1,7 +1,7 @@
-# nuScenes-devkit Leverage Proposal
+# nuScenes-devkit Backend Makeover — Phase 1
 
-Status: `PROPOSAL`  
-Default pipeline impact: `NONE` — findings only, no scope change authorized.  
+Status: `APPROVED / COMPLETED PHASE 1`
+Default pipeline impact: `ADDITIVE` — devkit-backed measurements are preferred when available, with explicit fallback provenance.
 Verified against `nuscenes-devkit==1.2.0` against a local `v1.0-trainval` release.
 
 ## Scope
@@ -27,6 +27,37 @@ It contains assets the current pipeline does not read at all:
 
 The pinned devkit version is already `1.2.0` in `requirements.lock.txt`, so
 none of this needs a dependency change.
+
+## Approved Makeover Boundary
+
+The owner approved using more of the local nuScenes release and official devkit
+to improve backend calculations. Phase 1 keeps the canonical scenario schema,
+OpenSCENARIO exporter, simulator contracts and CP1 immutable baseline stable.
+Dataset-specific access is isolated in `real2scenario.nuscenes_backend`.
+
+Implemented in Phase 1:
+
+- Optional CAN `pose` ingestion through `NuScenesCanBus`, matched by timestamp
+  without extrapolation.
+- CAN speed is preferred for the ego trajectory when a match is available;
+  finite-difference speed remains the explicit fallback for missing CAN data or
+  unmatched timestamps.
+- Scenario provenance records CAN adapter version, status, sample count and
+  configured misalignment limit without recording host dataset paths.
+- Native polygon widths use sampled perpendicular cross-sections and a median
+  estimator when Shapely geometry is available; area-over-centerline remains a
+  compatibility fallback.
+
+Not changed by this phase:
+
+- Actor speed remains annotation/keyframe-derived; CAN is an ego-source signal.
+- No lane direction, actor reference convention, matcher tolerance or CP1
+  baseline is changed.
+- CAN acceleration/yaw-rate fields are not yet added to the canonical `State`;
+  they remain available through the source adapter for the Tier 1 simulator
+  integration phase.
+- Point clouds, map rendering and prediction evaluation remain separate API
+  slices because they require payload contracts and private-artifact handling.
 
 ## 1. Map Expansion — OSM Is Solving A Problem That Is Already Solved
 
@@ -173,7 +204,7 @@ generation and the ADE/FDE comparison.
 - The devkit exposes `route` through a hard-coded blacklist keyed to
   `max_misalignment == 5.0`; a different threshold triggers a full rescan.
 
-## 3. Map View, POV And 3D — The Blocker Is Self-Imposed
+## 3. Map View, POV And 3D — Data Available, Rendering Still Required
 
 ### Current state
 
@@ -181,16 +212,16 @@ generation and the ADE/FDE comparison.
 330-line `App.tsx` using inline SVG. The map drawing in `App.tsx` is a
 placeholder path (`M0 50 H100`), not nuScenes map data.
 
-`App.tsx` disables two views with the reason "no point-cloud access":
+The current UI previously disabled two views with the reason "no point-cloud access":
 
 - 3rd-person POV, tracked as U5
 - LiDAR 3D, tracked as U6
 
-That reason is not accurate for this release. LIDAR_TOP holds 34149 keyframe
+That reason is not accurate for this release and has been superseded by the
+updated UI scope. LIDAR_TOP holds 34149 keyframe
 clouds and 297737 sweeps, with 34149 LiDAR segmentation labels and 34149
 panoptic labels alongside them. The data is on disk; the pipeline does not read
-it. The U5/U6 dependency note in `docs/current/active-work.md` should be
-corrected so it records a capability gap rather than a data gap.
+  it. U5/U6 are implementation gaps, not data-availability gaps.
 
 ### What the devkit supplies
 
@@ -238,9 +269,9 @@ evaluation target for the frame-prediction work above.
 
 | # | Action | Unblocks | Confidence |
 | --- | --- | --- | --- |
-| 1 | Read ego speed/accel/yaw-rate from CAN `pose` at 50 Hz; keep finite difference as fallback for blacklisted scenes | Frame prediction, variant generation, ADE/FDE accuracy | High, measured |
+| 1 | Read ego speed/accel/yaw-rate from CAN `pose` at 50 Hz; keep finite difference as fallback for blacklisted scenes | Frame prediction, variant generation, ADE/FDE accuracy | Implemented in Phase 1 for ego speed; acceleration/yaw-rate adapter fields retained for Tier 1 integration |
 | 2 | Replace `area / centerline` lane width with median perpendicular width sampling | CP1 polygon lane width, lane occupancy, road-match diagnostics | High, measured |
-| 3 | Correct the U6 "no point-cloud access" reason; LIDAR_TOP is on disk | LiDAR 3D view scoping | High, verified |
+| 3 | Enable the U6 LiDAR POV using private decimated LIDAR_TOP payloads with devkit calibration provenance | LiDAR 3D view scoping | High, contract implemented; serving/UI open |
 | 4 | Serve `render_map_patch` geometry to the frontend to replace the placeholder SVG map | Map view | High |
 | 5 | Retarget "Full Singapore One-North coverage" to the other three local maps instead of OSM | Deferred map-source expansion | High |
 | 6 | Adopt `stop_line`, `ped_crossing`, `traffic_light` and `road_segment` layers | OSC stop triggers, pedestrian zones, road hierarchy | Medium, needs schema review |
@@ -261,10 +292,10 @@ evaluation target for the frame-prediction work above.
 - Any change to lane width is a CP1 semantic change and needs the normal review
   and evidence path.
 
-## Open Questions For Owner
+## Remaining Owner Decisions
 
-1. Is CAN ego state an acceptable substitute for finite-differenced speed, or
-   does it change a contract that is already signed off?
+1. Whether CAN-derived acceleration and yaw rate should be promoted into a
+   future canonical source-state extension, rather than remaining adapter data.
 2. Does the 20-variant grid remain meaningful with CAN-derived state, or does
    it need a re-declared physics budget?
 3. Should the prediction benchmark become CP3 acceptance evidence, or stay

@@ -40,11 +40,13 @@ rewrite historical entries.
 
 ## DEC-006 — OSM Role
 
-- Status: `PROPOSAL`
+- Status: `DEFERRED PROPOSAL / NOT ACTIVE MAKEOVER SCOPE`
 - OSM is an auxiliary alignment/reference/visualization layer.
 - nuScenes vector map remains the canonical CP1 map source.
 - OSM-derived CARLA worlds are feasibility-only unless a future decision says
   otherwise.
+- This remains a deferred proposal and is not part of the active nuScenes-devkit
+  backend makeover.
 
 ## DEC-007 — Execution Order and Backend Boundary
 

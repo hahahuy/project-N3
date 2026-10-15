@@ -1,7 +1,9 @@
 # Archived Plan B Documents
 
-Everything in this directory is historical Plan B material. Do not use it as
-the current project contract. Current sources are:
+Everything in this directory is quarantined historical Plan B material. Do not
+use it as a current plan, status source, task assignment or implementation
+direction. The active implementation is the nuScenes-devkit backend makeover in
+`docs/current/nuscenes-devkit-makeover-handoff.md`. Current sources are:
 
 - `MVP&ProjectSummary.md`
 - `docs/current/project-status.md`

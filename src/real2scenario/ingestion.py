@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from .models import Actor, Scenario, State
+from .nuscenes_backend import NuScenesSourceAdapter, nearest_can_poses
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,6 +38,7 @@ def extract_scenario(
     *,
     version: str = "v1.0-mini",
     tables: Mapping[str, Sequence[Mapping[str, Any]]] | None = None,
+    use_devkit_sources: bool = True,
 ) -> Scenario:
     """Extract global-frame ego and explicitly selected actor trajectories.
 
@@ -93,6 +95,16 @@ def extract_scenario(
         ego_yaws.append(_yaw_from_record(pose, "ego_pose"))
         ego_tokens.append(_required_string(lidar, "ego_pose_token", "LIDAR_TOP sample_data"))
 
+    can_samples = ()
+    source_adapter = NuScenesSourceAdapter(root)
+    scene_name = _required_string(scene, "name", "scene") if scene.get("name") else window.scene_token
+    if use_devkit_sources:
+        can_samples = source_adapter.can_pose(scene_name)
+    can_matches = nearest_can_poses(
+        [round(timestamp_s * 1_000_000) for timestamp_s in timestamps_s], can_samples
+    )
+    matched_can = any(match is not None and match.speed_mps is not None for match in can_matches)
+
     actors = [
         _build_actor(
             instance_token,
@@ -114,6 +126,9 @@ def extract_scenario(
             ego_yaws,
             origin_time_s=timestamps_s[0],
             source_tokens=ego_tokens,
+            measured_speeds=[match.speed_mps if match is not None else None for match in can_matches]
+            if can_matches
+            else None,
         ),
     )
     duration_s = timestamps_s[-1] - timestamps_s[0]
@@ -135,6 +150,9 @@ def extract_scenario(
             "map_reconstruction_version": "not-applicable",
             "generator_version": "real2scenario-ingestion-v1",
             "selected_instance_tokens": ",".join(actor_instance_tokens),
+            **source_adapter.provenance(
+                scene_name=scene_name, used=matched_can, sample_count=len(can_samples)
+            ),
         },
     )
 
@@ -325,6 +343,7 @@ def _states_from_positions(
     *,
     origin_time_s: float | None = None,
     source_tokens: Sequence[str] | None = None,
+    measured_speeds: Sequence[float | None] | None = None,
 ) -> tuple[State, ...]:
     if not (len(timestamps_s) == len(positions) == len(yaws)):
         raise ValueError("Trajectory timestamps, positions, and yaws must have equal length.")
@@ -332,9 +351,16 @@ def _states_from_positions(
         raise ValueError("Trajectory must contain at least one state.")
     if source_tokens is not None and len(source_tokens) != len(timestamps_s):
         raise ValueError("Trajectory source tokens must match state count.")
+    if measured_speeds is not None and len(measured_speeds) != len(timestamps_s):
+        raise ValueError("Measured speeds must match trajectory state count.")
     start_time_s = timestamps_s[0] if origin_time_s is None else origin_time_s
     relative_times = [timestamp_s - start_time_s for timestamp_s in timestamps_s]
     speeds = _finite_difference_speeds(relative_times, positions)
+    if measured_speeds is not None:
+        speeds = [
+            measured if measured is not None and measured >= 0 else fallback
+            for measured, fallback in zip(measured_speeds, speeds)
+        ]
     return tuple(
         State(
             time_s=time_s,

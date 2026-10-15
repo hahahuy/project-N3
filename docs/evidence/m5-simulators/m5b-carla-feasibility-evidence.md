@@ -8,7 +8,7 @@ The esmini baseline is present under $HOME/esmini (esmini and dat2csv); the API 
 
 ## Reproducibility boundary
 
-Run `scripts/m5b-carla-preflight.sh` from the repository root and attach stdout
+Run `scripts/archive/carla/m5b-carla-preflight.sh` from the repository root and attach stdout
 to a local run record. It does not install or launch CARLA. Use
 `docs/evidence/m5-simulators/m5b-manual-run-record.md`. Keep local paths,
 binaries, recordings, credentials, and licensed data out of git.

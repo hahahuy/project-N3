@@ -38,7 +38,8 @@ same-XOSC CARLA execution is not current MVP evidence.
 
 Read only the relevant follow-up handoff after the common context:
 
-- CP1 semantic alignment: [CP1 agent handoff](docs/current/cp1-agent-handoff-next.md) and the linked CP1 reports.
+- Backend makeover: [nuScenes-devkit makeover handoff](docs/current/nuscenes-devkit-makeover-handoff.md).
+- CP1 semantic alignment: parallel diagnostic evidence only; use the linked CP1 reports when that track is explicitly resumed.
 - UI and authoring: [UI motion editor](docs/current/ui-motion-editor.md), [MVP UI flow](docs/current/ui-mvp-flow-spec.md), and [U0 showcase](docs/current/ui-showcase-checkpoint.md).
 - Simulator work: [technical contracts](docs/current/technical-contracts.md), especially the MVP physics budget and Tier 1 `kinematic-open-loop-v1`.
 - PM/review work: [PM guide](docs/current/pm-agent-guide.md), [active work](docs/current/active-work.md), and [review checklist](docs/guides/review-checklist.md).
@@ -67,12 +68,12 @@ worktree changes.
 
 The active implementation sequence is:
 
-1. CP1 owner interpretation and cross-scene semantic confirmation, preserving the immutable `20/143 = 13.99%` baseline.
-2. CP3 owner-approved benchmark index/protocol and provisional benchmark evidence.
-3. CP5 owner sign-off and verified-tree release evidence.
-4. Tier 1 `kinematic-open-loop-v1` internal simulator with normalized traces, explicit limit diagnostics and collision pre-checks.
-5. Full 2D/3D authoring workspace and frame-aware timeline.
-6. Post-edit frame generation and optional recorded LiDAR evidence.
+1. nuScenes-devkit backend makeover Phase 2 source-state integration.
+2. Native devkit map/query capabilities and private LiDAR contracts.
+3. Advisory prediction evaluation with separate metric provenance.
+4. Tier 1 `kinematic-open-loop-v1` internal simulator integration.
+5. Resume CP1/CP3/CP4/CP5 closure tracks.
+6. Full 2D/3D authoring workspace and frame-aware timeline.
 7. CP6 paper evidence.
 
 Do not silently change Plan A, actor scope, lane direction, tolerances, ground
@@ -90,7 +91,7 @@ an English completion report.
 - [Evidence index](docs/current/evidence-index.md)
 - [Artifact policy](docs/current/artifact-policy.md)
 - [OSM integration proposal](docs/current/osm-integration-proposal.md)
-- [Migration checklist](docs/plan-a-migration-checklist.md)
+- Historical migration ledger: `docs/archive/plan-a-migration-checklist.md`
 - [Guides](docs/guides/)
 - [Architecture](docs/architecture/)
 - [Reports](docs/reports/)
