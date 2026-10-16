@@ -16,6 +16,17 @@ New agents and sessions must read these files first:
 10. `docs/current/next-agent-handoff.md`
 11. `docs/current/nuscenes-devkit-makeover-handoff.md`
 
+For implementation work, read the new reference map after the current context:
+
+1. `docs/architecture/system-overview.md`
+2. `docs/architecture/boundary-map.md`
+3. The relevant page under `docs/subsystems/`
+4. The relevant page under `docs/contracts/`
+
+Use `docs/current/` for status, decisions, handoffs and acceptance state. Use
+`docs/subsystems/` for code ownership and wiring. Use `docs/contracts/` for
+stable caller obligations. Use `docs/operations/` for runtime and deployment.
+
 Agents changing the browser application must also read:
 
 1. `docs/current/frontend-workspace-handbook.md`
@@ -59,5 +70,10 @@ Controlling documents for deployment state:
 - `docs/experiments/`: exploratory results not yet accepted as evidence.
 - `docs/guides/`: setup and operational guides.
 - `docs/architecture/`: current architecture and API boundaries.
+- `docs/subsystems/`: implementation reference by runtime subsystem.
+- `docs/contracts/`: canonical artifacts, web availability and API surface.
+- `docs/operations/`: operational entrypoints grouped separately from domain docs.
+- `docs/proposals/`: unaccepted implementation proposals and expert handoffs;
+  proposals must be reconciled with current code before implementation.
 - `docs/archive/plan-b/`: stale historical Plan B material.
 - `docs/archive/plan-a-migration-checklist.md`: historical migration ledger.

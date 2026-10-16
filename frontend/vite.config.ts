@@ -23,6 +23,7 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     ...(allowedHosts?.length ? { allowedHosts } : {}),
+    fs: { allow: [".."] },
     proxy: {
       "/api": {
         target: apiProxy,

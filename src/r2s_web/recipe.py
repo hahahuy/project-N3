@@ -245,6 +245,8 @@ class RecipeStore:
         """Activate or deactivate one step without removing its evidence."""
         document = self.document(record)
         step = _step_by_id(document.current, step_id)
+        if request.active and step.status != STEP_STATUS_VALID:
+            raise ValueError(f"step {step_id!r} is not valid and cannot be activated.")
         if request.active and step.inactive_reason == INACTIVE_AFTER_MARKER:
             raise ValueError(
                 f"step {step_id!r} is after the active rollback marker and cannot be activated."

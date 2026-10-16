@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from math import pi
 from typing import Literal
 
 from real2scenario import Scenario, State
@@ -56,7 +57,11 @@ def _state_at(trajectory: tuple[State, ...], time_s: float) -> State:
                 time_s=time_s,
                 x_m=before.x_m + ratio * (after.x_m - before.x_m),
                 y_m=before.y_m + ratio * (after.y_m - before.y_m),
-                yaw_rad=before.yaw_rad + ratio * (after.yaw_rad - before.yaw_rad),
+                yaw_rad=before.yaw_rad + ratio * _wrapped_angle_delta(after.yaw_rad, before.yaw_rad),
                 speed_mps=before.speed_mps + ratio * (after.speed_mps - before.speed_mps),
             )
     return trajectory[-1]
+
+
+def _wrapped_angle_delta(current: float, previous: float) -> float:
+    return (current - previous + pi) % (2 * pi) - pi

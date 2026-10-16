@@ -90,3 +90,13 @@ def test_native_command_capabilities_separate_supported_reset_and_control(tmp_pa
     assert capabilities["reset"]["implementation"] == "reload_same_artifact_pair"
     assert capabilities["control"]["available"] is False
     session.command("control", {"actor_id": "ego", "throttle": 0.2})
+
+
+def test_native_sessions_are_singleton_because_esminilib_state_is_process_global(tmp_path: Path) -> None:
+    xosc, xodr = _files(tmp_path)
+    service = LiveSessionService(tmp_path, "fake.so", binding_factory=FakeBinding)
+
+    service.create("scenario-1", xosc, xodr, 0.05)
+
+    with pytest.raises(RuntimeError, match="native_live_session_limit_reached"):
+        service.create("scenario-2", xosc, xodr, 0.05)

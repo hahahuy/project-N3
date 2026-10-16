@@ -7,6 +7,7 @@ export type ActorSummary = {
 };
 
 export type ArtifactLink = { kind: string; path: string; url: string };
+export type WasmScenarioPair = { scenario_id: string; coordinate_frame: string; map_warning: string; openscenario: string; opendrive: string; artifact_visibility: string };
 export type ScenarioSummary = {
   scenario_id: string;
   parent_scenario_id: string | null;
@@ -337,6 +338,7 @@ export const fetchPOVFrame = (id: string, mode: "third-person" | "in-car", timeS
 export const fetchPOVImageFrame = (id: string, mode: "third-person" | "in-car", timeS: number) => request<POVImageFrame>(`/workspace/scenarios/${encodeURIComponent(id)}/image-frames/${mode}?time_s=${encodeURIComponent(timeS)}`);
 export const fetchVariantSensorStatus = (id: string) => request<VariantSensorStatus>(`/workspace/scenarios/${encodeURIComponent(id)}/sensor-status`);
 export const fetchScenarioArtifacts = (id: string) => request<{ scenario_id: string; artifacts: ArtifactLink[] }>(`/scenarios/${encodeURIComponent(id)}/artifacts`);
+export const createWasmScenarioPair = (id: string) => request<WasmScenarioPair>(`/workspace/scenarios/${encodeURIComponent(id)}/wasm-pair`, { method: "POST" });
 export const fetchTrajectory = (id: string) => request<TrajectoryResponse>(`/scenarios/${encodeURIComponent(id)}/trajectory`);
 export const previewVariant = (scenarioId: string, body: PreviewRequest) => request<PreviewResponse>(`/scenarios/${encodeURIComponent(scenarioId)}/variants/preview`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 export const createBatch = (body: object) => request<{ job_id: string }>("/batches", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });

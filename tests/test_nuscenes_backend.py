@@ -41,3 +41,30 @@ def test_vehicle_monitor_channel_fails_closed_without_a_dataset(tmp_path) -> Non
     adapter = NuScenesSourceAdapter(tmp_path / "missing-dataset")
 
     assert adapter.can_vehicle_monitor("scene-0001") == ()
+
+
+class _BareExceptionCanBus:
+    """Mimics the devkit, which signals missing CAN data with a bare Exception."""
+
+    all_messages = ("pose", "vehicle_monitor")
+
+    def get_messages(self, scene_name, message_name, print_warnings=True):
+        raise Exception(f"Error: {scene_name} does not have any CAN bus data!")
+
+
+def test_missing_can_pose_degrades_to_empty_capability_result(tmp_path, monkeypatch) -> None:
+    """Contract conformance: unavailable CAN must not abort the run.
+
+    CAN pose is optional and documented to fall back to finite differences, so a
+    scene without CAN data must yield an empty capability result rather than
+    propagating the devkit's bare Exception out of the adapter.
+    """
+    (tmp_path / "can_bus").mkdir()
+    adapter = NuScenesSourceAdapter(tmp_path)
+    monkeypatch.setattr(
+        "nuscenes.can_bus.can_bus_api.NuScenesCanBus", lambda **kwargs: _BareExceptionCanBus()
+    )
+
+    assert adapter.can_pose("scene-0001") == ()
+    assert adapter.can_vehicle_monitor("scene-0001") == ()
+    assert adapter._can_error == "Exception"

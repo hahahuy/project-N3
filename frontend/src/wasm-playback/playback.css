@@ -1,0 +1,13 @@
+.wasm-playback-view { display: grid; grid-template-rows: minmax(0, 1fr) auto auto; min-height: 0; height: 100%; background: #101821; color: #d7e8f2; }
+.wasm-playback-view svg { width: 100%; height: 100%; min-height: 0; background: radial-gradient(circle at 50% 45%, #1b2a36, #0b1117 75%); }
+.wasm-playback-view .native-map-line { fill: none; stroke: #7098aa; stroke-width: .18; opacity: .75; }
+.wasm-actor-box { fill: #e6b85c; stroke: #fff2bd; stroke-width: .2; transform-box: fill-box; transform-origin: center; }
+.wasm-playback-controls { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-top: 1px solid #304653; font-size: 11px; }
+.wasm-playback-controls button { background: #203641; color: inherit; border: 1px solid #507080; border-radius: 3px; padding: 4px 9px; }
+.wasm-playback-controls button:disabled { opacity: .45; }
+.wasm-playback-warning { padding: 0 10px 8px; color: #d8a85f; }
+.three-playback-shell { position: relative; min-height: 0; height: 100%; background: #101821; }
+.three-playback-canvas { position: absolute; inset: 0; cursor: grab; }
+.three-playback-canvas:active { cursor: grabbing; }
+.three-playback-overlay { position: absolute; left: 10px; bottom: 10px; display: flex; align-items: center; gap: 8px; color: #d7e8f2; font-size: 11px; pointer-events: none; }
+.three-playback-overlay button { pointer-events: auto; background: #203641; color: inherit; border: 1px solid #7098aa; border-radius: 3px; padding: 5px 9px; }

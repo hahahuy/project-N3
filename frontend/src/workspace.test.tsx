@@ -392,6 +392,21 @@ describe("actor timeline and gate lane", () => {
     expect((addView() as HTMLButtonElement).disabled).toBe(false);
   });
 
+  it("derives add-view slots from the next insertion position and exposes every registered view", async () => {
+    await renderWorkspace();
+    fireEvent.click(screen.getByRole("button", { name: "Add view" }));
+    const menu = screen.getByRole("menu");
+    expect(within(menu).getByRole("button", { name: /Top-down/ }).textContent).toContain("view panel 2 of 3");
+    expect(within(menu).getByRole("button", { name: /Sensor Evidence/ }).textContent).toContain("view panel 2 of 3");
+    expect(within(menu).getByRole("button", { name: /3rd-person POV/ }).textContent).toContain("view panel 2 of 3");
+    expect(within(menu).getByRole("button", { name: /In-car POV/ }).textContent).toContain("view panel 2 of 3");
+    expect(within(menu).getByRole("button", { name: /LiDAR 3D/ }).textContent).toContain("view panel 2 of 3");
+
+    fireEvent.click(within(menu).getByRole("button", { name: /LiDAR 3D/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Add view" }));
+    expect(within(screen.getByRole("menu")).getByRole("button", { name: /In-car POV/ }).textContent).toContain("view panel 3 of 3");
+  });
+
   it("synchronizes the playhead across the main POV, top-down and replay-only sensor panes", async () => {
     await renderWorkspace();
 

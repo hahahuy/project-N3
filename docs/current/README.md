@@ -5,6 +5,12 @@ project context for agents and future sessions. Start with
 `next-agent-handoff.md`; the nuScenes-devkit makeover is the active implementation
 track.
 
+This directory is the status/decision layer, not the complete implementation
+reference. For code ownership and wiring, continue with
+[`../architecture/system-overview.md`](../architecture/system-overview.md),
+[`../architecture/boundary-map.md`](../architecture/boundary-map.md) and the
+relevant page under [`../subsystems/`](../subsystems/README.md).
+
 - `project-status.md`: checkpoint status and remaining blockers.
 - `active-work.md`: work queue and dependencies.
 - `decisions.md`: append-only decision log.
@@ -18,8 +24,8 @@ track.
 - `ui-showcase-checkpoint.md`: lightweight U0 showcase before the unfinished
   full 2D/3D MVP authoring workspace.
 - `frontend-workspace-handbook.md`: how to run, structure and change the browser
-  app under `frontend/`; endpoint inventory, theming rules, and known layout
-  traps. Start here for any frontend task.
+  app under `frontend/`; retained as a historical/current frontend log. The
+  subsystem entrypoint is now `docs/subsystems/frontend/README.md`.
 - `wave-3a-backend.md`: completed Wave 3A backend report and historical context;
   current simulator work is defined in `technical-contracts.md` and
   `active-work.md`.
@@ -39,3 +45,10 @@ track.
   remaining lateral-alignment blocker.
 - CP1 semantic-alignment files: parallel diagnostic evidence; they are not the
   current next-agent assignment.
+
+## Proposals
+
+- `docs/proposals/wasm-interactive-simulator/`: expert-supplied planning
+  documents for a future esmini-WASM playback and interaction slice. The P0
+  build feasibility step has not started; these documents do not replace the
+  current native replay or workspace contracts.

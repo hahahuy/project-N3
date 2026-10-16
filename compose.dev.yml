@@ -1,4 +1,11 @@
 services:
+  api-permissions:
+    image: alpine:3.22
+    user: "0:0"
+    command: ["sh", "-c", "chown -R ${PROJECT_N3_UID:-1000}:${PROJECT_N3_GID:-1000} /reports && chmod -R u+rwX /reports"]
+    volumes:
+      - project-n3-dev-reports:/reports
+
   api:
     build:
       context: .
@@ -10,6 +17,9 @@ services:
     # Survive host reboots. Observed 2026-10-15: an unplanned reboot left the dev
     # stack down while the product stack recovered on `unless-stopped`.
     restart: unless-stopped
+    depends_on:
+      api-permissions:
+        condition: service_completed_successfully
     environment:
       PROJECT_N3_ROOT: /app
       PROJECT_N3_ARTIFACT_ROOT: scenarios

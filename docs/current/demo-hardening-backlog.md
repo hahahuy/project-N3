@@ -1,12 +1,14 @@
 # Public Demo Hardening Backlog
 
-Status: `OPEN / NOT IMPLEMENTED`
+Status: `OPEN — PAGINATION AND BATCH LIMITS REMAIN`
 Scope: the three items that must be completed before the web application is
 reachable by anyone outside the local network.
 
-Agents must not treat any item here as complete. None has been implemented. The
-numbers below were measured on `hhf-server` against a `v1.0-trainval` release
-and are recorded as evidence, not as a claim of `DONE`.
+Agents must not treat the remaining pagination or batch-limit items as complete.
+The reverse-proxy item is built and locally verified, while S-1/S-2 path
+confinement is implemented and covered by API tests. The numbers below were
+measured on `hhf-server` against a `v1.0-trainval` release and are recorded as
+evidence, not as a claim of `DONE`.
 
 Related: `docs/current/active-work.md`, `docs/current/artifact-policy.md`,
 `docs/guides/security-deployment.md`, `docs/guides/datastreaming.md`,
@@ -33,8 +35,8 @@ Priority: **highest remaining value**
 ### Problem
 
 `GET /api/source-scenes` returns every scene unpaginated. The implementation is
-at `src/PROJECT_N3_WEB/app.py` (`list_source_scenes`), which calls
-`SourceSceneAdapter.discover()` (`src/PROJECT_N3_WEB/source_scenes.py:60-64`). That
+at `src/r2s_web/app.py` (`list_source_scenes`), which calls
+`SourceSceneAdapter.discover()` (`src/r2s_web/source_scenes.py:63-67`). That
 iterates all scenes and, per scene, calls `index.sample_tokens()` and
 `index.instance_tokens()`.
 
@@ -90,7 +92,7 @@ Priority: **launch blocker for public exposure**
 
 `POST /api/batches` runs generation synchronously inside the request handler.
 `BatchService.create` calls `self._run(...)` directly at
-`src/PROJECT_N3_WEB/jobs.py:85-94`. There is no thread pool, no queue and no cap on
+`src/r2s_web/jobs.py:86-95`. There is no thread pool, no queue and no cap on
 concurrent jobs.
 
 Two consequences:
@@ -102,9 +104,9 @@ Two consequences:
 
 ### What already has a cap
 
-`src/PROJECT_N3_WEB/live_session.py` correctly caps concurrent live esmini sessions:
+`src/r2s_web/live_session.py` correctly caps concurrent live esmini sessions:
 
-- `MAX_SESSIONS = 4` (`src/PROJECT_N3_WEB/live_session.py:21`)
+- `MAX_SESSIONS = 4` (`src/r2s_web/live_session.py:21`)
 - raises `live_session_limit_reached` at line 308-309 when exceeded
 
 The live-session path already applies the discipline this item requires. The
@@ -343,7 +345,7 @@ frontend bundle.
 
 ### Already complete
 
-S-1 and S-2 are committed in `src/PROJECT_N3_WEB/config.py` and covered by six tests in
+S-1 and S-2 are implemented in `src/r2s_web/config.py` and covered by the path-safety tests in
 `tests/test_web_api.py`. Untrusted input can no longer select `dataset_root`,
 `artifact_root` or `output_root` outside the allowed roots. Do not reintroduce
 raw path handling in `WebSettings.with_paths`. Re-confirmed through the demo

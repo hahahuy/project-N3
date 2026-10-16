@@ -25,6 +25,11 @@ Both run **the same application code**. Only the configuration differs.
 | Reachable from | LAN / Tailscale only | public internet |
 | Restarts freely | yes | deliberately, rarely |
 
+The API runs as the configured host UID/GID in both Compose environments. A
+short-lived root-only `api-permissions` service initializes the reports volume
+before the API starts, so replay, preview and WASM-pair artifacts remain
+writable without running the API as root.
+
 ### Why they must differ
 
 A development server is built for someone who already has the code open. It
@@ -54,7 +59,7 @@ project-n3-prod-api              (FastAPI :8000)
 ```
 
 FastAPI serves the built bundle itself, mounted below the `/api` namespace
-(`src/PROJECT_N3_WEB/app.py:874-878`). There is deliberately **no frontend container in
+(`src/r2s_web/app.py:889-893`). There is deliberately **no frontend container in
 the product stack** and **no Vite dev server on the public path**.
 
 Only `gateway` publishes a host port. `api` and `cloudflared` publish none, so

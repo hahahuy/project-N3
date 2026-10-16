@@ -68,6 +68,14 @@ class NuScenesSourceAdapter:
             messages = self._can_bus.get_messages(scene_name, message_name, print_warnings=False)
         except (AssertionError, OSError, KeyError, TypeError, ValueError):
             return ()
+        except Exception as error:
+            # The devkit signals "no CAN data for this scene" with a bare
+            # Exception, which the narrow tuple above cannot catch. CAN pose is
+            # an optional capability with a documented finite-difference
+            # fallback, so an unavailable source must degrade to an empty
+            # capability result rather than abort the whole run.
+            self._can_error = type(error).__name__
+            return ()
         if not isinstance(messages, list):
             return ()
         return tuple(

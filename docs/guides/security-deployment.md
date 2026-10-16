@@ -1,6 +1,6 @@
 # Security and Deployment Guide
 
-Status: `PROPOSED — NOT IMPLEMENTED`
+Status: `CURRENT — LOCAL-TRUST APPLICATION; PUBLIC EXPOSURE STILL REQUIRES HARDENING`
 Scope: public exposure of the Real2Scenario web application.
 Authority: this document proposes changes. It does not modify current Plan A
 scope, scientific contracts, or acceptance criteria.
@@ -32,16 +32,13 @@ remote party.
 
 ### F-1 — CRITICAL: arbitrary file read via `POST /api/settings`
 
-`WebSettings.with_paths` accepts attacker-controlled path roots without
-containment.
+The settings endpoint is unauthenticated, so filesystem-root selection must be
+confined even in the local-trust application.
 
-- `src/PROJECT_N3_WEB/config.py:70-74` — `dataset_root` is passed through
-  `Path(...).expanduser().resolve()` with **no validation at all**.
-- `src/PROJECT_N3_WEB/config.py:64-69` — `artifact_root` and `output_root` use
-  `_project_path`, which at `src/PROJECT_N3_WEB/config.py:79-81` returns
-  `path.resolve()` unchanged whenever `path.is_absolute()`. Containment only
-  applies to relative paths.
-- The endpoint is unauthenticated: `src/PROJECT_N3_WEB/app.py:209`.
+- `src/r2s_web/config.py` confines artifact, output and dataset roots to the
+  project root, existing configured roots or operator-declared extra roots.
+- `POST /api/settings` remains unauthenticated and therefore must not be
+  treated as a public deployment boundary.
 
 An attacker can re-point the roots and then read files through the artifact
 endpoint:
@@ -56,7 +53,7 @@ curl -X POST http://target/api/settings \
 curl http://target/api/artifacts/passwd
 ```
 
-`ArtifactAdapter.resolve_artifact` (`src/PROJECT_N3_WEB/adapter.py:86-93`) correctly
+`ArtifactAdapter.resolve_artifact` (`src/r2s_web/adapter.py:87-94`) correctly
 confines reads to the configured roots — but the attacker controls those roots.
 The check is sound; its inputs are not.
 
@@ -65,13 +62,13 @@ and application secrets.
 
 ### F-2 — HIGH: unauthenticated compute with no concurrency limit
 
-`POST /api/batches` (`src/PROJECT_N3_WEB/app.py:383`) runs generation synchronously
-inside the request handler (`BatchService.create` → `self._run`, `src/PROJECT_N3_WEB/jobs.py:85-94`).
+`POST /api/batches` (`src/r2s_web/app.py:843`) runs generation synchronously
+ inside the request handler (`BatchService.create` → `self._run`, `src/r2s_web/jobs.py:86-95`).
 There is no thread pool, no queue and no cap on concurrent jobs.
 
 Consequences: request handlers block for the full generation duration, the
 worker pool saturates under load, and `/api/replays` can spawn `esmini`
-subprocesses (`src/PROJECT_N3_WEB/esmini.py:173-176`). This is the realistic
+ subprocesses (`src/r2s_web/esmini.py:175-183`). This is the realistic
 denial-of-service vector — not volumetric DDoS.
 
 Note that returning HTTP `202 Accepted` while running synchronously is also
@@ -79,14 +76,14 @@ incorrect per its own contract.
 
 ### F-3 — HIGH: full dataset enumeration without pagination
 
-`GET /api/source-scenes` (`src/PROJECT_N3_WEB/app.py:234`) returns all scenes
+`GET /api/source-scenes` (`src/r2s_web/app.py:409`) returns all scenes
 unbounded. For `v1.0-trainval` that is 850 scenes, each triggering
 `sample_tokens()` and `instance_tokens()` queries. Unauthenticated, this is a
 cheap CPU-exhaustion lever and a free bulk scrape of dataset metadata.
 
 ### F-4 — MEDIUM: CORS is not an access control
 
-`src/PROJECT_N3_WEB/app.py:59-64` allowlists `localhost:5173` only. CORS is enforced by
+`src/r2s_web/app.py:100-105` allowlists `localhost:5173` only. CORS is enforced by
 browsers; `curl`, scripts and server-side clients ignore it. It prevents
 accidental cross-origin use from a browser and provides no protection against
 direct requests.
@@ -152,12 +149,12 @@ These apply to both tiers and are small, independently testable changes.
 
 | ID | Change | File | Risk if skipped |
 |---|---|---|---|
-| S-1 | Constrain `dataset_root` to an allowlist or `_project_path` containment | `src/PROJECT_N3_WEB/config.py:70-74` | Arbitrary path probing |
-| S-2 | Constrain absolute `artifact_root`/`output_root` to `project_root` | `src/PROJECT_N3_WEB/config.py:79-81` | Arbitrary file read |
-| S-3 | Make `POST /api/settings` env-only, or gate it behind auth | `src/PROJECT_N3_WEB/app.py:209` | Re-arms F-1 |
+| S-1 | Constrain `dataset_root` to an allowlist | `src/r2s_web/config.py:67-98` | Complete; keep public exposure gated |
+| S-2 | Constrain artifact/output roots to allowed roots | `src/r2s_web/config.py:67-140` | Complete; keep public exposure gated |
+| S-3 | Make `POST /api/settings` env-only, or gate it behind auth | `src/r2s_web/app.py:378-407` | Re-arms F-1 |
 | S-4 | Add `USER` to `Dockerfile.dev` matching production | `Dockerfile.dev` | Root in container |
-| S-5 | Add `?limit=&offset=&q=` to `/api/source-scenes` | `src/PROJECT_N3_WEB/app.py:234` | Enumeration + CPU burn |
-| S-6 | Bound concurrent batch/replay jobs with a semaphore or queue | `src/PROJECT_N3_WEB/jobs.py:85` | Trivial DoS |
+| S-5 | Add `?limit=&offset=&q=` to `/api/source-scenes` | `src/r2s_web/app.py:409-414` | Enumeration + CPU burn |
+| S-6 | Bound concurrent batch/replay jobs with a semaphore or queue | `src/r2s_web/jobs.py:86-95` | Trivial DoS |
 
 S-1 and S-2 are the security-critical pair and should be treated as a single
 defect class: *untrusted input must not select filesystem roots.*

@@ -145,6 +145,15 @@ class LiveScenarioPairRequest(BaseModel):
     timestep_s: float = 0.05
 
 
+class WasmScenarioPairView(BaseModel):
+    scenario_id: str
+    coordinate_frame: str
+    map_warning: str
+    openscenario: str
+    opendrive: str
+    artifact_visibility: str
+
+
 class LiveSessionCommandRequest(BaseModel):
     command: Literal["pause", "resume", "step", "reset", "control", "camera"]
     payload: dict[str, object] = Field(default_factory=dict)

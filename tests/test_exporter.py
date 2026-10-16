@@ -79,3 +79,59 @@ def test_exporter_rejects_more_than_three_non_ego_actors() -> None:
 
     with pytest.raises(ValueError, match="one to three"):
         build_openscenario_xml(oversized, template)  # type: ignore[arg-type]
+
+
+def _late_start_scenario() -> tuple[Scenario, object]:
+    """A scenario whose non-ego track begins after the scenario start."""
+    scenario = Scenario(
+        scenario_id="export-late-start",
+        duration_s=8.0,
+        ego_actor_id="ego",
+        actors=(
+            Actor("ego", "vehicle.ego", (State(0.0, 0.0, 0.0, 0.0, 4.0), State(8.0, 32.0, 0.0, 0.0, 4.0))),
+            Actor(
+                "lead",
+                "vehicle.car",
+                (
+                    State(4.0, 12.0, 0.0, 0.0, 3.0),
+                    State(6.0, 18.0, 0.0, 0.0, 3.0),
+                    State(8.0, 24.0, 0.0, 0.0, 3.0),
+                ),
+            ),
+        ),
+        coordinate_frame="local_road_aligned",
+        provenance={"dataset": "synthetic"},
+    )
+    return select_opendrive_template(scenario, topology=STRAIGHT_ROAD_TOPOLOGY)
+
+
+def test_exporter_delays_trajectory_start_to_the_recorded_track_start() -> None:
+    """A late-appearing actor must not be replayed from simulation time zero.
+
+    Contract: each maneuver's StartTrigger fires at the actor's own first
+    recorded timestamp. Starting it at zero makes esmini consume the entire
+    recorded trajectory before the track has even begun, which leaves the actor
+    ``start_time * speed`` metres ahead of recorded truth at every compared
+    timestamp. Measured on the full 850-scene set this single condition accounted
+    for ADE mean 16.040 m -> 1.138 m.
+    """
+    scenario, template = _late_start_scenario()
+
+    root = ET.fromstring(build_openscenario_xml(scenario, template))  # type: ignore[arg-type]
+
+    triggers = {
+        group.find("Maneuver/Event").attrib["name"]: group.find(
+            "Maneuver/Event/StartTrigger/ConditionGroup/Condition"
+            "/ByValueCondition/SimulationTimeCondition"
+        ).attrib["value"]
+        for group in root.iter("ManeuverGroup")
+    }
+
+    assert triggers["ego_start"] == "0"
+    assert triggers["lead_start"] == "4"
+
+    # The polyline timeline itself must stay unshifted: a `relative` domain
+    # offset would move vertex times rather than delay the follow.
+    assert root.find(".//Trajectory[@name='lead_recorded']/../TimeReference/Timing").attrib[
+        "offset"
+    ] == "0"

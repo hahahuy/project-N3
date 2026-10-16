@@ -118,6 +118,21 @@ def test_live_scenario_pair_flow_materializes_private_pair(tmp_path: Path) -> No
     assert (tmp_path / "reports" / "live-pairs").is_dir()
 
 
+def test_wasm_pair_flow_materializes_private_pair_without_native_session(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+
+    response = client.post("/api/workspace/scenarios/synthetic-variant-001/wasm-pair")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["artifact_visibility"] == "local_private"
+    assert payload["openscenario"].startswith("/api/artifacts/reports/wasm-pairs/")
+    assert payload["opendrive"].endswith("straight-two-lane-v1.xodr")
+    assert (tmp_path / "reports" / "wasm-pairs").is_dir()
+    assert client.get(payload["openscenario"]).status_code == 200
+    assert client.get(payload["opendrive"]).status_code == 200
+
+
 def test_settings_fails_closed_when_dataset_directory_has_no_scene_metadata(tmp_path: Path) -> None:
     dataset_root = tmp_path / "dataset"
     (dataset_root / "v1.0-trainval").mkdir(parents=True)
@@ -225,6 +240,49 @@ def test_workspace_internal_simulator_returns_timestamped_pov_frame(tmp_path: Pa
     assert payload["provenance"]["artifact_visibility"] == "local_private"
 
 
+def test_workspace_frame_interpolates_yaw_across_pi_boundary(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+    fixture_path = tmp_path / "scenarios" / "baseline.json"
+    fixture = json.loads(fixture_path.read_text())
+    for actor in fixture["scenario"]["actors"]:
+        actor["trajectory"] = [
+            {**actor["trajectory"][0], "yaw_rad": 3.13},
+            {**actor["trajectory"][1], "yaw_rad": -3.13},
+        ]
+    fixture["scenario"]["duration_s"] = 1.0
+    fixture_path.write_text(json.dumps(fixture))
+
+    response = client.get(
+        "/api/workspace/scenarios/synthetic-variant-001/frames/in-car",
+        params={"time_s": 0.5},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["camera_transform"]["yaw_rad"] > 3.0
+
+
+def test_invalid_recipe_step_cannot_be_activated(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+    added = client.post(
+        "/api/workspace/scenarios/synthetic-variant-001/recipe/steps",
+        json={
+            "step_id": "invalid-step",
+            "name": "Impossible braking",
+            "actor_edit": {"actor_id": "ego", "braking_mps2": 100},
+        },
+    )
+    assert added.status_code == 200
+    assert added.json()["steps"][0]["status"] == "invalid"
+
+    response = client.post(
+        "/api/workspace/scenarios/synthetic-variant-001/recipe/steps/invalid-step/active",
+        json={"active": True},
+    )
+
+    assert response.status_code == 409
+    assert "is not valid" in response.json()["detail"]
+
+
 def test_workspace_reports_variant_sensor_status_and_unavailable_image_artifact(
     tmp_path: Path,
 ) -> None:
@@ -265,6 +323,16 @@ def test_native_map_capability_and_queries_fail_closed_without_dataset(tmp_path:
     assert capability.json()["available"] is False
     assert capability.json()["unavailable_reason"] == "dataset_not_configured"
     assert patch.status_code == 404
+
+
+def test_native_map_capability_rejects_unknown_map_names(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+
+    response = client.get("/api/workspace/maps/not-a-map/capability")
+
+    assert response.status_code == 200
+    assert response.json()["available"] is False
+    assert "unsupported_map_name" in response.json()["unavailable_reason"]
 
 
 def test_workspace_gate_timeline_reports_backend_statuses_and_extents(tmp_path: Path) -> None:

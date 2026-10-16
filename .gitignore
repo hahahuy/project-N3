@@ -28,3 +28,11 @@ ops/demo/certs/
 ops/demo/*.log
 ops/demo/.env
 .env
+
+# Local agent tooling and generated browser-automation artifacts.
+# These are machine-local, not project deliverables.
+.playwright-mcp/
+.agents/
+.claude/
+AGENTS.md
+CLAUDE.md

@@ -57,6 +57,7 @@ from .schemas import (
     LiveSessionCreateRequest,
     LiveSessionCommandRequest,
     LiveScenarioPairRequest,
+    WasmScenarioPairView,
 )
 from .actor_timeline import actor_timeline
 from .compare import compare_payload
@@ -100,7 +101,7 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-        allow_methods=["GET", "POST"],
+        allow_methods=["GET", "POST", "DELETE"],
         allow_headers=["*"],
     )
 
@@ -204,6 +205,33 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
                     "opendrive": f"/api/artifacts/{xodr.relative_to(resolved_settings.project_root).as_posix()}",
                 }
             }
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        except (OSError, RuntimeError, ValueError) as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+
+    @app.post("/api/workspace/scenarios/{scenario_id}/wasm-pair", response_model=WasmScenarioPairView)
+    def create_wasm_scenario_pair(scenario_id: str) -> WasmScenarioPairView:
+        """Materialize a private XOSC/XODR pair for browser WASM preview only."""
+        try:
+            record = adapter.get(scenario_id)
+            selected, template = select_opendrive_template(
+                record.scenario, topology=STRAIGHT_ROAD_TOPOLOGY
+            )
+            pair_key = hashlib.sha256(f"wasm:{scenario_id}".encode("utf-8")).hexdigest()[:24]
+            pair_root = resolved_settings.output_root / "wasm-pairs" / pair_key
+            pair_root.mkdir(parents=True, exist_ok=True)
+            xosc = write_openscenario(selected, template, pair_root / "scenario.xosc")
+            xodr = pair_root / Path(template.relative_path).name
+            xodr.write_bytes(template.path().read_bytes())
+            return WasmScenarioPairView(
+                scenario_id=scenario_id,
+                coordinate_frame=selected.coordinate_frame,
+                map_warning="OpenDRIVE output uses a local template approximation; it is not lossless map conversion.",
+                openscenario=f"/api/artifacts/{xosc.relative_to(resolved_settings.project_root).as_posix()}",
+                opendrive=f"/api/artifacts/{xodr.relative_to(resolved_settings.project_root).as_posix()}",
+                artifact_visibility="local_private",
+            )
         except KeyError as error:
             raise HTTPException(status_code=404, detail=str(error)) from error
         except (OSError, RuntimeError, ValueError) as error:

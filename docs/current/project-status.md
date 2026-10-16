@@ -1,7 +1,7 @@
 ---
 report_type: current_status
 status: CURRENT
-updated_at: 2026-10-15
+updated_at: 2026-10-16
 ---
 
 # Project Status
@@ -90,16 +90,29 @@ silently reuse nuScenes-specific assumptions.
 - A recorded-evidence top-down image route `GET /api/workspace/scenarios/{id}/top-down` (`source=lidar|radar`, `nsweeps`) is present in the working tree and **not yet committed**. It serves the official devkit `render_sample_data` view with `underlay_map=True` for the recorded sweep. This is recorded nuScenes evidence rendering only. It is not a simulator render, not a post-edit artifact, and not a substitute for esmini image capture. The radar source is an independent availability path and is not a post-edit radar artifact. **This route currently has no backend test coverage.**
 - The approved next simulator architecture is a native, bounded `esminiLib` live-session adapter with WebSocket-friendly state/control messages and a browser-native Three.js/PlayCanvas renderer. The existing subprocess/image-capture path remains for replay, validation and evidence; it is not the primary live 3D interaction path. Full esmini WebAssembly, Unity WebGL and WebRTC remote rendering are deferred alternatives.
 - `esmini-live-session-v1` is now implemented as a bounded optional native-binding service with XOSC/XODR confinement and SHA-256 identity, lifecycle/control/camera validation, REST commands and a WebSocket-friendly state stream. Upstream esmini v3.10.0 was cloned outside the repository, host v3.9 and v3.10 shared-library load/step smokes pass, and Compose container load/step returned four named private scenario objects at `t=0.05s`. Browser camera state is separate from the native viewer. No kinematic or screenshot fallback is claimed as esmini state.
+- Native live sessions are serialized because the public esminiLib ABI exposes process-global simulator state rather than per-session handles; the service rejects a second native binding while unavailable sessions remain bounded independently.
 - Native reset now reloads the same confined XOSC/XODR pair because the public esminiLib ABI has no stable reset symbol. Native control remains explicitly unavailable with `esminiLib_control_abi_unavailable`; camera commands remain browser-renderer state.
 - `POST /api/esmini/live/scenario-pairs` safely materializes a private generated XOSC/XODR pair from an existing scenario artifact and creates its bounded live session. Pair directories use a hashed scenario key and are served only through the existing confined artifact route.
 - The remaining CP1/CP3/CP4/CP5 closure items are still owner decisions: CP1 semantic policy and baseline interpretation, CP3 approved index/scientific policy, CP4 final gate policy, and CP5 release sign-off. CP6 research questions and paper evidence are likewise owner-required. Existing diagnostics and metrics remain provisional.
 - Behavior, Validate and Replay toolbar controls remain intentionally disabled in the current build: Behavior has no executor, Validate has no connected workspace validation action, and Replay requires an accepted replay/capture flow. They are not hidden or silently mapped to another mode; the UI labels them unavailable and the backend contracts remain fail-closed.
 - Compose now exposes `ESMINILIB_PATH` alongside `ESMINI_BIN` and `ESMINI_DAT2CSV`; the mounted `/opt/esmini` tree must include the executable, shared library, catalogs/models and compatible runtime assets.
 - The browser POV surface includes a native-state renderer path that consumes timestamped live objects when a live session is available and labels it separately from internal transform preview and `workspace-pov-image-v1` artifacts. The UI now creates a private scenario pair and polls the bounded native session when live capability is available; unavailable capability leaves the action disabled. CARLA remains post-MVP and variant post-edit sensor frames remain unsupported.
-- The add-view flow currently supports up to **three** panes (`MAX_VIEWS = 3`) and offers Top-down, 3rd-person POV and Sensor Evidence in the add-view menu; close, make-main, maximize/restore, reset-layout and responsive arrangements are covered. The earlier four-pane contract including In-car POV and LiDAR 3D add-view entries is **no longer the current build**; those view *types* still exist in the pane renderer, they are not offered as add-view menu entries. The default main pane is now 3rd-person POV (`MAIN_VIEW = "third-person"`), so the previous statement that the default view is Top-down is stale. Top-down remains the authoring/map/trajectory view and is unchanged in meaning. The nuScenes devkit-style `LIDAR_TOP` multi-sweep evidence view (`nsweeps=5`, map underlay, ego pose/calibration and CAN telemetry) remains a separate view mode, not a replacement for authoring Top-down.
+- The add-view flow supports up to **three** panes (`MAX_VIEWS = 3`) and offers all five current view types: Top-down, Sensor Evidence, 3rd-person POV, In-car POV and LiDAR 3D. Close, make-main, maximize/restore, reset-layout and responsive arrangements are covered. The default main pane is 3rd-person POV (`MAIN_VIEW = "third-person"`). Top-down remains the authoring/map/trajectory view and is unchanged in meaning. The nuScenes devkit-style `LIDAR_TOP` multi-sweep evidence view (`nsweeps=5`, map underlay, ego pose/calibration and CAN telemetry) remains a separate view mode, not a replacement for authoring Top-down. The panel registry derives menu entries, capacity/slot labels, renderer dispatch and native-session capability visibility from one descriptor set.
 - The add-view control now carries an explicit capacity badge (`n-3`) and a note when the grid is locked; adding Sensor Evidence from the authoring tab switches to Replay first. These are presentation/UX changes only and do not alter any capability contract.
 - The approved optimization is recorded in `docs/current/nuscenes-devkit-optimization-decision.md` and implemented provisionally in the cached adapter: use cached devkit semantics for multisweep LiDAR, official transforms/boxes/maps/projections and CAN, then use NumPy/vectorized payloads and measured spatial indexing while keeping application contracts and provenance separate.
 - ADE/FDE scientific thresholds are not finalized.
+- WASM interactive-simulator migration checkpoint (2026-10-16): P0 is complete.
+  The reproducible esminiJS ES-module build loads in a real browser Worker,
+  mounts synthetic XOSC/XODR fixtures, steps to `t=0.05`, and returns one active
+  object, two lane surfaces and two road marks. The current native replay,
+  `run_esmini()`/`dat2csv` measurement path and existing internal POV/live-state
+  views remain the baseline. P2 now has a playback-only Worker/view slice using
+  the synthetic smoke fixture, with play/pause/step/reset and road/object
+  rendering. The `/wasm-smoke` page can now select a catalog scenario and fetch
+  a private generated XOSC/XODR pair through
+  `POST /api/workspace/scenarios/{id}/wasm-pair`; synthetic fixture fallback
+  remains available when no catalog is configured. It does not provide P3
+  interaction/injection.
 
 ## Remaining Work Order
 

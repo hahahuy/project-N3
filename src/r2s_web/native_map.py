@@ -9,6 +9,13 @@ from real2scenario import MAP_LAYERS, native_map_records
 
 from .config import WebSettings
 
+SUPPORTED_MAP_NAMES = {
+    "boston-seaport",
+    "singapore-hollandvillage",
+    "singapore-onenorth",
+    "singapore-queenstown",
+}
+
 
 class NativeMapService:
     """Lazily load the official map API and expose only read-only queries."""
@@ -18,6 +25,12 @@ class NativeMapService:
         self._apis: dict[str, Any] = {}
 
     def capability(self, map_name: str = "singapore-onenorth") -> dict[str, object]:
+        if map_name not in SUPPORTED_MAP_NAMES:
+            return {
+                "available": False,
+                "unavailable_reason": f"unsupported_map_name:{map_name}",
+                "map_name": map_name,
+            }
         if self.settings.dataset_root is None:
             return {"available": False, "unavailable_reason": "dataset_not_configured", "map_name": map_name}
         map_root = self.settings.dataset_root / "maps" / "expansion"
@@ -25,7 +38,7 @@ class NativeMapService:
             return {"available": False, "unavailable_reason": "map_expansion_not_available", "map_name": map_name}
         try:
             self._map_api(map_name)
-        except (ImportError, OSError, RuntimeError, ValueError) as error:
+        except (AssertionError, ImportError, OSError, RuntimeError, ValueError) as error:
             return {"available": False, "unavailable_reason": f"native_map_unavailable:{type(error).__name__}", "map_name": map_name}
         return {"available": True, "unavailable_reason": None, "map_name": map_name, "source": "nuscenes-devkit", "artifact_visibility": "local_private"}
 
@@ -54,7 +67,10 @@ class NativeMapService:
                 raise RuntimeError("nuscenes-devkit is required for native map queries") from error
             if self.settings.dataset_root is None:
                 raise RuntimeError("dataset_not_configured")
-            self._apis[map_name] = NuScenesMap(dataroot=str(self.settings.dataset_root), map_name=map_name)
+            try:
+                self._apis[map_name] = NuScenesMap(dataroot=str(self.settings.dataset_root), map_name=map_name)
+            except AssertionError as error:
+                raise ValueError(f"unsupported_map_name:{map_name}") from error
         return self._apis[map_name]
 
 

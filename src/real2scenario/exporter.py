@@ -145,7 +145,9 @@ def _append_maneuver_group(act: ET.Element, actor: Actor) -> None:
     )
     ET.SubElement(follow, "TrajectoryFollowingMode", {"followingMode": "position"})
     start_trigger = ET.SubElement(event, "StartTrigger")
-    _append_simulation_time_condition(start_trigger, "greaterThan", 0.0, edge="none")
+    _append_simulation_time_condition(
+        start_trigger, "greaterThan", actor.trajectory[0].time_s, edge="none"
+    )
 
 
 def _append_start_trigger(parent: ET.Element) -> None:

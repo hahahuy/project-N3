@@ -12,6 +12,7 @@ import hashlib
 import os
 import threading
 import uuid
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
@@ -181,6 +182,7 @@ class LiveSession:
     unavailable_reason: str | None = None
     simulation_time_s: float = 0.0
     camera_state: dict[str, Any] = field(default_factory=dict)
+    native_lock: threading.RLock | None = None
 
     def metadata(self) -> dict[str, Any]:
         return {
@@ -211,9 +213,11 @@ class LiveSession:
         }
 
     def frame(self) -> dict[str, Any]:
-        payload = self.binding.state() if self.binding else {"objects": [], "events": []}
-        if self.binding:
-            self.simulation_time_s = float(self.binding.library.SE_GetSimulationTime()) if hasattr(self.binding, "library") else self.simulation_time_s
+        lock = self.native_lock or nullcontext()
+        with lock:
+            payload = self.binding.state() if self.binding else {"objects": [], "events": []}
+            if self.binding:
+                self.simulation_time_s = float(self.binding.library.SE_GetSimulationTime()) if hasattr(self.binding, "library") else self.simulation_time_s
         return {
             **self.metadata(),
             "message_type": "state",
@@ -232,26 +236,28 @@ class LiveSession:
             elif command == "camera":
                 _validate_camera(payload)
             return self.metadata() | {"message_type": "command_result", "command": command}
-        if command == "pause":
-            self.status = "paused"
-        elif command == "resume":
-            self.status = "running"
-        elif command == "step":
-            if self.status == "unavailable":
-                raise RuntimeError("live_session_unavailable")
-            self.binding.step(self.timestep_s)
-            self.simulation_time_s += self.timestep_s
-        elif command == "reset":
-            self.binding.reset()
-            self.simulation_time_s = 0.0
-            self.status = "reset"
-        elif command == "control":
-            _validate_control(payload)
-            self.binding.control(payload)
-        elif command == "camera":
-            _validate_camera(payload)
-            self.binding.camera(payload)
-            self.camera_state = dict(payload)
+        lock = self.native_lock or nullcontext()
+        with lock:
+            if command == "pause":
+                self.status = "paused"
+            elif command == "resume":
+                self.status = "running"
+            elif command == "step":
+                if self.status == "unavailable":
+                    raise RuntimeError("live_session_unavailable")
+                self.binding.step(self.timestep_s)
+                self.simulation_time_s += self.timestep_s
+            elif command == "reset":
+                self.binding.reset()
+                self.simulation_time_s = 0.0
+                self.status = "reset"
+            elif command == "control":
+                _validate_control(payload)
+                self.binding.control(payload)
+            elif command == "camera":
+                _validate_camera(payload)
+                self.binding.camera(payload)
+                self.camera_state = dict(payload)
         return self.frame()
 
 
@@ -263,6 +269,7 @@ class LiveSessionService:
         self.binding_factory = binding_factory
         self.sessions: dict[str, LiveSession] = {}
         self._lock = threading.RLock()
+        self._native_lock = threading.RLock()
 
     def capability(self) -> dict[str, Any]:
         configured = bool(self.library_path)
@@ -307,18 +314,22 @@ class LiveSessionService:
         with self._lock:
             if len(self.sessions) >= self.max_sessions:
                 raise RuntimeError("live_session_limit_reached")
+            if any(session.binding is not None for session in self.sessions.values()):
+                raise RuntimeError("native_live_session_limit_reached")
             binding: NativeBinding | None = None
             status = "unavailable"
             reason = "esminiLib_not_configured"
             if self.library_path:
                 try:
                     binding = self.binding_factory(self.library_path)
-                    binding.load(str(xosc), str(xodr), timestep_s)
+                    with self._native_lock:
+                        binding.load(str(xosc), str(xodr), timestep_s)
                     status, reason = "paused", None
                 except (OSError, RuntimeError) as error:
                     if binding is not None:
                         try:
-                            binding.close()
+                            with self._native_lock:
+                                binding.close()
                         except (OSError, RuntimeError):
                             pass
                     binding = None
@@ -334,6 +345,7 @@ class LiveSessionService:
                 binding=binding,
                 status=status,
                 unavailable_reason=reason,
+                native_lock=self._native_lock if binding is not None else None,
             )
             self.sessions[session.session_id] = session
             return session
@@ -348,7 +360,8 @@ class LiveSessionService:
         with self._lock:
             session = self.get(session_id)
             if session.binding:
-                session.binding.close()
+                with self._native_lock:
+                    session.binding.close()
             del self.sessions[session_id]
 
 
