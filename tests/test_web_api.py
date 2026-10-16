@@ -1172,3 +1172,45 @@ def test_artifact_download_confines_to_configured_roots(tmp_path: Path) -> None:
     response = client.get("/api/artifacts/../outside/secret.txt")
 
     assert response.status_code == 404
+
+
+def test_trajectory_response_exposes_source_timestamps_and_record_tokens(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The web trajectory contract must expose nuScenes source provenance.
+
+    Without these fields a consumer cannot map replay time back to nuScenes
+    source time, so the UI can render a correct-looking frame while being unable
+    to demonstrate the correlation scientifically.
+    """
+    client = _client(tmp_path)
+
+    response = client.get("/api/scenarios/synthetic-variant-001/trajectory")
+
+    assert response.status_code == 200
+    recorded = next(
+        path for path in response.json()["paths"] if path["path_kind"] != "replayed"
+    )
+    state = recorded["states"][0]
+
+    # The contract must expose both fields. Values may be null for scenarios
+    # whose canonical states carry no source provenance; population is covered
+    # by the coordinate-transform round-trip tests.
+    assert "source_timestamp_us" in state
+    assert "source_record_token" in state
+
+
+def test_actor_timeline_survives_present_timestamps_with_no_brake_channel(
+    tmp_path: Path,
+) -> None:
+    """An available brake channel with no samples must degrade, not crash.
+
+    Contract: ``_match_braking`` is called for every actor regardless of whether
+    a channel resolved. When canonical states carry ``source_timestamp_us`` but
+    no pedal samples exist, matching against an empty channel must yield empty
+    samples. Previously the early return on absent timestamps hid this path, so
+    restoring source timestamps exposed the crash.
+    """
+    from r2s_web.actor_timeline import _match_braking
+
+    assert _match_braking([1_000, 2_000, 3_000], ()) == [None, None, None]

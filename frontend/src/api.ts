@@ -19,7 +19,7 @@ export type ScenarioSummary = {
   available_artifacts: ArtifactLink[];
 };
 
-export type TrajectoryState = { time_s: number; x_m: number; y_m: number; yaw_rad: number; speed_mps: number };
+export type TrajectoryState = { time_s: number; x_m: number; y_m: number; yaw_rad: number; speed_mps: number; source_timestamp_us?: number | null; source_record_token?: string | null };
 export type TrajectoryPath = { actor_id: string; actor_type: string; path_kind: "recorded" | "replayed" | "generated"; states: TrajectoryState[] };
 export type ReplayMetric = { sample_count: number; position_rmse_m: number; final_displacement_m: number; heading_mae_rad: number; speed_mae_mps: number; alignment_method: string; ade_m?: number | null; fde_m?: number | null; coverage_status?: string };
 export type MetricDistribution = { mean: number; median: number; p95: number; max: number };

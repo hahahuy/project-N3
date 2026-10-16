@@ -39,6 +39,8 @@ class TrajectoryState(BaseModel):
     y_m: float
     yaw_rad: float
     speed_mps: float
+    source_timestamp_us: int | None = None
+    source_record_token: str | None = None
 
 
 class TrajectoryPath(BaseModel):

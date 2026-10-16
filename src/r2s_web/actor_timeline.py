@@ -207,6 +207,10 @@ def _match_braking(
     """Match recorded pedal samples to canonical timestamps without extrapolation."""
     if not timestamps or any(timestamp is None for timestamp in timestamps):
         return [None] * len(timestamps)
+    if not braking:
+        # No channel to match against. The caller keeps the unavailable reason,
+        # so this must degrade to empty rather than fail.
+        return [None] * len(timestamps)
     result: list[float | None] = []
     for timestamp in timestamps:
         nearest = min(braking, key=lambda item: abs(item.timestamp_us - timestamp))

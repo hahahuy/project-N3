@@ -53,6 +53,8 @@ class RoadAlignedTransform:
             y_m=-heading_sin * delta_x_m + heading_cos * delta_y_m,
             yaw_rad=_wrap_angle(state.yaw_rad - self.heading_rad),
             speed_mps=state.speed_mps,
+            source_timestamp_us=state.source_timestamp_us,
+            source_record_token=state.source_record_token,
         )
 
     def to_source_state(self, state: State) -> State:
@@ -65,6 +67,8 @@ class RoadAlignedTransform:
             y_m=self.origin_y_m + heading_sin * state.x_m + heading_cos * state.y_m,
             yaw_rad=_wrap_angle(state.yaw_rad + self.heading_rad),
             speed_mps=state.speed_mps,
+            source_timestamp_us=state.source_timestamp_us,
+            source_record_token=state.source_record_token,
         )
 
     def provenance(self) -> dict[str, str]:

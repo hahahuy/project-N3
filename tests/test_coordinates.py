@@ -125,3 +125,77 @@ def test_transform_rejects_non_positive_round_trip_tolerance(tolerance_m: float)
             heading_rad=0.0,
             round_trip_tolerance_m=tolerance_m,
         )
+
+
+def _annotated_scenario() -> Scenario:
+    """A scenario whose canonical states carry nuScenes source provenance."""
+    ego = Actor(
+        actor_id="ego",
+        actor_type="vehicle.ego",
+        trajectory=(
+            State(0.0, 100.0, 200.0, pi / 2, 5.0, source_timestamp_us=1_532_402_176_148_932,
+                  source_record_token="ego-sample-token"),
+        ),
+    )
+    other = Actor(
+        actor_id="instance-abc",
+        actor_type="vehicle.car",
+        trajectory=(
+            State(0.0, 110.0, 205.0, pi / 2, 4.0, source_timestamp_us=1_532_402_176_148_932,
+                  source_record_token="actor-sample-token"),
+        ),
+    )
+    return Scenario(
+        scenario_id="annotated",
+        duration_s=1.0,
+        ego_actor_id="ego",
+        actors=(ego, other),
+        coordinate_frame="nuscenes_global",
+        provenance={"dataset": "synthetic"},
+    )
+
+
+def test_transform_preserves_source_timestamps_and_record_tokens() -> None:
+    """The frame transform must carry source provenance through unchanged.
+
+    Contract: ``source_timestamp_us`` and ``source_record_token`` describe which
+    nuScenes keyframe a canonical state came from. They are frame-independent, so
+    rotating and translating the scenario must not drop them.
+
+    Dropping them silently breaks two downstream consumers: the workspace brake
+    pedal channel, which matches CAN pedal samples to canonical timestamps and
+    otherwise degrades to ``canonical_states_missing_source_timestamp_us``, and
+    any mapping from replay time back to nuScenes source time.
+    """
+    scenario = _annotated_scenario()
+    transform = RoadAlignedTransform(
+        origin_x_m=100.0, origin_y_m=200.0, heading_rad=pi / 2
+    )
+
+    local = transform_to_local_road_aligned(scenario, transform)
+
+    for actor in local.actors:
+        for state in actor.trajectory:
+            assert state.source_timestamp_us == 1_532_402_176_148_932
+            assert state.source_record_token is not None
+            assert state.source_record_token.endswith("sample-token")
+
+    # The inverse transform must preserve them as well.
+    restored = transform.to_source_state(local.actors[1].trajectory[0])
+    assert restored.source_timestamp_us == 1_532_402_176_148_932
+    assert restored.source_record_token == "actor-sample-token"
+
+
+def test_transform_keeps_absent_source_provenance_absent() -> None:
+    """States without source provenance must not gain any."""
+    scenario = _source_scenario()
+    transform = RoadAlignedTransform(
+        origin_x_m=100.0, origin_y_m=200.0, heading_rad=pi / 2
+    )
+
+    local = transform_to_local_road_aligned(scenario, transform)
+
+    for actor in local.actors:
+        for state in actor.trajectory:
+            assert state.source_timestamp_us is None
+            assert state.source_record_token is None
