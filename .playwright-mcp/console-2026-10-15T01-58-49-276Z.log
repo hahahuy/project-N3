@@ -1,4 +1,0 @@
-[    1175ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://docs.unity3d.com/Manual/docdata/global_toc.js?ts=20261014:0
-[    2083ms] [LOG] assigned tooltip JS 
- @ https://docs.unity3d.com/StaticFilesManual/js/core.js?ts=20261014:976
-[    4436ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://api.company-target.com/api/v3/ip.json?referrer=&page=https%3A%2F%2Fdocs.unity3d.com%2FManual%2Fwebgl.html&page_title=Unity%20-%20Manual%3A%20Web:0
