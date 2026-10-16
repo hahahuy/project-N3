@@ -874,13 +874,14 @@ function ViewPane({ view, common, content }: { view: View; common: ViewCommonPro
 
 function renderViewContent(content: ViewContent, common: ViewCommonProps) {
   const renderer = getViewDescriptor(content.type).renderer;
-  if (renderer === "top-down") return <TopDownView selected={content.selected} trajectory={common.trajectory} timeline={common.timeline} activeTracks={content.activeTracks} selectedActor={content.selectedActor} measurement={content.measurement} mode={content.mode} onSelectActor={content.onSelectActor} preset={common.preset} hiddenKinds={common.hiddenKinds} />;
-  if (renderer === "sensor-evidence") return <SensorEvidenceView evidence={content.evidence} decimation={content.decimation} onDecimation={content.onDecimation} onSweeps={content.onSensorSweeps} playhead={common.timeline} trajectory={common.trajectory} />;
-  if (renderer === "lidar") return <LidarView descriptor={content.descriptor} decimation={content.decimation} onDecimation={content.onDecimation} playhead={common.timeline} />;
-  if (content.liveState?.status === "running" || content.liveState?.status === "paused" || content.liveState?.status === "reset") return <LivePOVView state={content.liveState} playhead={common.timeline} />;
-  if (content.frame) return <POVView frame={content.frame} imageFrame={content.imageFrame} playhead={common.timeline} />;
-  const layer = content.workspace?.layers[content.type === "in-car" ? "in_car" : "third_person"];
-  return <div className="unavailable-view"><StatusBadge status={layer?.available ? "loading" : "unavailable"} /><strong>{viewLabels[content.type]} {layer?.available ? "loading" : "unavailable"}</strong><p>{content.liveCapability?.unavailable_reason ?? layer?.unavailable_reason ?? "Select an imported scenario to query capability."}</p></div>;
+  if (renderer === "top-down" && content.type === "top-down") return <TopDownView selected={content.selected} trajectory={common.trajectory} timeline={common.timeline} activeTracks={content.activeTracks} selectedActor={content.selectedActor} measurement={content.measurement} mode={content.mode} onSelectActor={content.onSelectActor} preset={common.preset} hiddenKinds={common.hiddenKinds} />;
+  if (renderer === "sensor-evidence" && content.type === "sensor-evidence") return <SensorEvidenceView evidence={content.evidence} decimation={content.decimation} onDecimation={content.onDecimation} onSweeps={content.onSensorSweeps} playhead={common.timeline} trajectory={common.trajectory} />;
+  if (renderer === "lidar" && content.type === "lidar") return <LidarView descriptor={content.descriptor} decimation={content.decimation} onDecimation={content.onDecimation} playhead={common.timeline} />;
+  const povContent = content as Extract<ViewContent, { type: "third-person" | "in-car" }>;
+  if (povContent.liveState?.status === "running" || povContent.liveState?.status === "paused" || povContent.liveState?.status === "reset") return <LivePOVView state={povContent.liveState} playhead={common.timeline} />;
+  if (povContent.frame) return <POVView frame={povContent.frame} imageFrame={povContent.imageFrame} playhead={common.timeline} />;
+  const layer = povContent.workspace?.layers[povContent.type === "in-car" ? "in_car" : "third_person"];
+  return <div className="unavailable-view"><StatusBadge status={layer?.available ? "loading" : "unavailable"} /><strong>{viewLabels[povContent.type]} {layer?.available ? "loading" : "unavailable"}</strong><p>{povContent.liveCapability?.unavailable_reason ?? layer?.unavailable_reason ?? "Select an imported scenario to query capability."}</p></div>;
 }
 
 function LivePOVView({ state, playhead }: { state: LiveState; playhead: number }) {

@@ -117,7 +117,7 @@ def _append_initial_state(actions: ET.Element, actor: Actor) -> None:
     speed_action = ET.SubElement(longitudinal, "SpeedAction")
     ET.SubElement(speed_action, "SpeedActionDynamics", {"dynamicsShape": "step", "value": "0", "dynamicsDimension": "time"})
     target = ET.SubElement(speed_action, "SpeedActionTarget")
-    ET.SubElement(target, "AbsoluteTargetSpeed", {"value": _number(actor.trajectory[0].speed_mps)})
+    ET.SubElement(target, "AbsoluteTargetSpeed", {"value": "0"})
 
 
 def _append_maneuver_group(act: ET.Element, actor: Actor) -> None:
@@ -134,7 +134,11 @@ def _append_maneuver_group(act: ET.Element, actor: Actor) -> None:
     shape = ET.SubElement(trajectory, "Shape")
     polyline = ET.SubElement(shape, "Polyline")
     for state in actor.trajectory:
-        vertex = ET.SubElement(polyline, "Vertex", {"time": _number(state.time_s)})
+        vertex = ET.SubElement(
+            polyline,
+            "Vertex",
+            {"time": _number(state.time_s), "speed": _number(state.speed_mps)},
+        )
         position = ET.SubElement(vertex, "Position")
         _append_world_position(position, state)
     time_reference = ET.SubElement(follow, "TimeReference")
