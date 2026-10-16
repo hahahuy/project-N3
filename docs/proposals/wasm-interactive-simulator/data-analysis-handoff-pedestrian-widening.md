@@ -108,12 +108,53 @@ Acceptance: recommend (i) keep `other` for all, (ii) map specific categories
 non-human at export (fail-closed). Include what esmini actually does with each
 `MiscObjectCategory` value — an untested mapping is an invented fact.
 
-**A6 — Mass/dimension defaults audit.**
+**A6 — Mass/dimension defaults audit. → PROTOCOL DELIVERED 2026-10-16, ready to execute.**
 `Pedestrian mass=75`, `MiscObject mass=0`, and the bbox fallback scales are
-documented-as-inert defaults for position following. Acceptance: confirm from
-esmini semantics (or a run) that mass truly never steers a
-`FollowTrajectoryAction` under `followingMode="position"`, or mark the
-assumption false with the mechanism.
+documented-as-inert defaults for position following. Run the protocol below on
+native 3.10 (`export ESMINI_BIN="$HOME/esmini-3.10/bin/esmini"`
+`ESMINI_DAT2CSV="$HOME/esmini-3.10/bin/dat2csv"`); it decides the claim by
+construction, no statistics needed.
+
+*Why this design is decisive:* same binary + same XOSC except the `mass`
+attribute ⇒ if mass enters the computation anywhere, the trace must differ;
+if all traces are byte-identical, mass provably steers nothing on this path.
+One load-bearing subtlety: the test trajectory **must contain acceleration**
+(a constant-speed straight line is insensitive even to a mass-aware
+controller), hence the track criteria in step 1.
+
+1. **Pick tracks.** One real pedestrian track: duration ≥ 10 s, speed range
+   spanning ≥ 1 m/s (must include accel/decel or a curve), stable dimensions.
+   One static misc object (cone/barrier). Export once via the repo exporter
+   (`write_openscenario` stages the XODR alongside) to `/tmp/opencode/a6/`
+   as `base.xosc`. Fallback with no dataset: author a synthetic pedestrian
+   with an accelerate–cruise–decelerate speed profile (≥ 10 vertices);
+   constant-speed lines are explicitly invalid for this test.
+2. **Determinism gate (do not skip).** Replay `base.xosc` twice to two trace
+   paths (`run_esmini` + `dat2csv` via `EsminiConfig`, `fixed_timestep_s=0.01`,
+   headless). `diff` the two CSVs: empty ⇒ proceed; non-empty ⇒ STOP, the
+   experiment is invalid — report run-to-run variance instead.
+3. **Single-variable variants.** From `base.xosc`, change nothing but `mass`:
+   `walk1` Pedestrian `75` → `750` (plausible, non-degenerate); `cone1`
+   MiscObject `0` → `100`. E.g.:
+   `root.find("./Entities/ScenarioObject[@name='walk1']/Pedestrian").set("mass", "750")`
+   (same for the misc object), re-serialized with identical indent/decl.
+   Vehicles carry no `mass` attribute — out of scope, note it.
+4. **Replay each variant** (same engine, `dt 0.01`) and
+   `compute_scenario_replay_metrics` per actor for the ADE/FDE table.
+5. **Decide by this table:**
+
+   | Observation | Verdict |
+   |---|---|
+   | Traces byte-identical across masses (gate passed) | Mass inert under position-following, native 3.10, tested class — assumption HOLDS |
+   | Diff non-empty | Assumption FALSE — report max vertex displacement, which actor(s), longitudinal vs lateral; escalate, do not change defaults |
+   | Engine crash on `mass=0` (misc) | Mass enters some code path (≥ validation) — not proven; retest misc `1` vs `100` and report |
+   | Gate fails | Invalid run — report variance, no verdict |
+
+   Scope limits (explicit, not footnotes): native 3.10 only;
+   `FollowTrajectoryAction` + `position` only; WASM-engine repeat is a
+   separate follow-up, not required here; no claim about other controllers,
+   triggers, or collision dynamics. Total cost: 8 short replays
+   (2 levels × 2 runs × 2 tags).
 
 ## 4. Harder analyses wanted (beyond this update)
 
@@ -201,15 +242,23 @@ observation is noted but explicitly **not** accepted as A6 evidence
   which does not exist in this environment).
 - esminiJS **3.10.0 WASM build present** (`frontend/wasm-esmini/dist/esmini.js`).
 
-**Tracked task — build native 3.10 binary** (owner-ordered 2026-10-16, unblocks
-all native verification incl. the A6 mass-swap): (1) size the OSG toolchain
-first — do not attempt blind; (2) build from the sibling source @ `06065f9`
-so it version-matches the WASM engine; (3) acceptance = binary reports 3.10.x
-via `--version`, ships a working `dat2csv`, and replays the `/tmp/opencode`
-esmoke scenario (ego+pedestrian+cone — regenerate it, the old dir is temp)
-with exit 0 and per-actor coverage `complete`; (4) record build deps and set
-`ESMINI_BIN`/`ESMINI_DAT2CSV` per the README convention (shell config only,
-never committed).
+**Tracked task — build native 3.10 binary → DONE 2026-10-16.**
+Built from the sibling source @ `06065f9` with the slim flags
+`USE_OSG/SUMO/OSI/GTEST/IMPLOT/PROJ=OFF, BUILD_ODRPLOT/REPLAYER/EXAMPLES=OFF`
+(headless `esmini` + `dat2csv` need no OSG; configure 90 s, full build 81/81
+targets on 12 cores). Toolchain: cmake 4.3, GCC 16, Ninja (all stock Fedora;
+no sudo needed — externals auto-download, unused ones ignored).
+Staged at `~/esmini-3.10/bin/` (`esmini`, `esmini-dyn`, `dat2csv`,
+`libesminiLib.so`, `libesminiRMLib.so`; `ldd` clean), build version
+`project-N3-3.10.0-local`. Acceptance: `--version` → `v3.10.0-0-06065f9`,
+esmoke replay (ego+pedestrian+cone, `dt 0.01`) exit 0 with coverage
+`complete` on all 3 actors (ego ADE `0.0200`/FDE `0.0400`, walk1
+`0.0050`/`0.0100`, cone1 `0.0000` m — pipeline sanity, n=2, not a baseline).
+**Version skew resolved:** native 3.10 now version-matches the esminiJS 3.10.0
+engine — A2 runs on this binary; the vehicle-only same-engine re-run for the
+`0.0411 m` baseline check still applies. Enable per the README convention
+(shell config only, never committed):
+`export ESMINI_BIN="$HOME/esmini-3.10/bin/esmini" ESMINI_DAT2CSV="$HOME/esmini-3.10/bin/dat2csv"`.
 
 **Version-skew caveat (binding until resolved):** native runs here are 3.9.0;
 the browser engine is 3.10.0. Never compare 3.9.0-native numbers against

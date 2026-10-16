@@ -47,13 +47,18 @@ cảnh mà quỹ đạo thưa, sai số càng lớn.
 **Vì sao đây là bug thật chứ không phải tinh chỉnh:** có test chốt lại hành vi này, và cơ chế
 lỗi rõ ràng — không có ngưỡng nào được nới để đạt kết quả này.
 
-### 0.3 Đây là bản build ĐANG ĐƯỢC SỬA
+### 0.3 Build hiện tại: XANH — nhưng hãy đo lại trước khi trình bày
 
-`npm run build` **đang fail** (TypeScript error tại `App.tsx:593`) do một đợt refactor
-Python test: `336 passed`. Frontend test: `49 passed`. Build: xanh.
+Lần đo gần nhất: Python `348 passed`, frontend `49 passed`, build sạch, docs consistency PASS.
 
-→ **Không trình bày live từ bản build hiện tại** nếu chưa sửa xong. Hoặc dùng bản
-đã commit `e9ad9b8` (build xanh, nhưng thiếu tính năng WASM).
+Tuy nhiên **số test này đã thay đổi nhiều lần trong vài giờ** (322 → 326 → 329 → 336 → 348)
+vì có agent khác đang làm song song. **Hãy chạy lại và ghi nhận con số bạn thực sự đo**,
+đừng dùng con số trong tài liệu này.
+
+Có một điểm thay đổi quan trọng so với bản guide cũ: bản build đã **từng đỏ** (TypeScript
+error tại `App.tsx:593`) và nay đã xanh, nhưng view panel đang trong quá trình **thay thế bằng
+trình WASM/esmini**. Nếu trình bày live, hãy chụp sẵn ảnh màn hình dự phòng — giao diện có
+thể đổi giữa chừng.
 
 ### 0.4 Nếu bị hỏi "cái này dùng được chưa?"
 
@@ -163,16 +168,18 @@ giả.
 ### Slide 7: Bằng chứng đã chạy
 
 ```
-Python test suite : 336 passed
-Frontend tests    :  48 passed
+Python test suite : 348 passed
+Frontend tests    :  49 passed
 Docs consistency  :  PASS
-Build            : ⚠ đang sửa (xem mục 0.3)
+Build             : clean
 ```
+
+*(Đo gần nhất 2026-10-16. Hãy chạy lại trước khi trình bày — xem mục 0.3.)*
 
 **Nói:** Mỗi lần chạy CI tái lập được kết quả này.
 
 **Sau đó phải nói thẳng (đừng để giám khảo tự phát hiện):**
-> "Tuy nhiên, tôi muốn minh bạch một điều: con số 336 test này **không chứng minh** phần
+> "Tuy nhiên, tôi muốn minh bạch một điều: con số test này **không chứng minh** phần
 > sửa dữ liệu cảm biến chạy đúng trên dữ liệu thật. Trong quá trình review, chúng tôi phát
 > hiện một lỗi mà toàn bộ 322 test cũ vẫn pass — vì bộ test không có dữ liệu thật. Chúng tôi
 > đã kiểm chứng lại trên toàn bộ 850 cảnh. Đó là lý do những con số ở slide trước là đo thật,
@@ -227,7 +234,8 @@ hạn khiến phần còn lại của buổi trình bày đáng tin hơn.
 | 4 | **Ảnh esmini chưa chạy được** | Môi trường build không có chế độ render. Hệ thống trả `capture_viewer_unavailable`. |
 | 5 | **Chưa sinh được cảm biến sau chỉnh sửa** | Cảm biến "sau edit" vẫn là `unsupported`. Chỉ có cảm biến gốc. **Đây là giới hạn bản chất, chưa phải lỗi.** |
 | 6 | **Chạy multi-simulator chưa xong** | CARLA là post-MVP. Hiện chỉ esmini. |
-| 7 | **Giao diện đang ở giữa refactor** | Một số chức năng backend đã có nhưng chưa mở nút trên UI. |
+| 7 | **Giao diện đang ở giữa thay thế** | Viewer hiện tại bị đánh giá là quá phức tạp để bảo trì; đang thay bằng trình WASM. Một số chức năng backend đã có nhưng chưa mở nút trên UI. |
+| 8 | **Chưa có aggregate theo cảnh (scene-macro)** | Chỉ số hiện gộp theo track, nên cảnh nhiều xe được tính nặng hơn. Vì vậy chúng tôi **chưa đề xuất ngưỡng** — ngưỡng chốt trên cách gộp này sẽ thiên lệch. |
 
 ### Cách nói về hạn chế #3 (giám khảo chuyên nghiệp sẽ hỏi đúng chỗ này)
 
@@ -248,18 +256,43 @@ theo dõi** của mô phỏng, tương đương khoảng **0.05% quãng đườn
 nó **đã hội tụ** — không còn đòn bẩy đáng kể. Chúng tôi dừng tại đây thay vì tiếp tục tối ưu,
 vì điều đó sẽ chỉ làm con số đẹp hơn chứ không làm mô phỏng đáng tin hơn.
 
+### Slide 8d: Trình mô phỏng chạy ngay trong trình duyệt (WASM/esmini)
+
+**Đây là điểm mạnh mới và là hướng phát triển chính — nói nó như một *hướng*, không phải
+như một *kết quả đã xong*.**
+
+**Nói:**
+> "Chúng tôi đã build được chính esmini thành WebAssembly và chạy nó **trong trình duyệt**,
+> trong một Worker, render đường và xe bằng WebGL. Nó mở đường cho việc xem kịch bản ngay
+> trên web mà không cần cài gì.
+>
+> Nhưng tôi phải nói rõ hai điều. **Một:** hiện nó chỉ chạy ở trang chẩn đoán riêng, chưa
+> đưa vào sản phẩm chính — vì giao diện xem cảnh hiện tại của chúng tôi quá phức tạp để bảo
+> trì, nên chúng tôi quyết định **thay thế nó** bằng cái này thay vì sửa tiếp. **Hai:** nó
+> **không** được dùng để tính bất kỳ chỉ số nào. Mọi con số tôi vừa trình bày đều đến từ
+> esmini chạy native, không phải từ bản trong trình duyệt."
+
+**Vì sao nói "chưa đưa vào sản phẩm" là tốt:** bạn đang trình bày một hướng đi thật kèm
+rủi ro đã biết. Giám khảo đánh giá cao hơn nhiều so với việc trình bày một tính năng
+"đã xong" mà rõ ràng chưa xong.
+
+**Nếu giám khảo hỏi "vậy con số 0.041 m có phải từ bản trong trình duyệt không?"**
+> "Không. Và đó là điểm chúng tôi cố ý giữ: chỉ số chỉ được lấy từ một nguồn duy nhất là
+> esmini native. Nếu lấy số từ trình duyệt, khi hai bên lệch nhau thì không biết lỗi ở đâu."
+
 ### Slide 10: Ba bước gần nhất
 
 ```
-1. Đóng nốt đường làn      → mở khóa chỉ số độ trung thực
-                             (đây là nút thắt duy nhất còn lại)
-2. Kiểm chứng trên dữ liệu thật → xác nhận các sửa lỗi cảm biến
-3. Mở hoặc chốt phạm vi UI  → quyết định của chủ sở hữu, cần chốt
+1. Đóng nốt đường làn       → mở khóa chỉ số độ trung thực
+                              (đây là nút thắt duy nhất còn lại)
+2. Bổ sung aggregate theo cảnh → hiện mới có micro, thiếu scene-macro
+3. Thay thế viewer bằng WASM  → đang triển khai, chưa vào sản phẩm
 ```
 
 **Nói:** Ưu tiên số 1 vì nó là **nút thắt duy nhất**. Khi đường làn khớp, toàn bộ chuỗi chỉ
 số có ý nghĩa trở lại. Chúng tôi không đầu tư thêm tính năng cho tới khi đóng được nút thắt
-này — và đó là một quyết định có chủ đích.
+này — đó là một quyết định có chủ đích. Việc thay thế viewer (số 3) đang chạy song song
+nhưng **không** sinh ra bất kỳ con số nào.
 
 ### Slide 11: Tầm nhìn dài hạn
 
@@ -311,7 +344,14 @@ việc biến dữ liệu lái xe thật thành tình huống kiểm thử tái 
 > chúng tôi mới chỉ khớp 13.99%. Nếu gộp hai câu đó lại thành 'chính xác 99.7%' thì chúng tôi
 > đang nói quá, và chúng tôi không muốn làm vậy."
 
-### "Ổn định thế nào? Chạy được bao lâu?"
+### "Cái chạy trong trình duyệt có phải mô phỏng thật không?"
+
+> "Nó là chính mã esmini, biên dịch sang WebAssembly — không phải mô phỏng giả lập lại.
+> Nhưng chúng tôi phân biệt rất rõ: bản native là nguồn số liệu duy nhất, còn bản trình duyệt
+> chỉ để xem và tương tác. Chúng tôi chỉ đưa vào sản phẩm khi nó chạy đúng bước tích phân như
+> native; hiện nó đang ở trang chẩn đoán riêng và chưa vào sản phẩm chính."
+
+### "Ổn định thế nào? Chạy được bao lây?
 
 > "Bộ test tự động ổn định. Nhưng tôi phải nói thêm một điểm vận hành: trong quá trình
 > chuẩn bị demo, chúng tôi đã gặp một sự cố mà container *nhìn* vẫn bình thường nhưng thực
@@ -356,6 +396,7 @@ việc biến dữ liệu lái xe thật thành tình huống kiểm thử tái 
 | Con số | Nguồn trong repo |
 |---|---|
 | ADE mean **0.0411**, median **0.0348**, p95 **0.1035**, max **0.1726**; FDE max **0.2052**; 850 cảnh / 3215 track | `docs/reports/residual-replay-error-composition.md` |
+| Trình WASM/esmini chạy trong trình duyệt | `docs/proposals/wasm-interactive-simulator/` (diagnostic-only) |
 | `20/143 = 13.99%` | `docs/reports/cp1-corridor-external-evidence.md` |
 | 60 biến thể / 48 hợp lệ / 0 lỗi sim | `docs/reports/cp3-benchmark-run-evidence.md` |
 | ADE mean 15.31 · median 0.29 | cùng trên — **đã đánh dấu superseded**, đừng trích |
