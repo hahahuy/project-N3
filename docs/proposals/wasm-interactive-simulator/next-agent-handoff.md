@@ -155,40 +155,97 @@ confined artifact route. `WasmSmokePage` passes it; the main app does not.
    must not invent domain truth.
 7. Raw nuScenes data and derived artifacts stay local/private.
 
-### Questions you must answer before building
+### Owner decisions — answered 2026-10-16, binding
 
-**Q1 — Is this capability approved for the MVP, or exploratory?** Nothing in
-`docs/reports/tracks-1-6-disposition.md` covers WASM. It is neither in the seven
-acceptance tracks nor explicitly deferred. This is an owner decision and it
-blocks planning.
+These replace the questions in the previous revision of this document. Do not
+re-ask them.
 
-**Q2 — Where does WASM playback belong in the product?** It is currently only at
-`/wasm-smoke`, a diagnostic page. Options: keep it diagnostic-only (status quo),
-promote it to a real workspace view type, or something else. Promoting it changes
-the view registry, the capability contracts and the claim boundaries.
+**Q1 — Approved, with a gate.** WASM was proposed by external experts and is
+**approved as the intended replacement for the project's current runner**. Before
+any replacement work, the priority is **testing**. Treat build/test hardening as
+the next increment, not feature completion.
 
-**Q3 — LiDAR/radar fusion: what exactly?** The Worker currently returns
-`object_states` and `road_geometry` only. There is no sensor channel from the
-WASM engine. Fusion would mean either rendering recorded nuScenes sensor data
-alongside WASM actors, or getting sensor output from the engine. These are very
-different amounts of work and only the first is honest about the engine's role.
+**Q2 — Diagnostic-only for now.** WASM stays at `/wasm-smoke` and stays out of
+`VIEW_REGISTRY`. Promotion to a real workspace view type requires a separate
+explicit owner approval after joint review with the WASM agent. Do not re-add it
+to the registry on your own judgement.
 
-**Q4 — Synchronized cross-panel focus: sync with what?** `selectedId` is local
-state inside `ThreePlaybackCanvas` and is not lifted. Synchronizing means lifting
-it and having at least one other panel consume it. Which panel — the workspace
-actor timeline, the gate lane, the LiDAR canvas? And does selection need to drive
-scenario state, or only view state?
+**Q3 — Fusion means recorded nuScenes sensor data alongside WASM actors.**
+Render recorded sensor evidence next to engine actors. **Not** sensor output from
+the WASM engine, which has no sensor channel. Note this keeps Sensor Evidence
+semantics intact: recorded nuScenes data is recorded nuScenes data, and must
+never be presented as engine-generated output.
 
-**Q5 — Fixed-step clock.** Should playback be driven by simulation time from the
-Worker rather than by a UI interval? The proposal asks for fixed-step playback and
-seek. Is seek in scope, or only play/step/reset?
+**Q4 — Deferred.** Synchronized cross-panel focus is **decided later**. Do not
+build it in this increment. If you touch selection at all, keep `selectedId`
+local and do not lift it.
 
-**Q6 — Is `min_track_duration_s` needed here too?** It is open in
-`docs/reports/residual-replay-error-composition.md` for native replay. Does the
-same policy apply to the browser engine, or is the engine's behaviour different?
+**Q5 — Worker-driven fixed-step is REQUIRED, and seek is in scope with one hard
+condition.**
+- Fixed step driven by the Worker, **not** a UI interval and not rAF. This is a
+  parity requirement, not a preference: native runs `--fixed_timestep 0.01`, and
+  the timestep is measurably load-bearing — `0.05 → 0.01` moved ADE mean
+  `0.1829 → 0.0411 m` (4.2x). A variable-step or rAF integrator is a different
+  integrator and will not agree with native. Pin `dt = 0.01`. `dt = 0.005` was
+  bit-identical, so `0.01` is converged and safe.
+- **Seek must be `reset` + re-integrate from `t = 0` to the target step.** A
+  naive "jump to nearest cached frame" breaks parity, because state depends on
+  integration history.
+- **If seek slips, ship play/step/reset + a timestamp readout, and do not claim
+  correlation.** Without seek you cannot line a frame up with a LiDAR sweep, so
+  correlation is impossible. A truthful clock without seek is still useful; an
+  untruthful seek silently poisons the comparison.
+
+**Q6 — Not needed. Leave both engines on the full track population.** Applying
+`min_track_duration_s` to one engine only would break parity, because the two
+engines would then score different track populations and the numbers would not be
+comparable. Three reasons to leave it alone:
+- The policy exists to trim tracks the simulator cannot converge onto — 2-4
+  keyframe fragments at scene end. After both timing fixes it is nearly moot:
+  only **47/3215 tracks (1.5 %)** are under 2 s and residual is ~`0.035 m`.
+- Its value at `dt 0.05` was ADE mean `1.1378 → 0.5539`, but at `dt 0.01` the
+  whole residual is already `0.0411`, so there is no accuracy pressure left.
+- It is a population-alignment rule, not an accuracy tweak. Any future cut must be
+  applied identically to both engines and chosen on physical grounds, never
+  fitted to a metric.
+- **Verify before assuming parity:** confirm whether esminiJS uses the same
+  position-following controller as native. If it is a simpler kinematic
+  interpolator it may not have the convergence problem at all, in which case
+  excluding short tracks would **discard good data**.
+- Revisit only if convergence failure actually appears in the browser, and then
+  change both engines together.
+
+### 🔴 Highest-priority defect: the Worker is running the wrong timestep
+
+The owner decision on Q5 makes this concrete and urgent:
+
+```text
+native   src/real2scenario/simulation.py:58   fixed_timestep_s = 0.01   ✅
+WASM     frontend/src/wasm-playback/worker.ts:54        dt: 0.05          ❌
+WASM     frontend/src/wasm-playback/WasmPlaybackView.tsx:6  DT = 0.05      ❌
+WASM     frontend/src/wasm-smoke/worker.ts:25            dt: 0.05          ❌
+```
+
+The browser engine is currently integrating at the timestep that the owner
+measured as **4.2x worse**. Any comparison drawn before this is corrected is
+meaningless, and any correlation claim would be invalid. Fix this first; it is
+small and it gates the credibility of everything else in this subsystem.
+
+Also note that `WasmPlaybackView` currently drives stepping with
+`window.setInterval(..., DT * 1000)`. The owner requires the Worker to own the
+clock, so this is a required change, not a preference.
 
 ### Definition of done for any increment you ship
 
+Highest-priority items, in order: **(1)** Worker `dt` is `0.01` and the Worker
+owns the clock; **(2)** Q5 parity behaviours implemented or explicitly deferred
+with the correlation claim withheld; **(3)** provenance labels accurate; **(4)**
+at least one automated test for the Worker protocol contract.
+
+- [ ] Worker integration timestep is `0.01`, matching native, and the Worker owns
+      the clock.
+- [ ] Seek, if present, is `reset` + re-integrate from `t = 0` — never a cached
+      frame jump.
 - [ ] No WASM-derived number appears in any report, metric, gate or `replay.csv`.
 - [ ] Provenance labels are accurate: fixture vs real scenario vs native.
 - [ ] Dead code removed; `useEffect` deps correct.
@@ -231,11 +288,13 @@ Re-measure it; the count moves.
 
 ### What I most want back
 
-1. Confirmation of Q1–Q6 before any feature work.
+1. Whether the `dt` parity fix landed, with the before/after you measured.
 2. The defect list in "Known defects and risks" re-verified, fixed or explained.
 3. A proposed increment — small enough to review — with its own acceptance bar.
 4. An explicit statement of what stays preview-only no matter what you ship.
+5. Your reading of whether esminiJS uses native's position-following controller
+   (Q6 verification). That answer decides whether short-track exclusion ever
+   applies to the browser engine at all.
 
-**Ask before you build. This subsystem has an approved boundary and a proposal
-that contradicts it in places; sorting that out first is cheaper than a
-rollback.**
+**The boundary is now approved and the six questions are answered. Build — but
+build in the order above, and never let a browser number reach a report.**

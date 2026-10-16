@@ -261,3 +261,41 @@ execution backends.
   complete and the channel is ego-only.
 - Until decided, the channel stays `PROVISIONAL` and no correlation figure may
   be published.
+
+## DEC-020 — WASM / esminiJS Interactive Simulator
+
+- Status: `OWNER-APPROVED AS FUTURE REPLACEMENT / DIAGNOSTIC-ONLY NOW`
+- Commits: `b7e09a5` (handoff prompt and status reconciliation).
+- The capability was proposed by external experts. It is **approved as the
+  intended replacement for the project's current runner**, but the immediate
+  priority is **testing and hardening**, not feature completion.
+- **Placement: diagnostic-only.** WASM stays served at `/wasm-smoke` and stays
+  out of `VIEW_REGISTRY`. Promotion to a real workspace view type requires a
+  separate explicit owner approval after joint review. An agent must not promote
+  it on its own judgement.
+- **Parity requirements, binding.**
+  - Integration timestep is `dt = 0.01`, matching native `--fixed_timestep
+    0.01`. The timestep is measurably load-bearing: `0.05 → 0.01` moved ADE mean
+    `0.1829 → 0.0411 m` (4.2x). A variable-step or rAF-driven integrator is a
+    different integrator and will not agree with native.
+  - The Worker owns the fixed-step clock. A UI interval driving steps does not
+    satisfy parity.
+  - Seek, if implemented, must be `reset` plus re-integration from `t = 0`.
+    Jumping to a cached frame breaks parity because state depends on integration
+    history. If seek is deferred, **no correlation claim may be made**: without
+    seek a frame cannot be lined up with a LiDAR sweep.
+- **Fusion means recorded nuScenes sensor data rendered alongside engine actors.**
+  It does not mean sensor output from the WASM engine, which has no sensor
+  channel. Recorded sensor evidence remains recorded nuScenes data and is never
+  presented as engine-generated output.
+- **Synchronized cross-panel focus is deferred** and explicitly decided later.
+- **`min_track_duration_s` is not applied.** Applying it to one engine only would
+  make the two engines score different track populations, so the numbers would not
+  be comparable. It is a population-alignment rule, not an accuracy tweak, and any
+  future cut must be applied identically to both engines and chosen on physical
+  grounds. Currently only **47/3215 tracks (1.5 %)** are under 2 s and residual is
+  ~`0.035 m`, so there is no accuracy pressure. The browser engine's follower
+  must be compared against native's before any cut is ever considered.
+- **Claim boundaries from DEC-018 continue to apply without exception:** browser
+  frames are preview/interaction only and never feed ADE/FDE, `replay.csv`, gates
+  or any report. Native esmini remains the sole sanctioned metric source.

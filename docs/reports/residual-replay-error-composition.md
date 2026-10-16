@@ -316,3 +316,34 @@ Also unresolved and blocking any *scientific* correlation claim: the canonical
 `scenario.json` does not serialise either, and `time_s` is relative to
 scenario start. The mapping from replay time to nuScenes source time therefore
 cannot be reconstructed from the exported artifact today.
+
+## 11. Short-track population — why `min_track_duration_s` is not applied
+
+Status: `PROVISIONAL / DECISION RECORDED IN DEC-020`
+
+Owner guidance recorded 2026-10-16, applying to the native engine and, by
+parity, to any future browser engine.
+
+**Population now:** only **47 of 3215 tracks (1.5 %)** are shorter than 2 s, down
+from the 2-4 keyframe fragments at scene end that motivated the policy. Median
+residual is ~`0.035 m`.
+
+**Measured value of the cut, at the old timestep:** ADE mean `1.1378 → 0.5539`.
+At the current `dt = 0.01` the entire residual is already `0.0411`, so there is no
+accuracy pressure left for the cut to relieve.
+
+**Why it must not be applied to one engine only.** `min_track_duration_s` is a
+population-alignment rule, not an accuracy tweak. If native excludes sub-2 s
+tracks and the browser does not, the two engines score **different track
+populations** and their numbers are not comparable. Any cut must be applied
+identically to both, chosen on physical grounds, and never fitted to a metric.
+
+**Unverified caveat, recorded so it is checked rather than assumed.** Whether
+esminiJS uses the same position-following controller as native esmini has not been
+confirmed. If the browser engine uses a simpler kinematic interpolator, it may
+never exhibit the convergence failure that motivated the policy — in which case
+excluding short tracks there would **discard good data**.
+
+**Recommendation:** leave both engines on the full track population. Revisit only
+if convergence failure actually appears in the browser engine, and then change
+both together. See DEC-020.
