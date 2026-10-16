@@ -92,6 +92,66 @@ class EsminiBackend:
         except KeyError as error:
             raise KeyError(f"Replay job {job_id!r} was not found.") from error
 
+    def image_frame(self, record, *, mode: str, time_s: float) -> dict[str, object]:
+        """Resolve a real private capture manifest; never use a transform as an image."""
+        if mode not in {"third-person", "in-car"}:
+            raise ValueError("Unsupported POV mode.")
+        # The driver-camera capture is stored below the replay job's mode
+        # directory, while orbit capture is stored at the job root. Search both
+        # locations, but continue to accept only manifests and files beneath
+        # the private output root.
+        manifests = sorted(self.settings.output_root.glob("replay-*/**/image-frames.json"))
+        for manifest_path in manifests:
+            try:
+                payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            if payload.get("scenario_id") != record.scenario.scenario_id:
+                continue
+            for frame in payload.get("frames", ()):
+                if frame.get("mode") != mode:
+                    continue
+                timestamp = frame.get("timestamp_s")
+                artifact = frame.get("artifact")
+                if not isinstance(timestamp, (int, float)) or not isinstance(artifact, str):
+                    continue
+                artifact_path = (manifest_path.parent / artifact).resolve()
+                if not artifact_path.is_file() or self.settings.output_root not in artifact_path.parents:
+                    continue
+                if abs(float(timestamp) - time_s) > float(payload.get("tolerance_s", 0.05)):
+                    continue
+                relative = _relative(self.settings.project_root, artifact_path)
+                return {
+                    "contract_version": "workspace-pov-image-v1",
+                    "scenario_id": record.scenario.scenario_id,
+                    "mode": mode,
+                    "status": "rendered",
+                    "frame_id": str(frame.get("frame_id") or artifact_path.stem),
+                    "timestamp_s": float(timestamp),
+                    "simulator": "esmini",
+                    "simulator_version": str(payload.get("simulator_version") or "unknown"),
+                    "artifact": {"kind": "esmini-image-frame", "path": relative, "url": f"/api/artifacts/{relative}"},
+                    "unavailable_reason": None,
+                    "provenance": {
+                        "manifest": _relative(self.settings.project_root, manifest_path),
+                        "artifact_visibility": "local_private",
+                        "source": "esmini_capture_artifact",
+                    },
+                }
+        return {
+            "contract_version": "workspace-pov-image-v1",
+            "scenario_id": record.scenario.scenario_id,
+            "mode": mode,
+            "status": "unavailable",
+            "frame_id": None,
+            "timestamp_s": None,
+            "simulator": "esmini",
+            "simulator_version": None,
+            "artifact": None,
+            "unavailable_reason": "esmini_image_capture_artifact_unavailable",
+            "provenance": {"artifact_visibility": "local_private"},
+        }
+
     def _run(self, job: ReplayJob) -> None:
         job.status = "running"
         job.started_at = _now()
@@ -118,6 +178,7 @@ class EsminiBackend:
                 EsminiConfig(
                     executable=self.settings.esmini_bin,
                     trace_converter=self.settings.esmini_dat2csv,
+                    capture_images=self.settings.esmini_capture_images,
                 ),
             )
             job.tool_version = report.tool_version
@@ -135,6 +196,11 @@ class EsminiBackend:
                 job.failure_message = report.failure_message or report.stderr.strip() or "esmini replay did not complete."
                 job.error = job.failure_message
             else:
+                _write_image_manifest(
+                    self.settings.project_root, job_root, scenario, report.trace, mode="third-person"
+                )
+                if self.settings.esmini_capture_images:
+                    self._capture_additional_mode(job_root, scenario, mode="in-car")
                 job.metrics = {
                     actor_id: metrics.__dict__ if hasattr(metrics, "__dict__") else {
                         key: getattr(metrics, key)
@@ -163,6 +229,30 @@ class EsminiBackend:
             job.error = str(error)
         finally:
             job.finished_at = _now()
+
+    def _capture_additional_mode(self, job_root: Path, scenario, *, mode: str) -> None:
+        """Capture the second real camera mode without changing replay status."""
+        mode_root = job_root / mode
+        mode_root.mkdir(parents=True, exist_ok=True)
+        try:
+            selected, template = select_opendrive_template(scenario, topology=STRAIGHT_ROAD_TOPOLOGY)
+            xosc_path = write_openscenario(selected, template, mode_root / "scenario.xosc")
+            report = run_esmini(
+                xosc_path,
+                mode_root / "replay.csv",
+                EsminiConfig(
+                    executable=self.settings.esmini_bin,
+                    trace_converter=self.settings.esmini_dat2csv,
+                    capture_images=True,
+                    camera_mode="driver",
+                ),
+            )
+            if report.completed and report.trace is not None:
+                _write_image_manifest(
+                    self.settings.project_root, mode_root, scenario, report.trace, mode=mode
+                )
+        except (OSError, ValueError, KeyError):
+            return
 
 
 def _path_exists(value: str | None) -> bool:
@@ -201,3 +291,35 @@ def _failure_code(error: Exception) -> str:
     if "template" in message or "scenario" in message:
         return "missing_opendrive_template_or_scenario"
     return "replay_setup_failed"
+
+
+def _write_image_manifest(root: Path, job_root: Path, scenario, trace, *, mode: str) -> None:
+    """Index only image files that esmini actually emitted during this replay."""
+    image_paths = sorted(
+        path for path in job_root.iterdir() if path.suffix.lower() in {".jpg", ".jpeg", ".png"}
+    )
+    if not image_paths:
+        return
+    timestamps = sorted({state.state.time_s for state in trace.states})
+    if len(image_paths) != len(timestamps):
+        return
+    manifest = {
+        "contract_version": "workspace-pov-image-v1",
+        "scenario_id": scenario.scenario_id,
+        "simulator": "esmini",
+        "simulator_version": "configured-esmini",
+        "tolerance_s": 0.05,
+        "frames": [
+            {
+                "frame_id": f"{scenario.scenario_id}:esmini:{index:06d}",
+                "mode": mode,
+                "timestamp_s": timestamp,
+                "artifact": image_path.name,
+            }
+            for index, (image_path, timestamp) in enumerate(zip(image_paths, timestamps))
+        ],
+        "artifact_visibility": "local_private",
+    }
+    (job_root / "image-frames.json").write_text(
+        json.dumps(manifest, sort_keys=True, separators=(",", ":")), encoding="utf-8"
+    )

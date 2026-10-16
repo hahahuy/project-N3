@@ -1,7 +1,9 @@
 # Current Context
 
 Read this directory after `MVP&ProjectSummary.md`. These files are the current
-project context for agents and future sessions.
+project context for agents and future sessions. Start with
+`next-agent-handoff.md`; the nuScenes-devkit makeover is the active implementation
+track.
 
 - `project-status.md`: checkpoint status and remaining blockers.
 - `active-work.md`: work queue and dependencies.
@@ -25,13 +27,15 @@ project context for agents and future sessions.
 - `late-future-platform-plan.md`: approved priorities after the current MVP.
 - `next-agent-handoff.md`: current implementation handoff and non-negotiable
   boundaries.
+- `nuscenes-devkit-makeover-handoff.md`: authoritative makeover phases,
+  boundaries and next actions.
 - `pm-agent-guide.md`: short guide for agents coordinating scope, evidence and dependencies.
-- `carla-recorded-trajectory-replay-research.md`: recommended CARLA solution
-  for replaying recorded nuScenes trajectories and the implementation gates.
+- `carla-recorded-trajectory-replay-research.md`: post-MVP CARLA research;
+  not a current implementation assignment.
 - `cp1-automated-semantic-alignment.md`: HMM/Viterbi lane-sequence matching
   and automated CP1 failure triage to reduce manual review.
 - `cp1-semantic-alignment-next-solution.md`: native nuScenes oracle,
   source-to-XODR residual decomposition, and the recommended path beyond the
   remaining lateral-alignment blocker.
-- `cp1-agent-handoff-next.md`: short implementation handoff for the next CP1
-  semantic-alignment agent.
+- CP1 semantic-alignment files: parallel diagnostic evidence; they are not the
+  current next-agent assignment.

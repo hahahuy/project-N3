@@ -1,0 +1,1264 @@
+- generic [active] [ref=f29e1]:
+  - generic [ref=f29e2]:
+    - generic [ref=f29e3]: Table of Contents
+    - list [ref=f29e4]:
+      - listitem [ref=f29e5]:
+        - link "Hello World programming tutorial" [ref=f29e6] [cursor=pointer]:
+          - /url: "#_hello_world_programming_tutorial"
+        - list [ref=f29e7]:
+          - listitem [ref=f29e8]:
+            - link "Preparations" [ref=f29e9] [cursor=pointer]:
+              - /url: "#preparations"
+          - listitem [ref=f29e10]:
+            - link "How to build, run and debug \"Hello World\"" [ref=f29e11] [cursor=pointer]:
+              - /url: "#_how_to_build_run_and_debug_hello_world"
+          - listitem [ref=f29e12]:
+            - link "Examples" [ref=f29e13] [cursor=pointer]:
+              - /url: "#_examples"
+          - listitem [ref=f29e14]:
+            - link "Python binding" [ref=f29e15] [cursor=pointer]:
+              - /url: "#_python_binding"
+          - listitem [ref=f29e16]:
+            - link "C# binding" [ref=f29e17] [cursor=pointer]:
+              - /url: "#_c_binding"
+  - generic [ref=f29e18]:
+    - generic [ref=f29e22]:
+      - paragraph [ref=f29e24]:
+        - link [ref=f29e25] [cursor=pointer]:
+          - /url: index.html
+          - strong [ref=f29e26]: Home
+      - generic [ref=f29e27]:
+        - searchbox "Search all pages..." [ref=f29e28]
+        - button "Search" [ref=f29e29] [cursor=pointer]
+      - group [ref=f29e30]:
+        - generic "Navigator" [ref=f29e31] [cursor=pointer]
+    - generic [ref=f29e32]:
+      - heading "Hello World programming tutorial" [level=2] [ref=f29e33]
+      - generic [ref=f29e34]:
+        - paragraph [ref=f29e36]: This tutorial shows how to utilize esmini as a shared (dynamically loaded) library for use in a custom application. It can be used with or without esmini embedded viewer.
+        - generic [ref=f29e37]:
+          - heading "Preparations" [level=3] [ref=f29e38]
+          - paragraph [ref=f29e40]:
+            - text: The simplest preparation is to get the demo package from
+            - link "the latest relase" [ref=f29e41] [cursor=pointer]:
+              - /url: https://github.com/esmini/esmini/releases/latest
+            - text: and then head on to the steps below.
+          - paragraph [ref=f29e43]: But, of course, if you already have checked out the esmini project from GitHub and compiled it you should already be set.
+          - paragraph [ref=f29e45]:
+            - text: Just make sure that the shared library is available in the
+            - code [ref=f29e46]: bin
+            - text: or
+            - code [ref=f29e47]: lib
+            - text: "folder, which should be available directly under esmini root. Exact filename depends on the platform as follows:"
+          - table [ref=f29e49]:
+            - rowgroup [ref=f29e50]:
+              - row [ref=f29e51]:
+                - cell [ref=f29e52]:
+                  - strong [ref=f29e53]: "Windows:"
+                - cell [ref=f29e54]:
+                  - paragraph [ref=f29e55]: esminiLib.dll
+              - row [ref=f29e56]:
+                - cell [ref=f29e57]:
+                  - strong [ref=f29e58]: "Linux:"
+                - cell [ref=f29e59]:
+                  - paragraph [ref=f29e60]: libesminiLib.so
+              - row [ref=f29e61]:
+                - cell [ref=f29e62]:
+                  - strong [ref=f29e63]: "Mac:"
+                - cell [ref=f29e64]:
+                  - paragraph [ref=f29e65]: libesminiLib.dylib
+        - generic [ref=f29e66]:
+          - heading "How to build, run and debug \"Hello World\"" [level=3] [ref=f29e67]
+          - generic [ref=f29e68]:
+            - heading "Windows/Visual Studio" [level=4] [ref=f29e69]
+            - generic [ref=f29e70]:
+              - 'heading "First step: Create the solution file" [level=5] [ref=f29e71]'
+              - paragraph [ref=f29e73]:
+                - text: Run from
+                - code [ref=f29e74]: Hello-World_coding-example
+                - text: "root folder:"
+                - code [ref=f29e75]: mkdir build
+                - code [ref=f29e76]: cd build
+                - code [ref=f29e77]: cmake ..
+                - text: (will generate solution for multiple variants, including Release and Debug)
+            - generic [ref=f29e78]:
+              - heading "Build and run the application from command line" [level=5] [ref=f29e79]
+              - generic [ref=f29e80]:
+                - heading "Build" [level=6] [ref=f29e81]
+                - paragraph [ref=f29e83]:
+                  - code [ref=f29e84]: cmake --build . --config Release
+                  - text: (release variant), or
+                  - code [ref=f29e85]: cmake --build . --config Debug
+                  - text: (debug variant)
+              - generic [ref=f29e86]:
+                - heading "Run" [level=6] [ref=f29e87]
+                - list [ref=f29e89]:
+                  - listitem [ref=f29e90]:
+                    - paragraph [ref=f29e91]:
+                      - text: open a command shell and put yourself in
+                      - code [ref=f29e92]: Hello-World_coding-example/build
+                      - text: folder
+                  - listitem [ref=f29e93]:
+                    - paragraph [ref=f29e94]:
+                      - text: "add shared library location to the environment path variable, e.g: CMD:"
+                      - code [ref=f29e95]: set path=../../bin;%path%
+                      - text: "PowerShell:"
+                      - code [ref=f29e96]: $env:path+=";../../bin"
+                      - text: "bash:"
+                      - code [ref=f29e97]: PATH=$PATH:../../bin
+                  - listitem [ref=f29e98]:
+                    - paragraph [ref=f29e99]:
+                      - text: "Launch application CMD:"
+                      - code [ref=f29e100]: .\Debug\esmini-player.exe
+                      - text: or
+                      - code [ref=f29e101]: .\Release\esmini-player.exe
+                      - text: "(depending on variant) PowerShell or bash:"
+                      - code [ref=f29e102]: ./Debug/esmini-player.exe
+                      - text: or
+                      - code [ref=f29e103]: ./Release/esmini-player.exe
+            - generic [ref=f29e104]:
+              - heading "Build, run and debug the application from Visual Studio" [level=5] [ref=f29e105]
+              - list [ref=f29e107]:
+                - listitem [ref=f29e108]:
+                  - paragraph [ref=f29e109]:
+                    - text: Open
+                    - code [ref=f29e110]: esmini-player.sln
+                    - text: in Visual Studio
+                - listitem [ref=f29e111]:
+                  - paragraph [ref=f29e112]:
+                    - text: Build as usual (Ctrl-F7 or
+                    - code [ref=f29e113]: Build
+                    - text: →
+                    - code [ref=f29e114]: Build Solution
+                    - text: )
+                - listitem [ref=f29e115]:
+                  - paragraph [ref=f29e116]: Set as startup project
+                  - list [ref=f29e118]:
+                    - listitem [ref=f29e119]:
+                      - paragraph [ref=f29e120]: Right click on esmini-player in Solution Explorer
+                    - listitem [ref=f29e121]:
+                      - paragraph [ref=f29e122]:
+                        - text: Click on
+                        - code [ref=f29e123]: Set as Startup Project
+                - listitem [ref=f29e124]:
+                  - paragraph [ref=f29e125]: Tell the system where to find the shared library
+                  - list [ref=f29e127]:
+                    - listitem [ref=f29e128]:
+                      - paragraph [ref=f29e129]: Right click on esmini-player in Solution Explorer
+                    - listitem [ref=f29e130]:
+                      - paragraph [ref=f29e131]:
+                        - text: Click on
+                        - code [ref=f29e132]: Properties
+                    - listitem [ref=f29e133]:
+                      - paragraph [ref=f29e134]:
+                        - text: Select Configuration →
+                        - code [ref=f29e135]: All Configurations
+                    - listitem [ref=f29e136]:
+                      - paragraph [ref=f29e137]:
+                        - text: In
+                        - code [ref=f29e138]: Configuration Properties
+                        - text: →
+                        - code [ref=f29e139]: Debugging
+                        - text: →
+                        - code [ref=f29e140]: Environment
+                        - text: "write:"
+                        - code [ref=f29e141]: path=$(ProjectDir)/../../bin
+                        - text: or any other folder containing the esmini library
+                - listitem [ref=f29e142]:
+                  - paragraph [ref=f29e143]: Run
+                  - list [ref=f29e145]:
+                    - listitem [ref=f29e146]:
+                      - paragraph [ref=f29e147]:
+                        - code [ref=f29e148]: Ctrl-F5
+                        - text: to run without debug
+                    - listitem [ref=f29e149]:
+                      - paragraph [ref=f29e150]:
+                        - code [ref=f29e151]: F5
+                        - text: to debug
+          - generic [ref=f29e152]:
+            - heading "Linux" [level=4] [ref=f29e153]
+            - generic [ref=f29e154]:
+              - 'heading "First step: Create the Makefile" [level=5] [ref=f29e155]'
+              - paragraph [ref=f29e157]:
+                - text: Run from
+                - code [ref=f29e158]: Hello-World_coding-example
+                - text: "root folder:"
+                - code [ref=f29e159]: mkdir build
+                - code [ref=f29e160]: cd build
+                - text: "then:"
+                - code [ref=f29e161]: cmake .. -DCMAKE_BUILD_TYPE=Release
+                - text: for Release variant, or
+                - code [ref=f29e162]: cmake .. -DCMAKE_BUILD_TYPE=Debug
+                - text: for Debug variant
+            - generic [ref=f29e163]:
+              - heading "Build and run from command line" [level=5] [ref=f29e164]
+              - list [ref=f29e166]:
+                - listitem [ref=f29e167]:
+                  - paragraph [ref=f29e168]:
+                    - text: Build
+                    - code [ref=f29e169]: cmake --build .
+                    - text: or just
+                    - code [ref=f29e170]: make
+                - listitem [ref=f29e171]:
+                  - paragraph [ref=f29e172]:
+                    - text: Tell system where to look for esmini shared library (maybe not necessary)
+                    - code [ref=f29e173]: export LD_LIBRARY_PATH=../../bin
+                    - text: "(on macOS: DYLD_LIBRARY_PATH)"
+                - listitem [ref=f29e174]:
+                  - paragraph [ref=f29e175]:
+                    - text: Launch application
+                    - code [ref=f29e176]: ./esmini-player
+            - generic [ref=f29e177]:
+              - heading "Build, run and debug from Visual Studio Code" [level=5] [ref=f29e178]
+              - paragraph [ref=f29e180]: "Prerequisites: Install the following VS Code extensions:"
+              - list [ref=f29e182]:
+                - listitem [ref=f29e183]:
+                  - paragraph [ref=f29e184]: C/C++
+                - listitem [ref=f29e185]:
+                  - paragraph [ref=f29e186]: CMake Tools
+              - generic [ref=f29e187]:
+                - heading "Build" [level=6] [ref=f29e188]
+                - list [ref=f29e190]:
+                  - listitem [ref=f29e191]:
+                    - paragraph [ref=f29e192]: Open visual studio as Hello-World_coding-example as root folder
+                  - listitem [ref=f29e193]:
+                    - paragraph [ref=f29e194]:
+                      - text: Open the Command Palette (Ctrl+Shift+P) and run
+                      - code [ref=f29e195]: "CMake: Select a Kit"
+                      - text: . Select the compiler you want to use. For example GCC 11.3.0
+                  - listitem [ref=f29e196]:
+                    - paragraph [ref=f29e197]:
+                      - text: Open the Command Palette (Ctrl+Shift+P) run the
+                      - code [ref=f29e198]: "CMake: Select Variant"
+                      - text: command. Select Debug.
+                  - listitem [ref=f29e199]:
+                    - paragraph [ref=f29e200]:
+                      - text: Open the Command Palette (Ctrl+Shift+P) run the
+                      - code [ref=f29e201]: CMake:Set Build Target
+                      - text: . Select esmini-player.
+                  - listitem [ref=f29e202]:
+                    - paragraph [ref=f29e203]:
+                      - text: Open the Command Palette (Ctrl+Shift+P) and run the
+                      - code [ref=f29e204]: "CMake: Build"
+                      - text: command, or select the build button from the Status bar.
+                - paragraph [ref=f29e206]: Open main.cpp file in the Hello-World_coding-example folder and optionally introduce break points.
+              - generic [ref=f29e207]:
+                - heading "Run" [level=6] [ref=f29e208]
+                - list [ref=f29e210]:
+                  - listitem [ref=f29e211]:
+                    - paragraph [ref=f29e212]:
+                      - text: Open the Command Palette (Ctrl+Shift+P) and run the
+                      - code [ref=f29e213]: "CMake: Run Without Debugging"
+                      - text: command, or
+                  - listitem [ref=f29e214]:
+                    - paragraph [ref=f29e215]: Use play button in the status bar, or
+                  - listitem [ref=f29e216]:
+                    - paragraph [ref=f29e217]: Shift-F5
+              - generic [ref=f29e218]:
+                - heading "Debug" [level=6] [ref=f29e219]
+                - list [ref=f29e221]:
+                  - listitem [ref=f29e222]:
+                    - paragraph [ref=f29e223]:
+                      - text: Open the Command Palette (Ctrl+Shift+P) and run the
+                      - code [ref=f29e224]: "CMake: Debug"
+                      - text: command, or
+                  - listitem [ref=f29e225]:
+                    - paragraph [ref=f29e226]: Use debug button in the status bar, or
+                  - listitem [ref=f29e227]:
+                    - paragraph [ref=f29e228]: Ctrl-F5
+          - generic [ref=f29e229]:
+            - heading "Next step" [level=4] [ref=f29e230]
+            - paragraph [ref=f29e232]: Now that you can build and run Hello World, it’s time to explore some functionality of esmini. Next section presents a few code examples to try out, e.g. by modifying main.cpp.
+        - generic [ref=f29e233]:
+          - heading "Examples" [level=3] [ref=f29e234]
+          - generic [ref=f29e235]:
+            - heading "Hello world - load and play a scenario" [level=4] [ref=f29e236]
+            - generic [ref=f29e237]:
+              - generic [ref=f29e238]:
+                - text: Example 1.
+                - link "Hello-World_coding-example/main.cpp" [ref=f29e239] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master/Hello-World_coding-example/main.cpp
+              - code [ref=f29e242]:
+                - text: "#include \"esminiLib.hpp\" int main(int argc, char* argv[]) { SE_Init("
+                - generic [ref=f29e243]: "\"../../resources/xosc/cut-in.xosc\""
+                - text: ", 0, 1, 0, 0); for (int i = 0; i < 500; i++) { SE_Step(); } SE_Close(); return 0; }"
+            - paragraph [ref=f29e245]: "Exercise: Change scenario to pedestrian.xosc, then compile and run the program again."
+          - generic [ref=f29e246]:
+            - heading "Add optional argument to load any scenario" [level=4] [ref=f29e247]
+            - generic [ref=f29e248]:
+              - generic [ref=f29e249]:
+                - text: Example 2.
+                - link "EnvironmentSimulator/code-examples/hello_world/hw2_arguments.cpp" [ref=f29e250] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master/EnvironmentSimulator/code-examples/hello_world/hw2_arguments.cpp
+              - code [ref=f29e253]:
+                - text: "#include \"esminiLib.hpp\" int main(int argc, char* argv[]) { if (argc > 1) { SE_InitWithArgs(argc, const_cast<const char**>(argv)); } else { SE_Init("
+                - generic [ref=f29e254]: "\"../resources/xosc/cut-in.xosc\""
+                - text: ", 0, 1, 0, 0); } for (int i = 0; i < 500; i++) { SE_Step(); } SE_Close(); return 0; }"
+            - paragraph [ref=f29e256]:
+              - text: You can now specify esmini arguments according to
+              - link "esmini launch commands" [ref=f29e257] [cursor=pointer]:
+                - /url: https://github.com/esmini/esmini/blob/master/docs/commands.txt
+              - text: .
+            - paragraph [ref=f29e259]: "Example:"
+            - generic [ref=f29e260]: ./esmini-player --window 60 60 1000 500 --osc ../resources/xosc/pedestrian.xosc --trails
+          - generic [ref=f29e263]:
+            - heading "Fetch state of scenario objects" [level=4] [ref=f29e264]
+            - paragraph [ref=f29e266]: This example shows how to retrieve the state of scenario objects.
+            - paragraph [ref=f29e268]: We also check the return code from the initialization and react on any error.
+            - generic [ref=f29e269]:
+              - generic [ref=f29e270]:
+                - text: Example 3.
+                - link "EnvironmentSimulator/code-examples/hello_world/hw3_fetch_states.cpp" [ref=f29e271] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master/EnvironmentSimulator/code-examples/hello_world/hw3_fetch_states.cpp
+              - code [ref=f29e274]:
+                - text: "#include \"stdio.h\" #include \"esminiLib.hpp\" int main(int argc, char* argv[]) { (void)argc; (void)argv; if (SE_Init("
+                - generic [ref=f29e275]: "\"../resources/xosc/cut-in.xosc\""
+                - text: ", 0, 1, 0, 0) != 0) { printf("
+                - generic [ref=f29e276]: "\"Failed to initialize scenario\\n\""
+                - text: "); return -1; } for (int i = 0; i < 500; i++) { SE_Step(); for (int j = 0; j < SE_GetNumberOfObjects(); j++) { SE_ScenarioObjectState state; SE_GetObjectState(SE_GetId(j), &state); printf("
+                - generic [ref=f29e277]: "\"time [%.2f] object[%d] id %d pos[%.2f, %.2f] %.2f %.2f odometer: %.2f\\n\""
+                - text: ", state.timestamp, j, SE_GetId(j), state.x, state.y, state.wheel_angle, state.wheel_rot, SE_GetObjectOdometer(SE_GetId(j))); } } SE_Close(); return 0; }"
+          - generic [ref=f29e278]:
+            - heading "External control of Ego" [level=4] [ref=f29e279]
+            - paragraph [ref=f29e281]: A silly example showing how you can just take control over vehicle state via the API. The Ego car will move one meter along the Y-axis for each frame while rotating…
+            - paragraph [ref=f29e283]: Now we will also introduce the quit_flag, which lets you quit by pressing 'Esc' key.
+            - paragraph [ref=f29e285]: In addition we’ll try out the alignment feature. By default objects will be aligned to road surface. This behavior can be controlled with alignment settings. In below example, the Ego vehicle will be aligned to road surface except during iterations 100-200 where it will obey the reported Z coordinate and move accordingly to elevation/Z = 10 meter.
+            - generic [ref=f29e286]:
+              - generic [ref=f29e287]:
+                - text: Example 4.
+                - link "EnvironmentSimulator/code-examples/hello_world/hw4_external_ego_control.cpp" [ref=f29e288] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master//EnvironmentSimulator/code-examples/hello_world/hw4_external_ego_control.cpp
+              - code [ref=f29e291]:
+                - text: "#include \"esminiLib.hpp\" #include <stdio.h> int main(int argc, char* argv[]) { const char* filename = argc > 1 ? argv[1] :"
+                - generic [ref=f29e292]: "\"../resources/xosc/cut-in_external.xosc\""
+                - text: "; SE_ScenarioObjectState state; double z = 0.0; if (SE_Init(filename, 0, 1, 0, 0) != 0) { return -1; } for (int i = 0; i < 500 && SE_GetQuitFlag() != 1; i++) { SE_ReportObjectPos(SE_GetId(0), 8.0, i, z, 1.57 + 0.01 * i, 0.0, 0.0); SE_Step(); // fetch position in terms of road coordinates SE_GetObjectState(SE_GetId(0), &state); printf("
+                - generic [ref=f29e293]: "\"road_id: %d s: %.3f lane_id %d lane_offset: %.3f z: %.2f\\n\""
+                - text: ", state.roadId, state.s, state.laneId, state.laneOffset, state.z); if (i == 100) { z = 10.0; printf("
+                - generic [ref=f29e294]: "\"Release relative road alignment, set absolute z = %.2f\\n\""
+                - text: ", z); SE_SetObjectPositionMode(SE_GetId(0), SE_PositionModeType::SE_SET, SE_PositionMode::SE_Z_ABS); // release relative alignment to road surface } if (i == 200) { z = 0.0; printf("
+                - generic [ref=f29e295]: "\"Restore relative road alignment, set relative z = %.2f\\n\""
+                - text: ", z); SE_SetObjectPositionMode(SE_GetId(0), SE_PositionModeType::SE_SET, SE_PositionMode::SE_Z_REL); // enforce relative alignment to road surface } } SE_Close(); return 0; }"
+            - paragraph [ref=f29e297]: "Exercise: Change heading with i, e.g:"
+            - paragraph [ref=f29e299]:
+              - code [ref=f29e300]: SE_ReportObjectPos(0, 0.0f, 8.0f, (float)i, 0.0f, 1.57f + 0.01f*i, 0.0f, 0.0f);
+            - paragraph [ref=f29e302]: Yes, it looks crazy! But it demonstrates how an application totally can take control of a vehicle.
+          - generic [ref=f29e303]:
+            - heading "Control controllers" [level=4] [ref=f29e304]
+            - paragraph [ref=f29e306]: Try to run cut-in_interactive.xosc, as below.
+            - generic [ref=f29e307]:
+              - generic [ref=f29e308]:
+                - text: Example 5.
+                - link "EnvironmentSimulator/code-examples/hello_world/hw5_control_controllers_enabled.cpp" [ref=f29e309] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master//EnvironmentSimulator/code-examples/hello_world/hw5_control_controllers_enabled.cpp
+              - code [ref=f29e312]:
+                - text: "#include \"esminiLib.hpp\" int main(int argc, char* argv[]) { (void)argc; (void)argv; SE_Init("
+                - generic [ref=f29e313]: "\"../resources/xosc/cut-in_interactive.xosc\""
+                - text: ", 0, 1, 0, 0); for (int i = 0; i < 2000 && SE_GetQuitFlag() != 1; i++) { SE_Step(); } SE_Close(); return 0; }"
+            - paragraph [ref=f29e315]: Control the Ego vehicle with arrow keys.
+            - paragraph [ref=f29e317]:
+              - text: To disable controllers and hand over to default scenario behavior set first argument flag (see
+              - link "headerfile esminiLib.hpp" [ref=f29e318] [cursor=pointer]:
+                - /url: https://github.com/esmini/esmini/blob/45ef22ed04867f6e6630bb73461e5d4a3fcd7d93/EnvironmentSimulator/Libraries/esminiLib/esminiLib.hpp#L259
+              - text: "):"
+            - generic [ref=f29e319]:
+              - generic [ref=f29e320]:
+                - text: Example 6.
+                - link "EnvironmentSimulator/code-examples/hello_world/hw6_control_controllers_disabled.cpp" [ref=f29e321] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master//EnvironmentSimulator/code-examples/hello_world/hw6_control_controllers_disabled.cpp
+              - code [ref=f29e324]:
+                - text: "#include \"esminiLib.hpp\" int main(int, char**) { SE_Init("
+                - generic [ref=f29e325]: "\"../resources/xosc/cut-in_interactive.xosc\""
+                - text: ", 1, 1, 0, 0); for (int i = 0; i < 2000 && SE_GetQuitFlag() != 1; i++) { SE_Step(); } SE_Close(); return 0; }"
+          - generic [ref=f29e326]:
+            - heading "Ideal sensors" [level=4] [ref=f29e327]
+            - generic [ref=f29e328]:
+              - generic [ref=f29e329]:
+                - text: Example 7.
+                - link "EnvironmentSimulator/code-examples/hello_world/hw7_ideal_sensors.cpp" [ref=f29e330] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master//EnvironmentSimulator/code-examples/hello_world/hw7_ideal_sensors.cpp
+              - code [ref=f29e333]:
+                - text: "#include \"stdio.h\" #include \"esminiLib.hpp\" #define MAX_HITS 10 int main(int, char**) { SE_Init("
+                - generic [ref=f29e334]: "\"../resources/xosc/cut-in.xosc\""
+                - text: ", 0, 1, 0, 0); SE_AddObjectSensor(0, 2.0, 1.0, 0.5, 1.57, 1.0, 50.0, 1.57, MAX_HITS); SE_AddObjectSensor(0, -1.0, 0.0, 0.5, 3.14, 0.5, 20.0, 1.57, MAX_HITS); // Turn on visualization of object sensors, toggle key 'r' SE_ViewerShowFeature(1, true); for (int i = 0; i < 2000 && !(SE_GetQuitFlag() == 1); i++) { SE_Step(); int objList[MAX_HITS]; for (int j = 0; j < 2; j++) // iterate over added sensors { int nHits = SE_FetchSensorObjectList(j, objList); for (int k = 0; k < nHits; k++) { printf("
+                - generic [ref=f29e335]: "\"Sensor[%d] detected obj: %d\\n\""
+                - text: ", j, objList[k]); // Get some info of that detected object SE_ScenarioObjectState state; SE_GetObjectState(objList[k], &state); printf("
+                - generic [ref=f29e336]: "\"object[%d] pos: (%.2f, %.2f) heading: %.2f\\n\""
+                - text: ", objList[k], state.x, state.y, state.h); } } } SE_Close(); return 0; }"
+            - paragraph [ref=f29e338]:
+              - strong [ref=f29e339]: Note
+              - text: ": If you want M_PI, add on top (before includes):"
+              - code [ref=f29e340]: "#define _USE_MATH_DEFINES"
+          - generic [ref=f29e341]:
+            - heading "Collision detection" [level=4] [ref=f29e342]
+            - paragraph [ref=f29e344]: "There are two approaches to collision detection that fit different use cases:"
+            - generic [ref=f29e345]:
+              - heading "1. By scenario" [level=5] [ref=f29e346]
+              - paragraph [ref=f29e348]:
+                - text: Making use of the OpenSCENARIO
+                - link "CollisionCondition" [ref=f29e349] [cursor=pointer]:
+                  - /url: https://www.asam.net/static_downloads/ASAM_OpenSCENARIO_V1.2.0_Model_Documentation/modelDocumentation/content/CollisionCondition.html
+                - text: a collision can be detected and act upon. This can be useful for example if a scenario or test case should end in case of Ego vehicle gets involved in a collision.
+              - paragraph [ref=f29e351]:
+                - text: See example
+                - link "EnvironmentSimulator/Unittest/xosc/test-collision-detection.xosc" [ref=f29e352] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/blob/master/EnvironmentSimulator/Unittest/xosc/test-collision-detection.xosc
+                - text: ". To run it from command line:"
+              - paragraph [ref=f29e354]:
+                - code [ref=f29e355]: ./bin/esmini --window 60 60 800 400 --osc ./EnvironmentSimulator/Unittest/xosc/test-collision-detection.xosc
+              - paragraph [ref=f29e357]: Control the Ego car with keyboard arrow keys. Press "up" to accelerate, and "left" or "right" to steer. See output in console when colliding with the two other cars.
+              - paragraph [ref=f29e359]: "The interactive controller can be disabled. Then the Ego car will get the speed from the scenario. Run:"
+              - paragraph [ref=f29e361]:
+                - code [ref=f29e362]: ./bin/esmini --window 60 60 800 400 --osc ./EnvironmentSimulator/Unittest/xosc/test-collision-detection.xosc --disable_controllers
+              - paragraph [ref=f29e364]:
+                - strong [ref=f29e365]: "Note:"
+                - text: In this example the action is empty, i.e. the event is triggered on collision but nothing really happens, other than logging the trigger result. In a real use case there could be an actual action, e.g. immediate stop by setting speed to zero in a single step. Another usage is to use the condition in a scenario stop trigger, e.g. to quit the test case as soon as collision happens.
+            - generic [ref=f29e366]:
+              - heading "2. By API" [level=5] [ref=f29e367]
+              - paragraph [ref=f29e369]:
+                - text: In addition, or as alternative, to detect collisions via OpenSCENARIO condition esmini can check for collisions between any objects regardless of the scenario. This is a feature that must be enabled (
+                - code [ref=f29e370]: SE_CollisionDetection(true)
+                - text: ) since it’s off by default to avoid unnecessary performance penalties.
+              - paragraph [ref=f29e372]: "See code example:"
+              - generic [ref=f29e373]:
+                - generic [ref=f29e374]:
+                  - text: Example 8.
+                  - link "EnvironmentSimulator/code-examples/hello_world/hw8_collision_detection.cpp" [ref=f29e375] [cursor=pointer]:
+                    - /url: https://github.com/esmini/esmini/tree/master//EnvironmentSimulator/code-examples/hello_world/hw8_collision_detection.cpp
+                - code [ref=f29e378]:
+                  - text: "#include \"esminiLib.hpp\" #include \"stdio.h\" int main(void) { SE_Init("
+                  - generic [ref=f29e379]: "\"../EnvironmentSimulator/Unittest/xosc/test-collision-detection.xosc\""
+                  - text: ", 1, 1, 0, 0); SE_CollisionDetection(true); for (int i = 0; i < 500; i++) { SE_Step(); for (int j = 0; j < SE_GetNumberOfObjects(); j++) { for (int k = 0; k < SE_GetObjectNumberOfCollisions(j); k++) { printf("
+                  - generic [ref=f29e380]: "\"Collision[%d]: %d\\n\""
+                  - text: ", j, SE_GetObjectCollision(j, k)); } } } return 0; }"
+              - paragraph [ref=f29e382]:
+                - strong [ref=f29e383]: "Note:"
+                - text: It uses the same scenario file as the above (
+                - link "1. By scenario" [ref=f29e384] [cursor=pointer]:
+                  - /url: "#_1_by_scenario"
+                - text: ) but the complete "CollisionManeuver" could be removed since no CollisionCondition is needed for API based collision detection. Actually, if maneuver is present the console will show log info from both the condition and the API driven collision detections.
+          - generic [ref=f29e385]:
+            - heading "Simple speed control" [level=4] [ref=f29e386]
+            - paragraph [ref=f29e388]: As an alternative to the external control examples above, you can control the speed of an object directly. Just note that any triggered scenario actions involving the object might conflict with speed settings via lib API. Recommendation is control an object either via API or scenario file. That said, the combination can be useful for some use cases.
+            - paragraph [ref=f29e390]: The code will modulate speed of Ego (first vehicle) between 2 and 20 mps.
+            - generic [ref=f29e391]:
+              - generic [ref=f29e392]:
+                - text: Example 9.
+                - link "EnvironmentSimulator/code-examples/hello_world/speed_controller.cpp" [ref=f29e393] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master/EnvironmentSimulator/code-examples/hello_world/speed_controller.cpp
+              - code [ref=f29e396]:
+                - text: "#include \"esminiLib.hpp\" #include <iostream> int main(int argc, char **argv) { double acc = 10; // initial acceleration double speed = 2.0; // initial speed if (argc > 1) { SE_Init(argv[1], 0, 1, 0, 0); } else { printf("
+                - generic [ref=f29e397]: "\"Usage: %s <path to xosc file>\\n\""
+                - text: ", argv[0]); return -1; } while (SE_GetQuitFlag() != 1) { speed += acc * SE_GetSimTimeStep(); // get latest time step from simulation // modulate speed by changing sign of acceleration now and then if (speed < 2.0) { acc = 10; } else if (speed > 20.0) { acc = -10; } // report updated speed SE_ReportObjectSpeed(0, speed); // step the simulation in natural speed, change to SE_Step(<time-step>) for fixed timestep SE_Step(); } SE_Close(); return 0; }"
+            - paragraph [ref=f29e399]:
+              - text: Example run command, from
+              - code [ref=f29e400]: esmini/code-examples-bin
+              - text: "folder:"
+              - code [ref=f29e401]: ./speed_controller ../resources/xosc/cut-in.xosc
+            - paragraph [ref=f29e403]:
+              - text: "There is also a Python version of this example:"
+              - link "EnvironmentSimulator/code-examples/hello_world/speed_controller.py" [ref=f29e404] [cursor=pointer]:
+                - /url: https://github.com/esmini/esmini/tree/master/EnvironmentSimulator/code-examples/hello_world/speed_controller.py
+          - generic [ref=f29e405]:
+            - heading "Inject actions" [level=4] [ref=f29e406]
+            - paragraph [ref=f29e408]: "This example demonstrates how you can control longitudinal and lateral motion by applying the following actions:"
+            - list [ref=f29e410]:
+              - listitem [ref=f29e411]:
+                - paragraph [ref=f29e412]: SpeedAction
+              - listitem [ref=f29e413]:
+                - paragraph [ref=f29e414]: LaneChangeAction
+              - listitem [ref=f29e415]:
+                - paragraph [ref=f29e416]: LaneOffsetAction
+            - paragraph [ref=f29e418]: Currently (v2.37.0) the action injection feature is limited to these three actions, but it’s rather easy to extend if needed.
+            - paragraph [ref=f29e420]: "The code will apply three actions according as follows:"
+            - list [ref=f29e422]:
+              - listitem [ref=f29e423]:
+                - paragraph [ref=f29e424]: after 2 seconds, make a slight movement (lane offset) of 0.45m to the right
+              - listitem [ref=f29e425]:
+                - paragraph [ref=f29e426]: after 7 seconds, make a lane change to the left
+              - listitem [ref=f29e427]:
+                - paragraph [ref=f29e428]: after 8 seconds, consider to do another lane change, but skip since another is already ongoing
+              - listitem [ref=f29e429]:
+                - paragraph [ref=f29e430]: after 9.5 seconds, brake softly (braking will start before lane change is done)
+              - listitem [ref=f29e431]:
+                - paragraph [ref=f29e432]: after 11.0 seconds, brake harder to a stop (will cancel the ongoing soft brake action)
+            - generic [ref=f29e433]:
+              - generic [ref=f29e434]:
+                - text: Example 10.
+                - link "EnvironmentSimulator/code-examples/hello_world/action_injection.cpp" [ref=f29e435] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master/EnvironmentSimulator/code-examples/hello_world/action_injection.cpp
+              - code [ref=f29e438]:
+                - text: "#include \"esminiLib.hpp\" #include <string.h> #include <iostream> #define SMALL_NUMBER 1e-6 int main(int argc, char **argv) { double dt = -1.0; // default to variable timestep if (argc > 2) { if (SE_InitWithArgs(argc, const_cast<const char **>(argv)) != 0) { printf("
+                - generic [ref=f29e439]: "\"Error: Could not initialize scenario %s\\n\""
+                - text: ", argv[1]); return -1; } for (int i = 2; i < argc; i++) { if (i < argc - 1 && strcmp(argv[i],"
+                - generic [ref=f29e440]: "\"--fixed_timestep\""
+                - text: ") == 0) { dt = atof(argv[i + 1]); // use any provided fixed timestep } } } else if (argc > 1) { if (SE_Init(argv[1], 0, 1, 0, 0) != 0) { printf("
+                - generic [ref=f29e441]: "\"Error: Could not initialize scenario %s\\n\""
+                - text: ", argv[1]); return -1; } } else { printf("
+                - generic [ref=f29e442]: "\"Usage: %s <path to xosc file>\\n\""
+                - text: ", argv[0]); return -1; } int state = 0; while (SE_GetQuitFlag() == 0 && SE_GetSimulationTime() < 17.0) { if (state == 0 && SE_GetSimulationTime() > 2.0 + SMALL_NUMBER) { printf("
+                - generic [ref=f29e443]: "\"Injecting lane offset action\\n\""
+                - text: "); SE_LaneOffsetActionStruct lane_offset; lane_offset.id = 0; // id of object to perform action lane_offset.offset = -0.45; // target offset in m lane_offset.maxLateralAcc = 0.5; // max lateral acceleration in m/s^2 lane_offset.transition_shape = 0; // cubic SE_InjectLaneOffsetAction(&lane_offset); state++; } else if (state == 1 && SE_GetSimulationTime() > 7.0 + SMALL_NUMBER) { printf("
+                - generic [ref=f29e444]: "\"Injecting lane change action\\n\""
+                - text: "); SE_LaneChangeActionStruct lane_change; lane_change.id = 0; // id of object to perform action lane_change.mode = 1; // relative (own vehicle) lane_change.target = 1; // target lane id (relative) lane_change.transition_shape = 2; // sinusoidal lane_change.transition_dim = 2; // time lane_change.transition_value = 3.0; // s SE_InjectLaneChangeAction(&lane_change); state++; } else if (state == 2 && SE_GetSimulationTime() > 8.0 + SMALL_NUMBER) { if (SE_InjectedActionOngoing(5)) // 5 = LAT_LANE_CHANGE { printf("
+                - generic [ref=f29e445]: "\"Lane change already ongoing, skipping second lane change\\n\""
+                - text: "); } else { printf("
+                - generic [ref=f29e446]: "\"Injecting lane change action 2\\n\""
+                - text: "); SE_LaneChangeActionStruct lane_change; lane_change.id = 0; // id of object to perform action lane_change.mode = 1; // relative (own vehicle) lane_change.target = -1; // target lane id (relative) lane_change.transition_shape = 2; // sinusoidal lane_change.transition_dim = 2; // time lane_change.transition_value = 3.0; // s SE_InjectLaneChangeAction(&lane_change); } state++; } else if (state == 3 && SE_GetSimulationTime() > 9.5 + SMALL_NUMBER) // slightly overlapping lane change action { printf("
+                - generic [ref=f29e447]: "\"Injecting speed action - soft brake\\n\""
+                - text: "); SE_SpeedActionStruct speed; speed.id = 0; // id of object to perform action speed.speed = 0.0; // target speed in m/s speed.transition_shape = 0; // cubic speed.transition_dim = 1; // rate speed.transition_value = 3.0; // m/s^2 SE_InjectSpeedAction(&speed); state++; } else if (state == 4 && SE_GetSimulationTime() > 11.0 + SMALL_NUMBER) // slightly overlapping lane change action { printf("
+                - generic [ref=f29e448]: "\"Injecting speed action - hard brake\\n\""
+                - text: "); SE_SpeedActionStruct speed; speed.id = 0; // id of object to perform action speed.speed = 0.0; // target speed in m/s speed.transition_shape = 1; // cubic speed.transition_dim = 1; // rate speed.transition_value = 8.0; // m/s^2 SE_InjectSpeedAction(&speed); state++; } if (dt < 0.0) { SE_Step(); } else { SE_StepDT(dt); } } SE_Close(); return 0; }"
+            - paragraph [ref=f29e450]:
+              - text: Example run command, from
+              - code [ref=f29e451]: esmini/code-examples-bin
+              - text: "folder:"
+              - code [ref=f29e452]: ./action_injection ../resources/xosc/cut-in.xosc
+            - paragraph [ref=f29e454]:
+              - text: "There is also a Python version of this example:"
+              - link "EnvironmentSimulator/code-examples/hello_world/action_injection.py" [ref=f29e455] [cursor=pointer]:
+                - /url: https://github.com/esmini/esmini/tree/master/EnvironmentSimulator/code-examples/hello_world/action_injection.py
+          - generic [ref=f29e456]:
+            - heading "Driver model" [level=4] [ref=f29e457]
+            - paragraph [ref=f29e459]:
+              - text: Using a simple vehicle model this example demonstrates how a driver model can interact with the scenario in terms of pedal and steering input. This time we use the
+              - code [ref=f29e460]: ExternalController
+              - text: again to ensure any scenario actions is not conflicting with the driver model.
+            - paragraph [ref=f29e462]: To show different variants we also show how to set scenario parameters during intialization, via callbacks. In effect this is a way to achieve runtime variants of the same basic scenario.
+            - paragraph [ref=f29e464]:
+              - text: Before heading into the application code we will look into the scenario file
+              - link "EnvironmentSimulator/code-examples/test-driver/test-driver.xosc" [ref=f29e465] [cursor=pointer]:
+                - /url: ../EnvironmentSimulator/code-examples/test-driver/test-driver.xosc
+              - text: .
+            - paragraph [ref=f29e467]: Now, let’s have a look inside it to see how to activate the ExternalController, which will prevent the DefaultController to interfere with the Ego vehicle and instead hand over exclusive control to our application. You can skip this and go to the C++ code example below if you’re not interested in the controller setup.
+            - list [ref=f29e469]:
+              - listitem [ref=f29e470]:
+                - paragraph [ref=f29e471]: Open test-driver.xosc
+              - listitem [ref=f29e472]:
+                - paragraph [ref=f29e473]:
+                  - text: Look in the Entities section, under the
+                  - code [ref=f29e474]: <ScenarioObject name="Ego"\>
+                  - text: element. Here the controller is defined and assigned to the Ego vehicle.
+            - code [ref=f29e478]:
+              - text: <ObjectController> <Controller name=
+              - generic [ref=f29e479]: "\"MyExternalControllerWithGhost\""
+              - text: "> <Properties> <Property name="
+              - generic [ref=f29e480]: "\"esminiController\""
+              - text: value=
+              - generic [ref=f29e481]: "\"ExternalController\""
+              - text: /> <Property name=
+              - generic [ref=f29e482]: "\"useGhost\""
+              - text: value=
+              - generic [ref=f29e483]: "\"$GhostMode\""
+              - text: /> <Property name=
+              - generic [ref=f29e484]: "\"headstartTime\""
+              - text: value=
+              - generic [ref=f29e485]: "\"2\""
+              - text: /> </Properties> </Controller> </ObjectController>
+            - paragraph [ref=f29e487]:
+              - strong [ref=f29e488]: "Note:"
+              - text: The GhostMode parameter is set to true or false in the ParameterDeclarations section in the top of the scenario file.
+            - list [ref=f29e490]:
+              - listitem [ref=f29e491]:
+                - paragraph [ref=f29e492]: Then the initial position is set. This could instead be done by the application, but it’s convenient to specify it in the scenario file.
+            - code [ref=f29e496]:
+              - text: <PrivateAction> <TeleportAction> <Position> <LanePosition roadId=
+              - generic [ref=f29e497]: "\"1\""
+              - text: laneId=
+              - generic [ref=f29e498]: "\"-1\""
+              - text: offset=
+              - generic [ref=f29e499]: "\"0\""
+              - text: s=
+              - generic [ref=f29e500]: "\"50\""
+              - text: /> </Position> </TeleportAction> </PrivateAction>
+            - list [ref=f29e502]:
+              - listitem [ref=f29e503]:
+                - paragraph [ref=f29e504]: Finally we need to activate the controller on both lateral and longitudinal domains.
+            - code [ref=f29e508]:
+              - text: <PrivateAction> <ActivateControllerAction longitudinal=
+              - generic [ref=f29e509]: "\"true\""
+              - text: lateral=
+              - generic [ref=f29e510]: "\"true\""
+              - text: /> </PrivateAction>
+            - paragraph [ref=f29e512]: The reason for putting it AFTER the positioning is that oterwise the position action would have no effect, since once the controller is activated all scenario actions will be ignored. The controller then having exclusive control.
+            - paragraph [ref=f29e514]: "Now let’s head into the code example. It will run the scenario three times:"
+            - list [ref=f29e516]:
+              - listitem [ref=f29e517]:
+                - paragraph [ref=f29e518]: External controller without ghost mode
+                - list [ref=f29e520]:
+                  - listitem [ref=f29e521]:
+                    - paragraph [ref=f29e522]: just look ahead and follow along current lane. Find point along the lane and steer towards it.
+              - listitem [ref=f29e523]:
+                - paragraph [ref=f29e524]: External controller with ghost mode and time based lookahead
+                - list [ref=f29e526]:
+                  - listitem [ref=f29e527]:
+                    - paragraph [ref=f29e528]: find the state of ghost at given time offset. Use it for steering and speed target.
+              - listitem [ref=f29e529]:
+                - paragraph [ref=f29e530]: External controller with ghost mode and position based lookahead
+                - list [ref=f29e532]:
+                  - listitem [ref=f29e533]:
+                    - paragraph [ref=f29e534]: given the current Ego position, find ghost state at some look ahead distance along its trail. Use it for steering and speed target.
+            - paragraph [ref=f29e536]: Now, study the code and perhaps play around mainpulating some values.
+            - generic [ref=f29e537]:
+              - generic [ref=f29e538]:
+                - text: Example 11.
+                - link "EnvironmentSimulator/code-examples/test-driver/test-driver.cpp" [ref=f29e539] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master/EnvironmentSimulator/code-examples/test-driver/test-driver.cpp
+              - code [ref=f29e542]:
+                - text: "#include \"stdio.h\" #include \"math.h\" #include <string> #include \"esminiLib.hpp\" void paramDeclCB(void* user_arg) { bool ghostMode = *(static_cast<bool*>(user_arg)); SE_LogMessage((std::string("
+                - generic [ref=f29e543]: "\"Running with ghostMode = \""
+                - text: ).append(ghostMode == true ?
+                - generic [ref=f29e544]: "\"true\""
+                - text: ":"
+                - generic [ref=f29e545]: "\"false\""
+                - text: )).c_str()); SE_SetParameterBool(
+                - generic [ref=f29e546]: "\"GhostMode\""
+                - text: ", ghostMode); } int main(int argc, char* argv[]) { (void)argc; (void)argv; const double defaultTargetSpeed = 50.0; const double curveWeight = 30.0; const double throttleWeight = 0.1; const double duration = 35.0; bool ghostMode[3] = {false, true, true}; SE_SimpleVehicleState vehicleState = {0, 0, 0, 0, 0, 0, 0, 0}; SE_ScenarioObjectState objectState; SE_RoadInfo roadInfo; for (int i = 0; i < 3; i++) { SE_RegisterParameterDeclarationCallback(paramDeclCB, &ghostMode[i]); if (SE_Init("
+                - generic [ref=f29e547]: "\"../EnvironmentSimulator/code-examples/test-driver/test-driver.xosc\""
+                - text: ", 0, 1, 0, 0) != 0) { SE_LogMessage("
+                - generic [ref=f29e548]: "\"Failed to initialize the scenario, quit\\n\""
+                - text: "); return -1; } // Lock object to the original lane // If setting to false, the object road position will snap to closest lane SE_SetLockOnLane(0, true); // Initialize the vehicle model, fetch initial state from the scenario SE_GetObjectState(0, &objectState); void* vehicleHandle = SE_SimpleVehicleCreate(objectState.x, objectState.y, objectState.h, 4.0, 0.0); SE_SimpleVehicleSteeringRate(vehicleHandle, 6.0); // show some road features, including road sensor SE_ViewerShowFeature(4 + 8, true); // NODE_MASK_TRAIL_DOTS (1 << 2) & NODE_MASK_ODR_FEATURES (1 << 3), // Run for specified duration or until 'Esc' button is pressed while (SE_GetSimulationTime() < duration && SE_GetQuitFlag() != 1) { // Get simulation delta time since last call (first will be minimum timestep) double dt = SE_GetSimTimeStep(); // Get road information at a point some speed dependent distance ahead double targetSpeed; if (ghostMode[i] == true) { // ghost version double ghost_speed = 0.0; double timestamp = 0.0; if (i % 2 == 0) // alternate between time based and position based look ahead modes { // Time based look ahead SE_GetRoadInfoGhostTrailTime(0, SE_GetSimulationTime() + 0.25, &roadInfo, &ghost_speed); } else { // Position based Time based look ahead SE_GetRoadInfoAlongGhostTrail(0, 5 + 0.75 * vehicleState.speed, &roadInfo, &ghost_speed, &timestamp); } targetSpeed = ghost_speed; } else { // Look ahead along the road, to establish target info for the driver model SE_GetRoadInfoAtDistance(0, 5 + 0.75 * vehicleState.speed, &roadInfo, 0, true); // Slow down when curve ahead - CURVE_WEIGHT is the tuning parameter targetSpeed = defaultTargetSpeed / (1 + curveWeight * fabs(roadInfo.angle)); } // Accelerate or decelerate towards target speed - THROTTLE_WEIGHT tunes magnitude double throttle = throttleWeight * (targetSpeed - vehicleState.speed); // Step vehicle model with driver input, but wait until time > 0 if (SE_GetSimulationTime() > 0 && !SE_GetPauseFlag()) { // Steer towards where the point double steerAngle = roadInfo.angle; SE_SimpleVehicleControlAnalog(vehicleHandle, dt, throttle, steerAngle); } // Fetch updated state and report to scenario engine SE_SimpleVehicleGetState(vehicleHandle, &vehicleState); // Report updated vehicle position and heading. z, pitch and roll will be aligned to the road SE_ReportObjectPosXYH(0, vehicleState.x, vehicleState.y, vehicleState.h); // The following values are not necessary to report. // If not reported, esmini will calculate based on motion over time // but for accuracy it's recommendeded to report if available. // wheel status (revolution and steering angles) SE_ReportObjectWheelStatus(0, vehicleState.wheel_rotation, vehicleState.wheel_angle); // speed (along vehicle longitudinal (x) axis) SE_ReportObjectSpeed(0, vehicleState.speed); // Finally, update scenario using same time step as for vehicle model SE_StepDT(dt); } SE_Close(); } return 0; }"
+            - paragraph [ref=f29e550]: Don’t worry about the stationary red car on the road, you’ll just drive through it.
+            - paragraph [ref=f29e552]: Try experimenting with the driver settings, e.g. increase lookahead distance factor from 0.75 to 1.75.
+            - paragraph [ref=f29e554]: When running the application, press key 'j' to toggle ghost trail dots and lines visualization.
+            - paragraph [ref=f29e556]:
+              - strong [ref=f29e557]: Challenge
+              - text: ": Attach a front looking sensor to detect it and have the driver to brake to avoid collision…"
+            - generic [ref=f29e558]:
+              - heading "Ghost concept in brief" [level=5] [ref=f29e559]
+              - paragraph [ref=f29e561]: In the first loop the driver model is just capable of driving along the specified lane. It’s totally detached from any scenario events.
+              - paragraph [ref=f29e563]: The ghost concept is a solution for a driver model to perform scenario actions. Basically it will launch a fore-runner to perform the scenario actions. The trajectory, including speed, is registered into a "trail" which can then be used as reference for steering and speed target.
+              - paragraph [ref=f29e565]: "Ghost mode is a parameter of the external controller. Normally this is set in the scenario, for example in test-driver.xosc, change line:"
+              - code [ref=f29e569]:
+                - text: <ParameterDeclaration name=
+                - generic [ref=f29e570]: "\"GhostMode\""
+                - text: parameterType=
+                - generic [ref=f29e571]: "\"boolean\""
+                - text: value=
+                - generic [ref=f29e572]: "\"false\""
+                - text: />
+              - paragraph [ref=f29e574]: "to:"
+              - code [ref=f29e578]:
+                - text: <ParameterDeclaration name=
+                - generic [ref=f29e579]: "\"GhostMode\""
+                - text: parameterType=
+                - generic [ref=f29e580]: "\"boolean\""
+                - text: value=
+                - generic [ref=f29e581]: "\"true\""
+                - text: />
+              - paragraph [ref=f29e583]:
+                - text: However, in the example code this parameter is controlled by the
+                - code [ref=f29e584]: paramDeclCB()
+                - text: callback. Once it’s registered with
+                - code [ref=f29e585]: SE_RegisterParameterDeclarationCallback()
+                - text: it will be called each time esmini is initialized (
+                - code [ref=f29e586]: SE_Init()
+                - text: ).
+          - generic [ref=f29e587]:
+            - heading "OSI groundtruth" [level=4] [ref=f29e588]
+            - paragraph [ref=f29e590]: "To access OSI data we first need to complement the build script (CMakeLists.txt) with OSI include and library info. For example:"
+            - paragraph [ref=f29e592]: "Windows:"
+            - generic [ref=f29e593]: "include_directories(. ../include ../EnvironmentSimulator/Libraries/esminiLib ../externals/osi/v10/include) link_directories(. ../bin ../externals/osi/v10/lib) target_link_libraries(${TARGET} esminiLib libprotobuf open_simulation_interface_pic)"
+            - paragraph [ref=f29e597]: "Linux:"
+            - generic [ref=f29e598]: "include_directories(. ../include ../EnvironmentSimulator/Libraries/esminiLib ../externals/osi/linux/include) link_directories(. ../bin ../externals/osi/linux/lib) target_link_libraries(${TARGET} esminiLib protobuf open_simulation_interface_pic)"
+            - paragraph [ref=f29e602]:
+              - strong [ref=f29e603]: "Note:"
+            - list [ref=f29e605]:
+              - listitem [ref=f29e606]:
+                - paragraph [ref=f29e607]: Replace foldername "v10" with linux or mac depending on your platform.
+              - listitem [ref=f29e608]:
+                - paragraph [ref=f29e609]:
+                  - text: "If linking with custom applications or libraries: OSI and Google Protobuf versions needs to be consistent (at least major version nr), also with the versions used in esmini (see"
+                  - link "here" [ref=f29e610] [cursor=pointer]:
+                    - /url: https://github.com/esmini/esmini#osi-support
+                  - text: ).
+            - paragraph [ref=f29e612]:
+              - text: Then run
+              - code [ref=f29e613]: cmake ..
+              - text: from the build folder to apply the changes in CMakeFiles.cxx.
+            - paragraph [ref=f29e615]: The following code will update, fetch and print some OSI data each frame.
+            - generic [ref=f29e616]:
+              - generic [ref=f29e617]:
+                - text: Example 12.
+                - link "EnvironmentSimulator/code-examples/osi-groundtruth/osi-groundtruth.cpp" [ref=f29e618] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master/EnvironmentSimulator/code-examples/osi-groundtruth/osi-groundtruth.cpp
+              - code [ref=f29e621]:
+                - text: "#include \"esminiLib.hpp\" #include <osi_common.pb.h> #include <osi_object.pb.h> #include <osi_groundtruth.pb.h> #include <osi_version.pb.h> int main(int argc, char* argv[]) { (void)argc; (void)argv; const osi3::GroundTruth* gt; SE_EnableOSIFile(0); // 0 or \"\" will result in default filename, ground_truth.osi SE_SetOSIStaticReportMode(SE_OSIStaticReportMode::DEFAULT); SE_Init("
+                - generic [ref=f29e622]: "\"../resources/xosc/cut-in_simple.xosc\""
+                - text: ", 0, 1, 0, 0); // Fetch initial OSI struct, this will also update the OSI data gt = reinterpret_cast<const osi3::GroundTruth*>(SE_GetOSIGroundTruthRaw()); // Lane boundaries (static road info only available in first OSI frame) printf("
+                - generic [ref=f29e623]: "\"lane boundaries: %d\\n\""
+                - text: ", gt->lane_boundary_size()); for (int j = 0; j < gt->lane_boundary_size(); j++) { printf("
+                - generic [ref=f29e624]: "\" lane boundary %d, nr of boundary points: %d\\n\""
+                - text: ", j, gt->lane_boundary(j).boundary_line_size()); #if 0 // change to 1 in order to print all boundary points for (int k = 0; k < gt->lane_boundary(j).boundary_line_size(); k++) { printf(\" (%.2f, %.2f)\\n\", gt->lane_boundary(j).boundary_line(k).position().x(), gt->lane_boundary(j).boundary_line(k).position().y()); } #endif } for (int i = 0; i < 4; i++) { SE_StepDT(0.01); // ground truth will be automatically updated each step if we have either an OSIFile or fetched a pointer to the // osi3::GroundTruth struct // Print timestamp printf("
+                - generic [ref=f29e625]: "\"Frame %d timestamp: %.2f\\n\""
+                - text: ", i + 1, static_cast<double>(gt->timestamp().seconds()) + 1E-9 * static_cast<double>(gt->timestamp().nanos())); // Static content such as lane boundaries should be 0 at this point (we have SE_OSIStaticReportMode::DEFAULT, change to API or API_AND_LOG to // get static data) printf("
+                - generic [ref=f29e626]: "\"lane boundaries: %d\\n\""
+                - text: ", gt->lane_boundary_size()); // Road markings, e.g. zebra lines printf("
+                - generic [ref=f29e627]: "\"road markings: %d\\n\""
+                - text: ", gt->road_marking_size()); // Moving objects printf("
+                - generic [ref=f29e628]: "\"moving objects: %d\\n\""
+                - text: ", gt->moving_object_size()); #if 1 // change to 1 in order to print some moving object state info // Print object id, position, orientation and velocity for (int j = 0; j < gt->moving_object().size(); j++) { printf("
+                - generic [ref=f29e629]: "\" obj id %u pos (%.2f, %.2f, %.2f) orientation (%.2f, %.2f, %.2f) vel (%.2f, %.2f, %.2f) acc (%.2f, %.2f, %.2f)\\n\""
+                - text: ", static_cast<unsigned int>(gt->moving_object(j).id().value()), gt->moving_object(j).base().position().x(), gt->moving_object(j).base().position().y(), gt->moving_object(j).base().position().z(), gt->moving_object(j).base().orientation().yaw(), gt->moving_object(j).base().orientation().pitch(), gt->moving_object(j).base().orientation().roll(), gt->moving_object(j).base().velocity().x(), gt->moving_object(j).base().velocity().y(), gt->moving_object(j).base().velocity().z(), gt->moving_object(j).base().acceleration().x(), gt->moving_object(j).base().acceleration().y(), gt->moving_object(j).base().acceleration().z()); } #endif // Moving objects printf("
+                - generic [ref=f29e630]: "\"stationary objects: %d\\n\""
+                - text: ", gt->stationary_object_size()); } SE_Close(); return 0; }"
+        - generic [ref=f29e631]:
+          - heading "Python binding" [level=3] [ref=f29e632]
+          - paragraph [ref=f29e634]: A Python wrapper for esmini can easily be created using "ctypes" (thanks David Kaplan for the tip!). This section presents a few examples to get you started.
+          - generic [ref=f29e635]:
+            - heading "Minimalistic esmini Python player" [level=4] [ref=f29e636]
+            - paragraph [ref=f29e638]: The script below works on Windows.
+            - code [ref=f29e642]:
+              - text: import ctypes se = ctypes.CDLL(
+              - generic [ref=f29e643]: "\"../bin/esminiLib.dll\""
+              - text: ) se.SE_Init(
+              - generic [ref=f29e644]: b"../resources/xosc/cut-in.xosc"
+              - text: ", 1, 1, 0, 0, 2) for i in range (500): se.SE_Step()"
+            - list [ref=f29e646]:
+              - listitem [ref=f29e647]:
+                - paragraph [ref=f29e648]:
+                  - text: Create the file
+                  - code [ref=f29e649]: esmini-win-player.py
+                  - text: in
+                  - code [ref=f29e650]: esmini/Hello-World_coding-example
+                  - text: folder, copy the code into it.
+              - listitem [ref=f29e651]:
+                - paragraph [ref=f29e652]:
+                  - text: Make sure the esminiLib is present in
+                  - code [ref=f29e653]: esmini/bin
+                  - text: folder.
+              - listitem [ref=f29e654]:
+                - paragraph [ref=f29e655]:
+                  - text: "Run the script from its folder as:"
+                  - code [ref=f29e656]: python esmini-win-player.py
+            - paragraph [ref=f29e658]:
+              - strong [ref=f29e659]: "Note:"
+              - text: Library name varies with the platform as mentioned above (see
+              - link "Preparations" [ref=f29e660] [cursor=pointer]:
+                - /url: "#preparations"
+              - text: )
+            - paragraph [ref=f29e662]: "Below is a bit more flexible variant:"
+            - list [ref=f29e664]:
+              - listitem [ref=f29e665]:
+                - paragraph [ref=f29e666]: "Portable: Works on all supported platforms"
+              - listitem [ref=f29e667]:
+                - paragraph [ref=f29e668]: Provide scenario via argument
+              - listitem [ref=f29e669]:
+                - paragraph [ref=f29e670]: Quit at press Escape or end of scenario
+            - generic [ref=f29e671]:
+              - generic [ref=f29e672]:
+                - text: Example 13.
+                - link "Hello-World_coding-example/esmini-player.py" [ref=f29e673] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master/Hello-World_coding-example/esmini-player.py
+              - code [ref=f29e676]:
+                - text: import ctypes import sys if sys.platform ==
+                - generic [ref=f29e677]: "\"linux\""
+                - text: or sys.platform ==
+                - generic [ref=f29e678]: "\"linux2\""
+                - text: ": se = ctypes.CDLL("
+                - generic [ref=f29e679]: "\"../bin/libesminiLib.so\""
+                - text: ) elif sys.platform ==
+                - generic [ref=f29e680]: "\"darwin\""
+                - text: ": se = ctypes.CDLL("
+                - generic [ref=f29e681]: "\"../bin/libesminiLib.dylib\""
+                - text: ) elif sys.platform ==
+                - generic [ref=f29e682]: "\"win32\""
+                - text: ": se = ctypes.CDLL("
+                - generic [ref=f29e683]: "\"../bin/esminiLib.dll\""
+                - text: ") else: print("
+                - generic [ref=f29e684]: "\"Unsupported platform: {}\""
+                - text: ".format(sys.platform)) quit() if (len(sys.argv) < 2): print("
+                - generic [ref=f29e685]: "'Usage: {} <xosc file>'"
+                - text: .format(sys.argv[0])) exit(-1) se.SE_Init(sys.argv[1].encode(
+                - generic [ref=f29e686]: "'ascii'"
+                - text: "), 0, 1, 0, 0) while not se.SE_GetQuitFlag(): se.SE_Step()"
+            - paragraph [ref=f29e688]:
+              - text: That was a minimalistic introduction. Following examples are located under the
+              - code [ref=f29e689]: EnvironmentSimulator/code-examples
+              - text: folder. To run them, again make sure the esminiLib is present in
+              - code [ref=f29e690]: esmini/bin
+              - text: folder. Run each script from its folder.
+          - generic [ref=f29e691]:
+            - heading "Initialize esmini by flexible argument list" [level=4] [ref=f29e692]
+            - paragraph [ref=f29e694]:
+              - text: Instead of using the limited
+              - code [ref=f29e695]: SE_Init()
+              - text: function you can pass any arguments using
+              - code [ref=f29e696]: SE_InitWithArgs()
+            - generic [ref=f29e697]:
+              - generic [ref=f29e698]:
+                - text: Example 14.
+                - link "EnvironmentSimulator/code-examples/hello_world/init_by_args.py" [ref=f29e699] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master/EnvironmentSimulator/code-examples/hello_world/init_by_args.py
+              - code [ref=f29e702]:
+                - generic [ref=f29e703]: "''' demonstrate how to initialize esmini with arguments instead of a few limited arguments using ideas from: https://comp.lang.python.narkive.com/RUdYlz64/trying-to-pass-sys-argv-as-int-argc-char-argv-using-ctypes Instruction: - make sure the esmini shared library (esminiLib.dll or esminiLib.so) is present in esmini/bin folder - if not, either compile esmini (see User guide) or fetch bin package release - from this folder (where this code module is), run: python ./init_by_args.py '''"
+                - text: import ctypes as ct import sys if sys.platform ==
+                - generic [ref=f29e704]: "\"linux\""
+                - text: or sys.platform ==
+                - generic [ref=f29e705]: "\"linux2\""
+                - text: ": se = ct.CDLL("
+                - generic [ref=f29e706]: "\"../../../bin/libesminiLib.so\""
+                - text: ) elif sys.platform ==
+                - generic [ref=f29e707]: "\"darwin\""
+                - text: ": se = ct.CDLL("
+                - generic [ref=f29e708]: "\"../../../bin/libesminiLib.dylib\""
+                - text: ) elif sys.platform ==
+                - generic [ref=f29e709]: "\"win32\""
+                - text: ": se = ct.CDLL("
+                - generic [ref=f29e710]: "\"../../../bin/esminiLib.dll\""
+                - text: ") else: print("
+                - generic [ref=f29e711]: "\"Unsupported platform: {}\""
+                - text: ".format(platform)) quit() # specify arguments types of esmini function se.SE_InitWithArgs.argtypes = [ct.c_int, ct.POINTER(ct.POINTER(ct.c_char))] # create the list of arguments args = ["
+                - generic [ref=f29e712]: "\"--window\""
+                - text: ","
+                - generic [ref=f29e713]: "\"60\""
+                - text: ","
+                - generic [ref=f29e714]: "\"60\""
+                - text: ","
+                - generic [ref=f29e715]: "\"800\""
+                - text: ","
+                - generic [ref=f29e716]: "\"400\""
+                - text: ","
+                - generic [ref=f29e717]: "\"--osc\""
+                - text: ","
+                - generic [ref=f29e718]: "\"../resources/xosc/cut-in.xosc\""
+                - text: ", ] # prepare argument list for ctypes use argv = (ct.POINTER(ct.c_char) * len(args))() argc = len(argv) for i, arg in enumerate(args): argv[i] = ct.create_string_buffer(arg.encode()) # init esmini if se.SE_InitWithArgs(argc, argv) != 0: exit(-1) # execute esmini until end of scenario or user requested quit by ESC key while se.SE_GetQuitFlag() == 0: se.SE_Step()"
+          - generic [ref=f29e719]:
+            - heading "Forward command line arguments" [level=4] [ref=f29e720]
+            - paragraph [ref=f29e722]: "How to just forward any argument provided from command line:"
+            - generic [ref=f29e723]:
+              - generic [ref=f29e724]:
+                - text: Example 15.
+                - link "EnvironmentSimulator/code-examples/hello_world/forward_cmd_args.py" [ref=f29e725] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master/EnvironmentSimulator/code-examples/hello_world/forward_cmd_args.py
+              - code [ref=f29e728]:
+                - generic [ref=f29e729]: "''' demonstrate how to forward command line arguments to esmini using ideas from: https://comp.lang.python.narkive.com/RUdYlz64/trying-to-pass-sys-argv-as-int-argc-char-argv-using-ctypes Instruction: - make sure the esmini shared library (esminiLib.dll or esminiLib.so) is present in esmini/bin folder - if not, either compile esmini (see User guide) or fetch bin package release - from this folder (where this code module is), run: python ./forward_cmd_args.py <esmini command line arguments> - Example: python ./forward_cmd_args.py ../../../resources/xosc/cut-in.xosc --road_features on --bounding_boxes '''"
+                - text: import ctypes as ct import sys if sys.platform ==
+                - generic [ref=f29e730]: "\"linux\""
+                - text: or sys.platform ==
+                - generic [ref=f29e731]: "\"linux2\""
+                - text: ": se = ct.CDLL("
+                - generic [ref=f29e732]: "\"../../../bin/libesminiLib.so\""
+                - text: ) elif sys.platform ==
+                - generic [ref=f29e733]: "\"darwin\""
+                - text: ": se = ct.CDLL("
+                - generic [ref=f29e734]: "\"../../../bin/libesminiLib.dylib\""
+                - text: ) elif sys.platform ==
+                - generic [ref=f29e735]: "\"win32\""
+                - text: ": se = ct.CDLL("
+                - generic [ref=f29e736]: "\"../../../bin/esminiLib.dll\""
+                - text: ") else: print("
+                - generic [ref=f29e737]: "\"Unsupported platform: {}\""
+                - text: ".format(platform)) quit() # specify arguments types of esmini function se.SE_InitWithArgs.argtypes = [ct.c_int, ct.POINTER(ct.POINTER(ct.c_char))] # fetch command line arguments argc = len(sys.argv) argv = (ct.POINTER(ct.c_char) * (argc + 1))() for i, arg in enumerate(sys.argv): argv[i] = ct.create_string_buffer(arg.encode("
+                - generic [ref=f29e738]: "'utf-8'"
+                - text: ")) # init esmini if se.SE_InitWithArgs(argc, argv) != 0: exit(-1) # execute esmini until end of scenario or user requested quit by ESC key while se.SE_GetQuitFlag() == 0: se.SE_Step()"
+          - generic [ref=f29e739]:
+            - heading "Get object states" [level=4] [ref=f29e740]
+            - paragraph [ref=f29e742]: "How to retrieve the state of all scenario objects:"
+            - generic [ref=f29e743]:
+              - generic [ref=f29e744]:
+                - text: Example 16.
+                - link "EnvironmentSimulator/code-examples/hello_world/get_states.py" [ref=f29e745] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master/EnvironmentSimulator/code-examples/hello_world/get_states.py
+              - code [ref=f29e748]:
+                - generic [ref=f29e749]: "''' demonstrate how to get scenario object states Instruction: - make sure the esmini shared library (esminiLib.dll or esminiLib.so) is present in esmini/bin folder - if not, either compile esmini (see User guide) or fetch bin package release - from this folder (where this code module is), run: python ./get_states.py '''"
+                - text: import ctypes from sys import platform if platform ==
+                - generic [ref=f29e750]: "\"linux\""
+                - text: or platform ==
+                - generic [ref=f29e751]: "\"linux2\""
+                - text: ": se = ctypes.CDLL("
+                - generic [ref=f29e752]: "\"../../../bin/libesminiLib.so\""
+                - text: ) elif platform ==
+                - generic [ref=f29e753]: "\"darwin\""
+                - text: ": se = ctypes.CDLL("
+                - generic [ref=f29e754]: "\"../../../bin/libesminiLib.dylib\""
+                - text: ) elif platform ==
+                - generic [ref=f29e755]: "\"win32\""
+                - text: ": se = ctypes.CDLL("
+                - generic [ref=f29e756]: "\"../../../bin/esminiLib.dll\""
+                - text: ") else: print("
+                - generic [ref=f29e757]: "\"Unsupported platform: {}\""
+                - text: ".format(platform)) quit() # Definition of SE_ScenarioObjectState struct class SEScenarioObjectState(ctypes.Structure): _fields_ = [ ("
+                - generic [ref=f29e758]: "\"id\""
+                - text: ", ctypes.c_int), ("
+                - generic [ref=f29e759]: "\"model_id\""
+                - text: ", ctypes.c_int), ("
+                - generic [ref=f29e760]: "\"control\""
+                - text: ", ctypes.c_int), ("
+                - generic [ref=f29e761]: "\"timestamp\""
+                - text: ", ctypes.c_double), ("
+                - generic [ref=f29e762]: "\"x\""
+                - text: ", ctypes.c_double), ("
+                - generic [ref=f29e763]: "\"y\""
+                - text: ", ctypes.c_double), ("
+                - generic [ref=f29e764]: "\"z\""
+                - text: ", ctypes.c_double), ("
+                - generic [ref=f29e765]: "\"h\""
+                - text: ", ctypes.c_double), ("
+                - generic [ref=f29e766]: "\"p\""
+                - text: ", ctypes.c_double), ("
+                - generic [ref=f29e767]: "\"r\""
+                - text: ", ctypes.c_double), ("
+                - generic [ref=f29e768]: "\"roadId\""
+                - text: ", ctypes.c_int), ("
+                - generic [ref=f29e769]: "\"junctionId\""
+                - text: ", ctypes.c_int), ("
+                - generic [ref=f29e770]: "\"t\""
+                - text: ", ctypes.c_double), ("
+                - generic [ref=f29e771]: "\"laneId\""
+                - text: ", ctypes.c_int), ("
+                - generic [ref=f29e772]: "\"laneOffset\""
+                - text: ", ctypes.c_double), ("
+                - generic [ref=f29e773]: "\"s\""
+                - text: ", ctypes.c_double), ("
+                - generic [ref=f29e774]: "\"speed\""
+                - text: ", ctypes.c_double), ("
+                - generic [ref=f29e775]: "\"centerOffsetX\""
+                - text: ", ctypes.c_double), ("
+                - generic [ref=f29e776]: "\"centerOffsetY\""
+                - text: ", ctypes.c_double), ("
+                - generic [ref=f29e777]: "\"centerOffsetZ\""
+                - text: ", ctypes.c_double), ("
+                - generic [ref=f29e778]: "\"width\""
+                - text: ", ctypes.c_double), ("
+                - generic [ref=f29e779]: "\"length\""
+                - text: ", ctypes.c_double), ("
+                - generic [ref=f29e780]: "\"height\""
+                - text: ", ctypes.c_double), ("
+                - generic [ref=f29e781]: "\"objectType\""
+                - text: ", ctypes.c_int), ("
+                - generic [ref=f29e782]: "\"objectCategory\""
+                - text: ", ctypes.c_int), ("
+                - generic [ref=f29e783]: "\"wheelAngle\""
+                - text: ", ctypes.c_double), ("
+                - generic [ref=f29e784]: "\"wheelRot\""
+                - text: ", ctypes.c_double), ("
+                - generic [ref=f29e785]: "\"visibilityMask\""
+                - text: ", ctypes.c_int) ] se.SE_Init("
+                - generic [ref=f29e786]: b"../resources/xosc/cut-in.xosc"
+                - text: ", 0, 1, 0, 0) obj_state = SEScenarioObjectState() # object that will be passed and filled in with object state info for i in range(500): for j in range(se.SE_GetNumberOfObjects()): se.SE_GetObjectState(se.SE_GetId(j), ctypes.byref(obj_state)) print("
+                - generic [ref=f29e787]: "'Frame {} Time {:.2f} ObjId {} roadId {} laneId {} laneOffset {:.2f} s {:.2f} x {:.2f} y {:.2f} heading {:.2f} speed {:.2f} wheelAngle {:.2f} wheelRot {:.2f}'"
+                - text: .format( i, obj_state.timestamp, obj_state.id, obj_state.roadId, obj_state.laneId, obj_state.laneOffset, obj_state.s, obj_state.x, obj_state.y, obj_state.h, obj_state.speed * 3.6, obj_state.wheelAngle, obj_state.wheelRot)) se.SE_Step()
+          - generic [ref=f29e788]:
+            - heading "Example use of esminiRMLib (RoadManager)" [level=4] [ref=f29e789]
+            - list [ref=f29e791]:
+              - listitem [ref=f29e792]:
+                - paragraph [ref=f29e793]:
+                  - text: Make sure the esminiRMLib is present in
+                  - code [ref=f29e794]: esmini/bin
+                  - text: folder
+              - listitem [ref=f29e795]:
+                - paragraph [ref=f29e796]: In the code, check filepath to the OpenDRIVE file to load (current search path should work when script is copied to and run from the esmini/Hello-World_coding-example folder)
+            - generic [ref=f29e797]:
+              - generic [ref=f29e798]:
+                - text: Example 17.
+                - link "EnvironmentSimulator/code-examples/hello_world/use_roadmanager.py" [ref=f29e799] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master/EnvironmentSimulator/code-examples/hello_world/use_roadmanager.py
+              - code [ref=f29e802]:
+                - generic [ref=f29e803]: "''' demonstrate how to use esmini esminiRMLib (road manager lib) in a Python context Instruction: - make sure the esmini shared library (esminiLib.dll or esminiLib.so) is present in esmini/bin folder - if not, either compile esmini (see User guide) or fetch bin package release - from this folder (where this code module is), run: python ./use_roadmanager.py '''"
+                - text: import ctypes as ct import sys if sys.platform ==
+                - generic [ref=f29e804]: "\"linux\""
+                - text: or sys.platform ==
+                - generic [ref=f29e805]: "\"linux2\""
+                - text: ": rm = ct.CDLL("
+                - generic [ref=f29e806]: "\"../../../bin/libesminiRMLib.so\""
+                - text: ) elif sys.platform ==
+                - generic [ref=f29e807]: "\"darwin\""
+                - text: ": rm = ct.CDLL("
+                - generic [ref=f29e808]: "\"../../../bin/libesminiRMLib.dylib\""
+                - text: ) elif sys.platform ==
+                - generic [ref=f29e809]: "\"win32\""
+                - text: ": rm = ct.CDLL("
+                - generic [ref=f29e810]: "\"../../../bin/esminiRMLib.dll\""
+                - text: ") else: print("
+                - generic [ref=f29e811]: "\"Unsupported platform: {}\""
+                - text: ".format(sys.platform)) sys.exit(-1) # Definition of RM_PositionData struct - should match esminiRMLib::RM_PositionData struct class RM_PositionData(ct.Structure): _fields_ = [ ("
+                - generic [ref=f29e812]: "\"x\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e813]: "\"y\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e814]: "\"z\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e815]: "\"h\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e816]: "\"p\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e817]: "\"r\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e818]: "\"h_relative\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e819]: "\"road_id\""
+                - text: ", ct.c_int), ("
+                - generic [ref=f29e820]: "\"junction_id\""
+                - text: ", ct.c_int), # -1 if not in a junction ("
+                - generic [ref=f29e821]: "\"lane_id\""
+                - text: ", ct.c_int), ("
+                - generic [ref=f29e822]: "\"lane_offset\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e823]: "\"s\""
+                - text: ", ct.c_double), ] # Specify argument types to a few functions rm.RM_SetWorldPosition.argtypes = [ct.c_int, ct.c_double, ct.c_double, ct.c_double, ct.c_double, ct.c_double, ct.c_double] rm.RM_SetLanePosition.argtypes = [ct.c_int, ct.c_int, ct.c_int, ct.c_double, ct.c_double] # Initialize esmini RoadManger with given OpenDRIVE file odr ="
+                - generic [ref=f29e824]: "'../../../resources/xodr/straight_500m.xodr'"
+                - text: "if rm.RM_Init(odr.encode()) == -1: # encode() converts string to pure byte array print("
+                - generic [ref=f29e825]: "\"Failed to load OpenDRIVE file \""
+                - text: ", ) sys.exit(-1) rm_pos = rm.RM_CreatePosition() # create a position object, returns a handle rm_pos_data = RM_PositionData() # object that will be passed and filled in with position info # test a few positions x = 65 y = -1.7 rm.RM_SetWorldPosition(rm_pos, x, y, 0.0, 0.0, 0.0, 0.0) rm.RM_GetPositionData(rm_pos, ct.byref(rm_pos_data)) print("
+                - generic [ref=f29e826]: "'road_id {} lane_id {} lane_offset {:.2f} s {:.2f}'"
+                - text: .format( rm_pos_data.road_id, rm_pos_data.lane_id, rm_pos_data.lane_offset, rm_pos_data.s)) road_id = 1 lane_id = 1 lane_offset = -0.2 s = 40 rm.RM_SetLanePosition(rm_pos, road_id, lane_id, lane_offset, s) rm.RM_GetPositionData(rm_pos, ct.byref(rm_pos_data)) print(
+                - generic [ref=f29e827]: "'x {:.2f} y {:.2f} h (yaw) {:.2f}'"
+                - text: .format( rm_pos_data.x, rm_pos_data.y, rm_pos_data.h))
+          - generic [ref=f29e828]:
+            - heading "Storyboard element state callback" [level=4] [ref=f29e829]
+            - paragraph [ref=f29e831]: The following code shows how to get notification of storyboard events using StoryBoardElementStateChangeCallback.
+            - generic [ref=f29e832]:
+              - generic [ref=f29e833]:
+                - text: Example 18.
+                - link "EnvironmentSimulator/code-examples/hello_world/storyboard_state_callback.py" [ref=f29e834] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master/EnvironmentSimulator/code-examples/hello_world/storyboard_state_callback.py
+                - text: (complete code)
+              - code [ref=f29e837]:
+                - text: "# Storyboard element types (see OSCTypeDefs/OSCAction.hpp) sbe_type = { 0:"
+                - generic [ref=f29e838]: "\"UNDEFINED_ELEMENT_TYPE\""
+                - text: ", 1:"
+                - generic [ref=f29e839]: "\"STORY_BOARD\""
+                - text: ", 2:"
+                - generic [ref=f29e840]: "\"STORY\""
+                - text: ", 3:"
+                - generic [ref=f29e841]: "\"ACT\""
+                - text: ", 4:"
+                - generic [ref=f29e842]: "\"MANEUVER_GROUP\""
+                - text: ", 5:"
+                - generic [ref=f29e843]: "\"MANEUVER\""
+                - text: ", 6:"
+                - generic [ref=f29e844]: "\"EVENT\""
+                - text: ", 7:"
+                - generic [ref=f29e845]: "\"ACTION\""
+                - text: "} # Storyboard element states (see OSCTypeDefs/OSCAction.hpp) sbe_state = { 0:"
+                - generic [ref=f29e846]: "\"UNDEFINED_ELEMENT_STATE\""
+                - text: ", 1:"
+                - generic [ref=f29e847]: "\"STANDBY\""
+                - text: ", 2:"
+                - generic [ref=f29e848]: "\"RUNNING\""
+                - text: ", 3:"
+                - generic [ref=f29e849]: "\"COMPLETE\""
+                - text: "} # Define callback for scenario storyboard element state changes # according to function type: void (*fnPtr)(const char* name, int type, int state) # required by SE_RegisterStoryBoardElementStateChangeCallback() def callback(name, type, state, full_path): # just print the received info print(type) print("
+                - generic [ref=f29e850]: "\"callback: {} ({}) state: {} full path: {}\""
+                - text: ".format(codecs.decode(name), sbe_type[type], sbe_state[state], codecs.decode(full_path), )) callback_type = ct.CFUNCTYPE(None, ct.c_char_p, ct.c_int, ct.c_int, ct.c_char_p) callback_func = callback_type(callback) # Initialize esmini before register the callback se.SE_AddPath("
+                - generic [ref=f29e851]: b"../../../resources/xosc"
+                - text: ") # search path if run from original location se.SE_Init("
+                - generic [ref=f29e852]: b"../resources/xosc/cut-in.xosc"
+                - text: ", 0, 1, 0, 1) # register the callback function se.SE_RegisterStoryBoardElementStateChangeCallback(callback_func)"
+          - generic [ref=f29e853]:
+            - heading "OSI groundtruth" [level=4] [ref=f29e854]
+            - paragraph [ref=f29e856]: OSI groundtruth can also be retrieved and processed via Python. The following code shows one way of doing it. This example also shows how the simulation can be encapsulated in a class.
+            - generic [ref=f29e857]:
+              - generic [ref=f29e858]:
+                - text: Example 19.
+                - link "EnvironmentSimulator/code-examples/hello_world/osi_groundtruth.py" [ref=f29e859] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master/EnvironmentSimulator/code-examples/hello_world/osi_groundtruth.py
+                - text: (complete code)
+              - code [ref=f29e862]:
+                - generic [ref=f29e863]: "''' demonstrate how to fetch OSI data from esmini in Python context Python dependencies: pip install protobuf==3.20.2 Note: No need to install OSI as long as esmini/scripts/osi3 folder is available Instruction: - make sure the esmini shared library (esminiLib.dll or esminiLib.so) is present in esmini/bin folder - if not, either compile esmini (see User guide) or fetch bin package release - from this folder (where this code module is), run: python ./osi_groundtruth.py '''"
+                - text: "import os import sys import ctypes as ct # Add scripts root directory to module search path in order to find osi3 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),"
+                - generic [ref=f29e864]: "'../../../'"
+                - text: ","
+                - generic [ref=f29e865]: "'scripts'"
+                - text: ))) sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
+                - generic [ref=f29e866]: "'..'"
+                - text: ","
+                - generic [ref=f29e867]: "'scripts'"
+                - text: "))) # if script moved to Hello World folder from osi3.osi_groundtruth_pb2 import GroundTruth # Import esmini lib if sys.platform =="
+                - generic [ref=f29e868]: "\"linux\""
+                - text: or sys.platform ==
+                - generic [ref=f29e869]: "\"linux2\""
+                - text: ": se = ct.CDLL("
+                - generic [ref=f29e870]: "\"../../../bin/libesminiLib.so\""
+                - text: ) elif sys.platform ==
+                - generic [ref=f29e871]: "\"darwin\""
+                - text: ": se = ct.CDLL("
+                - generic [ref=f29e872]: "\"../../../bin/libesminiLib.dylib\""
+                - text: ) elif sys.platform ==
+                - generic [ref=f29e873]: "\"win32\""
+                - text: ": se = ct.CDLL("
+                - generic [ref=f29e874]: "\"../../../bin/esminiLib.dll\""
+                - text: ") else: print("
+                - generic [ref=f29e875]: "\"Unsupported platform: {}\""
+                - text: ".format(platform)) quit() # Specify argument and return types of some esmini functions se.SE_GetOSIGroundTruth.restype = ct.c_void_p se.SE_GetOSIGroundTruth.argtypes = [ct.c_void_p] se.SE_StepDT.argtypes = [ct.c_double] class Sim: def __init__(self, scenario): self.msg = GroundTruth() # OSI groundtruth message self.msg_size = ct.c_int() if se.SE_Init(scenario, 0, 1, 0, 0) != 0: print("
+                - generic [ref=f29e876]: "'Failed to open '"
+                - text: ", scenario) exit(-1) self.GetAndPrintOSIInfo() # Initial state # Retrieve OSI message and print some info def GetAndPrintOSIInfo(self): msg_string = se.SE_GetOSIGroundTruth(ct.byref(self.msg_size)) self.msg.ParseFromString(ct.string_at(msg_string, self.msg_size)) # Print some info print("
+                - generic [ref=f29e877]: "\"Timestamp: {:.2f}\""
+                - text: ".format(self.msg.timestamp.seconds + 1e-9 * self.msg.timestamp.nanos)) for j, o in enumerate(self.msg.moving_object): print("
+                - generic [ref=f29e878]: "' Object[{}] id {}'"
+                - text: .format(j, o.id.value)) print(
+                - generic [ref=f29e879]: "' pos.x {:.2f} pos.y {:.2f} rot.h {:.2f}'"
+                - text: .format(\ o.base.position.x,\ o.base.position.y,\ o.base.orientation.yaw)) print(
+                - generic [ref=f29e880]: "' vel.x {:.2f} vel.y {:.2f} rot_rate.h {:.2f}'"
+                - text: .format(\ o.base.velocity.x,\ o.base.velocity.y,\ o.base.orientation_rate.yaw)) print(
+                - generic [ref=f29e881]: "' acc.x {:.2f} acc.y {:.2f} rot_acc.h {:.2f}'"
+                - text: ".format(\\ o.base.acceleration.x,\\ o.base.acceleration.y,\\ o.base.orientation_acceleration.yaw)) def Run(self): while se.SE_GetQuitFlag() != 1: se.SE_StepDT(0.05) self.GetAndPrintOSIInfo() # Updated state se.SE_Close() if __name__ =="
+                - generic [ref=f29e882]: "'__main__'"
+                - text: ": # Execute when the module is not initialized from an import statement. sim = Sim("
+                - generic [ref=f29e883]: b"../resources/xosc/cut-in.xosc"
+                - text: ) sim.Run()
+          - generic [ref=f29e884]:
+            - heading "Object state callback" [level=4] [ref=f29e885]
+            - paragraph [ref=f29e887]:
+              - mark [ref=f29e888]: Advanced
+            - paragraph [ref=f29e890]: Controllers and callbacks can also be utilized via Python. Following code drafts how to grab state of the first scenario object and then, in a callback, manipulate it and report back. If used in combination with ExternalController in mode=additive the scenario action are applied first. On the contrary, if used with mode=override, the scenario actions will not be applied giving exclusive control to the external callback function.
+            - generic [ref=f29e891]:
+              - generic [ref=f29e892]:
+                - text: Example 20.
+                - link "EnvironmentSimulator/code-examples/hello_world/object_callback.py" [ref=f29e893] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master/EnvironmentSimulator/code-examples/hello_world/object_callback.py
+                - text: (complete code)
+              - code [ref=f29e896]:
+                - text: "# Definition of SE_ScenarioObjectState struct class SEScenarioObjectState(ct.Structure): _fields_ = [ ("
+                - generic [ref=f29e897]: "\"id\""
+                - text: ", ct.c_int), ("
+                - generic [ref=f29e898]: "\"model_id\""
+                - text: ", ct.c_int), ("
+                - generic [ref=f29e899]: "\"control\""
+                - text: ", ct.c_int), ("
+                - generic [ref=f29e900]: "\"timestamp\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e901]: "\"x\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e902]: "\"y\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e903]: "\"z\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e904]: "\"h\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e905]: "\"p\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e906]: "\"r\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e907]: "\"roadId\""
+                - text: ", ct.c_int), ("
+                - generic [ref=f29e908]: "\"junctionId\""
+                - text: ", ct.c_int), ("
+                - generic [ref=f29e909]: "\"t\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e910]: "\"laneId\""
+                - text: ", ct.c_int), ("
+                - generic [ref=f29e911]: "\"laneOffset\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e912]: "\"s\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e913]: "\"speed\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e914]: "\"centerOffsetX\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e915]: "\"centerOffsetY\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e916]: "\"centerOffsetZ\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e917]: "\"width\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e918]: "\"length\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e919]: "\"height\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e920]: "\"objectType\""
+                - text: ", ct.c_int), ("
+                - generic [ref=f29e921]: "\"objectCategory\""
+                - text: ", ct.c_int), ("
+                - generic [ref=f29e922]: "\"wheel_angle\""
+                - text: ", ct.c_double), ("
+                - generic [ref=f29e923]: "\"wheel_rot\""
+                - text: ", ct.c_double), ] # Define callback for scenario object enabling manipulating the state AFTER scenario step but BEFORE OSI output # Use in combination with ExternalController in mode=additive in order for scenario actions to be applied first def callback(state_ptr, b): state = state_ptr.contents print("
+                - generic [ref=f29e924]: "\"callback for obj {}: x={:.2f} y={:.2f} h={:.2f}\""
+                - text: ".format(state.id, state.x, state.y, state.h)) se.SE_ReportObjectPosXYH(ct.c_int(state.id), ct.c_double(state.x + 0.02), ct.c_double(state.y), ct.c_double(state.h + 0.001)) callback_type = ct.CFUNCTYPE(None, ct.POINTER(SEScenarioObjectState), ct.c_void_p) callback_func = callback_type(callback) # Initialize esmini before register the callback se.SE_AddPath("
+                - generic [ref=f29e925]: b"../../../resources/xosc"
+                - text: ") # search path if run from original location se.SE_Init("
+                - generic [ref=f29e926]: b"../resources/xosc/cut-in.xosc"
+                - text: ", 0, 1, 0, 1) # register callback for first object (id=0) se.SE_RegisterObjectCallback(0, callback_func, 0)"
+        - generic [ref=f29e927]:
+          - heading "C# binding" [level=3] [ref=f29e928]
+          - paragraph [ref=f29e930]:
+            - text: A C# wrapper for the esminiLib is provided (
+            - link "ESMiniWrapper.cs" [ref=f29e931] [cursor=pointer]:
+              - /url: https://github.com/esmini/esmini/blob/master/EnvironmentSimulator/Libraries/esminiLib/ESMiniWrapper.cs
+            - text: ). Coverage is limited, but it might serve as a good starting point.
+          - generic [ref=f29e932]:
+            - heading "OSI groundtruth with C#" [level=4] [ref=f29e933]
+            - generic [ref=f29e934]:
+              - generic [ref=f29e935]:
+                - text: Example 21.
+                - link "EnvironmentSimulator/code-examples/osi-groundtruth-cs/osi-gt.cs" [ref=f29e936] [cursor=pointer]:
+                  - /url: https://github.com/esmini/esmini/tree/master/EnvironmentSimulator/code-examples/osi-groundtruth-cs/osi-gt.cs
+                - text: (complete code)
+              - code [ref=f29e939]:
+                - text: "using System; using System.Runtime.InteropServices; using ESMini; using Google.Protobuf; using static Osi3.GroundTruth; namespace esmini_csharp { class Program { static void Main(string[] args) { // initialize esmini if (ESMiniLib.SE_Init("
+                - generic [ref=f29e940]: "\"../../../../../resources/xosc/light_state.xosc\""
+                - text: ", 0, 1, 0, 0) != 0) { Console.WriteLine("
+                - generic [ref=f29e941]: "\"failed to load scenario\""
+                - text: "); return; } int size = 0; while (ESMiniLib.SE_GetQuitFlag() != 1) { // Step esmini ESMiniLib.SE_Step(); // Get OSI message IntPtr int_ptr = ESMiniLib.SE_GetOSIGroundTruth(out size); Byte[] byte_array = new Byte[size]; Marshal.Copy(int_ptr, byte_array, 0, size); Osi3.GroundTruth gt_msg = Osi3.GroundTruth.Parser.ParseFrom(byte_array); // Write some info from OSI message Console.WriteLine("
+                - generic [ref=f29e942]: "\"Time: {0:N3}\""
+                - text: ", gt_msg.Timestamp.Seconds + 1e-9 * gt_msg.Timestamp.Nanos); foreach (Osi3.MovingObject o in gt_msg.MovingObject) { Console.WriteLine("
+                - generic [ref=f29e943]: "\" Object[{0}], Pos: {1:N2}, {2:N2}, {3:N2}\""
+                - text: ", o.Id.Value, o.Base.Position.X, o.Base.Position.Y, o.Base.Position.Z); if (o.VehicleClassification.LightState != null) { Console.WriteLine("
+                - generic [ref=f29e944]: "\" Object[{0}] indicator {1}\""
+                - text: ", o.Id.Value, o.VehicleClassification.LightState.IndicatorState); } foreach (Osi3.MovingObject.Types.VehicleAttributes.Types.WheelData wd in o.VehicleAttributes.WheelData) { Console.WriteLine("
+                - generic [ref=f29e945]: "\" wheel[{0}] angle: {1:N4}\""
+                - text: ", wd.Index ,wd.Orientation.Yaw); } } } } } }"
+            - paragraph [ref=f29e947]: This example shows, one way, how to access OSI data in a C# environment.
+            - paragraph [ref=f29e949]:
+              - text: It’s dependent on the
+              - link "ESMiniWrapper.cs" [ref=f29e950] [cursor=pointer]:
+                - /url: https://github.com/esmini/esmini/blob/master/EnvironmentSimulator/Libraries/esminiLib/ESMiniWrapper.cs
+              - text: .
+          - generic [ref=f29e951]:
+            - heading "Windows" [level=4] [ref=f29e952]
+            - generic [ref=f29e953]:
+              - heading "Build" [level=5] [ref=f29e954]
+              - code [ref=f29e958]: mkdir build cd build cmake .. cmake --build . --config Release
+            - generic [ref=f29e959]:
+              - heading "Run" [level=5] [ref=f29e960]
+              - paragraph [ref=f29e962]:
+                - text: To have the correct relative path to the scenario file and also access to esminiLib we move into
+                - code [ref=f29e963]: esmini/bin
+                - text: folder for running the example.
+              - code [ref=f29e967]: cd ../../../../bin ../EnvironmentSimulator/code-examples/osi-groundtruth-cs/build/Release/osi-groundtruth
+          - generic [ref=f29e968]:
+            - heading "Linux" [level=4] [ref=f29e969]
+            - generic [ref=f29e970]:
+              - heading "Build" [level=5] [ref=f29e971]
+              - code [ref=f29e975]: mkdir build cd build cmake ../linux cmake --build .
+            - generic [ref=f29e976]:
+              - heading "Run" [level=5] [ref=f29e977]
+              - paragraph [ref=f29e979]:
+                - text: To have the correct relative path to the scenario file and also access to esminiLib we move into
+                - code [ref=f29e980]: esmini/bin
+                - text: folder for running the example.
+              - code [ref=f29e984]: cd ../../../../bin ../EnvironmentSimulator/code-examples/osi-groundtruth-cs/linux/bin/Release/net8.0/osi-groundtruth
+          - generic [ref=f29e985]:
+            - heading "How to create the osi3 C# files" [level=4] [ref=f29e986]
+            - paragraph [ref=f29e988]: "For this example the osi3 C# files were provided. If you need or want to compile them yourself (Windows example):"
+            - list [ref=f29e990]:
+              - listitem [ref=f29e991]:
+                - paragraph [ref=f29e992]:
+                  - text: "Get protoc compiler Suggested version: 3.15.2 Either build it yourself or get"
+                  - code [ref=f29e993]: protoc-3.15.2-win64.zip
+                  - text: "from release:"
+                  - link "https://github.com/protocolbuffers/protobuf/releases/tag/v3.15.2" [ref=f29e994] [cursor=pointer]:
+                    - /url: https://github.com/protocolbuffers/protobuf/releases/tag/v3.15.2
+              - listitem [ref=f29e995]:
+                - paragraph [ref=f29e996]:
+                  - text: Get OSI
+                  - link "https://github.com/OpenSimulationInterface/open-simulation-interface/releases/tag/v3.5.0" [ref=f29e997] [cursor=pointer]:
+                    - /url: https://github.com/OpenSimulationInterface/open-simulation-interface/releases/tag/v3.5.0
+              - listitem [ref=f29e998]:
+                - paragraph [ref=f29e999]:
+                  - text: "OSI proto files need to be converted for protobuf v3. This is easily done with the provided script:"
+                  - code [ref=f29e1000]: ./convert-to-proto3.sh
+              - listitem [ref=f29e1001]:
+                - paragraph [ref=f29e1002]: Compile for C#
+                - list [ref=f29e1004]:
+                  - listitem [ref=f29e1005]:
+                    - paragraph [ref=f29e1006]:
+                      - text: open a command line in
+                      - code [ref=f29e1007]: open-simulation-interface
+                      - text: root folder
+                  - listitem [ref=f29e1008]:
+                    - paragraph [ref=f29e1009]:
+                      - code [ref=f29e1010]: c:\my_path_to_protoc\protoc.exe *.proto --csharp_out=.
+                      - text: will create C# versions of all proto files
+  - generic [ref=f29e1011]: Last updated 2026-06-02 21:02:20 +0200

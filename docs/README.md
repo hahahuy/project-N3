@@ -14,6 +14,7 @@ New agents and sessions must read these files first:
 8. `docs/current/evidence-index.md`
 9. `docs/current/artifact-policy.md`
 10. `docs/current/next-agent-handoff.md`
+11. `docs/current/nuscenes-devkit-makeover-handoff.md`
 
 Agents changing the browser application must also read:
 
@@ -21,8 +22,20 @@ Agents changing the browser application must also read:
 2. `docs/current/frontend-workspace-log.md`
 3. `docs/current/backend-workspace-contract-log.md`
 
-Historical files under `docs/archive/` are not current contracts. Reports under
-`docs/reports/` record completed work and must not override current decisions.
+Historical files under `docs/archive/` are quarantined and are not current
+contracts, plans or assignments. Reports under `docs/reports/` record completed
+work and must not override current decisions. The active implementation plan is
+`docs/current/nuscenes-devkit-makeover-handoff.md`.
+
+Controlling documents for deployment state:
+
+- `docs/current/environment-environments.md` - development and product environments
+- `docs/current/demo-hardening-backlog.md` - public exposure hardening status
+- `docs/current/product-scene-exposure.md` - whether to expose all 850 scenes
+- `docs/current/naming-migration.md` - `r2s` to `project-N3` rename record
+- `docs/current/mission-batch-concurrency-benchmark.md` - S-6 cap selection
+- `docs/guides/production-push.md` - promote and rollback command helper
+- `docs/current/local-artifact-bundles.md` - local/private evidence index
 
 ## Documentation Rules
 
@@ -40,9 +53,11 @@ Historical files under `docs/archive/` are not current contracts. Reports under
 ## Directory Map
 
 - `docs/current/`: source of truth for current status and contracts.
+- `docs/current/nuscenes-devkit-makeover-handoff.md`: active implementation plan.
 - `docs/reports/`: English phase and implementation reports.
 - `docs/evidence/`: runtime or acceptance evidence grouped by milestone.
 - `docs/experiments/`: exploratory results not yet accepted as evidence.
 - `docs/guides/`: setup and operational guides.
 - `docs/architecture/`: current architecture and API boundaries.
 - `docs/archive/plan-b/`: stale historical Plan B material.
+- `docs/archive/plan-a-migration-checklist.md`: historical migration ledger.

@@ -16,3 +16,15 @@ reports/
 # Licensed nuScenes releases and their raw sensor payloads are local-only.
 data/v1.0-*/
 data/nuScenes-*/
+
+# Contest demo gateway secrets and TLS material. The shared key must never be
+# committed: nginx serves it, and anything in the repository is public.
+# Also covers the Cloudflare tunnel token and any local env file. The token is
+# a bearer credential for the tunnel; a committed token means anyone can serve
+# traffic through it.
+# See docs/guides/security-deployment.md section 5.1.
+ops/demo/secrets/
+ops/demo/certs/
+ops/demo/*.log
+ops/demo/.env
+.env

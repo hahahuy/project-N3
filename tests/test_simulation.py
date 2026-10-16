@@ -89,6 +89,26 @@ def test_runner_records_nonzero_exit_and_stderr(tmp_path: Path) -> None:
     assert report.failure_code == "esmini_exit"
 
 
+def test_capture_viewer_failure_is_explicit_and_fail_closed(tmp_path: Path) -> None:
+    scenario = _scenario(tmp_path)
+    executable = _fake_esmini(
+        tmp_path,
+        "print('Failed 2nd attempt to create viewer, giving up', file=sys.stderr)\n"
+        "print('Viewer initialization failed', file=sys.stderr)\n"
+        "raise SystemExit(255)\n",
+    )
+
+    report = run_esmini(
+        scenario,
+        tmp_path / "trace.csv",
+        EsminiConfig(executable=(sys.executable, str(executable)), capture_images=True),
+    )
+
+    assert report.failure_code == "capture_viewer_unavailable"
+    assert "usable viewer/display" in report.failure_message
+    assert report.trace is None
+
+
 def test_trace_parser_rejects_empty_and_invalid_trace(tmp_path: Path) -> None:
     empty = tmp_path / "empty.csv"
     empty.write_text(TRACE_HEADER, encoding="utf-8")

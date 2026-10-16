@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import re
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -25,11 +26,12 @@ from .schemas import ActorSummary, ArtifactLink, ScenarioSummary, SourceScene, S
 
 
 _INDEX_CACHE: dict[tuple[str, str, str], MetadataIndex] = {}
+_INDEX_CACHE_LOCK = threading.RLock()
 
 
 def metadata_cache_dir() -> Path:
     """Return the local metadata cache directory for scene import."""
-    configured = os.environ.get("R2S_METADATA_CACHE")
+    configured = os.environ.get("PROJECT_N3_METADATA_CACHE")
     return Path(configured).expanduser() if configured else default_cache_dir()
 
 
@@ -44,11 +46,12 @@ def shared_metadata_index(settings: WebSettings) -> MetadataIndex:
         raise ValueError("No local nuScenes dataset is configured.")
     cache_dir = metadata_cache_dir()
     key = (str(Path(settings.dataset_root).resolve()), settings.dataset_version, str(cache_dir))
-    index = _INDEX_CACHE.get(key)
-    if index is None:
-        index = MetadataIndex(settings.dataset_root, settings.dataset_version, cache_dir=cache_dir)
-        _INDEX_CACHE[key] = index
-    return index
+    with _INDEX_CACHE_LOCK:
+        index = _INDEX_CACHE.get(key)
+        if index is None:
+            index = MetadataIndex(settings.dataset_root, settings.dataset_version, cache_dir=cache_dir)
+            _INDEX_CACHE[key] = index
+        return index
 
 
 class SourceSceneAdapter:
@@ -158,7 +161,10 @@ class SourceSceneAdapter:
         if self.settings.dataset_root is None:
             return None
         path = self.settings.dataset_root / self.settings.dataset_version
-        return path if path.is_dir() else None
+        # A mounted release directory can exist while its metadata tables are
+        # incomplete. Treat that state as unavailable so settings/health remain
+        # fail-closed instead of surfacing a 500 from MetadataIndex.
+        return path if (path / "scene.json").is_file() else None
 
 
 def _source_scene(index: MetadataIndex, record: dict[str, Any]) -> SourceScene:

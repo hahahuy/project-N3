@@ -56,6 +56,8 @@ class EsminiConfig:
     trace_converter: str | Path | tuple[str, ...] | None = None
     timeout_s: float = 30.0
     fixed_timestep_s: float = 0.05
+    capture_images: bool = False
+    camera_mode: str = "orbit"
 
     def __post_init__(self) -> None:
         for field_name, value in (
@@ -64,6 +66,8 @@ class EsminiConfig:
         ):
             if not isfinite(value) or value <= 0:
                 raise ValueError(f"EsminiConfig {field_name} must be finite and positive.")
+        if self.camera_mode not in {"orbit", "driver"}:
+            raise ValueError("EsminiConfig camera_mode must be 'orbit' or 'driver'.")
 
     def resolve_command(self) -> tuple[str, ...]:
         """Resolve an explicit executable or the caller-provided ``ESMINI_BIN``."""
@@ -134,12 +138,24 @@ def run_esmini(
         *executable_command,
         "--osc",
         str(scenario),
-        "--headless",
         "--fixed_timestep",
         format(config.fixed_timestep_s, ".12g"),
         "--record",
         str(recording_path),
     )
+    if config.capture_images:
+        command += (
+            "--capture_screen",
+            "--camera_mode",
+            config.camera_mode,
+            "--window",
+            "0",
+            "0",
+            "640",
+            "480",
+        )
+    else:
+        command += ("--headless",)
     tool_version = _tool_version(executable_command, config.timeout_s)
     try:
         completed = subprocess.run(
@@ -178,6 +194,10 @@ def run_esmini(
         )
 
     if completed.returncode != 0:
+        failure_message = f"esmini exited with code {completed.returncode}."
+        combined_output = f"{completed.stdout}\n{completed.stderr}".lower()
+        if "viewer initialization failed" in combined_output or "failed to create window" in combined_output:
+            failure_message = "esmini image capture requires a usable viewer/display; headless capture is unavailable."
         return ReplayReport(
             command=command,
             completed=False,
@@ -188,7 +208,8 @@ def run_esmini(
             tool_version=tool_version,
             trace_path=trace,
             trace=None,
-            failure_code="esmini_exit", failure_message=f"esmini exited with code {completed.returncode}.",
+            failure_code="capture_viewer_unavailable" if config.capture_images else "esmini_exit",
+            failure_message=failure_message,
         )
     try:
         try:

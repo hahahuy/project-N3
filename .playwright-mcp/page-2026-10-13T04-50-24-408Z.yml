@@ -1,0 +1,117 @@
+- generic [ref=f29e2]:
+  - generic [ref=f29e3]:
+    - link "Skip to content" [ref=f29e4] [cursor=pointer]:
+      - /url: "#start-of-content"
+    - banner [ref=f29e9]:
+      - heading "Navigation Menu" [level=2] [ref=f29e10]
+      - generic [ref=f29e11]:
+        - link "Homepage" [ref=f29e13] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f29e16]:
+          - navigation "Global" [ref=f29e17]:
+            - list [ref=f29e18]:
+              - listitem [ref=f29e19]:
+                - button "Platform" [ref=f29e21] [cursor=pointer]
+              - listitem [ref=f29e24]:
+                - button "Solutions" [ref=f29e26] [cursor=pointer]
+              - listitem [ref=f29e29]:
+                - button "Resources" [ref=f29e31] [cursor=pointer]
+              - listitem [ref=f29e34]:
+                - button "Open Source" [ref=f29e36] [cursor=pointer]
+              - listitem [ref=f29e39]:
+                - button "Enterprise" [ref=f29e41] [cursor=pointer]
+              - listitem [ref=f29e44]:
+                - link "Pricing" [ref=f29e45] [cursor=pointer]:
+                  - /url: https://github.com/pricing
+          - generic [ref=f29e46]:
+            - button "Search or jump to, type / to search" [ref=f29e48] [cursor=pointer]
+            - link "Sign in" [ref=f29e55] [cursor=pointer]:
+              - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fsearch%3Fq%3DNoCrash%2BCARLA%2Bchallenge%26type%3Drepositories
+            - link "Sign up" [ref=f29e58] [cursor=pointer]:
+              - /url: /signup?ref_cta=Sign+up&ref_loc=header+logged+out&ref_page=%2Fsearch&source=header
+            - button "Appearance settings" [ref=f29e61] [cursor=pointer]
+  - main [ref=f29e67]:
+    - generic [ref=f29e70]:
+      - heading "repositories Search Results · NoCrash CARLA challenge" [level=1] [ref=f29e71]
+      - generic [ref=f29e74]:
+        - generic [ref=f29e75]:
+          - generic [ref=f29e76]:
+            - heading "Filter by" [level=2] [ref=f29e77]
+            - list "Filter by" [ref=f29e82]:
+              - listitem [ref=f29e83]:
+                - list [ref=f29e84]:
+                  - listitem [ref=f29e85]:
+                    - link "Code (...) results" [ref=f29e86] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash+CARLA+challenge&type=code
+                      - generic [ref=f29e87]:
+                        - generic [ref=f29e88]: Code
+                        - generic:
+                          - generic [aria-hidden]: ...
+                          - generic: (...)
+                          - generic: results
+                  - listitem [ref=f29e89]:
+                    - link "Repositories (0) results" [ref=f29e90] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash+CARLA+challenge&type=repositories
+                      - generic [ref=f29e91]:
+                        - generic [ref=f29e92]: Repositories
+                        - generic:
+                          - generic [aria-hidden]: "0"
+                          - generic: (0)
+                          - generic: results
+                  - listitem [ref=f29e93]:
+                    - link "Issues results" [ref=f29e94] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash+CARLA+challenge&type=issues
+                      - generic [ref=f29e95]:
+                        - generic [ref=f29e96]: Issues
+                        - generic: results
+                  - listitem [ref=f29e97]:
+                    - link "Pull requests results" [ref=f29e98] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash+CARLA+challenge&type=pullrequests
+                      - generic [ref=f29e99]:
+                        - generic [ref=f29e100]: Pull requests
+                        - generic: results
+                  - listitem [ref=f29e101]:
+                    - link "Discussions results" [ref=f29e102] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash+CARLA+challenge&type=discussions
+                      - generic [ref=f29e103]:
+                        - generic [ref=f29e104]: Discussions
+                        - generic: results
+                  - listitem [ref=f29e105]:
+                    - link "Users results" [ref=f29e106] [cursor=pointer]:
+                      - /url: https://github.com/search?q=NoCrash+CARLA+challenge&type=users
+                      - generic [ref=f29e107]:
+                        - generic [ref=f29e108]: Users
+                        - generic: results
+                  - listitem [ref=f29e109]:
+                    - button "More" [ref=f29e110] [cursor=pointer]
+              - listitem [aria-hidden] [ref=f29e113]
+              - listitem [ref=f29e114]:
+                - link "Advanced search" [ref=f29e115] [cursor=pointer]:
+                  - /url: /search/advanced
+          - slider "Draggable pane splitter" [ref=f29e119]
+        - generic [ref=f29e123]:
+          - generic [ref=f29e125]:
+            - generic [ref=f29e126]:
+              - generic [ref=f29e127]:
+                - generic [ref=f29e128]: 0 results
+                - generic [ref=f29e129]: (67 ms)
+              - heading "0 results" [active] [level=2] [ref=f29e130]
+            - generic [ref=f29e131]:
+              - 'button "Sort by: Best match" [ref=f29e133] [cursor=pointer]'
+              - button "Open column options" [ref=f29e137] [cursor=pointer]
+          - generic [ref=f29e141]:
+            - img "Mona looking through a globe hologram for code" [ref=f29e145]
+            - generic [ref=f29e146]:
+              - generic [ref=f29e148]:
+                - heading "Your search did not match any repositories" [level=3] [ref=f29e149]
+                - paragraph [ref=f29e150]: Try one of the tips below to find more repositories
+              - generic [ref=f29e152]:
+                - group [ref=f29e153]:
+                  - generic "Search across an organization" [ref=f29e154] [cursor=pointer]
+                - group [ref=f29e158]:
+                  - generic "Saved searches" [ref=f29e159] [cursor=pointer]
+              - paragraph [ref=f29e164]:
+                - text: You could try an
+                - link "advanced search" [ref=f29e165] [cursor=pointer]:
+                  - /url: /search/advanced?q=NoCrash+CARLA+challenge
+                - text: .

@@ -40,11 +40,13 @@ rewrite historical entries.
 
 ## DEC-006 — OSM Role
 
-- Status: `PROPOSAL`
+- Status: `DEFERRED PROPOSAL / NOT ACTIVE MAKEOVER SCOPE`
 - OSM is an auxiliary alignment/reference/visualization layer.
 - nuScenes vector map remains the canonical CP1 map source.
 - OSM-derived CARLA worlds are feasibility-only unless a future decision says
   otherwise.
+- This remains a deferred proposal and is not part of the active nuScenes-devkit
+  backend makeover.
 
 ## DEC-007 — Execution Order and Backend Boundary
 
@@ -154,4 +156,38 @@ execution backends.
   are outside the MVP and cannot be justified by the current dataset.
 - Tier 2 must never be silently represented as trajectory replay or used to
   claim final scientific fidelity. Unsupported controller/behavior modes remain
-  fail-closed in the OpenSCENARIO subset.
+   fail-closed in the OpenSCENARIO subset.
+
+## DEC-015 — Devkit-Authoritative Recorded Evidence Adapter
+
+- Status: `APPROVED IMPLEMENTATION DECISION`
+- The official nuScenes devkit is the semantic authority for recorded sensor,
+  annotation, map and CAN interpretation. Real2Scenario owns typed contracts,
+  provenance, private artifact policy, scenario editing, simulator sessions and
+  browser rendering.
+- Use cached `NuScenes` access, `LidarPointCloud.from_file_multisweep`, official
+  `Box`/`get_sample_data` transforms, `NuScenesMap`, `NuScenesExplorer` projection
+  semantics and `NuScenesCanBus`. Keep `MetadataIndex` for large discovery and
+  benchmark queries.
+- Optimize in this order: cached records, multisweep LiDAR, NumPy serialization,
+  official annotation/map layers, cached CAN timestamp matching, then optional
+  SciPy spatial indexing and radar/camera layers.
+- Keep the authoring Top-down view unchanged. A separate Sensor Evidence view
+  provides `LIDAR_TOP` history, map underlay, annotations and telemetry.
+- Recorded evidence is never generated post-edit sensor output; unavailable
+  capabilities remain explicit and raw/derived data stays local/private.
+
+## DEC-016 — Disabled Workspace Controls
+
+- Status: `APPROVED CURRENT MVP BOUNDARY`
+- Behavior remains disabled because no behavior executor exists; it must remain
+  structured `unsupported` rather than falling back to waypoint or kinematic
+  preview semantics.
+- Validate remains disabled until the Workspace exposes a connected validation
+  action with an API-owned result. The browser must not imply validation by
+  reusing gate labels or preview status.
+- Replay remains disabled until an accepted replay request, trace contract and
+  private artifact flow are connected to the workspace. Internal transform POV
+  and recorded Sensor Evidence are not replay substitutes.
+- The controls remain visible with explicit unavailable labeling so capability
+  boundaries are discoverable and cannot be mistaken for completed workflows.

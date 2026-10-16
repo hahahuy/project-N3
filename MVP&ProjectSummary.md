@@ -1,5 +1,11 @@
 # nuScenes → OpenSCENARIO: MVP & Project Summary
 
+> **Long-term scope baseline, not the current execution plan.** DEC-011
+> supersedes the original CARLA-first MVP acceptance wording in this document:
+> current MVP execution uses esmini and the internal Tier 1 kinematic preview;
+> CARLA same-XOSC execution is post-MVP. The active implementation plan is
+> `docs/current/nuscenes-devkit-makeover-handoff.md`.
+
 *Tài liệu dành cho quản lý dự án. Mục tiêu: hiểu dự án làm gì, khó ở đâu, kiểm tra ở mốc nào, và ai sẽ dùng sản phẩm.*
 
 ## 1. Tóm tắt một đoạn

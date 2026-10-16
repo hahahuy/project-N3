@@ -81,8 +81,8 @@ Sau khi đã có licensed nuScenes mini đầy đủ và cài devkit:
 
 ```bash
 pip install nuscenes-devkit matplotlib
-export NUSCENES_ROOT="$HOME/datasets/nuscenes"
-export NUSCENES_VERSION="v1.0-mini"
+export NUSCENES_ROOT="/mnt/backup/nuscenes"
+export NUSCENES_VERSION="v1.0-trainval"
 ```
 
 ```python

@@ -1,0 +1,322 @@
+- generic [active] [ref=f52e1]:
+  - generic [ref=f52e3]:
+    - generic [ref=f52e4]:
+      - generic [ref=f52e6]:
+        - link [ref=f52e8] [cursor=pointer]:
+          - /url: /
+          - img "ASAM" [ref=f52e9]
+        - generic [ref=f52e10]:
+          - list [ref=f52e11]:
+            - listitem [ref=f52e12]:
+              - link "News & Media" [ref=f52e13] [cursor=pointer]:
+                - /url: /news-media/overview/
+            - listitem [ref=f52e14]:
+              - link "ASAM:GUIDE" [ref=f52e15] [cursor=pointer]:
+                - /url: /asam-guide/
+            - listitem [ref=f52e16]:
+              - link "Newsletter" [ref=f52e17] [cursor=pointer]:
+                - /url: /newsletter/
+            - listitem [ref=f52e18]:
+              - link "Login" [ref=f52e19] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=f52e20]:
+              - link "Get Login" [ref=f52e21] [cursor=pointer]:
+                - /url: /get-login/
+          - link:
+            - /url: "#"
+          - link:
+            - /url: "#jquery-mmmenu"
+      - generic [ref=f52e23]:
+        - navigation:
+          - list [ref=f52e24]:
+            - listitem [ref=f52e25]:
+              - link "About ASAM" [ref=f52e26] [cursor=pointer]:
+                - /url: /about-asam/
+            - listitem [ref=f52e27]:
+              - link "Standards" [ref=f52e28] [cursor=pointer]:
+                - /url: /standards/
+            - listitem [ref=f52e29]:
+              - link "Active Projects" [ref=f52e30] [cursor=pointer]:
+                - /url: /active-projects/
+            - listitem [ref=f52e31]:
+              - link "Conferences & Events" [ref=f52e32] [cursor=pointer]:
+                - /url: /conferences-events/upcoming-events/
+            - listitem [ref=f52e33]:
+              - link "Application Stories" [ref=f52e34] [cursor=pointer]:
+                - /url: /application-stories/
+            - listitem [ref=f52e35]:
+              - link "Members" [ref=f52e36] [cursor=pointer]:
+                - /url: /members/
+        - link "Search" [ref=f52e37] [cursor=pointer]:
+          - /url: "#"
+    - generic [ref=f52e47]:
+      - heading "ASAM OpenDRIVE®" [level=1] [ref=f52e49]
+      - link "Go to Standard" [ref=f52e51] [cursor=pointer]:
+        - /url: https://publications.pages.asam.net/standards/ASAM_OpenDRIVE/ASAM_OpenDRIVE_Specification/latest/specification/index.html
+    - generic [ref=f52e54]:
+      - list [ref=f52e56]:
+        - listitem [ref=f52e57]:
+          - link "ASAM Quality Checker" [ref=f52e58] [cursor=pointer]:
+            - /url: /standards/asam-quality-checker/
+        - listitem [ref=f52e59]:
+          - link "ASAM OpenX example repo" [ref=f52e60] [cursor=pointer]:
+            - /url: /standards/asam-openx-example-repository/
+        - listitem [ref=f52e61]:
+          - link "&nbsp;" [ref=f52e62] [cursor=pointer]:
+            - /url: https://www.asam.net/standards/
+        - listitem [ref=f52e63]:
+          - link "ASAM OpenDRIVE with CityGML" [ref=f52e64] [cursor=pointer]:
+            - /url: /standards/asam-opendrive-with-citygml/
+        - listitem [ref=f52e65]:
+          - link "ASAM OpenX in offroad" [ref=f52e66] [cursor=pointer]:
+            - /url: /standards/asam-openx-in-offroad-applications/
+        - listitem [ref=f52e67]:
+          - link "ASAM Test Specification" [ref=f52e68] [cursor=pointer]:
+            - /url: /standards/asam-test-specification/
+        - listitem [ref=f52e69]:
+          - link "ASAM OpenXOntology" [ref=f52e70] [cursor=pointer]:
+            - /url: /standards/asam-openxontology/
+        - listitem [ref=f52e71]:
+          - link "&nbsp;" [ref=f52e72] [cursor=pointer]:
+            - /url: https://www.asam.net/standards/
+        - listitem [ref=f52e73]:
+          - link "Structured data management with ASAM ODS & ASAM MDF" [ref=f52e74] [cursor=pointer]:
+            - /url: /standards/structured-data-management-with-asam-ods-asam-mdf/
+        - listitem [ref=f52e75]:
+          - 'link "ASAM SOVD and eSync: Enhancing OTA update capabilities" [ref=f52e76] [cursor=pointer]':
+            - /url: /standards/asam-sovd-and-esync-enhancing-ota-update-capabilities/
+      - generic [ref=f52e77] [cursor=pointer]: More
+    - list [ref=f52e82]:
+      - listitem [ref=f52e83]:
+        - link "Standards" [ref=f52e84] [cursor=pointer]:
+          - /url: /standards/
+      - listitem [ref=f52e85]: ASAM OpenDRIVE®
+    - generic [ref=f52e91]:
+      - img "share icon" [ref=f52e93] [cursor=pointer]
+      - img "printer icon" [ref=f52e96] [cursor=pointer]
+    - generic [ref=f52e100]:
+      - generic [ref=f52e103]:
+        - link "Current Version" [ref=f52e105] [cursor=pointer]:
+          - /url: /standards/detail/opendrive/
+        - link "Previous versions" [ref=f52e107] [cursor=pointer]:
+          - /url: /standards/detail/opendrive/older/
+      - generic [ref=f52e108]:
+        - generic [ref=f52e109]:
+          - heading "ASAM OpenDRIVE®" [level=2] [ref=f52e110]
+          - text: • • • • • • •
+          - generic [ref=f52e113]:
+            - paragraph [ref=f52e114]:
+              - strong [ref=f52e115]:
+                - emphasis [ref=f52e116]: (The download of the standard ASAM OpenDRIVE is free of charge)
+            - paragraph [ref=f52e117]: The ASAM OpenDRIVE format provides a common base for describing road networks with extensible markup language (XML) syntax, using the file extension xodr. The data that is stored in an ASAM OpenDRIVE file describes the geometry of roads, lanes and objects, such as roadmarks on the road, as well as features along the roads, like signals. The road networks that are described in the ASAM OpenDRIVE file can either be synthetic or based on real data.
+            - paragraph [ref=f52e118]: The main purpose of ASAM OpenDRIVE is to provide a road network description that can be fed into simulations to develop and validate ADAS and AD features. With the help of ASAM OpenDRIVE, these road network descriptions can be exchanged between different simulators. Providing a standardized format for road descriptions also enables the industry to reduce the cost of creating and converting these files for their development and testing purposes. Road data may be manually created from road network editors, conversion of map data, or originate from converted scans of real-world roads.
+            - heading "Nodes" [level=3] [ref=f52e119]
+            - paragraph [ref=f52e120]: The format is organized in nodes that can be extended with user defined data. This facilitates a high degree of specialization for individual applications (usually simulations) while maintaining the interoperability that is required for the exchange of data between different applications.
+            - heading "Reference Line" [level=3] [ref=f52e121]
+            - paragraph [ref=f52e122]: The ASAM OpenDRIVE road network is modelled along the reference line, which is the core piece of every road. Roads, lanes, incl. their elevation profiles are all attached to the reference line.
+          - generic [ref=f52e124]:
+            - figure "Elements of ASAM OpenDRIVE" [ref=f52e125]:
+              - link:
+                - /url: https://www.asam.net/index.php?eID=tx_cms_showpic&file=4137&md5=fa301027c82e80ef49a2bb3869c6458a964a9aec&parameters%5B0%5D=eyJ3aWR0aCI6IjgwMG0iLCJoZWlnaHQiOiI2MDBtIiwiYm9keVRhZyI6Ijxib2R5&parameters%5B1%5D=IHN0eWxlPVwibWFyZ2luOjA7IGJhY2tncm91bmQ6I2ZmZjtcIj4iLCJ3cmFwIjoi&parameters%5B2%5D=PGEgaHJlZj1cImphdmFzY3JpcHQ6Y2xvc2UoKTtcIj4gfCA8XC9hPiIsImNyb3Ai&parameters%5B3%5D=OiJ7XCJkZWZhdWx0XCI6e1wiY3JvcEFyZWFcIjp7XCJ4XCI6MCxcInlcIjowLFwi&parameters%5B4%5D=d2lkdGhcIjoxLFwiaGVpZ2h0XCI6MX0sXCJzZWxlY3RlZFJhdGlvXCI6XCJOYU5c&parameters%5B5%5D=IixcImZvY3VzQXJlYVwiOm51bGx9fSJ9
+            - generic [ref=f52e127]:
+              - paragraph [ref=f52e128]: Objects representing features, such as signals, can be placed by using either the reference line or the global coordinate system, the road network is placed in. This can be seen in the above image. The reference line (blue line in the middle) is in the center of the road, the lanes (blue and light green) are attached to this reference line. The signs next to the road are placed in the s/t-coordinate system.
+              - paragraph [ref=f52e129]: In ASAM OpenDRIVE several roads form a road network and can be connected. ASAM OpenDRIVE can be seen as a construction kit of different road sections. The overall road network is composed of individual sections interconnected with each other.
+          - generic [ref=f52e131]:
+            - figure "Individual road segments are interconnected." [ref=f52e132]
+            - paragraph [ref=f52e135]: The image on the right shows how individual road segments interconnect e.g. with a junction. The shown XML snippet gives a short overview on how the linking of road segments can be used in ASAM OpenDRIVE. These links can support the driving logic of simulated traffic, especially for routing purposes, leaving more resources for the actual work of validating and developing AD driving features. In junctions, each possible connection between entry roads is connected via “connecting-roads”. Due to this mechanism connecting roads are the only roads within ASAM OpenDRIVE with overlapping surfaces.
+          - generic [ref=f52e137]:
+            - figure "Example of a junction" [ref=f52e138]
+            - paragraph [ref=f52e141]: In ASAM OpenDRIVE not only roads are linked but also the lanes between roads. These lane links can again support simulated traffic. They are also important for the visualization of the road network when the reference line of connecting roads and roads that enter the junction are not necessarily aligned (this is the case e.g. in junctions).
+          - generic [ref=f52e144]:
+            - heading "Relation to Other Standards" [level=3] [ref=f52e145]
+            - paragraph [ref=f52e146]: The ASAM OpenDRIVE description format contains all static objects of a road network that allow realistic simulation of vehicles driving on roads. In order to render the complete environment, additional description formats for static 3D roadside objects, such as trees and buildings, are needed. Road surface profiles are included from the ASAM OpenCRG file format. The dynamic content of driving simulations, such as vehicle maneuvers, can be described with ASAM OpenSCENARIO. The three standards complement each other and cover the static and dynamic content of in-the-loop vehicle simulation applications.
+            - heading "Market Relevance" [level=3] [ref=f52e147]
+            - paragraph [ref=f52e148]: ASAM OpenDRIVE is a well established standard for the description of road networks. It is already in use by many well-known manufacturers and companies developing ADAS and AD functions or performing high-accuracy kinematic surveying worldwide. It is being used for road and rail networks.
+          - generic [ref=f52e149]:
+            - heading "ASAM OpenX further development" [level=3] [ref=f52e151]
+            - generic [ref=f52e153]:
+              - paragraph [ref=f52e154]: ASAM OpenDRIVE is part of the ASAM OpenX suite of standards. The ASAM OpenX standards are currently in maintenance mode. We are constantly collecting change requests. Participation in the further development of the ASAM OpenX standards is possible at all times!
+              - paragraph [ref=f52e155]
+              - paragraph [ref=f52e156]:
+                - link "ASAM OpenX Proposals" [ref=f52e157] [cursor=pointer]:
+                  - /url: https://code.asam.net/simulation/openx/-/boards
+                - link "Enroll here" [ref=f52e158] [cursor=pointer]:
+                  - /url: https://forms.office.com/Pages/ResponsePage.aspx?id=8QOp6n45Fk-nQEpwj7KvOl_RSQ_km9BNu4wPTDAiqVhUQ1RMU0pDTVRQUkw2Nkk5RDg0T0JDUFVSMiQlQCN0PWcu
+                - link "Learn about ASAM OpenX poC" [ref=f52e159] [cursor=pointer]:
+                  - /url: https://www.asam.net/project-detail/asam-openx-standards-further-development/
+              - paragraph [ref=f52e160]
+              - paragraph [ref=f52e161]
+          - generic [ref=f52e164]:
+            - heading "Participating Companies:" [level=3] [ref=f52e165]
+            - paragraph [ref=f52e166]: BMW AG, Cariad SE, Mercedes-Benz AG, Porsche AG, 3D Mapping Solutions GmbH, AVL List GmbH, Continental AG, dSPACE GmbH, Five AI, fka GmbH, Hexagon Manufacturing Intelligence GmbH, RA Consulting GmbH, RWTH Aachen, Siemens AG, Tata Consultancy Services Pvt. Ltd., Vector Informatik GmbH, virtualcitySYSTEMS GmbH
+            - heading "Other Languages:" [level=3] [ref=f52e167]
+            - paragraph [ref=f52e168]:
+              - text: "The first ASAM version of OpenDRIVE, V1.6.0, has been translated into Chinese. It can be downloaded from the C-ASAM website:"
+              - link "www.c-asam.net" [ref=f52e169] [cursor=pointer]:
+                - /url: http://www.c-asam.net/?s=news-show-id-8.html
+          - separator [ref=f52e170]
+          - generic [ref=f52e171]:
+            - generic [ref=f52e173]:
+              - heading "RELATED CONTENT" [level=5] [ref=f52e174]
+              - link "Products based on ASAM OpenDRIVE" [ref=f52e175] [cursor=pointer]:
+                - /url: https://www.asam.net/members/product-directory/?tx_solr%5Bfilter%5D%5B0%5D=productsStandards%3AASAM+OpenDRIVE%C2%AE
+              - link "All ASAM Standards" [ref=f52e176] [cursor=pointer]:
+                - /url: /standards/
+            - generic [ref=f52e178]:
+              - heading "CONTACT" [level=5] [ref=f52e179]
+              - link [ref=f52e180] [cursor=pointer]:
+                - /url: javascript:linkTo_UnCryptMailto(%27nbjmup%2BtvqqpsuAbtbn%5C%2Fofu%27);
+                - text: ASAM Technical Support
+                - strong [ref=f52e181]: support@asam.net
+        - generic [ref=f52e182]:
+          - generic [ref=f52e183]:
+            - heading "DATASHEET" [level=5] [ref=f52e184]
+            - generic [ref=f52e185]:
+              - generic [ref=f52e186]: Domain
+              - generic [ref=f52e187]: Simulation
+            - generic [ref=f52e188]:
+              - generic [ref=f52e189]: Current Version
+              - generic [ref=f52e190]: 1.9.0
+            - generic [ref=f52e191]:
+              - generic [ref=f52e192]: Release Date
+              - generic [ref=f52e193]: 19 May 2026
+            - generic [ref=f52e194]:
+              - generic [ref=f52e195]: Application Areas
+              - list [ref=f52e197]:
+                - listitem [ref=f52e198]: • Description of road networks
+                - listitem [ref=f52e199]: • Driving simulation
+                - listitem [ref=f52e200]: • Traffic simulation
+            - generic [ref=f52e201]:
+              - generic [ref=f52e202]: Specification Content
+              - list [ref=f52e204]:
+                - listitem [ref=f52e205]: • File format specification
+                - listitem [ref=f52e206]: • XML schemata
+            - generic [ref=f52e207]:
+              - generic [ref=f52e208]: File Formats
+              - list [ref=f52e210]:
+                - listitem [ref=f52e211]: • xodr
+                - listitem [ref=f52e212]: • xodrz
+            - generic [ref=f52e213]:
+              - generic [ref=f52e214]: Scope
+              - generic [ref=f52e215]: Static road network description
+            - generic [ref=f52e216]:
+              - generic [ref=f52e217]: Webinar
+              - link "Getting started with ASAM OpenDRIVE" [ref=f52e219] [cursor=pointer]:
+                - /url: https://youtu.be/44Rm7hmqO2M
+            - generic [ref=f52e220]:
+              - generic [ref=f52e221]: Supportive infrastructure
+              - link "ASAM OpenX example repository" [ref=f52e223] [cursor=pointer]:
+                - /url: https://github.com/asam-ev/ASAM-OpenX-Examples
+            - generic [ref=f52e224]:
+              - generic [ref=f52e225]: Current Projects
+              - link "Proposals & ongoing projects" [ref=f52e227] [cursor=pointer]:
+                - /url: https://code.asam.net/simulation/openx/-/boards?label_name[]=OpenDRIVE
+          - generic [ref=f52e228]:
+            - heading "DOWNLOADS" [level=5] [ref=f52e229]
+            - link "ASAM OpenDRIVE 1.9.0" [ref=f52e231] [cursor=pointer]:
+              - /url: https://publications.pages.asam.net/standards/ASAM_OpenDRIVE/ASAM_OpenDRIVE_Specification/latest/specification/index.html
+            - heading "VIEW ONLINE (Free of charge)" [level=5] [ref=f52e233]:
+              - text: VIEW ONLINE
+              - generic [ref=f52e234]: (Free of charge)
+            - link "ASAM OpenDRIVE 1.9.0 release presentation PDF (716 KB)" [ref=f52e236] [cursor=pointer]:
+              - /url: https://www.asam.net/index.php?eID=dumpFile&t=f&f=11187&token=3a7655f22a13269d26c84c61e29614555d6b4fd7
+              - generic [ref=f52e237]: ASAM OpenDRIVE 1.9.0 release presentation
+              - generic [ref=f52e238]: PDF (716 KB)
+    - generic [ref=f52e241]:
+      - generic [ref=f52e242]: Our newsletter informs you when a new standard version is released.
+      - link "Subscribe" [ref=f52e243] [cursor=pointer]:
+        - /url: /newsletter/
+    - generic [ref=f52e244]:
+      - generic [ref=f52e246]:
+        - list [ref=f52e249]:
+          - listitem [ref=f52e250]:
+            - link "About ASAM" [ref=f52e251] [cursor=pointer]:
+              - /url: /about-asam/
+          - listitem [ref=f52e252]:
+            - link "Standards" [ref=f52e253] [cursor=pointer]:
+              - /url: /standards/
+          - listitem [ref=f52e254]:
+            - link "Active Projects" [ref=f52e255] [cursor=pointer]:
+              - /url: /active-projects/
+          - listitem [ref=f52e256]:
+            - link "Conferences & Events" [ref=f52e257] [cursor=pointer]:
+              - /url: /conferences-events/upcoming-events/
+          - listitem [ref=f52e258]:
+            - link "Application Stories" [ref=f52e259] [cursor=pointer]:
+              - /url: /application-stories/
+          - listitem [ref=f52e260]:
+            - link "Members" [ref=f52e261] [cursor=pointer]:
+              - /url: /members/
+        - generic [ref=f52e264]:
+          - paragraph [ref=f52e265]:
+            - strong [ref=f52e266]: ASAM e. V.
+            - text: "Altlaufstr. 40 85635 Hoehenkirchen Germany Phone: +49 8102 70139 080"
+          - paragraph [ref=f52e267]:
+            - link "info(at)asam.net" [ref=f52e268] [cursor=pointer]:
+              - /url: javascript:linkTo_UnCryptMailto(%27nbjmup%2BjogpAbtbn%5C%2Fofu%27);
+          - paragraph [ref=f52e269]
+        - generic [ref=f52e271]:
+          - generic [ref=f52e273]:
+            - paragraph [ref=f52e275]:
+              - strong [ref=f52e277]: Follow us on
+            - generic:
+              - generic:
+                - figure [ref=f52e278]:
+                  - link [ref=f52e279] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/company/asam-e-v---association-for-standardization-of-automation-and-measuring-systems/
+                - figure [ref=f52e280]:
+                  - link [ref=f52e281] [cursor=pointer]:
+                    - /url: https://www.youtube.com/@asame.v.1133
+          - generic [ref=f52e282]:
+            - paragraph [ref=f52e283]
+            - paragraph [ref=f52e284]
+        - generic [ref=f52e287]:
+          - paragraph [ref=f52e288]:
+            - strong [ref=f52e289]: MEET US AT
+          - paragraph [ref=f52e290]:
+            - link [ref=f52e291] [cursor=pointer]:
+              - /url: /conferences-events/detail/asam-international-conference-2026/
+              - strong [ref=f52e293]: ASAM International Conference
+          - paragraph [ref=f52e294]:
+            - strong [ref=f52e295]: "on:"
+            - text: Nov 04 - 05, 2026
+            - strong [ref=f52e296]: "in:"
+            - text: Munich, Germany
+            - link "See all our events" [ref=f52e297] [cursor=pointer]:
+              - /url: /conferences-events/
+      - separator [ref=f52e298]
+      - generic [ref=f52e300]:
+        - list [ref=f52e302]:
+          - listitem [ref=f52e303]:
+            - link "Privacy" [ref=f52e304] [cursor=pointer]:
+              - /url: /privacy/
+          - listitem [ref=f52e305]:
+            - link "Imprint" [ref=f52e306] [cursor=pointer]:
+              - /url: /imprint/
+          - listitem [ref=f52e307]:
+            - link "Articles of Association" [ref=f52e308] [cursor=pointer]:
+              - /url: /asam-statutes/
+          - listitem [ref=f52e309]:
+            - link "License Terms" [ref=f52e310] [cursor=pointer]:
+              - /url: /license/
+          - listitem [ref=f52e311]:
+            - link "Abbreviations" [ref=f52e312] [cursor=pointer]:
+              - /url: /abbreviations/
+          - listitem [ref=f52e313]:
+            - link "Terms & Definitions" [ref=f52e314] [cursor=pointer]:
+              - /url: /standards/terms-definitions/
+          - listitem [ref=f52e315]:
+            - generic "Cookie Settings" [ref=f52e316] [cursor=pointer]
+        - paragraph [ref=f52e319]: © 2026 ASAM e.V. All Rights Reserved
+  - generic [ref=f52e320]:
+    - generic [ref=f52e321]:
+      - heading "Cookies, third party services & privacy" [level=4] [ref=f52e322]
+      - paragraph [ref=f52e323]:
+        - text: "We use cookies to improve your user experience and to optimize the design of our website. With your consent, we also use third-party services that may transmit personal data to the provider: We use Google Analytics with anonymization function to analyze traffic on our website. We provide links that may forward you to other websites. Personal data may be transferred to these providers in the process. Please click"
+        - link "here" [ref=f52e324] [cursor=pointer]:
+          - /url: /privacy
+        - text: for our privacy policy.
+    - text: ×
+    - generic [ref=f52e325]:
+      - button "Customize" [ref=f52e326] [cursor=pointer]
+      - button "Accept all" [ref=f52e327] [cursor=pointer]

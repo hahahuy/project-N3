@@ -6,6 +6,9 @@ Manage scope, dependencies, evidence and documentation for Real2Scenario. The
 PM agent coordinates implementation; it does not silently change Plan A,
 scientific thresholds, licensing policy or simulator contracts.
 
+The current implementation priority is the nuScenes-devkit backend makeover.
+Use `docs/current/nuscenes-devkit-makeover-handoff.md` as the active work plan.
+
 ## Read First
 
 Read in this order:
@@ -17,10 +20,12 @@ Read in this order:
 5. `docs/current/active-work.md`
 6. `docs/current/technical-contracts.md`
 7. `docs/current/next-agent-handoff.md`
-8. `docs/current/evidence-index.md`
-9. `docs/current/artifact-policy.md`
-10. `docs/current/ui-motion-editor.md`
-11. Latest CP1, CP3, CP5 and Wave 3A reports under `docs/reports/`
+8. `docs/current/nuscenes-devkit-makeover-handoff.md`
+9. `docs/current/evidence-index.md`
+10. `docs/current/artifact-policy.md`
+11. `docs/current/ui-motion-editor.md`
+12. Latest CP1, CP3, CP5 and Wave 3A reports under `docs/reports/` only when
+    working on those parallel tracks.
 
 Do not use `docs/archive/plan-b/` as current scope. Read it only for historical
 context.
@@ -39,6 +44,9 @@ nuScenes v1.0-trainval
   -> browser 2D/3D analyst POV
   -> optional recorded LiDAR evidence
 ```
+
+The default local dataset root is `/mnt/backup/nuscenes`. Keep raw and derived
+nuScenes artifacts outside the repository.
 
 CARLA is post-MVP. Same-XOSC CARLA execution remains a future contract and must
 not be reported as current MVP evidence.
@@ -75,11 +83,11 @@ is context only and must not replace the selected-scope baseline.
 
 ## Main Current Risk
 
-The hardest active issue is CP1 semantic road alignment, not missing data or
-XODR generation. The scene-0061 corridor evidence currently reports roughly
-`13.99%` selected-scope road-match and `57.37%` all-vehicle context. The next
-work must explain actor/lane association, direction, lateral offset, footprint
-and unsupported dimensions without changing the baseline silently.
+The active implementation risk is integrating richer devkit measurements without
+silently changing canonical or scientific contracts. CP1 semantic road alignment
+is parallel evidence, not the default next task. Its scene-0061 corridor
+evidence reports `13.99%` selected-scope road-match and `57.37%` all-vehicle
+context; any CP1 follow-up must preserve that baseline.
 
 ## PM Workflow
 

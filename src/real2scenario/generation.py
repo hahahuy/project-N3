@@ -52,16 +52,30 @@ class ActorMotionEdit:
     heading_offset_rad: float = 0.0
     initial_gap_delta_m: float = 0.0
     timing_offset_s: float = 0.0
+    steering_angle_rad: float = 0.0
+    acceleration_mps2: float | None = None
+    braking_mps2: float | None = None
+    target_speed_mps: float | None = None
+    start_time_s: float = 0.0
+    end_time_s: float | None = None
 
     def __post_init__(self) -> None:
         if not self.actor_id:
             raise ValueError("ActorMotionEdit actor_id must not be empty.")
-        values = (self.speed_multiplier, self.heading_offset_rad, self.initial_gap_delta_m, self.timing_offset_s)
+        values = (self.speed_multiplier, self.heading_offset_rad, self.initial_gap_delta_m, self.timing_offset_s, self.steering_angle_rad, self.start_time_s)
         from math import isfinite
         if not all(isfinite(value) for value in values):
             raise ValueError("ActorMotionEdit values must be finite.")
         if self.speed_multiplier <= 0:
             raise ValueError("ActorMotionEdit speed_multiplier must be positive.")
+        if self.acceleration_mps2 is not None and not isfinite(self.acceleration_mps2):
+            raise ValueError("ActorMotionEdit acceleration_mps2 must be finite.")
+        if self.braking_mps2 is not None and (not isfinite(self.braking_mps2) or self.braking_mps2 < 0):
+            raise ValueError("ActorMotionEdit braking_mps2 must be finite and non-negative.")
+        if self.target_speed_mps is not None and (not isfinite(self.target_speed_mps) or self.target_speed_mps < 0):
+            raise ValueError("ActorMotionEdit target_speed_mps must be finite and non-negative.")
+        if self.end_time_s is not None and self.end_time_s < self.start_time_s:
+            raise ValueError("ActorMotionEdit end_time_s must not precede start_time_s.")
 
 
 def preview_variant(
@@ -118,10 +132,20 @@ def _preview_actor(actor: Actor, edit: ActorMotionEdit | None) -> Actor:
         time_s = state.time_s + edit.timing_offset_s
         if time_s < 0:
             raise ValueError(f"timing_offset_s would create a negative timestamp for actor {actor.actor_id!r}.")
+        maneuver_time = max(0.0, state.time_s - edit.start_time_s)
+        active = edit.end_time_s is None or state.time_s <= edit.end_time_s
+        acceleration = (edit.acceleration_mps2 or 0.0) - (edit.braking_mps2 or 0.0)
+        speed = state.speed_mps * edit.speed_multiplier
+        if active:
+            speed += acceleration * maneuver_time
+            if edit.target_speed_mps is not None:
+                speed = edit.target_speed_mps
+        # Do not clamp an infeasible maneuver. Tier 1 reports the violation.
+        yaw_offset = heading + (edit.steering_angle_rad * maneuver_time if active else 0.0)
         transformed.append(State(time_s, first.x_m + relative_x * edit.speed_multiplier + edit.initial_gap_delta_m,
-                                 first.y_m + relative_y * edit.speed_multiplier, state.yaw_rad + heading,
-                                 state.speed_mps * edit.speed_multiplier, state.source_timestamp_us,
-                                 state.source_record_token))
+                                  first.y_m + relative_y * edit.speed_multiplier, state.yaw_rad + yaw_offset,
+                                  speed, state.source_timestamp_us,
+                                  state.source_record_token))
     return Actor(actor.actor_id, actor.actor_type, tuple(transformed), actor.length_m, actor.width_m)
 
 

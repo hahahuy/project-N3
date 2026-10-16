@@ -55,8 +55,85 @@ def test_empty_artifact_root_is_a_valid_health_state(tmp_path: Path) -> None:
         "status": "ok",
         "artifact_root_configured": False,
         "scenario_count": 0,
-        "source_scene_count": 0,
+        "dataset_configured": False,
+        "dataset_version": "v1.0-trainval",
+        "dataset_metadata_available": False,
     }
+
+
+def test_live_esmini_capability_and_unavailable_session_are_explicit(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+    xosc = tmp_path / "scenario.xosc"
+    xodr = tmp_path / "road.xodr"
+    xosc.write_text("<OpenSCENARIO version='1.1'/>")
+    xodr.write_text("<OpenDRIVE revMajor='1' revMinor='6'/>")
+
+    capability = client.get("/api/esmini/live/capability")
+    created = client.post("/api/esmini/live/sessions", json={
+        "scenario_id": "synthetic-variant-001",
+        "xosc_path": str(xosc),
+        "xodr_path": str(xodr),
+        "timestep_s": 0.05,
+    })
+
+    assert capability.status_code == 200
+    assert capability.json()["contract_version"] == "esmini-live-session-v1"
+    assert capability.json()["available"] is False
+    assert created.status_code == 200
+    payload = created.json()
+    assert payload["status"] == "unavailable"
+    assert payload["xosc_sha256"].startswith("sha256:")
+    state = client.get(f"/api/esmini/live/sessions/{payload['session_id']}")
+    assert state.json()["rendering"]["screenshot_stream"] is False
+    command = client.post(f"/api/esmini/live/sessions/{payload['session_id']}/commands", json={"command": "step"})
+    assert command.status_code == 200
+    assert command.json()["message_type"] == "command_result"
+
+
+def test_sensor_evidence_is_separate_and_fails_closed_without_dataset(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+    response = client.get("/api/workspace/scenarios/synthetic-variant-001/sensor-evidence?nsweeps=5")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["contract_version"] == "nuscenes-sensor-evidence-v1"
+    assert payload["channel"] == "LIDAR_TOP"
+    assert payload["sweeps"] == []
+    assert payload["artifact_visibility"] == "local_private"
+
+
+def test_live_scenario_pair_flow_materializes_private_pair(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+
+    response = client.post(
+        "/api/esmini/live/scenario-pairs",
+        json={"scenario_id": "synthetic-variant-001", "timestep_s": 0.05},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "unavailable"
+    assert payload["artifacts"]["openscenario"].startswith("/api/artifacts/reports/live-pairs/")
+    assert payload["artifacts"]["opendrive"].endswith("straight-two-lane-v1.xodr")
+    assert (tmp_path / "reports" / "live-pairs").is_dir()
+
+
+def test_settings_fails_closed_when_dataset_directory_has_no_scene_metadata(tmp_path: Path) -> None:
+    dataset_root = tmp_path / "dataset"
+    (dataset_root / "v1.0-trainval").mkdir(parents=True)
+    settings = WebSettings(
+        project_root=tmp_path,
+        artifact_root=tmp_path / "scenarios",
+        output_root=tmp_path / "reports",
+        dataset_root=dataset_root,
+        esmini_bin=None,
+        esmini_dat2csv=None,
+    )
+
+    response = TestClient(create_app(settings)).get("/api/settings")
+
+    assert response.status_code == 200
+    assert response.json()["source_scene_count"] == 0
 
 
 def test_cp1_review_dashboard_is_read_only_and_preserves_baseline(tmp_path: Path) -> None:
@@ -93,6 +170,226 @@ def test_catalog_detail_trajectory_and_path_safety(tmp_path: Path) -> None:
     assert download.status_code == 200
     assert json.loads(download.text)["artifact_type"] == "variant"
     assert traversal.status_code in {404, 400}
+
+
+def test_workspace_contract_exposes_metadata_layers_and_explicit_unavailability(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+
+    document = client.get("/api/workspace/documents/synthetic-variant-001")
+    view = client.get("/api/workspace/scenarios/synthetic-variant-001")
+
+    assert document.status_code == 200
+    assert document.json()["active_scenario_id"] == "synthetic-variant-001"
+    assert document.json()["coordinate_frame"] == "local_road_aligned"
+    assert document.json()["dataset"]["available"] is False
+    assert document.json()["dataset"]["unavailable_reason"] == "dataset_not_configured"
+    assert document.json()["native_map"] == {
+        "available": False,
+        "unavailable_reason": "dataset_not_configured",
+    }
+    assert client.get("/api/workspace/lidar/capability").json()["available"] is False
+    assert view.status_code == 200
+    payload = view.json()
+    assert payload["layers"]["map_lanes"] == {
+        "available": False,
+        "unavailable_reason": "map_lane_geometry_not_available_in_current_artifact",
+    }
+    assert payload["layers"]["lidar"]["unavailable_reason"] == "dataset_not_configured"
+    lidar = client.get("/api/workspace/scenarios/synthetic-variant-001/lidar")
+    assert lidar.status_code == 200
+    assert lidar.json() == {"available": False, "unavailable_reason": "dataset_not_configured"}
+    assert payload["metrics"]["available"] is False
+    assert all(actor["dimensions"]["available"] for actor in payload["actors"])
+    assert payload["layers"]["third_person"]["available"] is True
+    assert payload["layers"]["in_car"]["available"] is True
+
+
+def test_workspace_internal_simulator_returns_timestamped_pov_frame(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+
+    workspace = client.get("/api/workspace/scenarios/synthetic-variant-001").json()
+    frame = client.get(
+        "/api/workspace/scenarios/synthetic-variant-001/frames/in-car",
+        params={"time_s": 0.5},
+    )
+
+    assert workspace["simulator_frames"]["available"] is True
+    assert workspace["simulator_frames"]["frame_contract"] == "simulator-frame-v1"
+    assert frame.status_code == 200
+    payload = frame.json()
+    assert payload["status"] == "rendered"
+    assert payload["mode"] == "in-car"
+    assert payload["simulator"] == "internal-kinematic-preview"
+    assert payload["timestamp_s"] == 0.5
+    assert payload["camera_transform"]["reference"] == "ego_mount"
+    assert payload["provenance"]["artifact_visibility"] == "local_private"
+
+
+def test_workspace_reports_variant_sensor_status_and_unavailable_image_artifact(
+    tmp_path: Path,
+) -> None:
+    client = _client(tmp_path)
+
+    sensor = client.get("/api/workspace/scenarios/synthetic-variant-001/sensor-status")
+    image = client.get(
+        "/api/workspace/scenarios/synthetic-variant-001/image-frames/third-person",
+        params={"time_s": 0.5},
+    )
+
+    assert sensor.status_code == 200
+    assert sensor.json()["contract_version"] == "workspace-variant-sensor-v1"
+    assert sensor.json()["status"] == "unsupported"
+    assert sensor.json()["post_edit_frames"] == {
+        "available": False,
+        "unavailable_reason": "post_edit_sensor_frames_not_generated",
+    }
+    assert sensor.json()["parent_sweep"]["available"] is False
+    assert sensor.json()["parent_sweep"]["unavailable_reason"] == "dataset_not_configured"
+    assert image.status_code == 200
+    assert image.json()["contract_version"] == "workspace-pov-image-v1"
+    assert image.json()["status"] == "unavailable"
+    assert image.json()["unavailable_reason"] == "esmini_image_capture_artifact_unavailable"
+    assert image.json()["artifact"] is None
+
+
+def test_native_map_capability_and_queries_fail_closed_without_dataset(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+
+    capability = client.get("/api/workspace/maps/singapore-onenorth/capability")
+    patch = client.get(
+        "/api/workspace/maps/singapore-onenorth/patch",
+        params={"x_min": 0, "y_min": 0, "x_max": 10, "y_max": 10, "layers": "road_segment"},
+    )
+
+    assert capability.status_code == 200
+    assert capability.json()["available"] is False
+    assert capability.json()["unavailable_reason"] == "dataset_not_configured"
+    assert patch.status_code == 404
+
+
+def test_workspace_gate_timeline_reports_backend_statuses_and_extents(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+
+    response = client.get("/api/workspace/scenarios/synthetic-variant-001/gate-timeline")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["contract_version"] == "workspace-gate-timeline-v1"
+    assert payload["time_domain"] == {"start_s": 0.0, "end_s": 1.0}
+    assert [gate["gate_id"] for gate in payload["gates"]] == ["G1", "G2", "G3", "G4", "G5", "G6", "G7"]
+    by_id = {gate["gate_id"]: gate for gate in payload["gates"]}
+    assert by_id["G1"]["status"] == "unsupported"
+    assert by_id["G1"]["reasons"] == ["xosc_subset_not_evaluated_in_workspace_surface"]
+    assert by_id["G2"]["status"] == "unsupported"
+    assert by_id["G3"]["status"] == "skipped"
+    assert by_id["G3"]["scientific_status"] == "PROVISIONAL"
+    assert by_id["G5"]["status"] == "skipped"
+    assert by_id["G5"]["reasons"] == ["event_definition_not_declared"]
+    assert by_id["G6"]["scientific_status"] == "PROVISIONAL"
+    assert all(gate["status"] != "pass" for gate in (by_id["G1"], by_id["G2"], by_id["G3"]))
+    assert all(gate["start_s"] >= 0.0 and gate["end_s"] <= 1.0 for gate in payload["gates"])
+    assert all(gate["extent_source"] == "scenario_time_domain" for gate in payload["gates"])
+    assert sum(payload["counts"].values()) == 7
+    assert payload["counts"]["unsupported"] == 2
+    assert payload["provisional_count"] == 3
+
+
+def test_workspace_gate_timeline_uses_a_declared_event_window(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+    fixture = json.loads((tmp_path / "scenarios" / "baseline.json").read_text())
+    fixture["scenario"]["provenance"].update(
+        {
+            "main_event_start_s": "0.25",
+            "main_event_end_s": "0.75",
+            "event_type": "longitudinal_cut_in",
+            "event_target_actor_id": fixture["scenario"]["actors"][0]["actor_id"],
+        }
+    )
+    (tmp_path / "scenarios" / "baseline.json").write_text(json.dumps(fixture))
+
+    payload = client.get(
+        "/api/workspace/scenarios/synthetic-variant-001/gate-timeline"
+    ).json()
+
+    g5 = next(gate for gate in payload["gates"] if gate["gate_id"] == "G5")
+    assert g5["extent_source"] == "declared_main_event_window"
+    assert (g5["start_s"], g5["end_s"]) == (0.25, 0.75)
+
+
+def test_workspace_actor_timeline_is_time_indexed_and_keeps_missing_channels_empty(
+    tmp_path: Path,
+) -> None:
+    client = _client(tmp_path)
+
+    response = client.get("/api/workspace/scenarios/synthetic-variant-001/timeline")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["contract_version"] == "workspace-actor-timeline-v1"
+    assert payload["time_domain"] == {"start_s": 0.0, "end_s": 1.0}
+    assert [track["actor_id"] for track in payload["tracks"]] == ["ego", "lead"]
+    for track in payload["tracks"]:
+        channels = track["channels"]
+        assert channels["position"] == {
+            "available": True,
+            "unavailable_reason": None,
+            "version": "canonical-state-v1",
+            "coverage": None,
+        }
+        assert channels["speed"]["available"] is True
+        assert channels["acceleration"]["version"] == "workspace-finite-difference-acceleration-v1"
+        assert channels["braking"]["available"] is False
+        assert [sample["time_s"] for sample in track["samples"]] == [0.0, 1.0]
+        assert all(sample["braking_pressure"] is None for sample in track["samples"])
+        assert all(sample["braking_source"] is None for sample in track["samples"])
+        assert all(sample["acceleration_mps2"] == 0.0 for sample in track["samples"])
+        assert all(sample["acceleration_source"] == "finite_difference" for sample in track["samples"])
+    ego, other = payload["tracks"]
+    assert ego["role"] == "ego"
+    assert ego["channels"]["braking"]["unavailable_reason"] == "scenario_provenance_declares_no_can_scene"
+    assert other["role"] == "actor"
+    assert other["channels"]["braking"]["unavailable_reason"] == "recorded_brake_channel_records_ego_only"
+
+
+def test_workspace_actor_timeline_reports_unsupported_braking_for_non_ego_tracks(
+    tmp_path: Path,
+) -> None:
+    client = _client(tmp_path)
+    fixture = json.loads((tmp_path / "scenarios" / "baseline.json").read_text())
+    fixture["scenario"]["provenance"]["can_scene"] = "scene-0001"
+    (tmp_path / "scenarios" / "baseline.json").write_text(json.dumps(fixture))
+
+    payload = client.get("/api/workspace/scenarios/synthetic-variant-001/timeline").json()
+
+    ego = payload["tracks"][0]
+    other = payload["tracks"][1]
+    assert ego["role"] == "ego"
+    assert ego["channels"]["braking"]["unavailable_reason"] == "dataset_not_configured"
+    assert other["role"] == "actor"
+    assert other["channels"]["braking"]["unavailable_reason"] == "recorded_brake_channel_records_ego_only"
+
+
+def test_workspace_gate_timeline_reports_error_for_malformed_event_evidence(
+    tmp_path: Path,
+) -> None:
+    client = _client(tmp_path)
+    fixture = json.loads((tmp_path / "scenarios" / "baseline.json").read_text())
+    fixture["scenario"]["provenance"].update(
+        {
+            "main_event_start_s": "0.9",
+            "main_event_end_s": "0.2",
+            "event_type": "longitudinal_cut_in",
+            "event_target_actor_id": fixture["scenario"]["actors"][0]["actor_id"],
+        }
+    )
+    (tmp_path / "scenarios" / "baseline.json").write_text(json.dumps(fixture))
+
+    payload = client.get("/api/workspace/scenarios/synthetic-variant-001/gate-timeline").json()
+
+    g5 = next(gate for gate in payload["gates"] if gate["gate_id"] == "G5")
+    assert g5["status"] == "error"
+    assert g5["reasons"] == ["invalid_event_window"]
+    assert payload["counts"]["error"] == 1
 
 
 def test_batch_is_deterministic_and_reconciles_three_statuses(tmp_path: Path) -> None:
@@ -309,6 +606,25 @@ def test_preview_is_deterministic_and_behavior_is_fail_closed(tmp_path: Path) ->
     assert unsupported.status_code == 200
     assert unsupported.json()["status"] == "unsupported"
     assert unsupported.json()["variant_id"] is None
+
+
+def test_preview_accepts_constrained_maneuver_fields_and_rejects_displacement(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+    response = client.post(
+        "/api/scenarios/synthetic-variant-001/variants/preview",
+        json={"recipe_steps": [{"step_id": "step-1", "name": "Brake for merge", "actor_edit": {"actor_id": "ego", "acceleration_mps2": 1.5, "braking_mps2": 0.2, "steering_angle_rad": 0.03, "target_speed_mps": 8.0, "start_time_s": 0.1, "end_time_s": 1.5}}], "actor_edits": [{"actor_id": "ego", "acceleration_mps2": 1.5, "braking_mps2": 0.2, "steering_angle_rad": 0.03, "target_speed_mps": 8.0, "start_time_s": 0.1, "end_time_s": 1.5}], "seed": 3},
+    )
+    rejected = client.post(
+        "/api/scenarios/synthetic-variant-001/variants/preview",
+        json={"actor_edits": [{"actor_id": "ego", "x_m": 4.0}], "seed": 3},
+    )
+    assert response.status_code == 200
+    assert response.json()["configuration"]["actor_edits"][0]["target_speed_mps"] == 8.0
+    assert response.json()["recipe_steps"][0]["name"] == "Brake for merge"
+    assert response.json()["limits"]["silent_clamps"] == "forbidden"
+    assert response.json()["provenance"]["simulator_version"] == "kinematic-open-loop-v1"
+    assert response.json()["rollback_marker"]["immutable_parent"] is True
+    assert rejected.status_code == 422
 
 
 def test_settings_and_source_scene_import_can_use_configured_local_dataset(tmp_path: Path) -> None:
@@ -635,6 +951,13 @@ def test_metric_availability_is_explicit_for_preview_and_batch_surfaces(tmp_path
         "unavailable_reason": "preview_has_no_simulator_trace",
         "alignment_method": None,
         "source": "none",
+        "scientific_status": "PROVISIONAL",
+        "provenance": {
+            "coordinate_transform_version": "synthetic-transform-v1",
+            "dataset_version": "v1",
+            "source_scene_token": "synthetic-scene-001",
+            "preview_mode": "kinematic-open-loop-v1",
+        },
         "per_actor": {},
         "aggregate": None,
     }
@@ -687,3 +1010,97 @@ def test_metric_availability_reports_replay_metrics_when_a_trace_exists(
         "recorded_timestamps_linear_interpolation_within_overlap"
     )
     assert results["replay_metrics"]["aggregate"]["actor_count"] == 2
+
+
+def test_settings_reject_artifact_root_outside_allowed_roots(
+    tmp_path: Path, tmp_path_factory: pytest.TempPathFactory
+) -> None:
+    """S-2: an absolute path outside every allowed root must be rejected."""
+    outside = tmp_path_factory.mktemp("outside")
+    (outside / "secret.txt").write_text("classified", encoding="utf-8")
+    client = _client(tmp_path)
+
+    response = client.post("/api/settings", json={"artifact_root": str(outside)})
+
+    assert response.status_code == 400
+    assert "artifact_root must stay inside an allowed root" in response.json()["detail"]
+    assert client.get("/api/artifacts/secret.txt").status_code == 404
+
+
+def test_settings_reject_dataset_root_outside_allowed_roots(tmp_path: Path) -> None:
+    """S-1: dataset_root must not become an arbitrary filesystem probe."""
+    client = _client(tmp_path)
+
+    for payload in (
+        {"dataset_root": "/etc"},
+        {"dataset_root": "/"},
+        {"dataset_root": "../../etc"},
+        {"output_root": "/etc"},
+    ):
+        response = client.post("/api/settings", json=payload)
+        assert response.status_code == 400, payload
+        assert "must stay inside an allowed root" in response.json()["detail"]
+
+
+def test_settings_reject_symlink_escape_from_project_root(
+    tmp_path: Path, tmp_path_factory: pytest.TempPathFactory
+) -> None:
+    """S-2: a symlink inside the project must not escape confinement."""
+    outside = tmp_path_factory.mktemp("outside")
+    (outside / "secret.txt").write_text("classified", encoding="utf-8")
+    client = _client(tmp_path)
+    link = tmp_path / "scenarios" / "escape"
+    link.symlink_to(outside, target_is_directory=True)
+
+    response = client.post("/api/settings", json={"artifact_root": str(link)})
+
+    assert response.status_code == 400
+    assert "must stay inside an allowed root" in response.json()["detail"]
+    assert client.get("/api/artifacts/escape/secret.txt").status_code == 404
+
+
+def test_settings_accept_relative_paths_inside_project_root(tmp_path: Path) -> None:
+    """S-2: the documented LOCAL PATHS workflow must keep working."""
+    client = _client(tmp_path)
+
+    response = client.post(
+        "/api/settings", json={"artifact_root": "scenarios", "output_root": "reports"}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["artifact_root"].endswith("scenarios")
+
+
+def test_settings_accept_dataset_root_from_extra_allowed_roots(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """S-1: an operator-declared external dataset root stays selectable."""
+    project = tmp_path / "project"
+    (project / "scenarios").mkdir(parents=True)
+    mounted = tmp_path / "mounted"
+    (mounted / "v1.0-mini").mkdir(parents=True)
+    monkeypatch.setenv("PROJECT_N3_EXTRA_DATA_ROOTS", str(mounted))
+    settings = WebSettings(
+        project_root=project,
+        artifact_root=project / "scenarios",
+        output_root=project / "reports",
+        dataset_root=None,
+        esmini_bin=None,
+        esmini_dat2csv=None,
+    )
+
+    updated = settings.with_paths(dataset_root=str(mounted))
+
+    assert updated.dataset_root == mounted.resolve()
+
+
+def test_artifact_download_confines_to_configured_roots(tmp_path: Path) -> None:
+    """The existing resolve_artifact guard must reject traversal."""
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "secret.txt").write_text("classified", encoding="utf-8")
+    client = _client(tmp_path)
+
+    response = client.get("/api/artifacts/../outside/secret.txt")
+
+    assert response.status_code == 404

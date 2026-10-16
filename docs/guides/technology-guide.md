@@ -62,8 +62,8 @@ log.json
 ```
 
 ```bash
-export NUSCENES_ROOT="$HOME/datasets/nuscenes"
-export NUSCENES_VERSION="v1.0-mini"
+export NUSCENES_ROOT="/mnt/backup/nuscenes"
+export NUSCENES_VERSION="v1.0-trainval"
 ```
 
 Trích xuất có nhận biết lane cần thêm nuScenes map data. R2S-101 cung cấp
@@ -101,7 +101,7 @@ source .venv/bin/activate
 pip install -e ".[dev,devkit]"
 ```
 
-Sau khi complete licensed mini release có ở `$NUSCENES_ROOT`, tạo inventory
+Sau khi complete licensed trainval release có ở `$NUSCENES_ROOT`, tạo inventory
 reviewable và render keyframe đầu của scene đầu tiên:
 
 ```bash

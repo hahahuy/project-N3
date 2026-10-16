@@ -1,7 +1,8 @@
-# UI Motion Editor Proposal
+# UI Motion Editor Design
 
-Status: `PROPOSAL`  
-Default implementation impact: `NONE` until a checkpoint is approved.
+Status: `APPROVED MVP DIRECTION / PARTIALLY IMPLEMENTED`
+The U0 parameterized preview subset is implemented. Full authoring, timeline,
+POV and sensor surfaces remain later MVP work and must use real backend contracts.
 
 ## Purpose
 

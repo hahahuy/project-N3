@@ -1,5 +1,6 @@
-> Historical Plan B document. Do not use as the current project contract.
-> Current sources: `MVP&ProjectSummary.md` and `docs/current/`.
+> QUARANTINED Historical Plan B DOCUMENT. Do not use it as a current plan,
+> status source, task assignment or implementation direction.
+> Current makeover handoff: `docs/current/nuscenes-devkit-makeover-handoff.md`.
 
 # Pre-M4 Procedure
 

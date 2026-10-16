@@ -1,7 +1,7 @@
 ---
 report_type: current_status
 status: CURRENT
-updated_at: 2026-10-12
+updated_at: 2026-10-15
 ---
 
 # Project Status
@@ -45,7 +45,7 @@ silently reuse nuScenes-specific assumptions.
 ## Environment and Data
 
 - Python environment: `.venv/`, Python 3.12.
-- Dataset root: `$NUSCENES_ROOT`, currently `$HOME/datasets/nuscenes`.
+- Dataset root: `$NUSCENES_ROOT`, defaulting to `/mnt/backup/nuscenes`.
 - Dataset version: `v1.0-trainval`.
 - `v1.0-trainval` preflight: `RUNTIME_VERIFIED`.
 - `v1.0-test`: metadata only for this setup; no trajectory extraction.
@@ -78,29 +78,68 @@ silently reuse nuScenes-specific assumptions.
 - CP2-A exact-pose planning and strict XOSC interpretation are implemented and
   tested; CARLA remains environment-deferred and no same-XOSC claim is made.
 - G6/G7 temporary funnel results are diagnostic and `PROVISIONAL`.
+- Workspace recipe, variant lineage, synchronized Compare and evidence-layer
+  workflows are implemented as additive contracts. Recipe history is explicitly
+  in-process and non-destructive; replay metrics remain `PROVISIONAL`; no final
+  scientific threshold or canonical recorded scenario was changed.
+- Constrained maneuver authoring now uses named recipe steps and explicit time ranges, with Tier 1 `kinematic-open-loop-v1` limits, violations, provenance and immutable-parent rollback markers visible in the local preview UI; CP1 remains `20/143 = 13.99%` provisional.
+- Browser acceptance now covers the real local recipe editor, Tier 1 steering/acceleration/braking/target-speed preview, rollback/undo state, synchronized Compare, timeline/gate text equivalents, evidence layers and keyboard/mobile-capable controls. The no-dataset runtime correctly reports LiDAR and esmini image artifacts unavailable.
+- Variant sensor status is explicit through `workspace-variant-sensor-v1`: post-edit frames remain `unsupported` until generated artifacts exist, while a recorded parent sweep is reported separately with provenance. `workspace-pov-image-v1` serves only real private esmini capture artifacts; transform-only internal POV remains distinct and is never mislabeled as an image.
+- The separate Sensor Evidence view preserves Top-down as the authoring/map/trajectory pane. Its `nuscenes-sensor-evidence-v1` contract follows nuScenes `LIDAR_TOP` recorded-history semantics equivalent to five-sweep `render_sample_data`: sweep tokens/timestamps, calibration and ego poses, private payload links, decimation, layer controls, synchronization status and honest historical-sweep smearing are exposed. Map underlay and CAN telemetry are independently reported unavailable unless configured; post-edit sensor frames remain unsupported.
+- Recorded `LIDAR_TOP` token resolution and multisweep history are now devkit-correct in the current working tree and **not yet committed**. Two defects were corrected: scenario `source_window` provenance stores *sample* tokens, but every sensor consumer was passing them directly where a *sample_data* token was required, so LiDAR, Sensor Evidence, sensor-status, evidence-layer and scenario routes all addressed the wrong record; and `sweep_records` walked `sample_data.prev`, which is empty for `LIDAR_TOP` keyframes, so recorded sweep history silently truncated after one sweep. History is now walked through `sample.prev` to each earlier sample's `LIDAR_TOP` sweep, matching the devkit multisweep walk, with a cycle guard. `instance_token` is now read from the sample annotation rather than from `Boxes`. This is a recorded-evidence correctness fix; it does not create post-edit sensor output and does not change any canonical schema or provenance contract.
+- A recorded-evidence top-down image route `GET /api/workspace/scenarios/{id}/top-down` (`source=lidar|radar`, `nsweeps`) is present in the working tree and **not yet committed**. It serves the official devkit `render_sample_data` view with `underlay_map=True` for the recorded sweep. This is recorded nuScenes evidence rendering only. It is not a simulator render, not a post-edit artifact, and not a substitute for esmini image capture. The radar source is an independent availability path and is not a post-edit radar artifact. **This route currently has no backend test coverage.**
+- The approved next simulator architecture is a native, bounded `esminiLib` live-session adapter with WebSocket-friendly state/control messages and a browser-native Three.js/PlayCanvas renderer. The existing subprocess/image-capture path remains for replay, validation and evidence; it is not the primary live 3D interaction path. Full esmini WebAssembly, Unity WebGL and WebRTC remote rendering are deferred alternatives.
+- `esmini-live-session-v1` is now implemented as a bounded optional native-binding service with XOSC/XODR confinement and SHA-256 identity, lifecycle/control/camera validation, REST commands and a WebSocket-friendly state stream. Upstream esmini v3.10.0 was cloned outside the repository, host v3.9 and v3.10 shared-library load/step smokes pass, and Compose container load/step returned four named private scenario objects at `t=0.05s`. Browser camera state is separate from the native viewer. No kinematic or screenshot fallback is claimed as esmini state.
+- Native reset now reloads the same confined XOSC/XODR pair because the public esminiLib ABI has no stable reset symbol. Native control remains explicitly unavailable with `esminiLib_control_abi_unavailable`; camera commands remain browser-renderer state.
+- `POST /api/esmini/live/scenario-pairs` safely materializes a private generated XOSC/XODR pair from an existing scenario artifact and creates its bounded live session. Pair directories use a hashed scenario key and are served only through the existing confined artifact route.
+- The remaining CP1/CP3/CP4/CP5 closure items are still owner decisions: CP1 semantic policy and baseline interpretation, CP3 approved index/scientific policy, CP4 final gate policy, and CP5 release sign-off. CP6 research questions and paper evidence are likewise owner-required. Existing diagnostics and metrics remain provisional.
+- Behavior, Validate and Replay toolbar controls remain intentionally disabled in the current build: Behavior has no executor, Validate has no connected workspace validation action, and Replay requires an accepted replay/capture flow. They are not hidden or silently mapped to another mode; the UI labels them unavailable and the backend contracts remain fail-closed.
+- Compose now exposes `ESMINILIB_PATH` alongside `ESMINI_BIN` and `ESMINI_DAT2CSV`; the mounted `/opt/esmini` tree must include the executable, shared library, catalogs/models and compatible runtime assets.
+- The browser POV surface includes a native-state renderer path that consumes timestamped live objects when a live session is available and labels it separately from internal transform preview and `workspace-pov-image-v1` artifacts. The UI now creates a private scenario pair and polls the bounded native session when live capability is available; unavailable capability leaves the action disabled. CARLA remains post-MVP and variant post-edit sensor frames remain unsupported.
+- The add-view flow currently supports up to **three** panes (`MAX_VIEWS = 3`) and offers Top-down, 3rd-person POV and Sensor Evidence in the add-view menu; close, make-main, maximize/restore, reset-layout and responsive arrangements are covered. The earlier four-pane contract including In-car POV and LiDAR 3D add-view entries is **no longer the current build**; those view *types* still exist in the pane renderer, they are not offered as add-view menu entries. The default main pane is now 3rd-person POV (`MAIN_VIEW = "third-person"`), so the previous statement that the default view is Top-down is stale. Top-down remains the authoring/map/trajectory view and is unchanged in meaning. The nuScenes devkit-style `LIDAR_TOP` multi-sweep evidence view (`nsweeps=5`, map underlay, ego pose/calibration and CAN telemetry) remains a separate view mode, not a replacement for authoring Top-down.
+- The add-view control now carries an explicit capacity badge (`n-3`) and a note when the grid is locked; adding Sensor Evidence from the authoring tab switches to Replay first. These are presentation/UX changes only and do not alter any capability contract.
+- The approved optimization is recorded in `docs/current/nuscenes-devkit-optimization-decision.md` and implemented provisionally in the cached adapter: use cached devkit semantics for multisweep LiDAR, official transforms/boxes/maps/projections and CAN, then use NumPy/vectorized payloads and measured spatial indexing while keeping application contracts and provenance separate.
 - ADE/FDE scientific thresholds are not finalized.
 
-## Execution Order
+## Remaining Work Order
 
-The Wave 3A backend and U0 showcase slice is implemented and verified. U0 is a
-showcase, not the complete MVP authoring workspace. The remaining current-MVP
-  work is CP1/CP3/CP4/CP5 evidence/sign-off closure plus the Tier 1 internal
-  kinematic simulator,
-full 2D/3D authoring workspace, frame-aware timeline and optional recorded LiDAR
-evidence. CARLA runtime and same-XOSC remain post-MVP.
+The Wave 3A backend, Workspace authoring slice and Phase 2 devkit contracts are
+implemented and verified locally. Remaining implementation order is: the separate
+nuScenes `LIDAR_TOP` multi-sweep evidence view; full browser live-session
+acceptance; post-edit sensor/render frame generation or explicit unavailable
+boundaries; private runtime/browser acceptance; CP1/CP3/CP4/CP5 engineering
+closure; and CP6 paper/evidence closure. Esmini image capture remains a replay and
+evidence path, not the live editor path. CARLA same-XOSC remains separate and
+post-MVP.
 
 ```text
-CP1 semantic-alignment owner review and diagnostics
-  -> CP3 benchmark evidence + CP4 G1-G7 orchestration + CP5 reproducibility
-  -> internal kinematic simulator
-  -> full 2D/3D authoring workspace + frame-aware timeline
-  -> optional recorded LiDAR evidence + CP6 paper bundle
+Native esminiLib live-session adapter and state/control contract
+  -> browser-native Three.js/PlayCanvas live renderer
+  -> separate nuScenes LIDAR_TOP nsweeps=5 evidence view with map underlay
+  -> post-edit camera/LiDAR/radar frames or explicit unsupported contracts
+  -> complete private runtime/browser acceptance
+  -> CP1/CP3/CP4/CP5 engineering closure
+  -> CP6 paper and evidence closure
   -> post-MVP CP2 same-XOSC CARLA execution
 ```
 
 CP1, CP3, CP4, CP5 and UI/sensor work continue as separate gated tracks. No UI,
 sensor or POV implementation may redefine the canonical scenario, same-XOSC
 contract, license boundary or scientific thresholds.
+
+## Workspace Wiring Checkpoint
+
+- Workspace now consumes real native map geometry and time-indexed actor state
+  when the configured nuScenes dataset/devkit supplies them.
+- Constrained maneuver fields are wired to preview requests; arbitrary
+  displacement and per-axis velocity edits remain outside the API schema.
+- Private decimated `LIDAR_TOP` serving and browser canvas rendering are
+  implemented with API calibration/ego-pose transforms, timestamp, frame,
+  decimation and count provenance. Post-edit sensor frames are not generated or
+  claimed; variant views must remain on the explicit parent-sweep/unavailable
+  contract until backend support exists. CARLA remains post-MVP.
+- Local runtime acceptance verified real `scene-0001` actor/map Workspace data
+  and a binary decimated LiDAR payload; evidence is provisional and private.
 
 ## Wave 3A Checkpoint Started
 
@@ -121,14 +160,22 @@ contract, license boundary or scientific thresholds.
   artifact. The approved internal kinematic simulator/frame-producing preview
   remains incomplete: U0 does not yet generate post-edit camera/LiDAR/radar
   frames, and its timeline is a path-view timestamp control, not a frame
-  renderer.
+  renderer. The target workspace now explicitly includes simulator third-person
+  and in-car POVs, native map POV, recorded LiDAR POV and time-indexed actor
+  state; these are not yet fully wired.
 - Full 2D/3D authoring workspace remains unfinished MVP work. U0 currently
   provides catalog/review, parameterized trajectory preview, path overlay and a
-  timeline label, but not the complete simulator-backed authoring POV.
+  timeline label, but not the complete simulator-backed authoring POV, native
+  map POV, recorded LiDAR POV or constrained maneuver editor.
 - UI0 interaction audit on `review/ui0-interaction-audit` exercised the desktop
   and mobile control surface. It fixed a generated-batch-result 404 caused by
   probing `/api/scenarios/{variant_id}` before loading the supported batch
   trajectory endpoint; frontend tests/build and a clean browser reload pass.
+
+- Simulator-backed POV slice now exposes `simulator-frame-v1`: the internal
+  kinematic preview returns timestamp-selected actor/camera transforms for
+  third-person and ego-mounted in-car views. esmini image frames and CARLA
+  same-XOSC remain separate; CARLA is post-MVP.
 - CP3 metric/gate wiring is verified with Python and frontend tests/build; replay
   aggregates remain diagnostic and no final ADE/FDE thresholds are set.
 - CP1 arc-fitting is integrated behind an explicit `geometry_mode="line_arc"`
@@ -231,7 +278,7 @@ contract, license boundary or scientific thresholds.
   `scripts/verify_release.py` runs the documented verification against a clean
   `git archive` export of `HEAD` or a working-tree snapshot and emits a
   `release-evidence-v1` bundle. That check exposed a real dependency of the
-  suite on the git-ignored local `data/v1.0-mini` dataset, which is now an
+  suite on the git-ignored local dataset, which is now an
   explicit skip; clean-checkout verification of the current sources passes, while
   `HEAD` verification remains blocked until the verified tree is committed. Owner
   sign-off is still pending.
@@ -278,8 +325,18 @@ contract, license boundary or scientific thresholds.
   separates synthetic, local nuScenes and simulator classes, aggregates
   provisional ADE/FDE and G1-G7 counts, and excludes host paths/raw artifacts.
   An agent-selected five-scene Singapore One-North metadata index now exists
-  privately without owner approval; canonical preparation exceeded the current
-  execution window, so no real multi-scene metrics or acceptance claim exists.
+  privately without owner approval. The preparation blocker recorded earlier in
+  this list (canonical preparation exceeding the execution window) was cleared by
+  the `nuscenes-metadata-index-v1` cache, and the real five-scene provisional
+  run described further below supersedes it. **Earlier bullets in this file that
+  state "no real multi-scene metrics or acceptance claim exists" are stale and
+  are superseded by this one and by the CP3 run evidence bullet; they are retained
+  only as chronological record.**
+- The backend Workspace contract slice implements B-WORKSPACE-01, B-WORKSPACE-02
+  and B-WORKSPACE-06 through read-only document/scenario endpoints. Actor roles,
+  dimensions, paths, provenance and metric availability are explicit; map, 3D
+  and LiDAR layers remain unavailable with API-owned reasons rather than fake
+  geometry or values.
 - That CP3 preparation blocker is now cleared. A cached metadata index
   (`nuscenes-metadata-index-v1`) streams the trainval tables once into a local
   private SQLite cache, and `extract_scenario` accepts preloaded tables, so
@@ -292,43 +349,81 @@ contract, license boundary or scientific thresholds.
   depending on scene, G3 stays skipped for missing road-match evidence and G5
   errors on missing event definitions. All values remain `PROVISIONAL`; no CP3
   acceptance, threshold or benchmark-index approval is claimed.
+- Owner-approved nuScenes-devkit backend makeover Phase 1 is implemented: CAN
+  `pose` optionally supplies matched ego speed with explicit finite-difference
+  fallback, and polygon lane widths prefer a sampled cross-section median. The
+  canonical State schema, CP1 baseline and scientific thresholds remain unchanged;
+  source-state, sensor/map APIs and Workspace wiring are implemented with
+  fail-closed runtime boundaries.
 
 ## Latest Verification
 
 ```text
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider
-259 passed, 1 warning. The warning is the existing Starlette/httpx deprecation;
+  322 passed, 1 warning. The warning is the existing Starlette/httpx deprecation;
 the cache provider is disabled because the default pytest cache path is not
 writable in this worktree.
+
+cd frontend && npm test && npm run build
+  48 tests passed across the API boundary and the Workspace keyboard, mobile and
+  accessibility suites; the production build succeeds. The count moved from 40 to
+  48 in the current working tree, where timeline resize/collapse, playhead
+  synchronization across panes, view-grid capacity, footer id truncation,
+  variant-studio branch identity and Replay tab entry are newly covered.
 ```
+
+The verification above was run against the **uncommitted working tree**, not
+against `HEAD`. `git status --short` shows 15 modified tracked files and two
+untracked documentation paths; the committed tree does not contain the
+`LIDAR_TOP` token-resolution fix, the multisweep history fix or the top-down
+route described above.
+
+## Acceptance Readiness
+
+Overall readiness is `IMPLEMENTATION-COMPLETE / ACCEPTANCE-PROVISIONAL / NOT
+RELEASE-READY`. Seven active acceptance groups remain: private runtime/browser,
+native control boundary, image capture, post-edit sensor scope, CP1/CP3/CP4/CP5
+closure, CP6 paper evidence, and the Behavior/Validate/Replay UI scope decision.
+The owner, dependency, evidence and next-action matrix is in
+`docs/reports/tracks-1-6-disposition.md`.
+
+The current checkout proves the authoring workspace, timeline, recipe editing,
+rollback, Compare, recorded Sensor Evidence view, cached devkit seams, private
+LiDAR contracts, bounded native esmini load/step and browser native-state wiring.
+It does not prove final scientific acceptance, configured private browser runtime
+acceptance, real esmini image artifacts, post-edit sensor generation, owner
+decisions or release sign-off.
 
 ## Next Safe Work
 
-1. Start the CP1 semantic-alignment diagnostic from
-   `docs/current/next-agent-handoff.md` and
-   `docs/current/cp1-agent-handoff-next.md`.
-2. Owner confirm the remaining CP1 policy decisions recorded in
-   `docs/reports/cp1-private-sequence-self-verification.md`; no broad visual
-   review is required unless classifications are disputed.
-3. Close CP3 benchmark evidence with owner review of the completed provisional
-   multi-scene run and of the agent-selected scene index; do not turn provisional
-   metrics into final thresholds.
-4. Commit the verified tree and repeat clean-checkout release verification so
-   the `HEAD` bundle can pass, then attribute the low per-scene road-match rates
-   across native, canonical and corridor references without changing provisional
-   policy, tolerances or artifact boundaries.
-5. Implement the internal fixed-timestep kinematic simulator and its normalized
-   preview trace/collision pre-check contract, then build the 2D/3D workspace
-   against `docs/current/ui-mvp-flow-spec.md`.
-6. Build the full 2D/3D authoring workspace: scene layers, actor selection and
-   editing, follow/orbit/analyst POV, vectors, timeline cursor and provenance.
-7. Add post-edit frame generation/timestamp-addressable artifacts and the
-   optional recorded LiDAR evidence layer where approved local data exists.
-8. Complete the CP6 paper evidence bundle from accepted, reproducible results.
-9. Implement the CP2 XOSC interpreter and CARLA custom-map execution path only
-   as post-MVP work.
-10. Defer full Singapore One-North coverage and alternate LiDAR/map-source
-   adapters until the corridor path is accepted.
-11. Late-future multi-dataset platform work is defined in
-   `docs/current/late-future-platform-plan.md` and is not part of current
-   CP0-CP6 acceptance.
+### Acceptance tracks disposition
+
+- Track 1 private runtime/browser: `PROVISIONAL`; run the configured private
+  browser walkthrough and record exact evidence or unavailable reasons.
+- Track 2 native control boundary: `OWNER-REQUIRED`; retain
+  `esminiLib_control_abi_unavailable` unless a compatible public ABI is verified,
+  and label reset-by-reload as reload.
+- Track 3 image capture: `PROVISIONAL`; current container fails closed as
+  `capture_viewer_unavailable` and has no real image manifest.
+- Track 4 post-edit sensors: `DEFERRED`; no calibrated generator exists, so the
+  variant remains `unsupported` with explicit parent-sweep fallback only.
+- Track 5 CP1/CP3/CP4/CP5 closure: `OWNER-REQUIRED`; preserve CP1
+  `20/143 = 13.99%` and keep metrics and gates provisional.
+- Track 6 CP6 paper/evidence closure: `OWNER-REQUIRED`; research questions and
+  final evidence bundle are not approved.
+- Track 7 UI scope: `OWNER-REQUIRED`; Behavior, Validate and Replay are disabled
+  intentionally and must be classified as deferred/unavailable until decided.
+
+1. Review the recorded CAN pedal channel where a source scene declares recorded
+   timestamps and complete any remaining per-sample text-equivalent review.
+2. Run esmini image capture on a runtime with viewer/off-screen support and
+   publish a private capture manifest; the API remains fail-closed without it.
+3. Implement post-edit camera/LiDAR/radar generation only when real calibrated
+   frame generation is available; retain the parent-sweep and unavailable states.
+4. Add owner acceptance evidence for the completed Workspace flows.
+5. Add advisory nuScenes prediction evaluation without mixing metric roles.
+6. Resume CP1/CP3/CP4/CP5 closure tracks after source/UI contracts stabilize.
+7. Complete the CP6 paper evidence bundle from accepted, reproducible results.
+8. Implement CP2 same-XOSC CARLA execution only as post-MVP work.
+9. Defer full Singapore One-North coverage and alternate providers until the
+   active source and corridor contracts are accepted.

@@ -102,6 +102,23 @@ from .mapbuilder import (
     validate_opendrive_subset,
 )
 from .ingestion import SourceWindow, extract_scenario, source_reference_convention
+from .nuscenes_backend import (
+    CAN_ADAPTER_VERSION,
+    CanPoseSample,
+    NuScenesSourceAdapter,
+    nearest_can_poses,
+)
+from .source_state import SOURCE_STATE_VERSION, SourceState, SourceStateExtension, build_source_state_extension
+from .kinematic import (
+    KINEMATIC_LIMITS_VERSION, KINEMATIC_VERSION, CollisionCheck, KinematicLimits,
+    KinematicPreview, KinematicViolation, check_footprint_collisions,
+    integrate_kinematic_open_loop,
+)
+from .native_sources import (
+    LIDAR_CONTRACT_VERSION, MAP_LAYERS, NATIVE_MAP_VERSION, PREDICTION_EVAL_VERSION,
+    LidarPayloadContract, evaluate_prediction_advisory, lidar_payload_contract,
+    native_map_patch, native_map_records, road_ahead_query,
+)
 from .metadata_index import (
     INDEX_VERSION as METADATA_INDEX_VERSION,
     MetadataIndex,
@@ -303,6 +320,32 @@ __all__ = [
     "SelectionConfig",
     "STRAIGHT_ROAD_TOPOLOGY",
     "SourceWindow",
+    "CAN_ADAPTER_VERSION",
+    "CanPoseSample",
+    "NuScenesSourceAdapter",
+    "nearest_can_poses",
+    "SOURCE_STATE_VERSION",
+    "SourceState",
+    "SourceStateExtension",
+    "build_source_state_extension",
+    "KINEMATIC_VERSION",
+    "KINEMATIC_LIMITS_VERSION",
+    "KinematicLimits",
+    "KinematicViolation",
+    "CollisionCheck",
+    "KinematicPreview",
+    "check_footprint_collisions",
+    "integrate_kinematic_open_loop",
+    "NATIVE_MAP_VERSION",
+    "MAP_LAYERS",
+    "LIDAR_CONTRACT_VERSION",
+    "PREDICTION_EVAL_VERSION",
+    "LidarPayloadContract",
+    "native_map_records",
+    "native_map_patch",
+    "road_ahead_query",
+    "lidar_payload_contract",
+    "evaluate_prediction_advisory",
     "State",
     "TEMPLATE_REGISTRY_VERSION",
     "VariantConfig",

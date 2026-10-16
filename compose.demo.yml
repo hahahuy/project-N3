@@ -1,0 +1,148 @@
+# Product environment: what judges see at https://project-n3.hahuy.cloud
+#
+# Serves a BUILT frontend bundle, not a Vite dev server. nginx gates the whole
+# stack with a shared key; FastAPI serves both /api/* and the static SPA.
+# Nothing is published except the gateway.
+#
+# Design: docs/guides/security-deployment.md section 5.1
+# Concepts: docs/current/environment-environments.md
+#
+# Usage (prefer the Makefile):
+#   make prod          # build bundle, then up
+#   make prod-logs
+#   make prod-down
+#
+# See docs/current/demo-hardening-backlog.md for remaining public-exposure work.
+
+name: project-n3-prod
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    # Drop the image default's `--reload`. This image is shared with the dev
+    # stack and its CMD runs uvicorn in reload mode; because prod bind-mounts
+    # the repository at /app, every host source edit was restarting the judge-
+    # facing API. Prod must only change code on a deliberate redeploy.
+    command: ["uvicorn", "r2s_web.app:app", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8000"]
+    user: "${PROJECT_N3_UID:-1000}:${PROJECT_N3_GID:-1000}"
+    restart: unless-stopped
+    environment:
+      PROJECT_N3_ROOT: /app
+      PROJECT_N3_ARTIFACT_ROOT: scenarios
+      PROJECT_N3_OUTPUT_ROOT: reports
+      PROJECT_N3_METADATA_CACHE: /var/cache/real2scenario
+      PROJECT_N3_EXTRA_DATA_ROOTS: ${PROJECT_N3_EXTRA_DATA_ROOTS:-/mnt/backup/nuscenes}
+      NUSCENES_ROOT: ${NUSCENES_ROOT:-/mnt/backup/nuscenes}
+      NUSCENES_VERSION: v1.0-trainval
+      ESMINI_BIN: ${ESMINI_BIN:-/opt/esmini/bin/esmini}
+      ESMINI_DAT2CSV: ${ESMINI_DAT2CSV:-/opt/esmini/bin/dat2csv}
+    volumes:
+      - .:/app
+      # Product artifacts are isolated from the dev environment so judge imports
+      # do not clutter the dev catalog and dev experiments do not appear in the
+      # demo. Seeded from the repository on first run.
+      - project-n3-prod-scenarios:/app/scenarios
+      - project-n3-prod-reports:/app/reports
+      - project-n3-metadata-cache:/var/cache/real2scenario
+      - /mnt/backup/nuscenes:/mnt/backup/nuscenes:ro
+      - ${HOME}/esmini:/opt/esmini:ro
+    networks:
+      - demo
+    # CPU is bounded so a runaway batch cannot saturate all 12 cores.
+    # Raised from 2.0 to 4 by owner request; the recorded-LiDAR and workspace
+    # paths are CPU-bound when decoding point-cloud sweeps.
+    #
+    # Memory is capped at 12G by owner request (2026-10-15). An earlier 4G limit
+    # was OOM-killed serving `/api/workspace/scenarios/{id}/sensor-evidence` and
+    # `.../lidar`, which decode recorded point-cloud sweeps; those workloads
+    # peaked near 25G. Unbounded memory was then tried instead, but on
+    # 2026-10-15 a worker grew to ~25G anon-rss and the kernel performed four
+    # GLOBAL OOM kills, taking down unrelated containers on the host. Because
+    # uvicorn runs with `--reload`, the killed worker is not respawned: the
+    # container stays "Up" while nothing listens on 8000, so the whole product
+    # route returns 502 with a healthy-looking container. 12G bounds the blast
+    # radius to this container while leaving headroom for the LiDAR paths.
+    # See docs/current/demo-hardening-backlog.md.
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 12G
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
+  gateway:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${PROJECT_N3_DEMO_HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./ops/nginx/demo.conf:/etc/nginx/conf.d/default.conf:ro
+      # Mount the credential file directly rather than its directory. nginx
+      # workers drop to uid 101 and read it on every request; mounting the file
+      # avoids needing directory traversal on a 0700 host directory. The script
+      # grants uid 101 read via ACL, so the hash is never world readable.
+      - ./ops/demo/secrets/htpasswd:/etc/nginx/secrets/htpasswd:ro
+      - ./ops/demo/certs:/etc/nginx/certs:ro
+      - project-n3-prod-logs:/var/log/nginx
+    networks:
+      - demo
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+  cloudflared:
+    image: cloudflare/cloudflared:2026.3.0
+    restart: unless-stopped
+    # Ingress is managed from the Cloudflare dashboard/API for this tunnel, not
+    # from a local config file. See the handoff note
+    # obs-vault/docs/handoff/2026-10-15-1640-project-n3-tunnel-survey.md
+    # Token lives in ops/demo/.env, which .gitignore already covers. env_file is
+    # used instead of an interpolated environment value because compose only
+    # auto-reads a .env at the project root, and this stack must not carry one.
+    # The key must be TUNNEL_TOKEN: that is the name cloudflared reads. The other
+    # stacks use CF_TUNNEL_TOKEN only because they interpolate it themselves.
+    command: tunnel --no-autoupdate run
+    env_file:
+      - ./ops/demo/.env
+    depends_on:
+      gateway:
+        condition: service_started
+    networks:
+      - demo
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+
+volumes:
+  # Every volume below declares an explicit `name:`. Without it Docker Compose
+  # prefixes the project name, which produced the malformed
+  # `project-n3-prod_project-n3-prod-scenarios`. See
+  # docs/current/naming-migration.md.
+  project-n3-metadata-cache:
+    name: project-n3-metadata-cache
+  project-n3-prod-scenarios:
+    name: project-n3-prod-scenarios
+  project-n3-prod-reports:
+    name: project-n3-prod-reports
+  frontend-node-modules:
+    name: project-n3-prod-node-modules
+  project-n3-prod-logs:
+    name: project-n3-prod-logs
+
+networks:
+  demo:
+    driver: bridge

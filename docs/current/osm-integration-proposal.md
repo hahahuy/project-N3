@@ -1,6 +1,6 @@
 # OSM Integration Proposal
 
-Status: `PROPOSAL`  
+Status: `DEFERRED PROPOSAL / NOT ACTIVE MAKEOVER SCOPE`
 Default pipeline impact: `NONE`  
 Canonical map source: nuScenes vector map
 

@@ -12,9 +12,9 @@ FROM python:3.11-slim-bookworm AS runtime
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    R2S_PROJECT_ROOT=/app \
-    R2S_ARTIFACT_ROOT=scenarios \
-    R2S_OUTPUT_ROOT=reports
+    PROJECT_N3_ROOT=/app \
+    PROJECT_N3_ARTIFACT_ROOT=scenarios \
+    PROJECT_N3_OUTPUT_ROOT=reports
 
 WORKDIR /app
 

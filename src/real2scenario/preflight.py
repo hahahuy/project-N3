@@ -249,7 +249,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         type=Path,
         help="Directory containing the nuScenes version directory.",
     )
-    parser.add_argument("--version", default="v1.0-mini")
+    parser.add_argument("--version", default="v1.0-trainval")
     parser.add_argument("--map-mode", choices=("none", "expansion"), default="expansion")
     args = parser.parse_args(argv)
 

@@ -1,0 +1,499 @@
+- generic [active] [ref=f21e1]:
+  - generic [ref=f21e2]:
+    - generic [ref=f21e3]:
+      - link "Skip to content" [ref=f21e4] [cursor=pointer]:
+        - /url: "#start-of-content"
+      - banner [ref=f21e9]:
+        - heading "Navigation Menu" [level=2] [ref=f21e10]
+        - generic [ref=f21e11]:
+          - link "Homepage" [ref=f21e13] [cursor=pointer]:
+            - /url: /
+          - generic [ref=f21e16]:
+            - navigation "Global" [ref=f21e17]:
+              - list [ref=f21e18]:
+                - listitem [ref=f21e19]:
+                  - button "Platform" [ref=f21e21] [cursor=pointer]
+                - listitem [ref=f21e24]:
+                  - button "Solutions" [ref=f21e26] [cursor=pointer]
+                - listitem [ref=f21e29]:
+                  - button "Resources" [ref=f21e31] [cursor=pointer]
+                - listitem [ref=f21e34]:
+                  - button "Open Source" [ref=f21e36] [cursor=pointer]
+                - listitem [ref=f21e39]:
+                  - button "Enterprise" [ref=f21e41] [cursor=pointer]
+                - listitem [ref=f21e44]:
+                  - link "Pricing" [ref=f21e45] [cursor=pointer]:
+                    - /url: https://github.com/pricing
+            - generic [ref=f21e46]:
+              - button "Search or jump to, type / to search" [ref=f21e48] [cursor=pointer]
+              - link "Sign in" [ref=f21e55] [cursor=pointer]:
+                - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fmichigan-traffic-lab%2FnuCarla
+              - link "Sign up" [ref=f21e58] [cursor=pointer]:
+                - /url: /signup?ref_cta=Sign+up&ref_loc=header+logged+out&ref_page=%2F%3Cuser-name%3E%2F%3Crepo-name%3E&source=header-repo&source_repo=michigan-traffic-lab%2FnuCarla
+              - button "Appearance settings" [ref=f21e61] [cursor=pointer]
+    - main [ref=f21e68]:
+      - generic "Global navigation menu" [ref=f21e71]:
+        - navigation "Breadcrumbs" [ref=f21e74]:
+          - list [ref=f21e75]:
+            - listitem [ref=f21e76]:
+              - link "michigan-traffic-lab" [ref=f21e77] [cursor=pointer]:
+                - /url: /michigan-traffic-lab
+            - listitem [ref=f21e79]:
+              - link "nuCarla" [ref=f21e80] [cursor=pointer]:
+                - /url: /michigan-traffic-lab/nuCarla
+        - heading "Repository navigation" [level=2] [ref=f21e83]
+        - navigation "Repository" [ref=f21e84]:
+          - list [ref=f21e85]:
+            - listitem [ref=f21e86]:
+              - link "Code" [ref=f21e87] [cursor=pointer]:
+                - /url: /michigan-traffic-lab/nuCarla
+            - listitem [ref=f21e92]:
+              - link "Issues (2)" [ref=f21e93] [cursor=pointer]:
+                - /url: /michigan-traffic-lab/nuCarla/issues
+                - generic [ref=f21e98]: Issues
+                - generic [ref=f21e99]:
+                  - generic [aria-hidden] [ref=f21e100]: "2"
+                  - generic [ref=f21e101]: (2)
+            - listitem [ref=f21e102]:
+              - link "Pull requests" [ref=f21e103] [cursor=pointer]:
+                - /url: /michigan-traffic-lab/nuCarla/pulls
+            - listitem [ref=f21e108]:
+              - link "Actions" [ref=f21e109] [cursor=pointer]:
+                - /url: /michigan-traffic-lab/nuCarla/actions
+            - listitem [ref=f21e114]:
+              - link "Projects" [ref=f21e115] [cursor=pointer]:
+                - /url: /michigan-traffic-lab/nuCarla/projects
+            - listitem [ref=f21e120]:
+              - link "Security and quality" [ref=f21e121] [cursor=pointer]:
+                - /url: /michigan-traffic-lab/nuCarla/security
+            - listitem [ref=f21e126]:
+              - link "Insights" [ref=f21e127] [cursor=pointer]:
+                - /url: /michigan-traffic-lab/nuCarla/pulse
+      - generic [ref=f21e144]:
+        - generic [ref=f21e148]:
+          - generic [ref=f21e151]:
+            - img "michigan-traffic-lab" [ref=f21e152]
+            - generic "nuCarla" [ref=f21e153]:
+              - strong [ref=f21e154]:
+                - link "nuCarla" [ref=f21e155] [cursor=pointer]:
+                  - /url: /michigan-traffic-lab/nuCarla
+            - generic [ref=f21e156]: Public
+          - list [ref=f21e158]:
+            - listitem [ref=f21e159]:
+              - link "You must be signed in to change notification settings" [ref=f21e160] [cursor=pointer]:
+                - /url: /login?return_to=%2Fmichigan-traffic-lab%2FnuCarla
+                - generic [ref=f21e161]: Notifications
+            - listitem [ref=f21e163]:
+              - link "You must be signed in to fork a repository" [ref=f21e164] [cursor=pointer]:
+                - /url: /login?return_to=%2Fmichigan-traffic-lab%2FnuCarla
+                - generic [ref=f21e166]:
+                  - text: Fork
+                  - generic [aria-hidden] [ref=f21e167]: "5"
+                  - generic [ref=f21e168]: (5)
+            - listitem [ref=f21e169]:
+              - link "Star (72)" [ref=f21e170] [cursor=pointer]:
+                - /url: /login?return_to=%2Fmichigan-traffic-lab%2FnuCarla
+                - generic [ref=f21e172]:
+                  - text: Star
+                  - generic [aria-hidden] [ref=f21e173]: "72"
+                  - generic [ref=f21e174]: (72)
+        - generic [ref=f21e175]:
+          - generic [ref=f21e178]:
+            - generic [ref=f21e179]:
+              - generic [ref=f21e180]:
+                - button "main branch" [ref=f21e182] [cursor=pointer]:
+                  - generic [ref=f21e183]: main
+                - generic [ref=f21e187]:
+                  - link "Branches" [ref=f21e188] [cursor=pointer]:
+                    - /url: /michigan-traffic-lab/nuCarla/branches
+                  - link "Tags" [ref=f21e191] [cursor=pointer]:
+                    - /url: /michigan-traffic-lab/nuCarla/tags
+              - generic [ref=f21e194]:
+                - combobox "Go to file" [ref=f21e202]
+                - button "Code" [ref=f21e203] [cursor=pointer]
+            - generic [ref=f21e206]:
+              - generic [ref=f21e207]:
+                - generic [ref=f21e209]:
+                  - heading "Latest commit" [level=2] [ref=f21e210]
+                  - generic [ref=f21e213]:
+                    - heading "History" [level=2] [ref=f21e214]
+                    - link "6 Commits" [ref=f21e215] [cursor=pointer]:
+                      - /url: /michigan-traffic-lab/nuCarla/commits/main/
+                - heading "Folders and files" [level=2] [ref=f21e218]
+                - table "Folders and files" [ref=f21e220]:
+                  - rowgroup:
+                    - row "Name Last commit message Last commit date":
+                      - columnheader "Name"
+                      - columnheader "Last commit message"
+                      - columnheader "Last commit date"
+                  - rowgroup [ref=f21e221]:
+                    - row "BEVDet, (Directory)" [ref=f21e222]:
+                      - cell [ref=f21e223]:
+                        - link "BEVDet, (Directory)" [ref=f21e230] [cursor=pointer]:
+                          - /url: /michigan-traffic-lab/nuCarla/tree/main/BEVDet
+                          - text: BEVDet
+                      - cell [ref=f21e231]
+                      - cell [ref=f21e233]
+                    - row "BEVFormer, (Directory)" [ref=f21e236]:
+                      - cell [ref=f21e237]:
+                        - link "BEVFormer, (Directory)" [ref=f21e244] [cursor=pointer]:
+                          - /url: /michigan-traffic-lab/nuCarla/tree/main/BEVFormer
+                          - text: BEVFormer
+                      - cell [ref=f21e245]
+                      - cell [ref=f21e247]
+                    - row "FastBEV, (Directory)" [ref=f21e250]:
+                      - cell [ref=f21e251]:
+                        - link "FastBEV, (Directory)" [ref=f21e258] [cursor=pointer]:
+                          - /url: /michigan-traffic-lab/nuCarla/tree/main/FastBEV
+                          - text: FastBEV
+                      - cell [ref=f21e259]
+                      - cell [ref=f21e261]
+                    - row "PETR, (Directory)" [ref=f21e264]:
+                      - cell [ref=f21e265]:
+                        - link "PETR, (Directory)" [ref=f21e272] [cursor=pointer]:
+                          - /url: /michigan-traffic-lab/nuCarla/tree/main/PETR
+                          - text: PETR
+                      - cell [ref=f21e273]
+                      - cell [ref=f21e275]
+                    - row ".gitignore, (File)" [ref=f21e278]:
+                      - cell [ref=f21e279]:
+                        - link ".gitignore, (File)" [ref=f21e286] [cursor=pointer]:
+                          - /url: /michigan-traffic-lab/nuCarla/blob/main/.gitignore
+                          - text: .gitignore
+                      - cell [ref=f21e287]
+                      - cell [ref=f21e289]
+                    - row "LICENSE, (File)" [ref=f21e292]:
+                      - cell [ref=f21e293]:
+                        - link "LICENSE, (File)" [ref=f21e300] [cursor=pointer]:
+                          - /url: /michigan-traffic-lab/nuCarla/blob/main/LICENSE
+                          - text: LICENSE
+                      - cell [ref=f21e301]
+                      - cell [ref=f21e303]
+                    - row "README.md, (File)" [ref=f21e306]:
+                      - cell [ref=f21e307]:
+                        - link "README.md, (File)" [ref=f21e314] [cursor=pointer]:
+                          - /url: /michigan-traffic-lab/nuCarla/blob/main/README.md
+                          - text: README.md
+                      - cell [ref=f21e315]
+                      - cell [ref=f21e317]
+                    - row "download.sh, (File)" [ref=f21e320]:
+                      - cell [ref=f21e321]:
+                        - link "download.sh, (File)" [ref=f21e328] [cursor=pointer]:
+                          - /url: /michigan-traffic-lab/nuCarla/blob/main/download.sh
+                          - text: download.sh
+                      - cell [ref=f21e329]
+                      - cell [ref=f21e331]
+              - generic [ref=f21e335]:
+                - generic [ref=f21e336]:
+                  - heading "Repository files navigation" [level=2] [ref=f21e337]
+                  - navigation "Repository files" [ref=f21e338]:
+                    - list [ref=f21e339]:
+                      - listitem [ref=f21e340]:
+                        - link "README" [ref=f21e341] [cursor=pointer]:
+                          - /url: "#"
+                      - listitem [ref=f21e346]:
+                        - link "License" [ref=f21e347] [cursor=pointer]:
+                          - /url: "#"
+                  - button "Outline" [ref=f21e352] [cursor=pointer]
+                - article [ref=f21e356]:
+                  - generic [ref=f21e357]:
+                    - 'heading "nuCarla: A nuScenes-Style Bird’s-Eye View Perception Dataset for CARLA Simulation" [level=1] [ref=f21e358]'
+                    - 'link "Permalink: nuCarla: A nuScenes-Style Bird’s-Eye View Perception Dataset for CARLA Simulation" [ref=f21e359] [cursor=pointer]':
+                      - /url: "#nucarla-a-nuscenes-style-birds-eye-view-perception-dataset-for-carla-simulation"
+                  - paragraph [ref=f21e362]:
+                    - link [ref=f21e363] [cursor=pointer]:
+                      - /url: https://arxiv.org/abs/2511.13744
+                      - img "arXiv" [ref=f21e364]
+                    - link [ref=f21e365] [cursor=pointer]:
+                      - /url: https://huggingface.co/datasets/zhijieq/nuCarla
+                      - img "Hugging Face" [ref=f21e366]
+                    - link [ref=f21e367] [cursor=pointer]:
+                      - /url: https://www.nuscenes.org/nuscenes
+                      - img "nuScenes" [ref=f21e368]
+                  - generic [ref=f21e369]:
+                    - heading "Introduction" [level=2] [ref=f21e370]
+                    - 'link "Permalink: Introduction" [ref=f21e371] [cursor=pointer]':
+                      - /url: "#introduction"
+                  - paragraph [ref=f21e374]:
+                    - text: "nuCarla is a large-scale, nuScenes-compatible, camera-based perception dataset developed in the CARLA simulator, featuring 9 distinct maps, 14 weather conditions, and 6 object classes. It is designed to facilitate training of effective perception representations for end-to-end autonomous driving development. The dataset contains 1,000 scenarios in total, with 700 for training, 150 for validation, and 150 for testing, matching the nuScenes split. To thoroughly validate nuCarla, we train and evaluate four state-of-the-art Bird's Eye View (BEV) perception models:"
+                    - link "BEVFormer" [ref=f21e375] [cursor=pointer]:
+                      - /url: https://github.com/fundamentalvision/BEVFormer
+                    - text: ","
+                    - link "PETR" [ref=f21e376] [cursor=pointer]:
+                      - /url: https://github.com/megvii-research/PETR
+                    - text: ","
+                    - link "BEVDet" [ref=f21e377] [cursor=pointer]:
+                      - /url: https://github.com/HuangJunJie2017/BEVDet
+                    - text: ","
+                    - link "FastBEV" [ref=f21e378] [cursor=pointer]:
+                      - /url: https://github.com/ymlab/advanced-fastbev
+                    - text: ", and demonstrate that all models achieve competitive performance using the official nuScenes detection metrics."
+                  - paragraph [ref=f21e379]:
+                    - strong [ref=f21e380]: Update 01/02/2026
+                    - text: ": Following community requests, we have released a sample data generation pipeline under the"
+                    - code [ref=f21e381]: data
+                    - text: branch.
+                  - generic [ref=f21e382]:
+                    - heading "Key Features" [level=2] [ref=f21e383]
+                    - 'link "Permalink: Key Features" [ref=f21e384] [cursor=pointer]':
+                      - /url: "#key-features"
+                  - paragraph [ref=f21e387]:
+                    - text: 🚗 The first large-scale
+                    - strong [ref=f21e388]: CARLA-based perception dataset
+                    - text: with full compatibility to the nuScenes format.
+                  - paragraph [ref=f21e389]:
+                    - text: ⚙️
+                    - strong [ref=f21e390]: MMDetection3D-1.0 fully upgraded
+                    - text: for usage with the latest PyTorch (2.7+) and CUDA (12.8+).
+                  - paragraph [ref=f21e391]:
+                    - text: 📦 Open-source
+                    - strong [ref=f21e392]: dataset and pretrained model weights
+                    - text: provided.
+                  - generic [ref=f21e393]:
+                    - heading "Tested Environment" [level=2] [ref=f21e394]
+                    - 'link "Permalink: Tested Environment" [ref=f21e395] [cursor=pointer]':
+                      - /url: "#tested-environment"
+                  - paragraph [ref=f21e398]: "The following environment settings are applied across all models in this repository:"
+                  - list [ref=f21e399]:
+                    - listitem [ref=f21e400]:
+                      - strong [ref=f21e401]: CUDA
+                      - text: ": 12.8"
+                    - listitem [ref=f21e402]:
+                      - strong [ref=f21e403]: Nvidia Driver
+                      - text: ": 570"
+                    - listitem [ref=f21e404]:
+                      - strong [ref=f21e405]: Python
+                      - text: ": 3.10"
+                    - listitem [ref=f21e406]:
+                      - strong [ref=f21e407]: OS
+                      - text: ": Ubuntu 22.04"
+                  - generic [ref=f21e408]:
+                    - heading "Data Preparation" [level=2] [ref=f21e409]
+                    - 'link "Permalink: Data Preparation" [ref=f21e410] [cursor=pointer]':
+                      - /url: "#data-preparation"
+                  - paragraph [ref=f21e413]:
+                    - text: The dataset is publicly available at
+                    - link "Hugging Face" [ref=f21e414] [cursor=pointer]:
+                      - /url: https://huggingface.co/datasets/zhijieq/nuCarla
+                    - text: . Download it using
+                    - code [ref=f21e415]: download.sh
+                    - text: and organize it in the following structure.
+                  - generic [ref=f21e416]:
+                    - code [ref=f21e418]: nuCarla ├─ maps/ ├─ samples/ ├─ v1.0-mini/ ├─ v1.0-test/ ├─ v1.0-trainval/
+                    - button "Copy code to clipboard" [ref=f21e420] [cursor=pointer]
+                  - paragraph [ref=f21e424]:
+                    - strong [ref=f21e425]: Note
+                    - text: ": This is a camera-based perception dataset. The LiDAR files in the sample folder are dummy placeholders provided solely for compatibility with the MMDetection3D framework conventions."
+                  - generic [ref=f21e426]:
+                    - heading "Training and Evaluation" [level=2] [ref=f21e427]
+                    - 'link "Permalink: Training and Evaluation" [ref=f21e428] [cursor=pointer]':
+                      - /url: "#training-and-evaluation"
+                  - paragraph [ref=f21e431]:
+                    - text: "For complete installation, training, and evaluation workflows, please refer to the individual folder corresponding to each model:"
+                    - link "BEVFormer" [ref=f21e432] [cursor=pointer]:
+                      - /url: /michigan-traffic-lab/nuCarla/blob/main/BEVFormer
+                    - text: ","
+                    - link "PETR" [ref=f21e433] [cursor=pointer]:
+                      - /url: /michigan-traffic-lab/nuCarla/blob/main/PETR
+                    - text: ","
+                    - link "BEVDet" [ref=f21e434] [cursor=pointer]:
+                      - /url: /michigan-traffic-lab/nuCarla/blob/main/BEVDet
+                    - text: ","
+                    - link "FastBEV" [ref=f21e435] [cursor=pointer]:
+                      - /url: /michigan-traffic-lab/nuCarla/blob/main/FastBEV
+                    - text: .
+                  - generic [ref=f21e436]:
+                    - heading "Model Zoo" [level=2] [ref=f21e437]
+                    - 'link "Permalink: Model Zoo" [ref=f21e438] [cursor=pointer]':
+                      - /url: "#model-zoo"
+                  - paragraph [ref=f21e441]:
+                    - strong [ref=f21e442]: IMPORTANT
+                    - text: ": The following results are evaluated on the nuCarla"
+                    - emphasis [ref=f21e443]: validation
+                    - text: set. All metrics are post-computed based on the six available classes (car, truck, bus, pedestrian, motorcycle, bicycle) and are not the direct output from the nuScenes console.
+                  - paragraph [ref=f21e444]: Due to time and resource considerations, we only conducted thorough evaluations for the selected model variants within each family. For users interested in other variants, please refer to the respective original code repositories.
+                  - table [ref=f21e446]:
+                    - rowgroup [ref=f21e447]:
+                      - row [ref=f21e448]:
+                        - columnheader "Method" [ref=f21e449]
+                        - columnheader "Schedule" [ref=f21e450]
+                        - columnheader "VRAM" [ref=f21e451]
+                        - columnheader "GPU Hours" [ref=f21e452]
+                        - columnheader "mAP" [ref=f21e453]
+                        - columnheader "NDS" [ref=f21e454]
+                        - columnheader "Config" [ref=f21e455]
+                        - columnheader "Download" [ref=f21e456]
+                    - rowgroup [ref=f21e457]:
+                      - row [ref=f21e458]:
+                        - cell "BEVFormer (Base)" [ref=f21e459]
+                        - cell "24ep" [ref=f21e460]
+                        - cell "30500M" [ref=f21e461]
+                        - cell "300" [ref=f21e462]
+                        - cell "0.813" [ref=f21e463]
+                        - cell "0.778" [ref=f21e464]
+                        - cell [ref=f21e465]:
+                          - link "config" [ref=f21e466] [cursor=pointer]:
+                            - /url: /michigan-traffic-lab/nuCarla/blob/main/BEVFormer/projects/configs/bevformer/bevformer-base.py
+                        - cell [ref=f21e467]:
+                          - link "model" [ref=f21e468] [cursor=pointer]:
+                            - /url: https://github.com/michigan-traffic-lab/nuCarla/releases/download/v1.0/bevformer-base.pth
+                          - text: /
+                          - link "log" [ref=f21e469] [cursor=pointer]:
+                            - /url: https://github.com/michigan-traffic-lab/nuCarla/releases/download/v1.0/bevformer-base.log
+                      - row [ref=f21e470]:
+                        - cell "PETR (VovNet-Grid Mask-P4-1600x640)" [ref=f21e471]: PETR (VovNet-GridMask-P4-1600x640)
+                        - cell "24ep" [ref=f21e472]
+                        - cell "9500M" [ref=f21e473]
+                        - cell "150" [ref=f21e474]
+                        - cell "0.745" [ref=f21e475]
+                        - cell "0.710" [ref=f21e476]
+                        - cell [ref=f21e477]:
+                          - link "config" [ref=f21e478] [cursor=pointer]:
+                            - /url: /michigan-traffic-lab/nuCarla/blob/main/PETR/projects/configs/petr/petr-vovnet-gridmask-p4-1600x640.py
+                        - cell [ref=f21e479]:
+                          - link "model" [ref=f21e480] [cursor=pointer]:
+                            - /url: https://github.com/michigan-traffic-lab/nuCarla/releases/download/v1.0/petr-vovnet-gridmask-p4-1600x640.pth
+                          - text: /
+                          - link "log" [ref=f21e481] [cursor=pointer]:
+                            - /url: https://github.com/michigan-traffic-lab/nuCarla/releases/download/v1.0/petr-vovnet-gridmask-p4-1600x640.log
+                      - row [ref=f21e482]:
+                        - cell "BEVDet (R50-4DLong Term-Stereo-CBGS)" [ref=f21e483]: BEVDet (R50-4DLongTerm-Stereo-CBGS)
+                        - cell "24ep" [ref=f21e484]
+                        - cell "8500M" [ref=f21e485]
+                        - cell "300" [ref=f21e486]
+                        - cell "0.811" [ref=f21e487]
+                        - cell "0.753" [ref=f21e488]
+                        - cell [ref=f21e489]:
+                          - link "config" [ref=f21e490] [cursor=pointer]:
+                            - /url: /michigan-traffic-lab/nuCarla/blob/main/BEVDet/configs/bevdet/bevdet-r50-4dlongterm-stereo-cbgs.py
+                        - cell [ref=f21e491]:
+                          - link "model" [ref=f21e492] [cursor=pointer]:
+                            - /url: https://github.com/michigan-traffic-lab/nuCarla/releases/download/v1.0/bevdet-r50-4dlongterm-stereo-cbgs.pth
+                          - text: /
+                          - link "log" [ref=f21e493] [cursor=pointer]:
+                            - /url: https://github.com/michigan-traffic-lab/nuCarla/releases/download/v1.0/bevdet-r50-4dlongterm-stereo-cbgs.log
+                      - row [ref=f21e494]:
+                        - cell "FastBEV (R50-CBGS-4D)" [ref=f21e495]
+                        - cell "24ep" [ref=f21e496]
+                        - cell "14000M" [ref=f21e497]
+                        - cell "50" [ref=f21e498]
+                        - cell "0.777" [ref=f21e499]
+                        - cell "0.728" [ref=f21e500]
+                        - cell [ref=f21e501]:
+                          - link "config" [ref=f21e502] [cursor=pointer]:
+                            - /url: /michigan-traffic-lab/nuCarla/blob/main/FastBEV/configs/fastbev/fastbev-r50-cbgs-4d.py
+                        - cell [ref=f21e503]:
+                          - link "model" [ref=f21e504] [cursor=pointer]:
+                            - /url: https://github.com/michigan-traffic-lab/nuCarla/releases/download/v1.0/fastbev-r50-cbgs-4d.pth
+                          - text: /
+                          - link "log" [ref=f21e505] [cursor=pointer]:
+                            - /url: https://github.com/michigan-traffic-lab/nuCarla/releases/download/v1.0/fastbev-r50-cbgs-4d.log
+                  - generic [ref=f21e506]:
+                    - heading "Acknowledgement" [level=2] [ref=f21e507]
+                    - 'link "Permalink: Acknowledgement" [ref=f21e508] [cursor=pointer]':
+                      - /url: "#acknowledgement"
+                  - paragraph [ref=f21e511]: "Many thanks to these excellent open source projects:"
+                  - list [ref=f21e512]:
+                    - listitem [ref=f21e513]:
+                      - link "MMDetection3D" [ref=f21e514] [cursor=pointer]:
+                        - /url: https://github.com/open-mmlab/mmdetection3d
+                    - listitem [ref=f21e515]:
+                      - link "BEVFormer" [ref=f21e516] [cursor=pointer]:
+                        - /url: https://github.com/fundamentalvision/BEVFormer
+                    - listitem [ref=f21e517]:
+                      - link "PETR" [ref=f21e518] [cursor=pointer]:
+                        - /url: https://github.com/megvii-research/PETR
+                    - listitem [ref=f21e519]:
+                      - link "BEVDet" [ref=f21e520] [cursor=pointer]:
+                        - /url: https://github.com/HuangJunJie2017/BEVDet
+                    - listitem [ref=f21e521]:
+                      - link "FastBEV" [ref=f21e522] [cursor=pointer]:
+                        - /url: https://github.com/ymlab/advanced-fastbev
+                  - generic [ref=f21e523]:
+                    - heading "Citation" [level=2] [ref=f21e524]
+                    - 'link "Permalink: Citation" [ref=f21e525] [cursor=pointer]':
+                      - /url: "#citation"
+                  - paragraph [ref=f21e528]: "If you use nuCarla in your research, please consider citing:"
+                  - generic [ref=f21e529]:
+                    - generic [ref=f21e530]:
+                      - text: "@article{nucarla, title="
+                      - generic [ref=f21e531]: "{nuCarla: A nuScenes-Style Bird’s-Eye View Perception Dataset for CARLA Simulation}"
+                      - text: ", author="
+                      - generic [ref=f21e532]: "{Qiao, Zhijie and Cao, Zhong and Liu, Henry X.}"
+                      - text: ", year="
+                      - generic [ref=f21e533]: "{2025}"
+                      - text: ", url="
+                      - generic [ref=f21e534]: "{https://arxiv.org/abs/2511.13744}"
+                      - text: ", }"
+                    - button "Copy code to clipboard" [ref=f21e536] [cursor=pointer]
+          - generic [ref=f21e542]:
+            - generic [ref=f21e543]:
+              - heading "About" [level=2] [ref=f21e544]
+              - paragraph [ref=f21e545]: "This repo contains the code for paper \"nuCarla: A nuScenes-Style Bird’s-Eye View Perception Dataset for CARLA Simulation\""
+              - heading "Resources" [level=3] [ref=f21e546]
+              - link "Readme" [ref=f21e548] [cursor=pointer]:
+                - /url: "#readme-ov-file"
+              - link "License" [ref=f21e552] [cursor=pointer]:
+                - /url: "#License-1-ov-file"
+              - generic [ref=f21e555]:
+                - generic [ref=f21e556]:
+                  - link "Activity" [ref=f21e558] [cursor=pointer]:
+                    - /url: /michigan-traffic-lab/nuCarla/activity
+                  - link "Custom properties" [ref=f21e562] [cursor=pointer]:
+                    - /url: /michigan-traffic-lab/nuCarla/custom-properties
+                - generic [ref=f21e565]:
+                  - heading "Stars" [level=3] [ref=f21e566]
+                  - generic [ref=f21e568]:
+                    - strong [ref=f21e571]: "72"
+                    - text: stars
+                  - heading "Watchers" [level=3] [ref=f21e572]
+                  - generic [ref=f21e574]:
+                    - strong [ref=f21e577]: "0"
+                    - text: watching
+                  - heading "Forks" [level=3] [ref=f21e578]
+                  - link [ref=f21e580] [cursor=pointer]:
+                    - /url: /michigan-traffic-lab/nuCarla/forks
+                    - strong [ref=f21e584]: "5"
+                    - text: forks
+              - link "Report repository" [ref=f21e586] [cursor=pointer]:
+                - /url: /contact/report-content?content_url=https%3A%2F%2Fgithub.com%2Fmichigan-traffic-lab%2FnuCarla&report=michigan-traffic-lab+%28user%29
+            - heading "Releases" [level=2] [ref=f21e588]
+            - heading "Packages" [level=2] [ref=f21e592]
+            - heading "Contributors" [level=2] [ref=f21e595]
+            - heading "Languages" [level=2] [ref=f21e598]
+    - contentinfo [ref=f21e601]:
+      - heading "Footer" [level=2] [ref=f21e602]
+      - generic [ref=f21e603]:
+        - generic [ref=f21e604]:
+          - link "GitHub Homepage" [ref=f21e605] [cursor=pointer]:
+            - /url: https://github.com
+          - generic [ref=f21e608]: © 2026 GitHub, Inc.
+        - navigation "Footer" [ref=f21e609]:
+          - heading "Footer navigation" [level=3] [ref=f21e610]
+          - list "Footer navigation" [ref=f21e611]:
+            - listitem [ref=f21e612]:
+              - link "Terms" [ref=f21e613] [cursor=pointer]:
+                - /url: https://docs.github.com/site-policy/github-terms/github-terms-of-service
+            - listitem [ref=f21e614]:
+              - link "Privacy" [ref=f21e615] [cursor=pointer]:
+                - /url: https://docs.github.com/site-policy/privacy-policies/github-privacy-statement
+            - listitem [ref=f21e616]:
+              - link "Security" [ref=f21e617] [cursor=pointer]:
+                - /url: https://github.com/security
+            - listitem [ref=f21e618]:
+              - link "Status" [ref=f21e619] [cursor=pointer]:
+                - /url: https://www.githubstatus.com/
+            - listitem [ref=f21e620]:
+              - link "Community" [ref=f21e621] [cursor=pointer]:
+                - /url: https://github.community/
+            - listitem [ref=f21e622]:
+              - link "Docs" [ref=f21e623] [cursor=pointer]:
+                - /url: https://docs.github.com/
+            - listitem [ref=f21e624]:
+              - link "Contact" [ref=f21e625] [cursor=pointer]:
+                - /url: https://support.github.com?tags=dotcom-footer
+            - listitem [ref=f21e626]:
+              - button "Manage cookies" [ref=f21e628] [cursor=pointer]
+            - listitem [ref=f21e629]:
+              - button "Do not share my personal information" [ref=f21e631] [cursor=pointer]
+  - alert [ref=f21e634]

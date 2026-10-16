@@ -1,0 +1,51 @@
+- main [ref=f3e3]:
+  - generic [ref=f3e4]:
+    - generic [ref=f3e5]:
+      - paragraph [ref=f3e6]: R2S / LOCAL LAB
+      - heading "Scenario review, without the black box." [level=1] [ref=f3e7]
+      - paragraph [ref=f3e8]: A CPU-only browser surface for recorded trajectories and deterministic variation. Every score links back to a canonical artifact.
+    - generic [ref=f3e9]:
+      - text: LOCAL API
+      - strong [ref=f3e11]: Connected boundary
+      - generic [ref=f3e12]: "esmini: checking"
+  - generic [ref=f3e53]: Not Found
+  - button "LOCAL PATHS +" [ref=f3e14] [cursor=pointer]:
+    - text: LOCAL PATHS
+    - generic [ref=f3e15]: +
+  - generic [ref=f3e16]:
+    - complementary [ref=f3e17]:
+      - generic [ref=f3e18]:
+        - generic [ref=f3e19]: 01 / CATALOG
+        - generic [ref=f3e20]: 0 artifacts
+      - heading "Source scenarios" [level=2] [ref=f3e21]
+      - paragraph [ref=f3e22]: Validated artifacts discovered below the configured directory.
+      - generic [ref=f3e23]: No artifacts configured.Open LOCAL PATHS above, then import a source scene.
+      - generic [ref=f3e25]:
+        - heading "nuScenes source scenes" [level=3] [ref=f3e26]
+        - paragraph [ref=f3e27]: Dataset metadata is not reachable.
+    - generic [ref=f3e28]:
+      - generic [ref=f3e29]:
+        - generic [ref=f3e30]: 02 / INSPECT
+        - generic [ref=f3e31]: waiting for artifact
+      - generic [ref=f3e32]: Select an imported scenario to inspect trajectories, provenance, and replay metadata.
+    - complementary [ref=f3e33]:
+      - generic [ref=f3e34]:
+        - generic [ref=f3e35]: 03 / MOTION EDIT
+        - generic [ref=f3e36]: U0 PREVIEW
+      - heading "Actor variation" [level=2] [ref=f3e37]
+      - paragraph [ref=f3e38]: Edit one recorded actor, then preview a deterministic child without mutating the parent.
+      - generic [ref=f3e39]:
+        - text: BEHAVIOR MODE
+        - strong [ref=f3e40]: UNSUPPORTED
+        - generic [ref=f3e41]: Executor is not implemented. No fallback is used.
+      - generic [ref=f3e42]:
+        - button "PREVIEW VARIANT" [disabled] [ref=f3e43]
+        - button "VALIDATE" [disabled] [ref=f3e44]
+        - button "RESET" [disabled] [ref=f3e45]
+        - button "EXPORT CONFIG" [disabled] [ref=f3e46]
+      - heading "Existing batch tools" [level=3] [ref=f3e48]
+      - generic [ref=f3e49]:
+        - checkbox "Replay with esmini" [ref=f3e50]
+        - text: Replay with esmini
+      - button "GENERATE BATCH" [disabled] [ref=f3e51] [cursor=pointer]
+      - button "RUN SELECTED WITH ESMINI" [disabled] [ref=f3e52] [cursor=pointer]

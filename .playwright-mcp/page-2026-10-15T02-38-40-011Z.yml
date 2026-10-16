@@ -1,0 +1,107 @@
+- main [ref=f4e3]:
+  - generic [ref=f4e4]:
+    - generic [ref=f4e5]:
+      - generic [ref=f4e6]: R2S
+      - generic [ref=f4e7]:
+        - strong [ref=f4e8]: project-N3
+        - generic [ref=f4e9]: untitled scenario document
+    - generic [ref=f4e10]:
+      - generic [ref=f4e11]: Simulation Off
+      - generic [ref=f4e12]: Dataset Off
+      - button "Switch to dark mode" [ref=f4e13] [cursor=pointer]
+  - navigation "Workspace toolbar" [ref=f4e16]:
+    - generic [ref=f4e17]:
+      - generic [ref=f4e19]:
+        - button "Undo" [disabled] [ref=f4e21]
+        - button "Redo" [disabled] [ref=f4e26]
+      - generic [ref=f4e31]:
+        - button "Import scene" [ref=f4e33] [cursor=pointer]
+        - button "Export" [disabled] [ref=f4e38]
+      - generic [ref=f4e43]:
+        - button "Select actors" [ref=f4e45] [cursor=pointer]
+        - button "Edit motion" [disabled] [ref=f4e49]
+        - button "Behavior mode" [disabled] [ref=f4e54]
+      - generic [ref=f4e60]:
+        - button "Validate" [disabled] [ref=f4e62]
+        - button "Replay" [disabled] [ref=f4e67]
+      - generic [ref=f4e72]:
+        - button "Measure" [ref=f4e74] [cursor=pointer]
+        - button "Compare" [disabled] [ref=f4e81]
+      - button "Add view" [ref=f4e88] [cursor=pointer]
+    - generic [ref=f4e91]:
+      - button "More tools" [disabled] [ref=f4e93]
+      - button "Search commands" [ref=f4e98] [cursor=pointer]:
+        - text: Search commands
+        - generic [ref=f4e104]: Alt+C
+      - button "Minimize header" [expanded] [ref=f4e105] [cursor=pointer]
+  - generic [ref=f4e108]:
+    - complementary "Workspace navigation" [ref=f4e109]:
+      - button "Recipe" [ref=f4e110] [cursor=pointer]
+      - button "Catalog" [pressed] [ref=f4e114] [cursor=pointer]
+      - button "Map layers" [ref=f4e120] [cursor=pointer]
+      - button "Comments" [ref=f4e125] [cursor=pointer]
+    - complementary "catalog panel" [ref=f4e128]:
+      - generic [ref=f4e129]:
+        - generic [ref=f4e130]:
+          - generic [ref=f4e131]: CATALOG
+          - generic [ref=f4e132]: 0/0
+        - textbox "Filter scenarios" [ref=f4e133]
+    - separator "Resize side panel" [ref=f4e138]
+    - region "View manager" [ref=f4e139]:
+      - generic [ref=f4e140]:
+        - generic [ref=f4e141]:
+          - text: SCENARIO STUDIO
+          - strong [ref=f4e142]: No scenario selected
+        - generic "Mode" [ref=f4e143]:
+          - button "select" [pressed] [ref=f4e144] [cursor=pointer]
+          - button "edit" [ref=f4e145] [cursor=pointer]
+          - button "measure" [ref=f4e146] [cursor=pointer]
+          - button "compare" [disabled] [ref=f4e147] [cursor=pointer]
+        - button "Reset layout" [ref=f4e148] [cursor=pointer]
+      - article [ref=f4e150]:
+        - generic [ref=f4e151]:
+          - strong [ref=f4e155]: Top-down
+          - generic [ref=f4e156]: "- empty"
+          - combobox "Camera preset" [ref=f4e157]:
+            - option "Auto-fit" [selected]
+            - option "North-up"
+            - option "Ego-up"
+          - button "Layers" [ref=f4e159] [cursor=pointer]
+          - button "Make main" [ref=f4e160] [cursor=pointer]
+          - button "Maximize" [ref=f4e161] [cursor=pointer]
+          - 'button "Close view: Top-down" [ref=f4e162] [cursor=pointer]': x
+        - generic [ref=f4e163]: Select an imported scenario
+      - region "Time-indexed actor timeline and gate lane" [ref=f4e164]:
+        - generic [ref=f4e165]:
+          - strong [ref=f4e166]: playhead 0.00 s
+          - generic [ref=f4e167]: of 0.00 s
+          - button "Step playhead back" [disabled] [ref=f4e168]: <
+          - button "Step playhead forward" [disabled] [ref=f4e169]: ">"
+          - slider "Playhead" [disabled] [ref=f4e170]: "0"
+          - generic [ref=f4e171]: "selection: none"
+        - paragraph [ref=f4e172]: Select an imported scenario to load time-indexed actor tracks.
+        - paragraph [ref=f4e173]: "Measure at 0.00 s: n/a (requires_at_least_two_actor_tracks)"
+    - complementary "Inspection navigation" [ref=f4e174]:
+      - button "Metrics" [ref=f4e175] [cursor=pointer]:
+        - generic [ref=f4e177]: "0"
+      - button "Gates" [ref=f4e178] [cursor=pointer]:
+        - generic [ref=f4e182]: "0"
+      - button "Provenance" [ref=f4e183] [cursor=pointer]
+      - button "Artifacts" [ref=f4e188] [cursor=pointer]
+  - generic [ref=f4e192]:
+    - generic [ref=f4e193]:
+      - button "Scenario studio" [ref=f4e194] [cursor=pointer]
+      - button "Variant studio" [ref=f4e195] [cursor=pointer]
+      - button "Replay" [ref=f4e196] [cursor=pointer]
+      - button "Report" [ref=f4e197] [cursor=pointer]
+    - generic [ref=f4e198]:
+      - generic [ref=f4e199]: "selection: none"
+      - generic [ref=f4e200]: "artifacts: 0"
+      - generic [ref=f4e201]: "branch: n/a"
+      - generic [ref=f4e202]: "config hash: n/a"
+      - generic [ref=f4e203]: "rollback: n/a"
+      - generic [ref=f4e204]: "recipe: n/a"
+      - generic [ref=f4e205]: "time: 0.00 s / 0.00 s"
+      - generic [ref=f4e206]: "PROVISIONAL: n/a"
+      - generic [ref=f4e207]: "POV: n/a"
+      - generic [ref=f4e208]: "frame: n/a"

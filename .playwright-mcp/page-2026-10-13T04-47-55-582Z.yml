@@ -1,0 +1,406 @@
+- generic [active] [ref=f15e1]:
+  - generic [ref=f15e2]:
+    - generic [ref=f15e3]:
+      - link "Skip to content" [ref=f15e4] [cursor=pointer]:
+        - /url: "#start-of-content"
+      - banner [ref=f15e9]:
+        - heading "Navigation Menu" [level=2] [ref=f15e10]
+        - generic [ref=f15e11]:
+          - link "Homepage" [ref=f15e13] [cursor=pointer]:
+            - /url: /
+          - generic [ref=f15e16]:
+            - navigation "Global" [ref=f15e17]:
+              - list [ref=f15e18]:
+                - listitem [ref=f15e19]:
+                  - button "Platform" [ref=f15e21] [cursor=pointer]
+                - listitem [ref=f15e24]:
+                  - button "Solutions" [ref=f15e26] [cursor=pointer]
+                - listitem [ref=f15e29]:
+                  - button "Resources" [ref=f15e31] [cursor=pointer]
+                - listitem [ref=f15e34]:
+                  - button "Open Source" [ref=f15e36] [cursor=pointer]
+                - listitem [ref=f15e39]:
+                  - button "Enterprise" [ref=f15e41] [cursor=pointer]
+                - listitem [ref=f15e44]:
+                  - link "Pricing" [ref=f15e45] [cursor=pointer]:
+                    - /url: https://github.com/pricing
+            - generic [ref=f15e46]:
+              - button "Search or jump to, type / to search" [ref=f15e48] [cursor=pointer]
+              - link "Sign in" [ref=f15e55] [cursor=pointer]:
+                - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fcarla-simulator%2Fscenario_runner%2Ftree%2Fmaster%2Fsrunner%2Fscenarios
+              - link "Sign up" [ref=f15e58] [cursor=pointer]:
+                - /url: /signup?ref_cta=Sign+up&ref_loc=header+logged+out&ref_page=%2F%3Cuser-name%3E%2F%3Crepo-name%3E%2Ffiles%2Fdisambiguate&source=header-repo&source_repo=carla-simulator%2Fscenario_runner
+              - button "Appearance settings" [ref=f15e61] [cursor=pointer]
+    - main [ref=f15e68]:
+      - generic "Global navigation menu" [ref=f15e71]:
+        - navigation "Breadcrumbs" [ref=f15e74]:
+          - list [ref=f15e75]:
+            - listitem [ref=f15e76]:
+              - link "carla-simulator" [ref=f15e77] [cursor=pointer]:
+                - /url: /carla-simulator
+            - listitem [ref=f15e79]:
+              - link "scenario_runner" [ref=f15e80] [cursor=pointer]:
+                - /url: /carla-simulator/scenario_runner
+        - heading "Repository navigation" [level=2] [ref=f15e83]
+        - navigation "Repository" [ref=f15e84]:
+          - list [ref=f15e85]:
+            - listitem [ref=f15e86]:
+              - link "Code" [ref=f15e87] [cursor=pointer]:
+                - /url: /carla-simulator/scenario_runner
+            - listitem [ref=f15e92]:
+              - link "Issues (167)" [ref=f15e93] [cursor=pointer]:
+                - /url: /carla-simulator/scenario_runner/issues
+                - generic [ref=f15e98]: Issues
+                - generic [ref=f15e99]:
+                  - generic [aria-hidden] [ref=f15e100]: "167"
+                  - generic [ref=f15e101]: (167)
+            - listitem [ref=f15e102]:
+              - link "Pull requests (14)" [ref=f15e103] [cursor=pointer]:
+                - /url: /carla-simulator/scenario_runner/pulls
+                - generic [ref=f15e107]: Pull requests
+                - generic [ref=f15e108]:
+                  - generic [aria-hidden] [ref=f15e109]: "14"
+                  - generic [ref=f15e110]: (14)
+            - listitem [ref=f15e111]:
+              - link "Actions" [ref=f15e112] [cursor=pointer]:
+                - /url: /carla-simulator/scenario_runner/actions
+            - listitem [ref=f15e117]:
+              - link "Projects" [ref=f15e118] [cursor=pointer]:
+                - /url: /carla-simulator/scenario_runner/projects
+            - listitem [ref=f15e123]:
+              - link "Security and quality" [ref=f15e124] [cursor=pointer]:
+                - /url: /carla-simulator/scenario_runner/security
+            - listitem [ref=f15e129]:
+              - link "Insights" [ref=f15e130] [cursor=pointer]:
+                - /url: /carla-simulator/scenario_runner/pulse
+      - generic [ref=f15e145]:
+        - generic [ref=f15e149]:
+          - generic [ref=f15e150]:
+            - heading "Expand file tree" [level=2] [ref=f15e152]:
+              - button "Expand file tree" [ref=f15e153] [cursor=pointer]
+            - button "master branch" [ref=f15e158] [cursor=pointer]:
+              - generic [ref=f15e159]: master
+            - generic [ref=f15e164]:
+              - navigation [ref=f15e165]:
+                - heading "Breadcrumbs" [level=2] [ref=f15e166]
+                - list [ref=f15e167]:
+                  - listitem [ref=f15e168]:
+                    - link "scenario_runner" [ref=f15e169] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/tree/master
+                  - listitem [ref=f15e170]:
+                    - text: /
+                    - link "srunner" [ref=f15e171] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/tree/master/srunner
+              - generic [ref=f15e172]:
+                - text: /
+                - heading "scenarios" [level=1] [ref=f15e173]
+                - text: /
+              - button "Copy path" [ref=f15e174] [cursor=pointer]
+          - generic [ref=f15e180]:
+            - heading "Directory actions" [level=2] [ref=f15e181]
+            - combobox "Go to file" [ref=f15e188]
+            - heading "More options" [level=2] [ref=f15e189]
+            - button "More options" [ref=f15e190] [cursor=pointer]
+        - generic [ref=f15e193]:
+          - generic [ref=f15e195]:
+            - heading "Latest commit" [level=2] [ref=f15e196]
+            - generic [ref=f15e199]:
+              - heading "History" [level=2] [ref=f15e200]
+              - link "History" [ref=f15e201] [cursor=pointer]:
+                - /url: /carla-simulator/scenario_runner/commits/master/srunner/scenarios
+          - generic [ref=f15e205]:
+            - heading "Folders and files" [level=2] [ref=f15e206]
+            - table "Folders and files" [ref=f15e208]:
+              - rowgroup [ref=f15e209]:
+                - row [ref=f15e210]:
+                  - columnheader "Name" [ref=f15e211]
+                  - columnheader "Last commit message" [ref=f15e212]
+                  - columnheader "Last commit date" [ref=f15e214]
+              - rowgroup [ref=f15e216]:
+                - row [ref=f15e217]:
+                  - cell [ref=f15e218]:
+                    - heading "parent directory" [level=3] [ref=f15e219]
+                    - link "Parent directory" [ref=f15e220] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/tree/master/srunner
+                      - generic [ref=f15e221]: ..
+                - row "__init__.py, (File)" [ref=f15e224]:
+                  - cell [ref=f15e225]:
+                    - link "__init__.py, (File)" [ref=f15e232] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/__init__.py
+                      - text: __init__.py
+                  - cell [ref=f15e233]
+                  - cell [ref=f15e235]
+                - row "actor_flow.py, (File)" [ref=f15e238]:
+                  - cell [ref=f15e239]:
+                    - link "actor_flow.py, (File)" [ref=f15e246] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/actor_flow.py
+                      - text: actor_flow.py
+                  - cell [ref=f15e247]
+                  - cell [ref=f15e249]
+                - row "background_activity.py, (File)" [ref=f15e252]:
+                  - cell [ref=f15e253]:
+                    - link "background_activity.py, (File)" [ref=f15e260] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/background_activity.py
+                      - text: background_activity.py
+                  - cell [ref=f15e261]
+                  - cell [ref=f15e263]
+                - row "background_activity_parametrizer.py, (File)" [ref=f15e266]:
+                  - cell [ref=f15e267]:
+                    - link "background_activity_parametrizer.py, (File)" [ref=f15e274] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/background_activity_parametrizer.py
+                      - text: background_activity_parametrizer.py
+                  - cell [ref=f15e275]
+                  - cell [ref=f15e277]
+                - row "basic_scenario.py, (File)" [ref=f15e280]:
+                  - cell [ref=f15e281]:
+                    - link "basic_scenario.py, (File)" [ref=f15e288] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/basic_scenario.py
+                      - text: basic_scenario.py
+                  - cell [ref=f15e289]
+                  - cell [ref=f15e291]
+                - row "blocked_intersection.py, (File)" [ref=f15e294]:
+                  - cell [ref=f15e295]:
+                    - link "blocked_intersection.py, (File)" [ref=f15e302] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/blocked_intersection.py
+                      - text: blocked_intersection.py
+                  - cell [ref=f15e303]
+                  - cell [ref=f15e305]
+                - row "change_lane.py, (File)" [ref=f15e308]:
+                  - cell [ref=f15e309]:
+                    - link "change_lane.py, (File)" [ref=f15e316] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/change_lane.py
+                      - text: change_lane.py
+                  - cell [ref=f15e317]
+                  - cell [ref=f15e319]
+                - row "construction_crash_vehicle.py, (File)" [ref=f15e322]:
+                  - cell [ref=f15e323]:
+                    - link "construction_crash_vehicle.py, (File)" [ref=f15e330] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/construction_crash_vehicle.py
+                      - text: construction_crash_vehicle.py
+                  - cell [ref=f15e331]
+                  - cell [ref=f15e333]
+                - row "control_loss.py, (File)" [ref=f15e336]:
+                  - cell [ref=f15e337]:
+                    - link "control_loss.py, (File)" [ref=f15e344] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/control_loss.py
+                      - text: control_loss.py
+                  - cell [ref=f15e345]
+                  - cell [ref=f15e347]
+                - row "cross_bicycle_flow.py, (File)" [ref=f15e350]:
+                  - cell [ref=f15e351]:
+                    - link "cross_bicycle_flow.py, (File)" [ref=f15e358] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/cross_bicycle_flow.py
+                      - text: cross_bicycle_flow.py
+                  - cell [ref=f15e359]
+                  - cell [ref=f15e361]
+                - row "cut_in.py, (File)" [ref=f15e364]:
+                  - cell [ref=f15e365]:
+                    - link "cut_in.py, (File)" [ref=f15e372] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/cut_in.py
+                      - text: cut_in.py
+                  - cell [ref=f15e373]
+                  - cell [ref=f15e375]
+                - row "cut_in_with_static_vehicle.py, (File)" [ref=f15e378]:
+                  - cell [ref=f15e379]:
+                    - link "cut_in_with_static_vehicle.py, (File)" [ref=f15e386] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/cut_in_with_static_vehicle.py
+                      - text: cut_in_with_static_vehicle.py
+                  - cell [ref=f15e387]
+                  - cell [ref=f15e389]
+                - row "follow_leading_vehicle.py, (File)" [ref=f15e392]:
+                  - cell [ref=f15e393]:
+                    - link "follow_leading_vehicle.py, (File)" [ref=f15e400] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/follow_leading_vehicle.py
+                      - text: follow_leading_vehicle.py
+                  - cell [ref=f15e401]
+                  - cell [ref=f15e403]
+                - row "freeride.py, (File)" [ref=f15e406]:
+                  - cell [ref=f15e407]:
+                    - link "freeride.py, (File)" [ref=f15e414] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/freeride.py
+                      - text: freeride.py
+                  - cell [ref=f15e415]
+                  - cell [ref=f15e417]
+                - row "green_traffic_light.py, (File)" [ref=f15e420]:
+                  - cell [ref=f15e421]:
+                    - link "green_traffic_light.py, (File)" [ref=f15e428] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/green_traffic_light.py
+                      - text: green_traffic_light.py
+                  - cell [ref=f15e429]
+                  - cell [ref=f15e431]
+                - row "hard_break.py, (File)" [ref=f15e434]:
+                  - cell [ref=f15e435]:
+                    - link "hard_break.py, (File)" [ref=f15e442] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/hard_break.py
+                      - text: hard_break.py
+                  - cell [ref=f15e443]
+                  - cell [ref=f15e445]
+                - row "highway_cut_in.py, (File)" [ref=f15e448]:
+                  - cell [ref=f15e449]:
+                    - link "highway_cut_in.py, (File)" [ref=f15e456] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/highway_cut_in.py
+                      - text: highway_cut_in.py
+                  - cell [ref=f15e457]
+                  - cell [ref=f15e459]
+                - row "invading_turn.py, (File)" [ref=f15e462]:
+                  - cell [ref=f15e463]:
+                    - link "invading_turn.py, (File)" [ref=f15e470] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/invading_turn.py
+                      - text: invading_turn.py
+                  - cell [ref=f15e471]
+                  - cell [ref=f15e473]
+                - row "maneuver_opposite_direction.py, (File)" [ref=f15e476]:
+                  - cell [ref=f15e477]:
+                    - link "maneuver_opposite_direction.py, (File)" [ref=f15e484] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/maneuver_opposite_direction.py
+                      - text: maneuver_opposite_direction.py
+                  - cell [ref=f15e485]
+                  - cell [ref=f15e487]
+                - row "no_signal_junction_crossing.py, (File)" [ref=f15e490]:
+                  - cell [ref=f15e491]:
+                    - link "no_signal_junction_crossing.py, (File)" [ref=f15e498] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/no_signal_junction_crossing.py
+                      - text: no_signal_junction_crossing.py
+                  - cell [ref=f15e499]
+                  - cell [ref=f15e501]
+                - row "object_crash_intersection.py, (File)" [ref=f15e504]:
+                  - cell [ref=f15e505]:
+                    - link "object_crash_intersection.py, (File)" [ref=f15e512] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/object_crash_intersection.py
+                      - text: object_crash_intersection.py
+                  - cell [ref=f15e513]
+                  - cell [ref=f15e515]
+                - row "object_crash_vehicle.py, (File)" [ref=f15e518]:
+                  - cell [ref=f15e519]:
+                    - link "object_crash_vehicle.py, (File)" [ref=f15e526] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/object_crash_vehicle.py
+                      - text: object_crash_vehicle.py
+                  - cell [ref=f15e527]
+                  - cell [ref=f15e529]
+                - row "open_scenario.py, (File)" [ref=f15e532]:
+                  - cell [ref=f15e533]:
+                    - link "open_scenario.py, (File)" [ref=f15e540] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/open_scenario.py
+                      - text: open_scenario.py
+                  - cell [ref=f15e541]
+                  - cell [ref=f15e543]
+                - row "opposite_vehicle_taking_priority.py, (File)" [ref=f15e546]:
+                  - cell [ref=f15e547]:
+                    - link "opposite_vehicle_taking_priority.py, (File)" [ref=f15e554] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/opposite_vehicle_taking_priority.py
+                      - text: opposite_vehicle_taking_priority.py
+                  - cell [ref=f15e555]
+                  - cell [ref=f15e557]
+                - row "osc2_scenario.py, (File)" [ref=f15e560]:
+                  - cell [ref=f15e561]:
+                    - link "osc2_scenario.py, (File)" [ref=f15e568] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/osc2_scenario.py
+                      - text: osc2_scenario.py
+                  - cell [ref=f15e569]
+                  - cell [ref=f15e571]
+                - row "other_leading_vehicle.py, (File)" [ref=f15e574]:
+                  - cell [ref=f15e575]:
+                    - link "other_leading_vehicle.py, (File)" [ref=f15e582] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/other_leading_vehicle.py
+                      - text: other_leading_vehicle.py
+                  - cell [ref=f15e583]
+                  - cell [ref=f15e585]
+                - row "parking_cut_in.py, (File)" [ref=f15e588]:
+                  - cell [ref=f15e589]:
+                    - link "parking_cut_in.py, (File)" [ref=f15e596] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/parking_cut_in.py
+                      - text: parking_cut_in.py
+                  - cell [ref=f15e597]
+                  - cell [ref=f15e599]
+                - row "parking_exit.py, (File)" [ref=f15e602]:
+                  - cell [ref=f15e603]:
+                    - link "parking_exit.py, (File)" [ref=f15e610] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/parking_exit.py
+                      - text: parking_exit.py
+                  - cell [ref=f15e611]
+                  - cell [ref=f15e613]
+                - row "pedestrian_crossing.py, (File)" [ref=f15e616]:
+                  - cell [ref=f15e617]:
+                    - link "pedestrian_crossing.py, (File)" [ref=f15e624] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/pedestrian_crossing.py
+                      - text: pedestrian_crossing.py
+                  - cell [ref=f15e625]
+                  - cell [ref=f15e627]
+                - row "route_obstacles.py, (File)" [ref=f15e630]:
+                  - cell [ref=f15e631]:
+                    - link "route_obstacles.py, (File)" [ref=f15e638] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/route_obstacles.py
+                      - text: route_obstacles.py
+                  - cell [ref=f15e639]
+                  - cell [ref=f15e641]
+                - row "route_scenario.py, (File)" [ref=f15e644]:
+                  - cell [ref=f15e645]:
+                    - link "route_scenario.py, (File)" [ref=f15e652] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/route_scenario.py
+                      - text: route_scenario.py
+                  - cell [ref=f15e653]
+                  - cell [ref=f15e655]
+                - row "signalized_junction_left_turn.py, (File)" [ref=f15e658]:
+                  - cell [ref=f15e659]:
+                    - link "signalized_junction_left_turn.py, (File)" [ref=f15e666] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/signalized_junction_left_turn.py
+                      - text: signalized_junction_left_turn.py
+                  - cell [ref=f15e667]
+                  - cell [ref=f15e669]
+                - row "signalized_junction_right_turn.py, (File)" [ref=f15e672]:
+                  - cell [ref=f15e673]:
+                    - link "signalized_junction_right_turn.py, (File)" [ref=f15e680] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/signalized_junction_right_turn.py
+                      - text: signalized_junction_right_turn.py
+                  - cell [ref=f15e681]
+                  - cell [ref=f15e683]
+                - row "vehicle_opens_door.py, (File)" [ref=f15e686]:
+                  - cell [ref=f15e687]:
+                    - link "vehicle_opens_door.py, (File)" [ref=f15e694] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/vehicle_opens_door.py
+                      - text: vehicle_opens_door.py
+                  - cell [ref=f15e695]
+                  - cell [ref=f15e697]
+                - row "yield_to_emergency_vehicle.py, (File)" [ref=f15e700]:
+                  - cell [ref=f15e701]:
+                    - link "yield_to_emergency_vehicle.py, (File)" [ref=f15e708] [cursor=pointer]:
+                      - /url: /carla-simulator/scenario_runner/blob/master/srunner/scenarios/yield_to_emergency_vehicle.py
+                      - text: yield_to_emergency_vehicle.py
+                  - cell [ref=f15e709]
+                  - cell [ref=f15e711]
+    - contentinfo [ref=f15e715]:
+      - heading "Footer" [level=2] [ref=f15e716]
+      - generic [ref=f15e717]:
+        - generic [ref=f15e718]:
+          - link "GitHub Homepage" [ref=f15e719] [cursor=pointer]:
+            - /url: https://github.com
+          - generic [ref=f15e722]: © 2026 GitHub, Inc.
+        - navigation "Footer" [ref=f15e723]:
+          - heading "Footer navigation" [level=3] [ref=f15e724]
+          - list "Footer navigation" [ref=f15e725]:
+            - listitem [ref=f15e726]:
+              - link "Terms" [ref=f15e727] [cursor=pointer]:
+                - /url: https://docs.github.com/site-policy/github-terms/github-terms-of-service
+            - listitem [ref=f15e728]:
+              - link "Privacy" [ref=f15e729] [cursor=pointer]:
+                - /url: https://docs.github.com/site-policy/privacy-policies/github-privacy-statement
+            - listitem [ref=f15e730]:
+              - link "Security" [ref=f15e731] [cursor=pointer]:
+                - /url: https://github.com/security
+            - listitem [ref=f15e732]:
+              - link "Status" [ref=f15e733] [cursor=pointer]:
+                - /url: https://www.githubstatus.com/
+            - listitem [ref=f15e734]:
+              - link "Community" [ref=f15e735] [cursor=pointer]:
+                - /url: https://github.community/
+            - listitem [ref=f15e736]:
+              - link "Docs" [ref=f15e737] [cursor=pointer]:
+                - /url: https://docs.github.com/
+            - listitem [ref=f15e738]:
+              - link "Contact" [ref=f15e739] [cursor=pointer]:
+                - /url: https://support.github.com?tags=dotcom-footer
+            - listitem [ref=f15e740]:
+              - button "Manage cookies" [ref=f15e742] [cursor=pointer]
+            - listitem [ref=f15e743]:
+              - button "Do not share my personal information" [ref=f15e745] [cursor=pointer]
+  - alert [ref=f15e748]

@@ -16,6 +16,7 @@ OPENDRIVE_SUBSET_VERSION = "r2s-odr-subset-v1"
 GEOMETRY_FITTER_VERSION = "line-arc-greedy-v1"
 CONTINUITY_VERSION = "connectivity-continuity-v1"
 CENTERLINE_REPAIR_VERSION = "centerline-repair-v1"
+LANE_WIDTH_ESTIMATOR_VERSION = "polygon-cross-section-median-v1"
 MIN_CENTERLINE_SEGMENT_M = 1e-6
 
 
@@ -325,7 +326,7 @@ def build_opendrive_from_nuscenes(
         "geometry_fitter_version": GEOMETRY_FITTER_VERSION if geometry_mode == "line_arc" else None,
         "residual_statistics": None if geometry_mode == "line" else _residual_statistics(fitted_segments),
         "resolution_m": resolution_m,
-        "lane_width_source": "polygon_area_over_centerline" if any(value == "polygon" for value in lane_width_sources.values()) else "fallback_constant",
+        "lane_width_source": "polygon_cross_section_median" if any(value == LANE_WIDTH_ESTIMATOR_VERSION for value in lane_width_sources.values()) else ("polygon_area_over_centerline" if any(value == "polygon" for value in lane_width_sources.values()) else "fallback_constant"),
         "fallback_width_m": fallback_width_m,
         "lane_width_source_counts": {source: sum(value == source for value in lane_width_sources.values()) for source in sorted(set(lane_width_sources.values()))},
         "junction_count": len(junction_specs),
@@ -469,6 +470,9 @@ def _lane_width(map_api, record, poses, fallback_width_m):
     if polygon_token and extractor is not None:
         try:
             polygon = extractor(polygon_token)
+            width = _median_polygon_cross_section(polygon, poses)
+            if width is not None:
+                return width, LANE_WIDTH_ESTIMATOR_VERSION
             area = float(getattr(polygon, "area"))
             length = _path_length(poses)
             if math.isfinite(area) and area > 0 and length > 0:
@@ -478,6 +482,51 @@ def _lane_width(map_api, record, poses, fallback_width_m):
         except (AttributeError, TypeError, ValueError):
             pass
     return fallback_width_m, "fallback"
+
+
+def _median_polygon_cross_section(polygon, poses):
+    """Estimate lane width from perpendicular polygon cross-sections."""
+    try:
+        from shapely.geometry import LineString
+
+        boundary = polygon.boundary
+    except (AttributeError, ImportError):
+        return None
+    widths: list[float] = []
+    for x, y, heading in poses[:: max(1, len(poses) // 20)]:
+        perpendicular = (-math.sin(heading), math.cos(heading))
+        line = LineString(
+            [
+                (x - perpendicular[0] * 20.0, y - perpendicular[1] * 20.0),
+                (x + perpendicular[0] * 20.0, y + perpendicular[1] * 20.0),
+            ]
+        )
+        intersection = boundary.intersection(line)
+        points = _geometry_points(intersection)
+        if len(points) >= 2:
+            distances = sorted(
+                math.hypot(a[0] - x, a[1] - y) for a in points
+            )
+            width = distances[0] + distances[1]
+            if math.isfinite(width) and width > 0:
+                widths.append(width)
+    if not widths:
+        return None
+    ordered = sorted(widths)
+    return ordered[len(ordered) // 2]
+
+
+def _geometry_points(geometry):
+    if geometry.is_empty:
+        return []
+    if geometry.geom_type == "Point":
+        return [(geometry.x, geometry.y)]
+    if hasattr(geometry, "geoms"):
+        points = []
+        for item in geometry.geoms:
+            points.extend(_geometry_points(item))
+        return points
+    return [(x, y) for x, y, *_ in geometry.coords]
 
 
 def _append_junctions(root, specs, road_ids):

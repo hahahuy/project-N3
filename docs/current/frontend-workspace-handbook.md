@@ -123,7 +123,8 @@ written into each decorator; there is no router and no version segment.
 
 These have working client helpers in `api.ts` and working backend routes, but no
 UI surface. They belong to later milestones - check `active-work.md` before
-starting one.
+starting one. New native map, simulator POV and LiDAR payload routes must be
+added to the contract register before the UI consumes them.
 
 | Method | Path | Client helper |
 |---|---|---|
@@ -138,24 +139,20 @@ starting one.
 | GET | `/api/batches/{id}/results` and sub-routes | `fetchBatchResults`, `fetchBatchTrajectory` |
 | POST | `/api/batches/{id}/results/{vid}/export` | `exportBatchResult` |
 
-### Declared client-side but NOT implemented
+### Partial Workspace routes
 
-**`49c6bc3` added `WorkspaceDocument` / `WorkspaceScenario` types and
-`fetchWorkspaceDocument` / `fetchWorkspaceScenario` helpers pointing at
-`/api/workspace/documents/{id}` and `/api/workspace/scenarios/{id}`. No such
-route exists.** `src/r2s_web/` contains zero occurrences of "workspace", and
-both URLs return 404 against a running backend.
-
-Do not point the shell at them until the routes are written. The contract looks
-attractive - per-capability `unavailable_reason`, real `gates`, and
-`metrics.per_actor` - but calling it today would break every surface at once.
+Workspace document/scenario routes now exist as a partial contract. They expose
+metadata, actor state arrays, paths, metric availability and capability blocks.
+Native map capability/patch/road-ahead routes also exist. They do not yet
+provide simulator POV frames, LiDAR point payloads or constrained maneuver
+routes. Extend the backend contract before wiring those views; never fill gaps
+with mocked data.
 
 ### Does not exist - do not look for it
 
-- **No CARLA endpoint.** There is no `/api/carla*`, `/api/simulators*` or
-  generic `/api/capabilities`. CARLA exists only in `src/real2scenario/`, and
-  the Simulation chip lists it as unavailable. Full green on that chip is
-  unreachable until a capability route exists.
+- **No complete simulator POV endpoint yet.** esmini, internal preview and CARLA
+  contracts exist in the backend, but live third-person/in-car frame serving
+  and capability reporting remain incomplete.
 - **No single-scenario export.** The only export route is batch/variant
   scoped. The toolbar Export therefore downloads a client-side JSON bundle of
   the already-loaded scenario and trajectory. It is not XOSC export and must not
