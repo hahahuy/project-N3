@@ -120,9 +120,14 @@ authoritative scenario stepping, triggers, controllers, road-relative behavior a
 simulation state. The existing asynchronous esmini subprocess/capture path remains
 for replay, validation and evidence images; it is not the primary live 3D path.
 
-Do not compile the full esmini viewer to WebAssembly or make per-timeline image
-capture the first implementation. A reduced WASM port, Unity WebGL client and
-WebRTC remote rendering are future alternatives, not current scope.
+Per-timeline image capture is rejected as a first implementation. Unity WebGL
+client and WebRTC remote rendering remain future alternatives, not current scope.
+
+DEC-017 approves a second runtime for the interaction path: esmini compiled to
+WebAssembly, running in a browser Web Worker with a browser-native Three.js
+renderer. The WebAssembly prohibition above is withdrawn for interaction only; the
+native adapter above remains authoritative for stepping and measurement. A WASM
+runtime may not produce measurement. See `docs/guides/wasm-live-simulator-handoff.md`.
 
 ## Non-Negotiable Boundaries
 

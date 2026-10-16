@@ -191,3 +191,34 @@ execution backends.
   and recorded Sensor Evidence are not replay substitutes.
 - The controls remain visible with explicit unavailable labeling so capability
   boundaries are discoverable and cannot be mistaken for completed workflows.
+
+## DEC-017 — Browser-Local esmini WebAssembly Interaction Runtime
+
+- Status: `APPROVED — SUPERSEDES the WebAssembly deferral in the Live Esmini
+  Adapter Contract for the interaction path`
+- The Live Esmini Adapter Contract remains correct for **authoritative stepping and
+  measurement**. That tier is unchanged and still native.
+- A second, separate runtime is approved for **interactive preview and authoring**:
+  `esmini` compiled to WebAssembly, running in a browser Web Worker, driving a
+  browser-native Three.js renderer.
+- Rationale: `esmini-live-session-v1` is `IMPLEMENTED PARTIAL` because
+  `esminiLib_control_abi_unavailable` and because the native shared library is not
+  present in the current environment. Interaction is therefore blocked on
+  environment, not on design. The WASM runtime removes that dependency entirely and
+  makes a reviewer able to run a scenario with no local install.
+- This directly reverses the line in `next-agent-handoff.md` that forbade
+  compiling esmini to WebAssembly. That prohibition is withdrawn for the
+  interaction path only. Per-timeline image capture remains rejected as a first
+  implementation.
+- Hard boundaries:
+  - The WASM runtime **must never** produce measurement. `state` crosses the WASM
+    boundary as `float32`, so ADE/FDE, gates and any fidelity claim continue to come
+    only from the native Tier 0 path in `src/real2scenario/simulation.py`.
+  - WASM output and native output must be distinguishable by filename, trace
+    contract id and UI label. No shared trace file.
+  - `esmini-live-session-v1` is not removed. It remains the authoritative-state
+    path when a native binding is configured.
+- Required follow-up outside this decision: amend `technical-contracts.md`
+  (Live Esmini Adapter Contract) to name the WASM runtime as an approved second
+  path, and amend `next-agent-handoff.md` to remove the WebAssembly prohibition.
+- Implementation handoff: `docs/guides/wasm-live-simulator-handoff.md`.

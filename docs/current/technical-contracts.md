@@ -444,6 +444,14 @@ The approved live 3D architecture uses esmini as a native authoritative simulati
 adapter and a browser-native renderer for presentation. The browser must not depend
 on a stream of esmini screenshots for normal editing or timeline interaction.
 
+DEC-017 approves a second, separate runtime for interaction: esmini compiled to
+WebAssembly in a browser Web Worker, driving the same browser-native renderer. It
+is authoritative for nothing. Because object state crosses the WASM boundary as
+`float32`, the WASM runtime must not produce ADE/FDE, gate results or any fidelity
+claim. Native and WASM runs must be distinguishable by filename, trace contract id
+and UI label, and must never share a trace file. When a native binding is
+configured, the native adapter remains the authoritative state source.
+
 ```text
 React + Three.js/PlayCanvas
   <-> WebSocket state/control transport

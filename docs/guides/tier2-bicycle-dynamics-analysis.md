@@ -1,8 +1,9 @@
 # Analysis A — Writing a Tier 2 Bicycle Dynamics Model
 
 **Status:** ANALYSIS — not an implementation commitment
-**Supersedes nothing.** Complements `docs/guides/wasm-interactive-simulator-handoff.md`.
-**Contract reference:** `docs/current/technical-contracts.md` lines 255-283, DEC-014.
+**Companion:** `docs/guides/wasm-live-simulator-handoff.md`
+**Contract reference:** `docs/current/technical-contracts.md` (Tier tiers section
+around lines 295-327), DEC-014.
 
 ---
 
@@ -24,7 +25,7 @@ the whole point of Tier 2.
 
 | Variant | Lateral equation | Has tyre forces? | In this project today? |
 |---|---|---|---|
-| Kinematic bicycle | `ψ̇ = v·tan(δ)/L` | No | Yes — esmini `vehicle.cpp:198-215` and the intended Tier 1 |
+| Kinematic bicycle | `ψ̇ = v·tan(δ)/L` | No | Yes — esmini `vehicle.cpp` and Tier 1 in `src/real2scenario/kinematic.py` |
 | **Dynamic bicycle** | `ψ̈ = (l_f·F_yf − l_r·F_yr)/I_z` | **Yes** | No |
 
 Tier 2 means the dynamic variant. The state vector grows from
@@ -181,25 +182,46 @@ tier-3-validated only, and say so.
 
 ## 5. Integration into this codebase
 
-### 5.1 Where it plugs
+### 5.1 The Tier 1 sibling is already there — copy its shape
 
-`PreviewService.preview()` in `src/r2s_web/jobs.py` currently returns
-`status="unsupported"` with `reason="behavior executor is not implemented"` for
-the behaviour branch. That is the seam. Tier 2 becomes one executor behind it.
+`src/real2scenario/kinematic.py` implements `kinematic-open-loop-v1` and is
+`IMPLEMENTED/TESTED/DIAGNOSTIC` in `docs/current/active-work.md`. Its structure is
+the template to follow, not something to invent:
+
+| Tier 1 element | Tier 2 equivalent |
+|---|---|
+| `KINEMATIC_VERSION = "kinematic-open-loop-v1"` | `DYNAMIC_VERSION = "dynamic-bicycle-open-loop-v1"` |
+| `KinematicLimits` frozen dataclass with `version` | `DynamicLimits` with tyre and stability limits |
+| `KinematicViolation` records with explicit fields | `DynamicViolation` — friction ellipse, slip angle, divergence |
+| `check_footprint_collisions()` returning `CollisionCheck` | reuse as-is; footprint is geometry, not dynamics |
+| `integrate_kinematic_open_loop()` | `integrate_dynamic_open_loop()` |
+| `"no new heavy runtime dependency"` (no NumPy/SciPy for propagation) | same discipline — pure stdlib propagation |
+
+Matching the dataclass-frozen, versioned, fail-closed style means Tier 2 review
+looks like Tier 1 review, and the existing test conventions apply unchanged.
 
 Expected module layout:
 
 ```
 src/real2scenario/dynamics/
 ├── __init__.py
-├── bicycle.py         # ODE right-hand side, state vector, integrators
+├── bicycle.py         # ODE right-hand side, state vector
 ├── parameters.py      # parameter set, priors, provenance, versioning
 ├── integrators.py     # semi-implicit Euler, RK4, fixed 0.05 s step
 ├── diagnostics.py     # limit violations, friction usage, stability flags
 └── maneuvers.py       # ISO 3888, ELW, sine-with-dwell
 ```
 
-### 5.2 Reuse, do not reinvent
+### 5.2 Where it plugs
+
+`PreviewService.preview()` in `src/r2s_web/jobs.py` returns
+`status="unsupported"` with `reason="behavior executor is not implemented"` for
+the behaviour branch. DEC-016 requires that stay structured `unsupported` rather
+than falling back to waypoint or kinematic preview semantics — so Tier 2 becomes
+a third executor behind that same seam, and the disabled-control labelling stays
+correct until one of them is genuinely wired.
+
+### 5.3 Reuse, do not reinvent
 
 | Existing | Use |
 |---|---|
@@ -208,7 +230,7 @@ src/real2scenario/dynamics/
 | `metrics.compute_replay_metrics` | ADE/FDE computation already exists and is trace-shaped. |
 | `validation.FeasibilityLimits` | Already carries kinematic limit names; extend with dynamics limits. |
 
-### 5.3 The reference-point trap
+### 5.4 The reference-point trap
 
 This is the integration bug you will hit first.
 
@@ -218,14 +240,14 @@ the **box centre** or **rear axle**. Comparing them without an explicit transfor
 produces a systematic longitudinal offset of the order of a metre — larger than
 most ADE values you would be reporting.
 
-`technical-contracts.md` line 272 already demands *"reference-point convention is
+The Tier 1 contract in `docs/current/technical-contracts.md` (around line 306) already demands *"reference-point convention is
 explicit and versioned, never inferred silently"*. That is not bureaucracy, it is
 this bug. Decide the convention, encode it in the parameter set, and report the
 offset.
 
-### 5.4 Contract obligations
+### 5.5 Contract obligations
 
-`technical-contracts.md` line 283 requires Tier 2 to declare *"a separate
+`docs/current/technical-contracts.md` (Tier 2 paragraph, around line 325) requires Tier 2 to declare *"a separate
 replay/behavior mode, versioned parameters, capability status and diagnostic
 metrics"*, and forbids it feeding final ADE/FDE claims or silently falling back
 to waypoint replay.
