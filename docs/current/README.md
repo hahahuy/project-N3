@@ -2,8 +2,12 @@
 
 Read this directory after `MVP&ProjectSummary.md`. These files are the current
 project context for agents and future sessions. Start with
-`next-agent-handoff.md`; the nuScenes-devkit makeover is the active implementation
-track.
+`next-agent-handoff.md`.
+
+The nuScenes-devkit backend makeover is **complete** for the approved contracts.
+The active track is **acceptance and closure**, not implementation. See
+`active-work.md` for the seven acceptance groups and
+`../reports/tracks-1-6-disposition.md` for their owners and next actions.
 
 This directory is the status/decision layer, not the complete implementation
 reference. For code ownership and wiring, continue with
@@ -11,44 +15,78 @@ reference. For code ownership and wiring, continue with
 [`../architecture/boundary-map.md`](../architecture/boundary-map.md) and the
 relevant page under [`../subsystems/`](../subsystems/README.md).
 
-- `project-status.md`: checkpoint status and remaining blockers.
-- `active-work.md`: work queue and dependencies.
-- `decisions.md`: append-only decision log.
-- `technical-contracts.md`: CP1/CP2 and simulator contracts.
+## Status and decisions
+
+- `project-status.md`: checkpoint status, current claims and remaining blockers.
+- `active-work.md`: work queue, dependencies and acceptance task groups.
+- `next-agent-handoff.md`: current handoff and non-negotiable boundaries.
+- `decisions.md`: append-only decision log. Owner decisions are DEC-001
+  onward; DEC-017 onward cover the replay baseline and WASM approval.
 - `evidence-index.md`: claim-to-evidence index.
 - `artifact-policy.md`: visibility and licensing boundaries.
-- `osm-integration-proposal.md`: OSM proposal; not active by default.
-- `ui-motion-editor.md`: proposed object motion editor and layer/POV model.
-- `ui-mvp-flow-spec.md`: MVP audience, primary user flow, state matrix and
-  acceptance criteria; hand-off document for a frontend/UX agent.
-- `ui-showcase-checkpoint.md`: lightweight U0 showcase before the unfinished
-  full 2D/3D MVP authoring workspace.
+- `technical-contracts.md`: CP1/CP2 and simulator contracts.
+
+## Active work plans
+
+- `viewpanel-makeover-prompt.md`: **ready for a frontend agent.** Brief and
+  questions for the view-panel restructure. Act on this before touching
+  `frontend/src/App.tsx` view dispatch.
+- `metric-benchmark-execution-plan.md`: approved near-future CP3 work. Note the
+  open blocker: the current baseline is a pooled actor-track micro aggregate and
+  scene-macro is still missing, which blocks any threshold proposal.
+- `demo-hardening-backlog.md`: public-exposure hardening. S-6 batch cap and
+  S-5 pagination remain open.
+- `mission-batch-concurrency-benchmark.md`: the S-6 record. Load-bearing — the
+  production guide cites it for the open batch-cap risk.
+- `product-scene-exposure.md`: scene exposure recommendation.
+
+## Frontend
+
 - `frontend-workspace-handbook.md`: how to run, structure and change the browser
-  app under `frontend/`; retained as a historical/current frontend log. The
-  subsystem entrypoint is now `docs/subsystems/frontend/README.md`.
-- `wave-3a-backend.md`: completed Wave 3A backend report and historical context;
-  current simulator work is defined in `technical-contracts.md` and
-  `active-work.md`.
-- `platform-direction.md`: future multi-dataset/LiDAR platform direction.
+  app under `frontend/`. Subsystem entrypoint is now
+  `../subsystems/frontend/README.md`.
+- `frontend-workspace-log.md`: frontend work log.
+- `ui-motion-editor.md`: motion editor and layer/POV model.
+- `ui-mvp-flow-spec.md`: MVP audience, primary user flow, state matrix and
+  acceptance criteria.
+
+## Backend
+
+- `nuscenes-devkit-makeover-handoff.md`: authoritative makeover phases and
+  boundaries. Phase 1 and Phase 2 are implemented.
+- `nuscenes-devkit-leverage-proposal.md`: the original devkit leverage
+  proposal; Phase 1 is complete.
+- `nuscenes-devkit-optimization-decision.md`: approved cached-adapter
+  optimization.
+- `backend-workspace-contract-log.md`: backend contract task register.
+
+## CP1 (paused, retained for resumption)
+
+CP1 is `PARTIAL/PROVISIONAL` at the immutable baseline `20/143 = 13.99%` and
+owner interpretation is still required. The diagnostic chain is consolidated in
+[`../reports/cp1-evidence-lineage.md`](../reports/cp1-evidence-lineage.md).
+
+- `cp1-manual-review-protocol.md`: the governed manual review protocol.
+
+## Future direction
+
+- `platform-direction.md`: multi-dataset/LiDAR platform direction, including the
+  restriction on publishing restricted data cited by the security guide.
 - `late-future-platform-plan.md`: approved priorities after the current MVP.
-- `next-agent-handoff.md`: current implementation handoff and non-negotiable
-  boundaries.
-- `nuscenes-devkit-makeover-handoff.md`: authoritative makeover phases,
-  boundaries and next actions.
-- `pm-agent-guide.md`: short guide for agents coordinating scope, evidence and dependencies.
-- `carla-recorded-trajectory-replay-research.md`: post-MVP CARLA research;
-  not a current implementation assignment.
-- `cp1-automated-semantic-alignment.md`: HMM/Viterbi lane-sequence matching
-  and automated CP1 failure triage to reduce manual review.
-- `cp1-semantic-alignment-next-solution.md`: native nuScenes oracle,
-  source-to-XODR residual decomposition, and the recommended path beyond the
-  remaining lateral-alignment blocker.
-- CP1 semantic-alignment files: parallel diagnostic evidence; they are not the
-  current next-agent assignment.
 
-## Proposals
+## Reference
 
-- `docs/proposals/wasm-interactive-simulator/`: expert-supplied planning
-  documents for a future esmini-WASM playback and interaction slice. The P0
-  build feasibility step has not started; these documents do not replace the
-  current native replay or workspace contracts.
+- `environment-environments.md`: environments and dataset layout.
+- `local-artifact-bundles.md`: local/private evidence bundle inventory.
+- `pm-agent-guide.md`: guide for agents coordinating scope and evidence.
+- `agent-completion-template.md`: completion report template.
+
+## Proposals (not current scope)
+
+- `../proposals/wasm-interactive-simulator/`: expert-supplied planning documents
+  and the current handoff. **P0 is complete** and P2 is partial; WASM is
+  diagnostic-only at `/wasm-smoke` and deliberately kept out of the view
+  registry. See `../proposals/wasm-interactive-simulator/next-agent-handoff.md`.
+- `../proposals/post-mvp/`: deferred and post-MVP work — CARLA recorded
+  trajectory replay research and the OSM integration proposal. Neither is a
+  current assignment.

@@ -241,7 +241,7 @@ make prod-rebuild         # rebuild so the image is clean too
 | `uvicorn --reload` in production | A crashed worker is not respawned; container says `Up` while nothing listens, all requests `502` | `make prod-rebuild`; check `docker inspect ... .State.Health.Status` |
 | No batch concurrency cap (S-6) | A large variant request saturates the host | Not yet implemented — see `docs/current/mission-batch-concurrency-benchmark.md` |
 | Host reboot | Dev stack has `restart: unless-stopped` since 2026-10-15 and recovers; other stacks vary | `make status` |
-| API memory is unbounded | A leak in a judge-facing endpoint could affect `banking-agent` or `kavita` | Owner-accepted; watch `docker stats` |
+| API memory | Unbounded memory triggered four kernel OOM kills on 2026-10-15, taking down unrelated host containers | Capped at 12G; watch `docker stats`. `--reload` still hides a killed worker behind a healthy container |
 
 ### Recommended fix, not yet applied
 

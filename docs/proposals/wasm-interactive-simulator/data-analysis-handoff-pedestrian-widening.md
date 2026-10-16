@@ -61,14 +61,19 @@ Acceptance: export the same scenario with the pre- and post-change exporter,
 construction. If the diff is non-empty, stop and return the diff — that is a
 defect, not a measurement.
 
-**A2 — Pedestrian-inclusive native replay ADE/FDE (the measurement this environment cannot make).**
-No `ESMINI_BIN` exists here, so no native run was possible. Acceptance: on an
-esmini-equipped machine, take ≥1 pedestrian-inclusive scenario (e.g. mini
-`scene-0061`: 29 vehicles / 60 pedestrians), run native replay at
-`--fixed_timestep 0.01`, and report per-category ADE/FDE (vehicle actors vs
-pedestrian actors separately — never a blended number). Flag specifically:
-do pedestrians converge onto position-following as cleanly as vehicles, or do
-they show the short-track convergence failure that Q6 describes for vehicles?
+**A2 — Pedestrian-inclusive native replay ADE/FDE.**
+Acceptance: on an esmini-equipped machine, take pedestrian-inclusive scenarios
+from the **wide index** (mini-10 is methodologically too small — see §7), run
+native replay at `--fixed_timestep 0.01`, and report per-category ADE/FDE
+(vehicle actors vs pedestrian actors separately — never a blended number).
+Flag specifically: do pedestrians converge onto position-following as cleanly
+as vehicles, or do they show the short-track convergence failure that Q6
+describes for vehicles? **Version rule:** record the exact engine version with
+every number. Native here is 3.9.0 while esminiJS is 3.10.0 (§7) — any
+WASM↔native comparison must use version-matched runs, and a vehicle-only
+re-run on the A2 engine is required to confirm the `0.0411 m` baseline still
+holds on that engine (A1 proves identical *input*, not an identical
+*engine*).
 
 **A3 — Selection displacement.**
 Pedestrians now compete for 3 slots. Acceptance: across the 10 mini scenes,
@@ -79,13 +84,12 @@ pedestrians vs selected vehicles, and (iii) any scene where import now fails
 systematically drops the highest-risk vehicle, propose a quota or weighting
 — as a proposal with acceptance bar, not an implementation.
 
-**A4 — esminiJS (WASM) handling of the new tags.**
-Acceptance: confirm the esminiJS build parses `Pedestrian` and `MiscObject`
-entities (init + `step_frame` + object states, same P0 bar as vehicles), and
-report the exact `type`/`kind` strings the engine returns for them — the
-renderer currently buckets non-`vehicle` objects as `unknown` (gray) and the
-ledger reports `actor_kind: vehicle | unknown`, so your strings decide whether
-a `pedestrian` kind/color is a truthful small increment or scope creep.
+**A4 — esminiJS (WASM) handling of the new tags. → CLAIMED BY WASM TEAM 2026-10-16.**
+No longer requested from data team: `frontend/wasm-esmini/dist/esmini.js`
+(3.10.0 build) is present, so the WASM team will init/step a pedestrian
+scenario via the Node harness and report the exact `type`/`kind` strings
+itself. Renderer buckets non-`vehicle` as `unknown` (gray) until those strings
+land.
 
 **A5 — MiscObject policy.**
 Acceptance: recommend (i) keep `other` for all, (ii) map specific categories
@@ -157,5 +161,44 @@ These are the open hard problems. Take any; each needs the same rigor as
 5. A5 + A6 verdicts with mechanisms cited.
 6. For any §4 item taken: measurements, ranking, and the cheapest truthful
    next increment with its own acceptance bar.
-7. Anything in §2 you measured differently — ground facts are versioned, not
+7. Anything in §2 you measured differently — ground facts are versioned, not sacred.
+
+## 7. Addendum 2026-10-16 — data-team reply + toolchain inventory
+
+**A1 ✅ VERIFIED by data team:** 40/40 XOSC files byte-identical pre/post
+widening (`EMPTY_DIFF__ADE_RECOMPUTE_VACUOUS`), done via `git worktree`
+without touching the working tree. Vehicle baseline `0.0411 m` stands **by
+construction for identical engine** (see the version rule in A2).
+
+**Agreed plan:** A3 first (cheap, pure Python, answers the displacement
+safety question), then A2 on the wide 850-scene index with per-category
+tables and reported n sizes — no verdicts from statistically small n.
+A4 claimed by WASM team. A6 mass-swap experiment: data team designs to the
+acceptance bar, runnable natively (see below); their along-track-residual
+observation is noted but explicitly **not** accepted as A6 evidence
+(cross-track cleanliness does not prove longitudinal mass-independence).
+
+**Toolchain inventory (this environment):**
+- Native esmini **3.9.0** (`~/esmini/bin/esmini` + `dat2csv`, `v3.9.0-0-efbf7ee1`) —
+  runs headless. **No `ESMINI_BIN`/`ESMINI_DAT2CSV` exported** (pass explicit
+  paths or `EsminiConfig(executable=..., trace_converter=...)` per invocation).
+- esmini **3.10.0 exists as source only** (sibling `github/esmini` checkout @
+  `06065f9`, unbuilt, no `dat2csv`). If a 3.10 binary exists elsewhere, its
+  path is still needed — none was found in `/opt`, `/usr/local`, or `$HOME`.
+- esminiJS **3.10.0 WASM build present** (`frontend/wasm-esmini/dist/esmini.js`).
+
+**Version-skew caveat (binding until resolved):** native runs here are 3.9.0;
+the browser engine is 3.10.0. Never compare 3.9.0-native numbers against
+3.10.0-WASM frames as if version-matched. Options, cheapest first: (i) keep
+native 3.9.0 for A2 and label all WASM↔native deltas version-confounded;
+(ii) build native 3.10 from source (needs OSG toolchain — size before
+attempting); (iii) point to an existing 3.10 binary if one is available.
+
+**Native smoke 2026-10-16 (3.9.0, synthetic ego+pedestrian+cone, 2 s, `dt 0.01`,
+headless, `/tmp/opencode/esmoke`, not committed):** exit 0, `Pedestrian` and
+`MiscObject(other, mass=0)` parsed and replayed, coverage `complete` for all
+3 actors (ego ADE `0.0200`, walk1 `0.0050`, cone1 `0.0000` m — pipeline
+sanity only, n=2 vertices is **not** a convergence result and does not
+replace A2). Partial A5-native-acceptance: 3.9.0 does not reject the new
+tags; full A5 semantics verdict still open.
    sacred.

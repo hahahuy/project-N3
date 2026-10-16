@@ -43,7 +43,7 @@ Controlling documents for deployment state:
 - `docs/current/environment-environments.md` - development and product environments
 - `docs/current/demo-hardening-backlog.md` - public exposure hardening status
 - `docs/current/product-scene-exposure.md` - whether to expose all 850 scenes
-- `docs/current/naming-migration.md` - `r2s` to `project-N3` rename record
+- `docs/reports/cp1-evidence-lineage.md` - `r2s` to `project-N3` rename record
 - `docs/current/mission-batch-concurrency-benchmark.md` - S-6 cap selection
 - `docs/guides/production-push.md` - promote and rollback command helper
 - `docs/current/local-artifact-bundles.md` - local/private evidence index
