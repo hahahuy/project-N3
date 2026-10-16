@@ -213,3 +213,32 @@ silently changed.
 
 No result from this plan alone establishes CP1 acceptance, final ADE/FDE policy,
 G6/G7 scientific thresholds, CP2 same-XOSC or CARLA runtime equivalence.
+
+## Open item blocking thresholds — scene-macro aggregate missing
+
+Status: `OPEN / HIGH PRIORITY / BLOCKS THRESHOLD PROPOSAL`
+Recorded: 2026-10-16
+
+This plan requires the primary dataset summary to be **scene-macro** (every
+scene contributing equally) with pooled actor-track micro aggregates reported
+only as a secondary view (see "Aggregation" above).
+
+**The current replay self-consistency baseline does not satisfy this.** It is
+reported as a pooled actor-track micro aggregate over 3215 tracks from 850
+scenes, so scenes with many tracks dominate scenes with few. The scene-macro
+aggregate has not been implemented.
+
+Consequences:
+
+- The current baseline is a valid diagnostic but is **not** the primary
+  dataset summary this plan requires.
+- **No ADE/FDE threshold may be proposed until scene-macro exists.** A threshold
+  calibrated on a micro aggregate would mis-weight scenes.
+- Recomputing the headline figures after adding scene-macro is expected to move
+  them; treat the current micro numbers as provisional in an additional sense
+  beyond their existing `PROVISIONAL` status.
+
+Next action: implement scene-macro aggregation over the existing 850-scene run,
+report mean/median/p95/max for ADE and FDE with contributing scene and track
+counts, and re-issue the baseline. Then, and only then, revisit whether a
+threshold is defensible.

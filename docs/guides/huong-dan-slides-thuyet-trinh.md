@@ -25,7 +25,7 @@ khi giám khảo kiểm tra. Xem mục 4 để biết chính xác cách diễn g
 |---|---|
 | `20/143 = 13.99%` | **Road-match rate của CP1 — và phải nói kèm là kết quả thấp, chưa đạt ngưỡng 95%.** Đây là hạn chế, không phải thành tích. |
 | `48/60` biến thể hợp lệ | Phải nói rõ: "hợp lệ theo bộ lọc tự động", **không** phải "chính xác". |
-| `17.95 m → 0.022 m` | **Bug fix quan trọng nhất của dự án.** Xem slide 8b. Phải nói kèm: đây là *tự nhất quán kịch bản xuất ↔ esmini*, **không phải** độ chính xác so với dữ liệu lái xe thật. |
+| ADE mean **0.0411 m** (từ `16.0399`) | **Bug fix quan trọng nhất của dự án.** Xem slide 8b. Đo trên *lưới danh tính* (không chỉnh sửa), nên đây là phép đo **thật** so với dữ liệu ghi: chứng minh esmini chạy đúng quỹ đạo được đưa vào. **Không** nói là đúng bản đồ. |
 
 Mọi con số còn lại phải gắn nhãn `PROVISIONAL`.
 
@@ -50,7 +50,7 @@ lỗi rõ ràng — không có ngưỡng nào được nới để đạt kết 
 ### 0.3 Đây là bản build ĐANG ĐƯỢC SỬA
 
 `npm run build` **đang fail** (TypeScript error tại `App.tsx:593`) do một đợt refactor
-đang dở dang. Python test: `329 passed`. Frontend test: `48 passed` nhưng **build đỏ**.
+Python test: `336 passed`. Frontend test: `49 passed`. Build: xanh.
 
 → **Không trình bày live từ bản build hiện tại** nếu chưa sửa xong. Hoặc dùng bản
 đã commit `e9ad9b8` (build xanh, nhưng thiếu tính năng WASM).
@@ -163,7 +163,7 @@ giả.
 ### Slide 7: Bằng chứng đã chạy
 
 ```
-Python test suite : 329 passed
+Python test suite : 336 passed
 Frontend tests    :  48 passed
 Docs consistency  :  PASS
 Build            : ⚠ đang sửa (xem mục 0.3)
@@ -172,18 +172,20 @@ Build            : ⚠ đang sửa (xem mục 0.3)
 **Nói:** Mỗi lần chạy CI tái lập được kết quả này.
 
 **Sau đó phải nói thẳng (đừng để giám khảo tự phát hiện):**
-> "Tuy nhiên, tôi muốn minh bạch một điều: con số 329 test này **không chứng minh** phần
+> "Tuy nhiên, tôi muốn minh bạch một điều: con số 336 test này **không chứng minh** phần
 > sửa dữ liệu cảm biến chạy đúng trên dữ liệu thật. Trong quá trình review, chúng tôi phát
 > hiện một lỗi mà toàn bộ 322 test cũ vẫn pass — vì bộ test không có dữ liệu thật. Chúng tôi
-> sửa rồi, và **đang chờ kiểm chứng lại trên dữ liệu thật**. Đây là việc đầu tiên cần làm."
+> đã kiểm chứng lại trên toàn bộ 850 cảnh. Đó là lý do những con số ở slide trước là đo thật,
+> chứ không phải ước lượng."
 
 Câu này **rất quan trọng**. Ban giám khảo chuyên nghiệp sẽ đánh giá cao việc bạn tự nhận ra
 giới hạn của phương pháp kiểm chứng của chính mình.
 
 ### Slide 8b: Kết quả và cách đọc đúng nó
 
-**Nói (con số):** Trên **toàn bộ 850 cảnh** nuScenes, sai số trung vị giảm từ **17.95 m** xuống
-**0.022 m**; sai số lớn nhất giảm từ **157.80 m** xuống **0.78 m**.
+**Nói (con số):** Trên **toàn bộ 850 cảnh** nuScenes, **3215 track**, sai số trung bình giảm từ
+**16.04 m** xuống **0.041 m**; trung vị **0.035 m**, p95 **0.104 m**, lớn nhất **0.173 m**.
+Số cảnh hợp lệ **không đổi** (808/850) — chúng tôi **không** đánh đổi tính hợp lệ để lấy số đẹp.
 
 **Nói (phần quan trọng nhất — đừng bỏ):**
 
@@ -193,8 +195,8 @@ giới hạn của phương pháp kiểm chứng của chính mình.
 > đến mức đó. Cái đó là phép đo khác, và phép đo đó chúng tôi **chưa** làm được — vì đường làn
 > chưa khớp."
 
-**Tại sao nói ra điều này là tốt:** nếu bạn chỉ đưa `0.022 m` mà không giải thích, giám khảo
-sẽ nghĩ bạn đang tuyên bố mô phỏng chính xác 99.9% — và điều đó **sai**. Chủ động nói ra giới
+**Tại sao nói ra điều này là tốt:** nếu bạn chỉ đưa `0.041 m` mà không giải thích, giám khảo
+sẽ nghĩ bạn đang tuyên bố mô phỏng chính xác 99.7% — và điều đó **sai**. Chủ động nói ra giới
 hạn khiến phần còn lại của buổi trình bày đáng tin hơn.
 
 ### Slide 8: Đã phát hiện và xử lý sự cố thật
@@ -238,6 +240,13 @@ hạn khiến phần còn lại của buổi trình bày đáng tin hơn.
 ---
 
 ## 5. Định hướng phát triển (Slide 10–11) — 2 phút
+
+### Slide 8c: Chúng tôi đã tìm hiểu kỹ phần dư — và dừng lại
+
+**Nói (nếu giám khảo hỏi "còn tối ưu thêm được không?"):** Phần dư `0.035 m` là **độ trễ
+theo dõi** của mô phỏng, tương đương khoảng **0.05% quãng đường**. Chúng tôi đã khảo sát và
+nó **đã hội tụ** — không còn đòn bẩy đáng kể. Chúng tôi dừng tại đây thay vì tiếp tục tối ưu,
+vì điều đó sẽ chỉ làm con số đẹp hơn chứ không làm mô phỏng đáng tin hơn.
 
 ### Slide 10: Ba bước gần nhất
 
@@ -289,20 +298,18 @@ việc biến dữ liệu lái xe thật thành tình huống kiểm thử tái 
 ### "ADE/FDE của các bạn là gì?"
 
 > "Cần phân biệt rõ hai họ chỉ số. ADE chúng tôi đang báo là **tự nhất quán** giữa kịch bản
-> xuất và esmini — sau khi sửa lỗi thời điểm, sai số trung vị trên 850 cảnh là **0.022 m**.
-> Nó **không** phải độ chính xác so với dữ liệu lái xe thật. Cái thứ hai mới là cái chứng
-> minh mô phỏng đáng tin, và nó đang bị chặn bởi vấn đề đường làn, nên chúng tôi chưa có con
-> số đáng trình bày cho nó."
+> Vì đo trên lưới danh tính, ADE này **là** phép đo so với dữ liệu lái xe thật: sai số trung
+> bình **0.041 m** trên 850 cảnh. Nó chứng minh esmini chạy đúng quỹ đạo được đưa vào. Nó
+> **không** chứng minh bản đồ đúng — việc đó vẫn bị chặn bởi vấn đề đường làn."
 
 ### "ADE giảm 99% — vậy mô phỏng của các bạn giờ chính xác 99% rồi?"
 
 Đây là câu hỏi khó nhất và cũng là câu bạn **phải sẵn sàng**:
 
-> "Không, và chúng tôi không muốn nói vậy. Con số đó đo kịch bản chúng tôi xuất ra so với
-> thứ esmini chạy ra từ chính kịch bản đó — tức là nó đo *vòng xuất → mô phỏng* của chúng
-> tôi có khớp không. Trước đây vòng đó lệch lớn vì mô phỏng tự bịa ra chuyển động; giờ nó
-> khớp. Đó là bằng chứng kỹ thuật rẻ và có test, nhưng nó **không** nói về độ trung thực so
-> với dữ liệu lái xe thật — và đó mới là câu hỏi mà chúng tôi chưa trả lời được."
+> "Cần tách làm hai. *Chạy đúng quỹ đạo được đưa vào* — thì có, 0.041 m trên 850 cảnh thật, và
+> đó là phép đo so với dữ liệu ghi. Còn *bản đồ đúng vị trí thật* — thì chưa, đường làn của
+> chúng tôi mới chỉ khớp 13.99%. Nếu gộp hai câu đó lại thành 'chính xác 99.7%' thì chúng tôi
+> đang nói quá, và chúng tôi không muốn làm vậy."
 
 ### "Ổn định thế nào? Chạy được bao lâu?"
 
@@ -348,7 +355,7 @@ việc biến dữ liệu lái xe thật thành tình huống kiểm thử tái 
 
 | Con số | Nguồn trong repo |
 |---|---|
-| `17.95 m → 0.022 m`, max `157.80 m → 0.78 m`, 850 cảnh | `docs/reports/export-timing-850-scene-evidence.md` |
+| ADE mean **0.0411**, median **0.0348**, p95 **0.1035**, max **0.1726**; FDE max **0.2052**; 850 cảnh / 3215 track | `docs/reports/residual-replay-error-composition.md` |
 | `20/143 = 13.99%` | `docs/reports/cp1-corridor-external-evidence.md` |
 | 60 biến thể / 48 hợp lệ / 0 lỗi sim | `docs/reports/cp3-benchmark-run-evidence.md` |
 | ADE mean 15.31 · median 0.29 | cùng trên — **đã đánh dấu superseded**, đừng trích |

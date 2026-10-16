@@ -10,12 +10,15 @@ frontend/node_modules/
 frontend/dist/
 
 # Generated scenario and simulator artifacts are reproducible from config.
+# These patterns MUST stay root-anchored. An unanchored "reports/" also matches
+# docs/reports/, which silently untracked 58 evidence reports that tracked
+# documents link to; 53 of those links were broken in a fresh clone.
 scenarios/generated/
 scenarios/nuscenes/
-reports/
+/reports/
 # Licensed nuScenes releases and their raw sensor payloads are local-only.
 data/v1.0-*/
-data/nuScenes-*/
+/data/nuScenes-*/
 
 # Contest demo gateway secrets and TLS material. The shared key must never be
 # committed: nginx serves it, and anything in the repository is public.

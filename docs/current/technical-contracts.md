@@ -226,6 +226,19 @@ MVP replay evidence uses esmini; the internal simulator is preview-only.
   `motion_mode=open_loop_transform_playback`.
 - Unsupported behavior mode must not fall back to waypoint mode.
 
+### WASM Parity Decision Note
+
+The current Data Analysis result is that native esmini 3.9.0 ignores the
+non-standard `Polyline/Vertex/@speed` extension. It must not be added to the
+WASM parser as a parity feature. The exporter parity target is
+`followingMode="position"`, pre-trigger actor hold, and
+`AbsoluteTargetSpeed="0"` during initialization. Native esmini remains the only
+source of official ADE/FDE and replay reports; WASM remains preview/correlation
+only.
+
+Any exporter change affecting these semantics requires native baseline
+recomputation and a native-vs-WASM parity run before correlation claims.
+
 ### CP2-A Exact-Pose Planning
 
 - Alignment artifact version: `carla-alignment-v1`.

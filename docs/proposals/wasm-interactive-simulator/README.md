@@ -16,6 +16,14 @@ react-three-fiber renderer described by the proposal.
 
 The handoff must be read against the current checkout:
 
+### Data Analysis correction
+
+The current analysis supersedes the earlier assumption that `Vertex/@speed`
+must be implemented by WASM for native parity. Measurements show native esmini
+3.9.0 ignores that extension and adding it to WASM would create a parity gap.
+The parity target is `followingMode="position"`, pre-trigger hold and
+`AbsoluteTargetSpeed=0`; native esmini remains authoritative for ADE/FDE.
+
 | Handoff claim | Current repository |
 |---|---|
 | 3D view is only a placeholder | Partly stale. `third-person` and `in-car` already render internal transform/native-state POV views, but not a WASM 3D engine. |
@@ -24,6 +32,15 @@ The handoff must be read against the current checkout:
 | Both workspace helpers are dead | Only `fetchWorkspaceDocument` is currently unused; `fetchWorkspaceScenario` is wired. |
 | Native replay can be replaced by browser WASM | Rejected. Native `run_esmini()` remains Tier 0 measurement. |
 | Live parameter edits work through the engine | Treat as unverified until the selected esminiJS build proves otherwise. |
+
+The canonical artifact serializer already preserves `source_timestamp_us` and
+`source_record_token` in state payloads. The web `TrajectoryState` response
+models currently omit those fields, so engineering-correlation UI must extend
+the web contract rather than assuming the artifact lacks source provenance.
+
+The WASM-pair cache key currently derives only from `scenario_id`. Exporter
+semantic changes therefore require pair regeneration or an exporter-version
+component in the cache key before trusting a browser artifact.
 
 ## Recommended Website Sequence
 

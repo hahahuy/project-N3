@@ -44,6 +44,11 @@ applies `fmt-11.2.0-emscripten-cstdlib.patch`. It builds with:
 - Browser Worker smoke passed at `/wasm-smoke` using the committed synthetic
   fixture: simulation time `0.05`, one active object, two lane surfaces and two
   road marks.
+- Generated nuScenes XOSC smoke was initially blocked by an exporter change that
+  added non-standard `speed` attributes to Polyline vertices. The exporter was
+  restored to the esmini-compatible form: `AbsoluteTargetSpeed=0` and no custom
+  vertex speed attribute. The WASM-pair endpoint now regenerates the corrected
+  XOSC in the writable reports volume.
 - No browser renderer or behavior injection is claimed.
 
 The Node smoke harness remains `smoke.mjs` for diagnostics. The authoritative

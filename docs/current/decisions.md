@@ -191,3 +191,73 @@ execution backends.
   and recorded Sensor Evidence are not replay substitutes.
 - The controls remain visible with explicit unavailable labeling so capability
   boundaries are discoverable and cannot be mistaken for completed workflows.
+
+## DEC-017 — Replay Fidelity Contract and Current Self-Consistency Baseline
+
+- Status: `OWNER-APPROVED / IMPLEMENTED / PROVISIONAL RESULTS`
+- Commits: `b52d423` (following mode + integration step), `79a4a8a` (source
+  provenance through the frame transform), `3372ff0` (documentation record).
+- Decision 1: `followingMode` is returned to `position`. The `timing` mode
+  permitted simulated drift that the recorded data does not contain.
+- Decision 2: `fixed_timestep` moves `0.05 → 0.01` s. This is a contract change
+  and the pinning assertion test was updated with it. `dt = 0.005` is
+  bit-identical to `0.01`, so the step is converged and is not a tuning knob.
+- Decision 3: the baseline is recomputed and every prior ADE/FDE figure is
+  superseded. Validity is unchanged at 808/850 valid — no validity was traded
+  for a better error number.
+- Decision 4: the web contract exposes `source_timestamp_us` and
+  `source_record_token` so a served frame can be traced back to the exact
+  recorded sample and sensor record.
+- Current baseline (full nuScenes `v1.0-trainval` 850-scene set, 3215 actor
+  tracks, esmini v3.9.0): ADE mean **0.0411 m**, median **0.0348 m**, p95
+  **0.1035 m**, max **0.1726 m**, FDE max **0.2052 m**, runtime cost **+14 %**.
+- Root cause was a **timing anchor**, not the map template. A late-appearing
+  actor ran from `t = 0`, covering roughly `track_start_time × speed` metres
+  absent from the recording. Two conditions are required to fix it: hold speed
+  until the recorded track starts, and align the follow-trajectory
+  `StartTrigger` to the recorded track start. The "map template is the primary
+  cause" hypothesis is **disproved by measurement** and must not be reused.
+- Metric role: these figures are **export-versus-replay self-consistency**. They
+  are not replay fidelity against the recorded driving trajectory and do not
+  support a claim about simulation faithfulness. CP1 remains `20/143 = 13.99%`.
+- **No threshold is proposed.** The aggregate currently exposes a micro mean
+  only, and the scene-macro aggregate required by
+  `docs/current/metric-benchmark-execution-plan.md` is still missing.
+- All results remain `PROVISIONAL`.
+
+## DEC-018 — Claim Boundaries After the Replay Fix
+
+- Status: `OWNER-APPROVED / BINDING ON ALL REPORTING`
+- Native esmini is the only sanctioned source of ADE/FDE. Visual preview,
+  including the WASM playback surface, is **not** a metric source and no figure
+  from it may enter a report.
+- The WASM visual preview may be presented as a preview only.
+- "Engineering correlation" is the strongest claim currently open for the
+  recorded ego brake-pedal channel, and it is not yet granted. See DEC-019.
+- **No map-accuracy claim** is permitted: gate G3 has never been evaluated.
+- **No safety or TTC claim** is permitted: G6 always fails for implementation
+  reasons, not measured ones.
+- An unavailable capability must never be reported as a successful result.
+
+## DEC-019 — Recorded Ego Brake Channel Reopened by Provenance Fix
+
+- Status: `OWNER-DECISION REQUIRED / IMPLEMENTATION LANDED PROVISIONALLY`
+- Context: `79a4a8a` fixed `RoadAlignedTransform`, which was dropping
+  `source_timestamp_us` and `source_record_token` when rebuilding `State`. That
+  loss is what kept the recorded ego brake pedal channel permanently
+  unavailable with `canonical_states_missing_source_timestamp_us` — 383/383
+  annotated states were losing provenance on the way into the local frame.
+- Current state: a real scene reports braking `available = true` at coverage
+  **0.625** from `nuscenes-can-vehicle-monitor-v1`. The same fix exposed and
+  repaired a latent `_match_braking` crash on an empty channel that the missing
+  timestamps had been masking.
+- **This is a scope change, not only a metric change.** A channel that was
+  uniformly unavailable is now partially available, so the UI, the availability
+  contract and any downstream reading of the timeline are affected.
+- Open decision for the owner: whether the UI may advance to an
+  **"engineering correlation"** claim. Recommended position is to record it as
+  an implemented capability with a coverage figure and a provenance contract,
+  and **not** yet to claim correlation, because coverage is 0.625 rather than
+  complete and the channel is ego-only.
+- Until decided, the channel stays `PROVISIONAL` and no correlation figure may
+  be published.
