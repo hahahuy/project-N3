@@ -176,9 +176,9 @@ the WASM engine, which has no sensor channel. Note this keeps Sensor Evidence
 semantics intact: recorded nuScenes data is recorded nuScenes data, and must
 never be presented as engine-generated output.
 
-**Q4 — Deferred.** Synchronized cross-panel focus is **decided later**. Do not
-build it in this increment. If you touch selection at all, keep `selectedId`
-local and do not lift it.
+**Q4 — STILL OPEN. Not answered, not deferred-by-abandonment.** See
+"Retained open question Q4" below. Do not build cross-panel focus sync in this
+increment, and do not lift `selectedId` out of `ThreePlaybackCanvas`.
 
 **Q5 — Worker-driven fixed-step is REQUIRED, and seek is in scope with one hard
 condition.**
@@ -214,6 +214,96 @@ comparable. Three reasons to leave it alone:
   excluding short tracks would **discard good data**.
 - Revisit only if convergence failure actually appears in the browser, and then
   change both engines together.
+
+---
+
+## Retained open question — Q4: synchronized cross-panel focus
+
+Status: `OPEN — DELIBERATELY NOT ANSWERED YET`
+Owner decision required. This is **not** a task for the next agent to guess.
+
+### The question, stated in full
+
+**When a viewer selects an object in the WASM 3D playback view, which other
+views should respond, and what exactly does "respond" mean?**
+
+Concretely, three linked decisions:
+
+1. **What is the identity key?** The WASM engine returns its own entity `id`
+   (see `WasmObjectState.id` in `types.ts`). The workspace uses nuScenes
+   `instance_token` / `actor_id`. These are different key spaces. Sync needs a
+   stable mapping, and engine IDs are **not** guaranteed stable across `reset()`
+   — the proposal's own analysis warns that engine entity IDs must be
+   "validated/remapped after reset". So the key question is: do we map WASM
+   engine IDs onto canonical actor identity once and cache it, or re-derive it on
+   every reset?
+
+2. **Which panels consume the selection?** Candidates in this repository:
+   - the workspace **actor timeline** (`workspace-actor-timeline-v1`, already
+     time-indexed and already synchronized with the playhead);
+   - the **gate lane** (`workspace-gate-timeline-v1`, G1-G7 status segments);
+   - the **LiDAR canvas** (recorded `LIDAR_TOP` payload view);
+   - the existing **Top-down** authoring view (already has `selectedActor` and
+     `onSelectActor`);
+   - the **Sensor Evidence** view.
+
+   Top-down already has actor selection wired, so it is the natural first
+   candidate — but it is also the authoring view, and per project boundary it
+   must stay the authoring/map/trajectory pane. Whether WASM selection should be
+   allowed to drive it is exactly the kind of thing that needs an explicit answer.
+
+3. **Is sync one-way or bidirectional, and does it touch scenario state?**
+   - One-way (WASM → other panels) is a pure view concern and is cheap.
+   - Bidirectional (clicking a timeline track focuses the WASM camera) needs a
+     camera command path into `ThreePlaybackCanvas`.
+   - **Does selection drive scenario state?** For example does focusing an actor
+     also move the shared `playhead`, or run a constrained maneuver? If yes, that
+     is a **behaviour** concern, not a view concern, and it touches the disabled
+     Behavior/Validate/Replay boundaries (DEC-016) and the recipe contract. That
+     would be a scope increase and needs its own approval.
+
+### Why it is being held
+
+The owner's guidance on 2026-10-16 was "decide later". This section exists so
+that "later" is a tracked item with a restated question rather than a silence.
+
+The reason it is worth holding rather than building opportunistically: the
+identity-key problem in (1) is the same class of problem as the recent replay
+defects. Actor identity across engine/canonical boundaries is precisely where
+this codebase has already shipped bugs — the recorded `LIDAR_TOP`
+sample-vs-`sample_data` token confusion, and the timing anchor that drove actors
+before their recorded track began. Building cross-panel sync before the key
+mapping is settled risks a visually convincing panel that highlights the wrong
+actor, which is exactly the "looks connected but is wrong" failure mode this
+project forbids.
+
+### Interim instruction — binding until Q4 is answered
+
+- Do **not** lift `selectedId` out of `ThreePlaybackCanvas`. Keep selection local.
+- Do **not** add cross-panel listeners, stores or props for selection.
+- If you refactor selection for any other reason, preserve it as local state and
+  leave a short note here saying what you preserved and what Q4 still needs.
+- You **may** clean up selection internals (highlight colour, mesh lookup) as
+  long as no cross-panel surface is introduced.
+
+### What an answer needs to contain
+
+Whoever answers Q4 must specify: the identity key and its reset behaviour; the
+panels to consume selection and in which direction; whether playhead or scenario
+state is affected; and the exact acceptance bar. A decision that only says "sync
+the panels" is not sufficient and should be sent back.
+
+### Revisit when
+
+Any one of these becomes true:
+
+- the `dt` parity fix has landed and the clock is trustworthy (Q5);
+- Q2 promotion to a real workspace view type is approved (a sync target must
+  exist first);
+- sensor fusion under Q3 ships, because fusion makes "which object is selected"
+  materially more important.
+
+---
 
 ### 🔴 Highest-priority defect: the Worker is running the wrong timestep
 

@@ -288,7 +288,14 @@ execution backends.
   It does not mean sensor output from the WASM engine, which has no sensor
   channel. Recorded sensor evidence remains recorded nuScenes data and is never
   presented as engine-generated output.
-- **Synchronized cross-panel focus is deferred** and explicitly decided later.
+- **Synchronized cross-panel focus is OPEN and deliberately not answered.** The
+  owner's guidance was "decide later"; this entry records it as an open owner
+  decision rather than a settled one so it is not lost or silently filled in by an
+  agent. The full restated question, the identity-key problem, the candidate
+  panels, the interim binding instruction and the revisit triggers are in
+  `docs/proposals/wasm-interactive-simulator/next-agent-handoff.md` under
+  "Retained open question — Q4". Interim rule: do not lift `selectedId` out of
+  `ThreePlaybackCanvas` and do not add cross-panel selection surfaces.
 - **`min_track_duration_s` is not applied.** Applying it to one engine only would
   make the two engines score different track populations, so the numbers would not
   be comparable. It is a population-alignment rule, not an accuracy tweak, and any
