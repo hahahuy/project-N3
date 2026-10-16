@@ -28,3 +28,6 @@ ops/demo/certs/
 ops/demo/*.log
 ops/demo/.env
 .env
+
+# Playwright MCP scratch output (console logs + accessibility snapshots)
+.playwright-mcp/
