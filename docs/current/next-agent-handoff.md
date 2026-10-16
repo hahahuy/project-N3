@@ -1,145 +1,109 @@
 # Next Agent Handoff
 
 Status: `READY FOR ACCEPTANCE / OWNER REVIEW`
-Primary next work: execute private runtime acceptance and obtain the documented owner decisions
+Updated: 2026-10-16
 
-## Blocked On First: An Uncommitted Working Tree
+## Read in order
 
-Before any acceptance work, note that the checkout is **not** the committed
-baseline. `git status --short` shows 15 modified tracked files plus untracked
-`docs/audits/` and `docs/guides/production-push.md`. `gitnexus detect_changes`
-reports `risk_level: critical`, 59 changed symbols, 53 affected processes.
+1. `MVP&ProjectSummary.md` — long-term scope baseline
+2. `docs/current/project-status.md` — checkpoint status and current claims
+3. `docs/current/decisions.md` — append-only owner decisions
+4. `docs/current/active-work.md` — work queue and acceptance groups
+5. `docs/current/technical-contracts.md` — API and simulator contracts
+6. `docs/current/evidence-index.md` — claim-to-evidence index
+7. `docs/current/artifact-policy.md` — visibility and licensing boundaries
+8. `docs/architecture/system-overview.md` and `boundary-map.md`
 
-The uncommitted work is substantive and partly **corrects real defects**:
+Consolidated history: `docs/reports/cp1-evidence-lineage.md` for CP1,
+`docs/reports/residual-replay-error-composition.md` for the replay baseline.
 
-- `source_window` provenance stores *sample* tokens, but LiDAR, Sensor Evidence,
-  sensor-status, evidence-layer and scenario routes were passing them where a
-  *sample_data* token was required — every one of those routes addressed the
-  wrong record.
-- `sweep_records` walked `sample_data.prev`, which is empty for `LIDAR_TOP`
-  keyframes, so recorded sweep history truncated after one sweep.
-- A new `GET /api/workspace/scenarios/{id}/top-down` route serves the official
-  devkit map-underlay render. It has a frontend caller but **no backend test**.
-- The view grid becomes `MAX_VIEWS = 3` with a 3rd-person POV default, superseding
-  the committed "four panes, Top-down default" description.
-- `react-grab` is added as a dependency without a recorded approval decision.
-- Demo `api` memory is capped at 12G, superseding the "limit removed" note in
-  `docs/current/demo-hardening-backlog.md`.
+## Three concurrent agents
 
-Do not commit this tree as-is without (a) confirming the recorded-evidence fixes
-against real private data, (b) adding `/top-down` backend coverage, and (c) an
-owner decision on the tracked generated files. Passing tests do not establish
-that these fixes behave correctly on the real dataset: the entire existing suite
-passes both before and after the token bug was present.
+The project runs three agents in parallel. **Read who owns what before touching
+anything**, and do not silently change another agent's scope.
 
-## Mission
+| Agent | Owns | Do not touch |
+|---|---|---|
+| **DataAnalysis** | Metrics and reliability of real2sim nuScenes → WASM/esmini player. Owns the replay baseline and residual analysis. | Do not change replay or export semantics while they are measuring. Changes invalidate their run. |
+| **ProjectManager** | Context, docs, codebase hygiene, and issuing prompts when new open items appear. | — |
+| **WASM-DATA** | Replacing the current view panel with the WASM/esmini player. Frontend and XOSC connector. | Do not reimplement their work. |
 
-The approved backend and Workspace implementation is complete for the current
-contracts. Use the available private runtime and official devkit only to produce
-acceptance evidence; do not start another makeover or expand scope. The seven
-acceptance groups and their exact actions are in
-`docs/reports/tracks-1-6-disposition.md`.
+The current tree is **committed and clean**. There is no pending uncommitted
+baseline problem to solve.
 
-Do not restart the old CP1 semantic-alignment handoff, Plan B milestones or CARLA
-runtime work. Existing CP1/CP3/CP4/CP5 material is historical or parallel
-evidence unless explicitly assigned in `active-work.md`.
-
-## Read In Order
-
-1. `MVP&ProjectSummary.md`
-2. `README.md`
-3. `docs/current/project-status.md`
-4. `docs/current/decisions.md`
-5. `docs/current/active-work.md`
-6. `docs/current/technical-contracts.md`
-7. `docs/current/nuscenes-devkit-makeover-handoff.md`
-8. `docs/current/nuscenes-devkit-leverage-proposal.md`
-9. `docs/current/evidence-index.md`
-10. `docs/current/artifact-policy.md`
-
-For the approved esmini adapter task, also read the live adapter sections in
-`docs/current/technical-contracts.md` and `docs/current/backend-workspace-contract-log.md`.
-
-## Current Direction
+## Current direction
 
 ```text
 nuScenes v1.0-trainval
   -> devkit-backed source adapter
   -> canonical scenario and provenance
-  -> native map/query capabilities
-  -> OpenDRIVE/OpenSCENARIO contracts
-  -> native esminiLib adapter and Tier 1 kinematic preview
-  -> metrics, gates, private sensor evidence and UI
+  -> native map / OpenDRIVE / OpenSCENARIO contracts
+  -> native esmini replay (sole sanctioned metric source)
+      + browser WASM player (preview/interaction only)
+  -> metrics, gates, private sensor evidence, UI
 ```
 
-Phase 1 and the additive Phase 2 backend contracts are implemented and tested.
-The Workspace authoring and timeline slices are also implemented/tested:
-optional CAN ego speed, source-state acceleration/yaw-rate alignment, Tier 1
-propagation, native map/query routes, private LiDAR descriptors, actor timeline,
-gate timeline, recipe/rollback, lineage, Compare, evidence layers and advisory
-prediction metrics. The next task is to finish acceptance and the remaining
-renderer/sensor gaps, not redesign those contracts. The bounded live-session
-  contract and browser native-state renderer are now implemented; host/Compose
-  native execution is verified. Remaining gaps are capability acceptance, private
-  capture/display support and owner-gated scientific/paper closure.
+The backend makeover is **complete** for the approved contracts. The active
+track is **acceptance and closure**, not implementation.
 
-## Remaining Work: Acceptance Tracks
+## Current verified baseline
 
-1. **Private runtime/browser acceptance:** run scenario-pair creation, polling,
-   timeline synchronization, native rendering, step and reset against configured
-   private data, recording exact evidence or unavailable reasons.
-2. **Native control boundary:** determine whether a compatible public ABI exists;
-   otherwise accept `esminiLib_control_abi_unavailable` and label reset-by-reload.
-3. **Image capture:** test configured/off-screen capture; retain
-   `capture_viewer_unavailable` unless real image artifacts and a manifest exist.
-4. **Post-edit sensors:** obtain an owner scope decision; until calibrated frame
-   generation is real and verified, keep variant sensors `unsupported`.
-5. **CP1/CP3/CP4/CP5 closure:** obtain semantic, benchmark, gate and release
-   decisions while preserving the immutable CP1 `20/143 = 13.99%` baseline.
-6. **CP6 paper closure:** finalize research questions and evidence bundle without
-   promoting provisional engineering diagnostics to scientific claims.
-7. **UI scope decision:** keep Behavior, Validate and Replay explicitly disabled
-   and classified as deferred/unavailable unless a separate scope is approved.
+Full nuScenes `v1.0-trainval` **850-scene** set, **3215 actor tracks**, esmini
+v3.9.0, at `b52d423`/`79a4a8a`/`3372ff0`:
 
-CARLA same-XOSC remains explicitly post-MVP and is not part of tracks 1-6.
+| Metric | Value |
+|---|---|
+| ADE mean | `0.0411 m` |
+| ADE median | `0.0348 m` |
+| ADE p95 | `0.1035 m` |
+| ADE max | `0.1726 m` |
+| FDE max | `0.2052 m` |
 
-## Approved Live 3D Direction
+Validity unchanged at **808/850** — no validity was traded for a better number.
+Runtime cost **+14 %**.
 
-The approved architecture is a hybrid, not a browser screenshot stream:
+**Read that with its metric role attached.** Measured on the identity grid, so
+position ADE/FDE and heading are role A, a genuine recorded-versus-replayed
+measurement: esmini reproduces the trajectory it was given. `speed_mae_mps` is
+role B there. It establishes **neither map accuracy** (CP1 remains
+`20/143 = 13.99 %`, G3 never evaluated) **nor threshold admissibility**.
 
-```text
-Browser React + Three.js/PlayCanvas renderer
-  <-> WebSocket state/control protocol
-  <-> long-lived native esminiLib session adapter
-        -> OpenSCENARIO/OpenDRIVE execution and OSI/state output
-```
+**Every ADE/FDE figure before `b52d423` is invalid and must not be quoted.**
 
-The browser-native renderer owns interactive roads, actors, cameras, trajectories,
-LiDAR/radar overlays and timeline interpolation. The native esmini adapter owns
-authoritative scenario stepping, triggers, controllers, road-relative behavior and
-simulation state. The existing asynchronous esmini subprocess/capture path remains
-for replay, validation and evidence images; it is not the primary live 3D path.
+All figures are `PROVISIONAL`. **No threshold is proposed** — the aggregate is
+still a pooled actor-track micro aggregate and scene-macro is missing.
 
-Do not compile the full esmini viewer to WebAssembly or make per-timeline image
-capture the first implementation. A reduced WASM port, Unity WebGL client and
-WebRTC remote rendering are future alternatives, not current scope.
+## Remaining work: seven acceptance groups
 
-## Non-Negotiable Boundaries
+Owners, evidence and exact next actions are in
+`docs/reports/tracks-1-6-disposition.md`.
 
-- Preserve canonical schema until a source-state extension is specified.
-- Preserve CP1 `20/143 = 13.99%` and all approved matcher policies.
-- Keep raw and nuScenes-derived artifacts outside the repository.
-- Never silently substitute CAN, route or LiDAR data for recorded ground truth.
+1. Private runtime/browser acceptance — `PROVISIONAL`
+2. Native esmini control boundary — `OWNER-REQUIRED`
+3. Image capture/display — `PROVISIONAL`
+4. Post-edit sensor generation — `DEFERRED`
+5. CP1/CP3/CP4/CP5 closure — `OWNER-REQUIRED`
+6. CP6 paper/evidence closure — `OWNER-REQUIRED`
+7. UI scope decision — `OWNER-REQUIRED`
+
+## Non-negotiable boundaries
+
+- Preserve canonical schemas and provenance contracts.
+- Preserve CP1 `20/143 = 13.99 %`.
+- Top-down stays the authoring/map/trajectory view.
+- Sensor Evidence is recorded nuScenes evidence only, never post-edit output.
+- Recorded data must not be described as regenerated sensor output.
+- Raw nuScenes data and derived artifacts stay outside the repository.
 - Keep prediction metrics separate from replay fidelity metrics.
+- Keep provisional metrics and diagnostic gates explicitly provisional.
+- Browser WASM is preview/interaction only; it never feeds ADE/FDE,
+  `replay.csv`, gates or reports. Native esmini is the sole sanctioned metric
+  source.
+- No map-accuracy claim while G3 is unevaluated. No safety/TTC claim while G6
+  fails for implementation reasons.
 - CARLA same-XOSC remains post-MVP.
-- Treat esmini/internal preview POVs and CARLA POVs as separate capability
-  statuses; do not claim a rendered POV from a static placeholder.
-- Keep variant post-edit sensor frames unsupported until actual frame generation
-  exists; expose parent-sweep fallback only with explicit provenance.
-- Treat `esminiLib` as the authoritative live simulation adapter; do not expose
-  internal transform preview as esmini rendering.
-- Keep live adapter sessions bounded, isolated and explicitly versioned with
-  XOSC/XODR hashes, timestep and capability status.
+- No new architecture or dependency without an approved decision.
+- Never reinterpret an unavailable capability as successful behaviour.
 
 ## Verification
 
@@ -149,22 +113,13 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider
 cd frontend && npm test -- --run && npm run build
 ```
 
-Current measured result: **322 passed / 48 passed / build clean**. Note that
-`322 / 40` appears in several committed documents and in `docs/guides/production-push.md`;
-the frontend count is now 48.
+**Passing tests is not acceptance.** Every figure above remains `PROVISIONAL`
+until owner sign-off.
 
-Before handoff, update the active work, project status, evidence index and track
-disposition. State exactly which capability is implemented, fallback, unavailable
-or unverified. Do not claim completion from tests without runtime evidence and
+## What to do next
+
+Do not start a new architecture track. Either execute an acceptance group from
+`docs/reports/tracks-1-6-disposition.md`, or work inside your own agent scope.
+State exactly which capability is implemented, fallback, unavailable or
+unverified. Do not claim completion from tests without runtime evidence and
 owner sign-off.
-
-## Short Prompt For The Next Agent
-
-> Execute the seven acceptance groups in
-> `docs/reports/tracks-1-6-disposition.md`, starting with the configured private
-> browser/runtime walkthrough. Do not redesign the bounded live-session service or
-> regenerate sensors without an owner-approved scope. Preserve the separate
-> recorded `LIDAR_TOP` evidence view, fail-closed image and variant-sensor states,
-> canonical schemas, provisional metric status and CARLA post-MVP boundary. Record
-> exact unavailable reasons, owner decisions and release evidence; passing tests
-> alone is not project completion.

@@ -1,13 +1,37 @@
-# View Panel Makeover — Handoff Prompt for the Next Agent
+# View Panel — Inventory and Handoff for the WASM Replacement
 
-> This document is a prompt. Paste the whole "Prompt" section below to the next
-> agent. Everything before it is context for the project manager.
+> **SUPERSEDES the earlier "View Panel Makeover" framing of this file, which was
+> wrong.** That version asked an agent to clean up and restructure the current
+> view panel. It is now settled that the current viewer is **being replaced by
+> the WASM/esmini player**, because it is judged too broken and too complex to
+> maintain. Cleaning it up would be wasted work.
+>
+> What is still useful here is the **inventory**: what exists today, what is
+> wired to what, and what must not be lost when the WASM player replaces it.
+> Keep that, discard the restructure proposal.
 
-Status: `READY FOR NEXT AGENT`
+Status: `INVENTORY / PREMISE CORRECTED 2026-10-16`
 Written by: Project Manager, 2026-10-16
-Baseline commit: `e9ad9b8`
-Scope: **frontend view-panel architecture only** — no new capabilities, no new
-backend features, no scientific claims.
+Baseline: `9488ef2`
+Scope: **inventory and boundary only.** This is not a task to build a cleaner
+version of the current viewer.
+
+---
+
+## Context you must read first
+
+The project runs **three agents in parallel**. Yours is the one that replaces
+the viewer. Two others are running concurrently:
+
+| Agent | Doing | Affects you? |
+|---|---|---|
+| **DataAnalysis** | Metrics and reliability of real2sim nuScenes -> WASM/esmini player | Yes — your player is what they are measuring. Do not change semantics under them. |
+| **ProjectManager** | Context, docs, codebase, prompts | Yes — owns the boundaries below. |
+| **WASM-DATA (you)** | Replace the current viewer with the WASM/esmini player | — |
+
+Current plan: you deploy frontend code and a separate XOSC connector to prove
+the replacement works, **then** reimplement it into the website's real view
+panel. This document is the "what exists / what must survive" side of that.
 
 ---
 
@@ -15,10 +39,69 @@ backend features, no scientific claims.
 
 ### Your mission
 
-Redesign the **view panel system** in `frontend/src/App.tsx`. It currently works
-in places but is structurally messy and, in several specific places, wired
-wrongly. Your job is to understand it completely, restructure it cleanly, and
-**tell me exactly what you need decisions on** before you guess.
+Produce an **inventory and boundary contract** for the view panel, not a
+restructured version of it.
+
+The current view panel in `frontend/src/App.tsx` is being replaced. Your job is
+to document exactly what it does today so nothing is silently lost, and to state
+clearly what the WASM player must take over.
+
+**Do not refactor the current viewer.** It is scheduled for replacement.
+
+### What must not be lost
+
+These are the behaviours that carry real evidence or contracts. Each needs a
+home in the replacement:
+
+| Must preserve | Why |
+|---|---|
+| Sensor Evidence as a **separate recorded-evidence** view | Recorded nuScenes `LIDAR_TOP` only. Never presented as engine output. |
+| Top-down as the authoring/map/trajectory pane | Project boundary; not replaceable by a playback viewer. |
+| Every explicit unavailable/fail-closed state | A refactor must never turn `unavailable` into something that looks successful. |
+| `PROVISIONAL` labelling of all replay metrics | Not decoration. |
+| Metric role separation | Prediction metrics and replay fidelity metrics stay separate. |
+| CP1 `20/143 = 13.99%` | Immutable. |
+| Provenance on served frames | `source_timestamp_us` / `source_record_token`. |
+
+### What you must decide and report
+
+1. **Which of the 5 current view types survive the replacement?**
+   `top-down`, `sensor-evidence`, `third-person`, `in-car`, `lidar` — from
+   `frontend/src/view-panels.ts` `VIEW_REGISTRY`.
+2. **Which become WASM playback views, and which stay recorded-evidence views?**
+   This is the important split. Recorded nuScenes evidence and engine-generated
+   output must never share a view type without an explicit label.
+3. **What does the WASM player take over?** Currently `third-person` conflates
+   three renderers by silent precedence — native live state, internal transform
+   POV, and esmini image artifact. The replacement should make the active
+   renderer explicit.
+4. **What happens to the disabled controls?** Behavior, Validate and Replay are
+   `disabled: true` with fail-closed backends (DEC-016). Confirm they stay
+   disabled; do not wire them.
+
+### Non-negotiable boundaries
+
+1. **WASM is preview/interaction only.** It never feeds ADE/FDE, `replay.csv`,
+   gates or any report. Native esmini stays the sole sanctioned metric source
+   (DEC-018, DEC-020).
+2. **Integration timestep `dt = 0.01`** to match native `--fixed_timestep`. The
+   Worker owns the clock. Seek must be reset + re-integrate from `t = 0`.
+3. **Sensor fusion means recorded nuScenes data alongside engine actors**, not
+   engine sensor output.
+4. **Cross-panel focus sync is an open owner question.** Do not lift
+   `selectedId` out of `ThreePlaybackCanvas` and do not add cross-panel
+   selection surfaces.
+5. **`min_track_duration_s` is not applied** to either engine, because a
+   one-sided cut makes the two track populations incomparable.
+6. **Do not add a dependency without approval.** `three` is already added.
+7. **No new scientific claim.** All figures stay `PROVISIONAL`.
+
+### Ask before you build
+
+Do not start reimplementing the WASM player into the view panel until the
+inventory is accepted and Q1-Q3 above are answered. The DataAnalysis agent is
+measuring against the current semantics; changing them mid-measurement would
+invalidate their run.
 
 **Do not add features.** This is a structural cleanup. Preserve every existing
 capability contract and every unavailable/fail-closed state exactly as-is.

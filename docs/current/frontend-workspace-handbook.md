@@ -4,7 +4,7 @@ Status: `ACTIVE`
 Owner: frontend agents
 Primary specification: `docs/current/ui-mvp-flow-spec.md`
 Backend contract register: `docs/current/backend-workspace-contract-log.md`
-Architecture decision: `docs/architecture/m4-local-demo-architecture.md`
+Architecture decision: `docs/architecture/boundary-map.md`
 
 ## Purpose
 

@@ -28,9 +28,10 @@ relevant page under [`../subsystems/`](../subsystems/README.md).
 
 ## Active work plans
 
-- `viewpanel-makeover-prompt.md`: **ready for a frontend agent.** Brief and
-  questions for the view-panel restructure. Act on this before touching
-  `frontend/src/App.tsx` view dispatch.
+- `viewpanel-makeover-prompt.md`: **inventory and boundary contract for the
+  WASM-DATA agent**, whose task is replacing the current view panel with the
+  WASM/esmini player. The earlier "restructure the view panel" framing was
+  withdrawn as wrong; keep the inventory, discard the cleanup proposal.
 - `metric-benchmark-execution-plan.md`: approved near-future CP3 work. Note the
   open blocker: the current baseline is a pooled actor-track micro aggregate and
   scene-macro is still missing, which blocks any threshold proposal.

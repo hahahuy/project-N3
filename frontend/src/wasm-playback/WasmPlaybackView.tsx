@@ -4,9 +4,14 @@ import { trackWasmActors } from "./types";
 import { createWasmScenarioPair } from "../api";
 import ThreePlaybackCanvas from "./ThreePlaybackCanvas";
 
-type Props = { scenarioId?: string };
+type Props = { scenarioId?: string; fixture?: "vehicle" | "pedestrian" };
 
-export default function WasmPlaybackView({ scenarioId }: Props) {
+const FIXTURE_FILES = {
+  vehicle: "fixture.xosc",
+  pedestrian: "fixture-pedestrian.xosc",
+} as const;
+
+export default function WasmPlaybackView({ scenarioId, fixture = "vehicle" }: Props) {
   const workerRef = useRef<Worker | null>(null);
   const [status, setStatus] = useState("loading");
   const [road, setRoad] = useState<WasmRoadGeometry>({ lane_surfaces: [], road_marks: [] });
@@ -34,8 +39,8 @@ export default function WasmPlaybackView({ scenarioId }: Props) {
     const load = async () => {
       if (!scenarioId) {
         const [xosc, xodr] = await Promise.all([
-          fetch(new URL("../wasm-smoke/fixture.xosc", import.meta.url)).then((response) => response.text()),
-          fetch(new URL("../wasm-smoke/fixture.xodr", import.meta.url)).then((response) => response.text()),
+          fetch(new URL(`../wasm-smoke/${FIXTURE_FILES[fixture]}`, import.meta.url)).then((response) => response.text()),
+          fetch(new URL("../wasm-smoke/smoke.xodr", import.meta.url)).then((response) => response.text()),
         ]);
         worker.postMessage({ type: "init", xosc, xodr });
         return;
@@ -46,7 +51,7 @@ export default function WasmPlaybackView({ scenarioId }: Props) {
     };
     load().catch((error) => setStatus(`error: ${error instanceof Error ? error.message : String(error)}`));
     return () => { worker.postMessage({ type: "dispose" }); worker.terminate(); workerRef.current = null; };
-  }, [scenarioId]);
+  }, [scenarioId, fixture]);
 
   useEffect(() => {
     workerRef.current?.postMessage({ type: playing ? "play" : "pause" });
@@ -68,6 +73,6 @@ export default function WasmPlaybackView({ scenarioId }: Props) {
         </li>
       ))}
     </ul>
-     <small className="wasm-playback-warning">{scenarioId ? "Real scenario playback preview." : "Synthetic playback fixture."} Browser frames are preview-only and never feed Tier 0 metrics.</small>
+     <small className="wasm-playback-warning">{scenarioId ? "Real scenario playback preview." : fixture === "pedestrian" ? "Synthetic pedestrian-tag fixture (Vehicle + Pedestrian + MiscObject)." : "Synthetic playback fixture."} Browser frames are preview-only and never feed Tier 0 metrics.</small>
   </div>;
 }

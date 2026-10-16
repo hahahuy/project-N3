@@ -166,3 +166,26 @@ live environment.
   `Pedestrian`/`MiscObject` policy + `xosc_subset` tag acceptance + ingestion
   widening beyond `vehicle.` prefix + owner decision + ADE parity recompute).
   XODR/traffic/environment/interaction-in-XOSC remain correctly unavailable.
+
+## 9. Addendum 2026-10-16 — smoke reorg for tag widening (owner-requested)
+
+`frontend/src/wasm-smoke/` reorganized so every remaining WASM check is
+runnable (see `frontend/src/wasm-smoke/README.md` for the full procedure):
+
+- `fixture.xodr` renamed to `smoke.xodr` so the file matches the XOSC-declared
+  `LogicFile` name (2 refs updated, no behavior change).
+- New `fixture-pedestrian.xosc`: ego `Vehicle` + `walk1` `Pedestrian` +
+  `cone1` `MiscObject(other)`, init-only, sharing `smoke.xodr`.
+- P0 probe (`worker.ts`) now runs **both** fixtures and reports per-object
+  `name`/`type`/`kind`; page renders both results plus a fixture picker
+  (vehicle / pedestrian / real scenario) for the playback preview.
+  `WasmPlaybackView` gained an optional `fixture` prop (default `"vehicle"`).
+- `frontend/wasm-esmini/smoke.mjs` fixed: road filename derived from the XOSC
+  `LogicFile` (hardcoded `/road.xodr` failed every run with `{excPtr}`),
+  Emscripten-vector helper mirrored from the browser workers, per-object tags
+  reported, constructor `dt` aligned to `0.01` (Q5).
+- Measured via the fixed harness (engine 3.10.0): pedestrian fixture yields
+  3/3 objects; `type`/`kind` are empty for all objects — recorded in the data
+  handoff (A4 done). Frontend `51 passed`, build clean, Python `348 passed`.
+- Browser-side visual confirmation of the pedestrian fixture is still owed —
+  deploy gap (§4) unchanged. Nothing here touches the live environment.

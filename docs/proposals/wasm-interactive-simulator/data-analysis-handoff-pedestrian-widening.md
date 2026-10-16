@@ -84,12 +84,23 @@ pedestrians vs selected vehicles, and (iii) any scene where import now fails
 systematically drops the highest-risk vehicle, propose a quota or weighting
 — as a proposal with acceptance bar, not an implementation.
 
-**A4 — esminiJS (WASM) handling of the new tags. → CLAIMED BY WASM TEAM 2026-10-16.**
-No longer requested from data team: `frontend/wasm-esmini/dist/esmini.js`
-(3.10.0 build) is present, so the WASM team will init/step a pedestrian
-scenario via the Node harness and report the exact `type`/`kind` strings
-itself. Renderer buckets non-`vehicle` as `unknown` (gray) until those strings
-land.
+**A4 — esminiJS (WASM) handling of the new tags. → DONE BY WASM TEAM 2026-10-16.**
+Parse verdict: **yes** — engine 3.10.0 (`v3.10.0-0-06065f9`) inits and
+`step_frame(0)`s the pedestrian fixture with 3/3 objects, no crash
+(`node frontend/wasm-esmini/smoke.mjs
+frontend/src/wasm-smoke/fixture-pedestrian.xosc
+frontend/src/wasm-smoke/smoke.xodr`; vehicle fixture still 1/1 with the
+P0 counts 2 lane surfaces / 2 road marks). Engine strings: **`type` and
+`kind` come back empty for every object, including the ego vehicle** — so no
+`pedestrian` kind/color is possible from engine strings; identity must come
+from `name`, and the renderer correctly buckets everything as `unknown`
+(gray) until a name→taxonomy mapping exists (that mapping is the Q4
+identity-key problem — not invented here). Browser-side visual confirmation
+of the pedestrian fixture is still owed (deploy gap, §7 of the correctness
+handoff). Side fix in the same increment: `smoke.mjs` previously hardcoded
+`/road.xodr` (every run died with an opaque `{excPtr}`) — now derives the road
+filename from the XOSC `LogicFile`, mirrors the browser `vectorItems`
+helper for Emscripten vectors, and reports per-object tags.
 
 **A5 — MiscObject policy.**
 Acceptance: recommend (i) keep `other` for all, (ii) map specific categories
@@ -179,13 +190,26 @@ observation is noted but explicitly **not** accepted as A6 evidence
 (cross-track cleanliness does not prove longitudinal mass-independence).
 
 **Toolchain inventory (this environment):**
-- Native esmini **3.9.0** (`~/esmini/bin/esmini` + `dat2csv`, `v3.9.0-0-efbf7ee1`) —
-  runs headless. **No `ESMINI_BIN`/`ESMINI_DAT2CSV` exported** (pass explicit
-  paths or `EsminiConfig(executable=..., trace_converter=...)` per invocation).
+- Native esmini **3.9.0 DELETED by owner order 2026-10-16** (was
+  `~/esmini/bin/esmini` + `dat2csv`, `v3.9.0-0-efbf7ee1`) — done so future
+  agents cannot mistake it for the 3.10 line. **No native runtime remains
+  here, and no `ESMINI_BIN`/`ESMINI_DAT2CSV` was ever exported.** The 3.9.0
+  smoke numbers below stand as a recorded measurement, not a rerunnable setup.
 - esmini **3.10.0 exists as source only** (sibling `github/esmini` checkout @
-  `06065f9`, unbuilt, no `dat2csv`). If a 3.10 binary exists elsewhere, its
-  path is still needed — none was found in `/opt`, `/usr/local`, or `$HOME`.
+  `06065f9`, unbuilt, no `dat2csv`). Repo-wide hunt found no 3.10 binary or
+  `libesmini*` anywhere (only `/opt/esmini` mount references in compose/docs,
+  which does not exist in this environment).
 - esminiJS **3.10.0 WASM build present** (`frontend/wasm-esmini/dist/esmini.js`).
+
+**Tracked task — build native 3.10 binary** (owner-ordered 2026-10-16, unblocks
+all native verification incl. the A6 mass-swap): (1) size the OSG toolchain
+first — do not attempt blind; (2) build from the sibling source @ `06065f9`
+so it version-matches the WASM engine; (3) acceptance = binary reports 3.10.x
+via `--version`, ships a working `dat2csv`, and replays the `/tmp/opencode`
+esmoke scenario (ego+pedestrian+cone — regenerate it, the old dir is temp)
+with exit 0 and per-actor coverage `complete`; (4) record build deps and set
+`ESMINI_BIN`/`ESMINI_DAT2CSV` per the README convention (shell config only,
+never committed).
 
 **Version-skew caveat (binding until resolved):** native runs here are 3.9.0;
 the browser engine is 3.10.0. Never compare 3.9.0-native numbers against

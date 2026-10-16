@@ -246,7 +246,7 @@ Dashboard cần: chọn source, xem timeline, xem overlay/replay metric, đặt
 speed/gap/timing, generate/validate batch, lọc validity trước score, và export
 `.xosc`/JSON/trace/report`. Shared server, local accounts, object storage,
 queued workers và local-agent execution là platform add-ons sau M4; xem
-`docs/architecture/m4-local-demo-architecture.md`.
+`docs/architecture/boundary-map.md`.
 
 FastAPI phải giữ ranh giới service/orchestration ngay cả khi chạy local.
 Frontend không đọc Python artifact hoặc filesystem trực tiếp, còn backend không

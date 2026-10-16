@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSCENARIO>
+  <FileHeader revMajor="1" revMinor="1" date="2026-10-16T00:00:00" description="WASM pedestrian smoke: Vehicle + Pedestrian + MiscObject tags" author="project-N3"/>
+  <ParameterDeclarations/>
+  <CatalogLocations/>
+  <RoadNetwork><LogicFile filepath="smoke.xodr"/><SceneGraphFile filepath=""/></RoadNetwork>
+  <Entities>
+    <ScenarioObject name="ego">
+      <Vehicle name="smoke-car" vehicleCategory="car">
+        <BoundingBox><Center x="0" y="0" z="0.9"/><Dimensions width="1.8" length="4.5" height="1.5"/></BoundingBox>
+        <Performance maxSpeed="40" maxAcceleration="5" maxDeceleration="8"/>
+        <Axles><FrontAxle maxSteering="0.5" wheelDiameter="0.7" trackWidth="1.5" positionX="2.8" positionZ="0.35"/><RearAxle maxSteering="0" wheelDiameter="0.7" trackWidth="1.5" positionX="0" positionZ="0.35"/></Axles>
+        <Properties/>
+      </Vehicle>
+    </ScenarioObject>
+    <ScenarioObject name="walk1">
+      <Pedestrian name="human.pedestrian.adult" mass="75" model="">
+        <BoundingBox><Center x="0" y="0" z="0.85"/><Dimensions width="0.6" length="0.6" height="1.7"/></BoundingBox>
+        <Properties/>
+      </Pedestrian>
+    </ScenarioObject>
+    <ScenarioObject name="cone1">
+      <MiscObject name="movable_object.trafficcone" MiscObjectCategory="other" mass="0">
+        <BoundingBox><Center x="0" y="0" z="0.5"/><Dimensions width="0.5" length="0.5" height="1.0"/></BoundingBox>
+        <Properties/>
+      </MiscObject>
+    </ScenarioObject>
+  </Entities>
+  <Storyboard>
+    <Init><Actions><Private entityRef="ego">
+      <PrivateAction><TeleportAction><Position><WorldPosition x="0" y="-1.75" z="0" h="0"/></Position></TeleportAction></PrivateAction>
+      <PrivateAction><LongitudinalAction><SpeedAction><SpeedActionDynamics dynamicsShape="step" value="0" dynamicsDimension="time"/><SpeedActionTarget><AbsoluteTargetSpeed value="5"/></SpeedActionTarget></SpeedAction></LongitudinalAction></PrivateAction>
+    </Private><Private entityRef="walk1">
+      <PrivateAction><TeleportAction><Position><WorldPosition x="3" y="1" z="0" h="0"/></Position></TeleportAction></PrivateAction>
+      <PrivateAction><LongitudinalAction><SpeedAction><SpeedActionDynamics dynamicsShape="step" value="0" dynamicsDimension="time"/><SpeedActionTarget><AbsoluteTargetSpeed value="1"/></SpeedActionTarget></SpeedAction></LongitudinalAction></PrivateAction>
+    </Private><Private entityRef="cone1">
+      <PrivateAction><TeleportAction><Position><WorldPosition x="6" y="0" z="0" h="0"/></Position></TeleportAction></PrivateAction>
+      <PrivateAction><LongitudinalAction><SpeedAction><SpeedActionDynamics dynamicsShape="step" value="0" dynamicsDimension="time"/><SpeedActionTarget><AbsoluteTargetSpeed value="0"/></SpeedActionTarget></SpeedAction></LongitudinalAction></PrivateAction>
+    </Private></Actions></Init>
+    <Story name="SmokeStory"><Act name="SmokeAct"><ManeuverGroup maximumExecutionCount="1" name="SmokeGroup"><Actors selectTriggeringEntities="false"><EntityRef entityRef="ego"/><EntityRef entityRef="walk1"/><EntityRef entityRef="cone1"/></Actors><Maneuver name="SmokeManeuver"/></ManeuverGroup><StartTrigger><ConditionGroup><Condition name="Start" delay="0" conditionEdge="rising"><ByValueCondition><SimulationTimeCondition value="0" rule="greaterThanEqual"/></ByValueCondition></Condition></ConditionGroup></StartTrigger></Act></Story>
+    <StopTrigger><ConditionGroup><Condition name="Stop" delay="0" conditionEdge="rising"><ByValueCondition><SimulationTimeCondition value="10" rule="greaterThan"/></ByValueCondition></Condition></ConditionGroup></StopTrigger>
+  </Storyboard>
+</OpenSCENARIO>
