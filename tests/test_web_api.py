@@ -721,6 +721,8 @@ def test_settings_and_source_scene_import_can_use_configured_local_dataset(tmp_p
     assert imported.status_code == 200
     assert imported.json()["scenario"]["coordinate_frame"] == "local_road_aligned"
     assert len(imported.json()["selected_actor_ids"]) >= 1
+    assert scenes.json()[0]["vehicle_candidate_count"] >= 1
+    assert scenes.json()[0]["pedestrian_candidate_count"] >= 0
     assert any(item["scenario_id"] == imported.json()["scenario_id"] for item in catalog.json())
 
 

@@ -86,7 +86,12 @@ class SourceSceneAdapter:
         if record is None:
             raise KeyError(f"Source scene {scene_token!r} was not found.")
         scene = _source_scene(index, record)
+        # Owner-approved population (2026-10-16): vehicles plus pedestrians.
+        # Cyclists are already covered — nuScenes annotates them as
+        # ``vehicle.bicycle``. Anything else stays unselected.
         vehicle_tokens = index.instance_tokens(scene_token)
+        pedestrian_tokens = index.instance_tokens(scene_token, category_prefix="human.")
+        actor_tokens = tuple(sorted(set(vehicle_tokens) | set(pedestrian_tokens)))
         window = SourceWindow(
             scene_token,
             start_sample_token or scene.first_sample_token,
@@ -95,7 +100,7 @@ class SourceSceneAdapter:
         source = extract_scenario(
             self.settings.dataset_root,
             window,
-            vehicle_tokens,
+            actor_tokens,
             version=self.settings.dataset_version,
             tables=index.tables_for_scenes([scene_token]),
         )
@@ -109,7 +114,7 @@ class SourceSceneAdapter:
         )
         if len(selected.actors) < 2:
             raise ValueError(
-                "No vehicle interaction actors matched the configured distance/TTC thresholds."
+                "No vehicle or pedestrian interaction actors matched the configured distance/TTC thresholds."
             )
         ego_start = next(
             actor for actor in selected.actors if actor.actor_id == selected.ego_actor_id
@@ -177,6 +182,7 @@ def _source_scene(index: MetadataIndex, record: dict[str, Any]) -> SourceScene:
         first_sample_token=str(record["first_sample_token"]),
         last_sample_token=str(record["last_sample_token"]),
         vehicle_candidate_count=len(index.instance_tokens(scene_token)),
+        pedestrian_candidate_count=len(index.instance_tokens(scene_token, category_prefix="human.")),
     )
 
 

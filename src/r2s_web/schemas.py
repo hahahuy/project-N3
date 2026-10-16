@@ -391,6 +391,7 @@ class SourceScene(BaseModel):
     first_sample_token: str
     last_sample_token: str
     vehicle_candidate_count: int
+    pedestrian_candidate_count: int = 0
 
 
 class SourceSceneImportRequest(BaseModel):

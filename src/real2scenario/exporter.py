@@ -82,7 +82,25 @@ def _validate_export_input(scenario: Scenario, template: OpenDriveTemplate) -> N
 
 
 def _append_entity(entities: ET.Element, actor: Actor, scenario: Scenario) -> None:
+    """Emit one scenario object with an entity tag matching the source taxonomy.
+
+    ``vehicle.*`` keeps the historical ``Vehicle`` encoding byte-identical so the
+    measured replay baseline is unaffected. ``human.*`` emits ``Pedestrian`` and
+    anything else emits ``MiscObject`` (category ``other``); the unmodified
+    source taxonomy is always preserved in the entity properties. Motion for all
+    tags remains defined solely by the recorded trajectory with
+    ``followingMode="position"`` and a zero initial-speed hold.
+    """
     scenario_object = ET.SubElement(entities, "ScenarioObject", {"name": actor.actor_id})
+    if actor.actor_type.startswith("human."):
+        _append_pedestrian(scenario_object, actor, scenario)
+    elif actor.actor_type.startswith("vehicle."):
+        _append_vehicle(scenario_object, actor, scenario)
+    else:
+        _append_misc_object(scenario_object, actor, scenario)
+
+
+def _append_vehicle(scenario_object: ET.Element, actor: Actor, scenario: Scenario) -> None:
     vehicle = ET.SubElement(
         scenario_object,
         "Vehicle",
@@ -108,6 +126,66 @@ def _append_entity(entities: ET.Element, actor: Actor, scenario: Scenario) -> No
     ET.SubElement(axles, "FrontAxle", {"maxSteering": "0.5", "wheelDiameter": "0.7", "trackWidth": "1.5", "positionX": "2.8", "positionZ": "0.35"})
     ET.SubElement(axles, "RearAxle", {"maxSteering": "0", "wheelDiameter": "0.7", "trackWidth": "1.5", "positionX": "0", "positionZ": "0.35"})
     _append_entity_properties(ET.SubElement(vehicle, "Properties"), actor, scenario)
+
+
+def _append_pedestrian(scenario_object: ET.Element, actor: Actor, scenario: Scenario) -> None:
+    """Emit a ``human.*`` actor as an OpenSCENARIO pedestrian.
+
+    Mass is inert under position following (no dynamics are simulated) and the
+    recorded annotations carry no mass; the fixed default is documented here
+    rather than derived. Bounding-box fallbacks mirror the vehicle pattern at a
+    pedestrian scale.
+    """
+    pedestrian = ET.SubElement(
+        scenario_object,
+        "Pedestrian",
+        {"name": actor.actor_type, "mass": "75", "model": ""},
+    )
+    bounding_box = ET.SubElement(pedestrian, "BoundingBox")
+    ET.SubElement(
+        bounding_box,
+        "Center",
+        {"x": "0", "y": "0", "z": _number((actor.height_m or 1.7) / 2.0)},
+    )
+    ET.SubElement(
+        bounding_box,
+        "Dimensions",
+        {
+            "width": _number(actor.width_m or 0.6),
+            "length": _number(actor.length_m or 0.6),
+            "height": _number(actor.height_m or 1.7),
+        },
+    )
+    _append_entity_properties(ET.SubElement(pedestrian, "Properties"), actor, scenario)
+
+
+def _append_misc_object(scenario_object: ET.Element, actor: Actor, scenario: Scenario) -> None:
+    """Emit any other taxonomy (e.g. ``movable_object.*``) as a misc object.
+
+    The category stays the conservative ``other`` instead of inventing a
+    mapping; the exact source taxonomy is preserved in the entity properties.
+    """
+    misc = ET.SubElement(
+        scenario_object,
+        "MiscObject",
+        {"name": actor.actor_type, "MiscObjectCategory": "other", "mass": "0"},
+    )
+    bounding_box = ET.SubElement(misc, "BoundingBox")
+    ET.SubElement(
+        bounding_box,
+        "Center",
+        {"x": "0", "y": "0", "z": _number((actor.height_m or 1.0) / 2.0)},
+    )
+    ET.SubElement(
+        bounding_box,
+        "Dimensions",
+        {
+            "width": _number(actor.width_m or 0.5),
+            "length": _number(actor.length_m or 0.5),
+            "height": _number(actor.height_m or 1.0),
+        },
+    )
+    _append_entity_properties(ET.SubElement(misc, "Properties"), actor, scenario)
 
 
 _VEHICLE_CATEGORY_BY_ACTOR_TYPE = {

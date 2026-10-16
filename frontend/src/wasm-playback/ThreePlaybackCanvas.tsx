@@ -179,6 +179,6 @@ function actorColor(object: { type: string; kind: string }, selected: boolean): 
 
   return <div className="three-playback-shell">
     <div ref={hostRef} className="three-playback-canvas" role="img" aria-label={`3D WASM playback at ${frame.simulation_time.toFixed(2)} seconds`} />
-    <div className="three-playback-overlay"><button type="button" onClick={resetView}>Reset View</button><span>{selectedId === null ? "Click a vehicle to focus" : `Selected vehicle ${selectedId}`}</span><span>Orbit / zoom enabled</span></div>
+    <div className="three-playback-overlay"><button type="button" onClick={resetView}>Reset View</button><span>{selectedId === null ? "Click an actor to focus" : `Selected actor ${selectedId}`}</span><span>Orbit / zoom enabled</span></div>
   </div>;
 }

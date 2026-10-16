@@ -119,7 +119,7 @@ Status: `PARTIAL` for the scoped scene-local corridor; `OPEN` for CP1 acceptance
 - [x] Add `src/real2scenario/mapbuilder/` with a deterministic prototype lane/path-to-road conversion.
 - [x] Add CP1 deterministic ID/manifest/structural subset contract. Evidence: `src/real2scenario/mapbuilder/`.
 - [x] Add gated line/arc geometry and verify the current line-mode corridor on real local data; full acceptance remains open.
-- [x] Prototype emits deterministic line geometry from all 2,002 local arcline records; arc fitting remains open. Evidence: `docs/reports/cp1-map-builder-prototype.md`.
+- [x] Prototype emits deterministic line geometry from all 2,002 local arcline records; arc fitting remains open. Evidence: `docs/reports/cp1-evidence-lineage.md`.
 - [x] Emit conservative connector junctions and repair dangling references/links in the scoped corridor; full junction semantics remain open.
 - [x] Estimate effective polygon widths with an explicitly labelled fallback; cross-section boundary validation remains open.
 - [x] Validate position and heading continuity diagnostically at road/junction joins.

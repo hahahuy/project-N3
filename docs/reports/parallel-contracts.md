@@ -41,7 +41,7 @@ data is being prepared:
 - CARLA interpreter/API execution: `OPEN`.
 - Custom XODR import and same-XOSC CARLA run: `UNVERIFIED`.
 - CP1 vector map builder: this report predates the external vector-map update;
-  see `cp1-map-builder-prototype.md` for current prototype status.
+  see `cp1-evidence-lineage.md` for current prototype status.
 
 ## Explicit Non-Claims
 

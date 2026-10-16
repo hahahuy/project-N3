@@ -75,7 +75,7 @@ from real2scenario import STRAIGHT_ROAD_TOPOLOGY, select_opendrive_template, wri
 from pathlib import Path
 from fastapi.responses import Response
 
-WASM_PAIR_EXPORTER_VERSION = "openscenario-exporter-v2"
+WASM_PAIR_EXPORTER_VERSION = "openscenario-exporter-v3"
 
 def create_app(settings: WebSettings | None = None) -> FastAPI:
     resolved_settings = settings or WebSettings.from_environment()

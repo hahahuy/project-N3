@@ -288,6 +288,83 @@ def test_exporter_maps_known_vehicle_categories_and_defaults_conservatively() ->
     assert categories == {"bicycle": "bicycle", "ego": "car"}
 
 
+def test_exporter_emits_pedestrian_and_misc_object_entities() -> None:
+    """Owner-approved population widening (2026-10-16): matching entity tags.
+
+    ``vehicle.*`` keeps the historical ``Vehicle`` encoding byte-identical (see
+    the determinism test above); only the entity tag routes by source taxonomy.
+    ``human.*`` emits ``Pedestrian`` and anything else emits ``MiscObject`` with
+    the conservative ``other`` category. Provenance properties are preserved on
+    every tag and motion stays position-followed with a zero-speed hold.
+    """
+    scenario = Scenario(
+        scenario_id="export-pedestrian",
+        duration_s=2.0,
+        ego_actor_id="ego",
+        actors=(
+            Actor("ego", "vehicle.ego", (State(0.0, 0.0, 0.0, 0.0, 4.0), State(2.0, 8.0, 0.0, 0.0, 4.0))),
+            Actor("walk1", "human.pedestrian.adult", (State(0.0, 3.0, 1.0, 0.0, 1.2), State(2.0, 5.0, 1.0, 0.0, 1.2)), 0.6, 0.6, 1.7),
+            Actor("cone1", "movable_object.cone", (State(0.0, 6.0, 0.0, 0.0, 0.0), State(2.0, 6.0, 0.0, 0.0, 0.0)), 0.4, 0.4, 0.8),
+        ),
+        coordinate_frame="local_road_aligned",
+        provenance={"dataset": "synthetic"},
+    )
+    scenario, template = select_opendrive_template(scenario, topology=STRAIGHT_ROAD_TOPOLOGY)
+
+    root = ET.fromstring(build_openscenario_xml(scenario, template))  # type: ignore[arg-type]
+
+    tags = {
+        obj.attrib["name"]: list(obj)[0].tag
+        for obj in root.findall("./Entities/ScenarioObject")
+    }
+    assert tags == {"ego": "Vehicle", "walk1": "Pedestrian", "cone1": "MiscObject"}
+    assert root.find("./Entities/ScenarioObject[@name='walk1']/Vehicle") is None
+    assert root.find("./Entities/ScenarioObject[@name='walk1']/Pedestrian/Performance") is None
+    assert root.find("./Entities/ScenarioObject[@name='walk1']/Pedestrian/Axles") is None
+    assert (
+        root.find("./Entities/ScenarioObject[@name='cone1']/MiscObject").attrib["MiscObjectCategory"]
+        == "other"
+    )
+    for name, taxonomy in (
+        ("ego", "vehicle.ego"),
+        ("walk1", "human.pedestrian.adult"),
+        ("cone1", "movable_object.cone"),
+    ):
+        properties = {
+            item.attrib["name"]: item.attrib["value"]
+            for item in root.findall(f"./Entities/ScenarioObject[@name='{name}']/*/Properties/Property")
+        }
+        assert properties["source_actor_type"] == taxonomy
+        assert properties["initial_speed_policy"] == "hold_zero_until_trajectory_start"
+    dimensions = root.find("./Entities/ScenarioObject[@name='walk1']/Pedestrian/BoundingBox/Dimensions").attrib
+    assert (float(dimensions["width"]), float(dimensions["length"]), float(dimensions["height"])) == (0.6, 0.6, 1.7)
+    assert {mode.attrib["followingMode"] for mode in root.iter("TrajectoryFollowingMode")} == {"position"}
+    assert root.find(".//AbsoluteTargetSpeed").attrib == {"value": "0"}
+
+
+def test_pedestrian_export_passes_fail_closed_validators(tmp_path) -> None:
+    """The new entity tags need no validator change: both validators are tag-agnostic."""
+    from real2scenario.xosc_subset import interpret_xosc_subset, parse_xosc_subset
+
+    scenario = Scenario(
+        scenario_id="export-pedestrian-validated",
+        duration_s=2.0,
+        ego_actor_id="ego",
+        actors=(
+            Actor("ego", "vehicle.ego", (State(0.0, 0.0, 0.0, 0.0, 4.0), State(2.0, 8.0, 0.0, 0.0, 4.0))),
+            Actor("walk1", "human.pedestrian.adult", (State(0.0, 3.0, 1.0, 0.0, 1.2), State(2.0, 5.0, 1.0, 0.0, 1.2))),
+        ),
+        coordinate_frame="local_road_aligned",
+        provenance={"dataset": "synthetic"},
+    )
+    scenario, template = select_opendrive_template(scenario, topology=STRAIGHT_ROAD_TOPOLOGY)
+    xosc = tmp_path / "scenario.xosc"
+    xosc.write_text(build_openscenario_xml(scenario, template), encoding="utf-8")  # type: ignore[arg-type]
+
+    assert parse_xosc_subset(xosc, template.path()).entity_names == ("ego", "walk1")  # type: ignore[union-attr]
+    assert [entity.name for entity in interpret_xosc_subset(xosc, template.path()).entities] == ["ego", "walk1"]
+
+
 def test_exporter_keeps_position_following_mode() -> None:
     """Trajectory following must stay on ``position``, never ``timing``.
 
