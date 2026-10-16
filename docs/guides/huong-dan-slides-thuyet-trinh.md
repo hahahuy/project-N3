@@ -25,9 +25,27 @@ khi giám khảo kiểm tra. Xem mục 4 để biết chính xác cách diễn g
 |---|---|
 | `20/143 = 13.99%` | **Road-match rate của CP1 — và phải nói kèm là kết quả thấp, chưa đạt ngưỡng 95%.** Đây là hạn chế, không phải thành tích. |
 | `48/60` biến thể hợp lệ | Phải nói rõ: "hợp lệ theo bộ lọc tự động", **không** phải "chính xác". |
-| `0.03 m` ADE tốt nhất | Phải nói kèm: đây là **tự nhất quán**, không phải độ chính xác so với dữ liệu gốc. |
+| `17.95 m → 0.022 m` | **Bug fix quan trọng nhất của dự án.** Xem slide 8b. Phải nói kèm: đây là *tự nhất quán kịch bản xuất ↔ esmini*, **không phải** độ chính xác so với dữ liệu lái xe thật. |
 
 Mọi con số còn lại phải gắn nhãn `PROVISIONAL`.
+
+### 0.2b Bạn PHẢI hiểu cơ chế bug fix này
+
+Đây là điểm mạnh nhất của dự án và cũng là chỗ dễ nói sai nhất. Hiểu rồi hãy trình bày.
+
+**Bug:** file OpenSCENARIO xuất ra đặt tốc độ mục tiêu ban đầu bằng **tốc độ đầu tiên của actor**. Nhưng
+OpenSCENARIO áp dụng lệnh đó ngay từ `t = 0`. Với một actor xuất hiện muộn trong cảnh — ví dụ
+chỉ bắt đầu được ghi nhận ở `t = 3 giây` — esmini sẽ **đẩy actor đi từ `t = 0`** cho tới khi
+lệnh follow-trajectory kích hoạt.
+
+**Hậu quả:** mô phỏng **tự bịa ra chuyển động không có trong dữ liệu ghi thật**. Càng tới các
+cảnh mà quỹ đạo thưa, sai số càng lớn.
+
+**Fix:** giữ actor đứng yên cho tới khi quỹ đạo ghi nhận bắt đầu, rồi mang tốc độ theo từng
+điểm trên polyline, và khớp `StartTrigger` với thời điểm bắt đầu.
+
+**Vì sao đây là bug thật chứ không phải tinh chỉnh:** có test chốt lại hành vi này, và cơ chế
+lỗi rõ ràng — không có ngưỡng nào được nới để đạt kết quả này.
 
 ### 0.3 Đây là bản build ĐANG ĐƯỢC SỬA
 
@@ -162,13 +180,30 @@ Build            : ⚠ đang sửa (xem mục 0.3)
 Câu này **rất quan trọng**. Ban giám khảo chuyên nghiệp sẽ đánh giá cao việc bạn tự nhận ra
 giới hạn của phương pháp kiểm chứng của chính mình.
 
+### Slide 8b: Kết quả và cách đọc đúng nó
+
+**Nói (con số):** Trên **toàn bộ 850 cảnh** nuScenes, sai số trung vị giảm từ **17.95 m** xuống
+**0.022 m**; sai số lớn nhất giảm từ **157.80 m** xuống **0.78 m**.
+
+**Nói (phần quan trọng nhất — đừng bỏ):**
+
+> "Con số này đo *kịch bản chúng tôi xuất ra* so với *thứ esmini chạy ra từ chính kịch bản đó*.
+> Nó chứng minh vòng xuất → mô phỏng của chúng tôi giờ khớp với nhau, và mô phỏng không còn
+> bịa ra chuyển động. Nó **không** nói rằng mô phỏng của chúng tôi sát dữ liệu lái xe thật
+> đến mức đó. Cái đó là phép đo khác, và phép đo đó chúng tôi **chưa** làm được — vì đường làn
+> chưa khớp."
+
+**Tại sao nói ra điều này là tốt:** nếu bạn chỉ đưa `0.022 m` mà không giải thích, giám khảo
+sẽ nghĩ bạn đang tuyên bố mô phỏng chính xác 99.9% — và điều đó **sai**. Chủ động nói ra giới
+hạn khiến phần còn lại của buổi trình bày đáng tin hơn.
+
 ### Slide 8: Đã phát hiện và xử lý sự cố thật
 
 **Nói:** Trong quá trình review gần đây, nhóm đã tìm và sửa hai lỗi có tác động thật:
 
 1. **Lỗi định danh bản ghi cảm biến.** Mọi API đều dùng sai mã bản ghi — 5 endpoint bị
    ảnh hưởng. Đã sửa.
-2. **Lịch sử quét LiDAR bị cắt còn 1 dòng** thay vì 5, do đi sai chuỗi liên kết. Đã sửa.
+2. **Lỗi thời điểm trong kịch bản xuất** → chi tiết ở slide 8b.
 
 **Nói:** Hai lỗi này cho thấy đúng điều giám khảo cần biết — phần lớn lỗi trong hệ thống này
 **không nằm ở thuật toán**, mà nằm ở **việc nối đúng mã bản ghi nào với khung hình nào**.
@@ -253,10 +288,21 @@ việc biến dữ liệu lái xe thật thành tình huống kiểm thử tái 
 
 ### "ADE/FDE của các bạn là gì?"
 
-> "Cần phân biệt rõ: ADE chúng tôi đang báo là **tự nhất quán** giữa kịch bản xuất và
-> esmini — khoảng 0.03 m ở cảnh tốt nhất. Nó **không** phải độ chính xác so với dữ liệu lái
-> xe thật. Cái thứ hai chính là cái bị chặn bởi vấn đề đường làn, và chúng tôi chưa có con
+> "Cần phân biệt rõ hai họ chỉ số. ADE chúng tôi đang báo là **tự nhất quán** giữa kịch bản
+> xuất và esmini — sau khi sửa lỗi thời điểm, sai số trung vị trên 850 cảnh là **0.022 m**.
+> Nó **không** phải độ chính xác so với dữ liệu lái xe thật. Cái thứ hai mới là cái chứng
+> minh mô phỏng đáng tin, và nó đang bị chặn bởi vấn đề đường làn, nên chúng tôi chưa có con
 > số đáng trình bày cho nó."
+
+### "ADE giảm 99% — vậy mô phỏng của các bạn giờ chính xác 99% rồi?"
+
+Đây là câu hỏi khó nhất và cũng là câu bạn **phải sẵn sàng**:
+
+> "Không, và chúng tôi không muốn nói vậy. Con số đó đo kịch bản chúng tôi xuất ra so với
+> thứ esmini chạy ra từ chính kịch bản đó — tức là nó đo *vòng xuất → mô phỏng* của chúng
+> tôi có khớp không. Trước đây vòng đó lệch lớn vì mô phỏng tự bịa ra chuyển động; giờ nó
+> khớp. Đó là bằng chứng kỹ thuật rẻ và có test, nhưng nó **không** nói về độ trung thực so
+> với dữ liệu lái xe thật — và đó mới là câu hỏi mà chúng tôi chưa trả lời được."
 
 ### "Ổn định thế nào? Chạy được bao lâu?"
 
@@ -302,9 +348,10 @@ việc biến dữ liệu lái xe thật thành tình huống kiểm thử tái 
 
 | Con số | Nguồn trong repo |
 |---|---|
+| `17.95 m → 0.022 m`, max `157.80 m → 0.78 m`, 850 cảnh | `docs/reports/export-timing-850-scene-evidence.md` |
 | `20/143 = 13.99%` | `docs/reports/cp1-corridor-external-evidence.md` |
 | 60 biến thể / 48 hợp lệ / 0 lỗi sim | `docs/reports/cp3-benchmark-run-evidence.md` |
-| ADE mean 15.31 · median 0.29 | cùng trên |
+| ADE mean 15.31 · median 0.29 | cùng trên — **đã đánh dấu superseded**, đừng trích |
 | `scene-0945` bị loại toàn bộ | cùng trên |
 | 13 helper API chưa có UI | `docs/current/viewpanel-makeover-prompt.md` |
 | Build đang fail | `frontend/` `npm run build`, `App.tsx:593` |

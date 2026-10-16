@@ -134,11 +134,7 @@ def _append_maneuver_group(act: ET.Element, actor: Actor) -> None:
     shape = ET.SubElement(trajectory, "Shape")
     polyline = ET.SubElement(shape, "Polyline")
     for state in actor.trajectory:
-        vertex = ET.SubElement(
-            polyline,
-            "Vertex",
-            {"time": _number(state.time_s), "speed": _number(state.speed_mps)},
-        )
+        vertex = ET.SubElement(polyline, "Vertex", {"time": _number(state.time_s)})
         position = ET.SubElement(vertex, "Position")
         _append_world_position(position, state)
     time_reference = ET.SubElement(follow, "TimeReference")
@@ -147,7 +143,7 @@ def _append_maneuver_group(act: ET.Element, actor: Actor) -> None:
         "Timing",
         {"domainAbsoluteRelative": "relative", "scale": "1", "offset": "0"},
     )
-    ET.SubElement(follow, "TrajectoryFollowingMode", {"followingMode": "position"})
+    ET.SubElement(follow, "TrajectoryFollowingMode", {"followingMode": "timing"})
     start_trigger = ET.SubElement(event, "StartTrigger")
     _append_simulation_time_condition(
         start_trigger, "greaterThan", actor.trajectory[0].time_s, edge="none"

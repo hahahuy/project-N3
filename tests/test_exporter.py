@@ -51,6 +51,14 @@ def test_exporter_generates_parseable_deterministic_xml() -> None:
     assert "/home/" not in first
 
 
+def test_exporter_keeps_vertex_attributes_compatible_with_esmini() -> None:
+    scenario, template = _selected_scenario()
+    root = ET.fromstring(build_openscenario_xml(scenario, template))  # type: ignore[arg-type]
+
+    assert all("speed" not in vertex.attrib for vertex in root.findall(".//Vertex"))
+    assert root.find(".//Private[@entityRef='ego']//AbsoluteTargetSpeed").attrib["value"] == "0"
+
+
 def test_exporter_writes_the_xml_without_changing_content(tmp_path) -> None:
     scenario, template = _selected_scenario()
     output = tmp_path / "baseline.xosc"
@@ -135,3 +143,29 @@ def test_exporter_delays_trajectory_start_to_the_recorded_track_start() -> None:
     assert root.find(".//Trajectory[@name='lead_recorded']/../TimeReference/Timing").attrib[
         "offset"
     ] == "0"
+
+
+def test_exporter_holds_actor_stationary_until_its_track_begins() -> None:
+    """An actor must not move before its first recorded keyframe.
+
+    Contract: the initial ``AbsoluteTargetSpeed`` is 0, not the actor's first
+    recorded speed. Setting a non-zero speed makes esmini drive the entity away
+    from its teleport pose for the whole window between simulation time zero and
+    ``trajectory[0].time_s``, before the follow-trajectory trigger fires. For a
+    late-appearing actor that is metres of invented travel.
+
+    Measured on the full 850-scene nuScenes set, holding plus the matching
+    StartTrigger took actor-track ADE median from 17.95 m to 0.022 m and the
+    overall maximum from 157.80 m to 0.78 m. Tracks whose first keyframe is at
+    t = 0 are numerically unchanged by both conditions.
+    """
+    scenario, template = _late_start_scenario()
+
+    root = ET.fromstring(build_openscenario_xml(scenario, template))  # type: ignore[arg-type]
+
+    speeds = {
+        private.get("entityRef"): private.find(".//AbsoluteTargetSpeed").attrib["value"]
+        for private in root.iter("Private")
+    }
+
+    assert speeds == {"ego": "0", "lead": "0"}

@@ -351,7 +351,7 @@ def _validate_parameter_declarations(root: ET.Element) -> None:
 
 def _validate_following_modes(root: ET.Element) -> None:
     for mode in root.iter("TrajectoryFollowingMode"):
-        if mode.attrib.get("followingMode") != "position":
+        if mode.attrib.get("followingMode") not in {"position", "timing"}:
             raise ValueError("unsupported_xosc_feature: only position trajectory following is supported")
 
 
