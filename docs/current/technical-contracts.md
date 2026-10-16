@@ -275,6 +275,15 @@ Required invariants:
 - parent scenario remains immutable;
 - child variant ID is deterministic from parent/config/version;
 - raw recorded trajectory remains distinguishable from generated trajectory;
+- canonical states must preserve `source_timestamp_us` and
+  `source_record_token` through every coordinate-frame transform, and
+  `/api/scenarios/{id}/trajectory` must expose both on every state. These are
+  frame-independent provenance: `time_s` is relative to scenario start, so the
+  source timestamp is the only link from replay time back to a nuScenes keyframe.
+  Replayed (`path_kind: replayed`) states have no source provenance and report
+  `null`. Losing this linkage is what previously made the recorded ego brake
+  pedal channel permanently unavailable with
+  `canonical_states_missing_source_timestamp_us`;
 - provisional G6/G7 results remain diagnostic;
 - all edits retain parent/config/seed/hash provenance;
 - the backend must work with a synthetic fixture without CARLA.
