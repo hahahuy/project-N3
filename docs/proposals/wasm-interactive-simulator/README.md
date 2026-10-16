@@ -1,6 +1,20 @@
 # WASM Interactive Simulator Proposal
 
-Status: `PROPOSAL — P0 NOT STARTED`
+Status: `P0 COMPLETE / P2 PARTIAL / RECONCILED 2026-10-16`
+
+> **Reconciliation note.** This directory previously read `P0 NOT STARTED` and
+> claimed the repository contained no esminiJS source, build, artifact, Worker
+> protocol or renderer. That is now **false**. `frontend/wasm-esmini/` holds the
+> build seam and provenance, `frontend/src/wasm-smoke/` is a working browser
+> Worker smoke page served at `/wasm-smoke`, and `frontend/src/wasm-playback/`
+> holds a Worker protocol plus a Three.js renderer with OrbitControls,
+> raycast selection, camera focus tweening and cuboid actors. LiDAR/radar fusion
+> and synchronized cross-panel focus are **not** implemented. See
+> [`next-agent-handoff.md`](next-agent-handoff.md) for the current state.
+>
+> The `wasm-playback` view type was **removed** from `VIEW_REGISTRY` and is
+> reachable only at `/wasm-smoke`, deliberately decoupled from the workspace.
+> The renderer is raw Three.js, **not** react-three-fiber.
 
 This directory stores the two expert-supplied documents for the proposed U5
 interactive simulator:
