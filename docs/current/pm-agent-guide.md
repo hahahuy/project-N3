@@ -27,9 +27,6 @@ Read in this order:
 12. Latest CP1, CP3, CP5 and Wave 3A reports under `docs/reports/` only when
     working on those parallel tracks.
 
-Do not use `docs/archive/plan-b/` as current scope. Read it only for historical
-context.
-
 ## Current MVP
 
 ```text

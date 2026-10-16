@@ -40,12 +40,11 @@ Read only the relevant follow-up handoff after the common context:
 
 - Backend makeover: [nuScenes-devkit makeover handoff](docs/current/nuscenes-devkit-makeover-handoff.md).
 - CP1 semantic alignment: parallel diagnostic evidence only; use the linked CP1 reports when that track is explicitly resumed.
-- UI and authoring: [UI motion editor](docs/current/ui-motion-editor.md), [MVP UI flow](docs/current/ui-mvp-flow-spec.md), and [U0 showcase](docs/reports/cp1-evidence-lineage.md).
+- UI and authoring: [UI motion editor](docs/current/ui-motion-editor.md), [MVP UI flow](docs/current/ui-mvp-flow-spec.md), 
 - Simulator work: [technical contracts](docs/current/technical-contracts.md), especially the MVP physics budget and Tier 1 `kinematic-open-loop-v1`.
 - PM/review work: [PM guide](docs/current/pm-agent-guide.md), [active work](docs/current/active-work.md), and [review checklist](docs/guides/review-checklist.md).
 
-Do not use `docs/archive/plan-b/` as current scope. It is historical context
-only. Reports under `docs/reports/` and evidence under `docs/evidence/` support
+Reports under `docs/reports/` and evidence under `docs/evidence/` support
 claims but do not override current decisions.
 
 ### First repository checks
@@ -91,7 +90,6 @@ an English completion report.
 - [Evidence index](docs/current/evidence-index.md)
 - [Artifact policy](docs/current/artifact-policy.md)
 - [OSM integration proposal](docs/proposals/post-mvp/osm-integration-proposal.md)
-- Historical migration ledger: `docs/archive/plan-a-migration-checklist.md`
 - [Guides](docs/guides/)
 - [Architecture](docs/architecture/)
 - [Reports](docs/reports/)

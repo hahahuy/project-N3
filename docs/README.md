@@ -33,9 +33,8 @@ Agents changing the browser application must also read:
 2. `docs/current/frontend-workspace-log.md`
 3. `docs/current/backend-workspace-contract-log.md`
 
-Historical files under `docs/archive/` are quarantined and are not current
-contracts, plans or assignments. Reports under `docs/reports/` record completed
-work and must not override current decisions. The active implementation plan is
+Reports under `docs/reports/` record completed work and must not override
+current decisions. The active implementation plan is
 `docs/current/nuscenes-devkit-makeover-handoff.md`.
 
 Controlling documents for deployment state:
@@ -75,5 +74,3 @@ Controlling documents for deployment state:
 - `docs/operations/`: operational entrypoints grouped separately from domain docs.
 - `docs/proposals/`: unaccepted implementation proposals and expert handoffs;
   proposals must be reconciled with current code before implementation.
-- `docs/archive/plan-b/`: stale historical Plan B material.
-- `docs/archive/plan-a-migration-checklist.md`: historical migration ledger.
