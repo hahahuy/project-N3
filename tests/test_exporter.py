@@ -171,6 +171,123 @@ def test_exporter_holds_actor_stationary_until_its_track_begins() -> None:
     assert speeds == {"ego": "0", "lead": "0"}
 
 
+def test_exporter_records_lifecycle_and_provenance_as_inert_properties() -> None:
+    """Lifecycle/timing metadata must be visible without steering the simulator.
+
+    Contract: the recorded observation window, trajectory time origin, source
+    taxonomy and the initial-speed policy are emitted as ``Property`` entries on
+    the entity. None of them may change the simulation: the polyline vertices,
+    the ``position`` following mode, the per-actor ``StartTrigger`` and the
+    zero initial ``AbsoluteTargetSpeed`` all stay exactly as the measured
+    baseline requires.
+    """
+    scenario, template = _late_start_scenario()
+
+    root = ET.fromstring(build_openscenario_xml(scenario, template))  # type: ignore[arg-type]
+
+    properties = {
+        item.get("name"): item.get("value")
+        for item in root.findall(".//Entities/ScenarioObject/Vehicle/Properties/Property")
+    }
+    assert properties["source_actor_type"] == "vehicle.car"
+    assert properties["source_actor_id"] == "lead"
+    assert properties["observed_start_s"] == "4"
+    assert properties["observed_end_s"] == "8"
+    assert properties["observation_count"] == "3"
+    assert properties["lifecycle_status"] == "late_entry"
+    assert properties["trajectory_time_origin_s"] == "4"
+    assert properties["initial_speed_policy"] == "hold_zero_until_trajectory_start"
+    assert properties["replay_mode"] == "open_loop_trajectory"
+
+    # The measured replay baseline must be untouched by the metadata.
+    speeds = {
+        private.get("entityRef"): private.find(".//AbsoluteTargetSpeed").attrib["value"]
+        for private in root.iter("Private")
+    }
+    assert speeds == {"ego": "0", "lead": "0"}
+    assert {
+        mode.attrib["followingMode"] for mode in root.iter("TrajectoryFollowingMode")
+    } == {"position"}
+
+
+def test_exporter_uses_recorded_actor_dimensions_instead_of_constants() -> None:
+    """Bounding-box height and centre must come from the recorded annotation.
+
+    The exporter previously hardcoded ``height=1.5`` and a fixed centre, so a
+    recorded truck or trailer rendered with the wrong cuboid in every replay
+    surface. Dimensions must pass through unchanged.
+    """
+    scenario = Scenario(
+        scenario_id="export-dimensions",
+        duration_s=2.0,
+        ego_actor_id="truck",
+        actors=(
+            Actor(
+                "truck",
+                "vehicle.truck",
+                (State(0.0, 0.0, 0.0, 0.0, 5.0), State(2.0, 10.0, 0.0, 0.0, 5.0)),
+                length_m=12.5,
+                width_m=2.9,
+                height_m=3.6,
+            ),
+            Actor(
+                "car",
+                "vehicle.car",
+                (State(0.0, 20.0, 0.0, 0.0, 5.0), State(2.0, 30.0, 0.0, 0.0, 5.0)),
+                length_m=4.5,
+                width_m=1.8,
+                height_m=1.5,
+            ),
+        ),
+        coordinate_frame="local_road_aligned",
+        provenance={"dataset": "synthetic"},
+    )
+    scenario, template = select_opendrive_template(scenario, topology=STRAIGHT_ROAD_TOPOLOGY)
+
+    root = ET.fromstring(build_openscenario_xml(scenario, template))  # type: ignore[arg-type]
+
+    dimensions = root.find(
+        "./Entities/ScenarioObject[@name='truck']/Vehicle/BoundingBox/Dimensions"
+    )
+    assert dimensions is not None
+    assert float(dimensions.attrib["height"]) == 3.6
+    assert float(dimensions.attrib["length"]) == 12.5
+    assert float(dimensions.attrib["width"]) == 2.9
+    assert (
+        root.find("./Entities/ScenarioObject[@name='truck']/Vehicle").attrib["vehicleCategory"]
+        == "truck"
+    )
+
+
+def test_exporter_maps_known_vehicle_categories_and_defaults_conservatively() -> None:
+    """An unmapped subtype stays ``car`` rather than being guessed.
+
+    A wrong ``vehicleCategory`` changes replay behaviour. Unknown or plain
+    ``vehicle.*`` subtypes therefore keep the measured ``car`` default while the
+    unmodified source taxonomy is still preserved in the entity properties.
+    """
+    scenario = Scenario(
+        scenario_id="export-categories",
+        duration_s=1.0,
+        ego_actor_id="bicycle",
+        actors=(
+            Actor("bicycle", "vehicle.bicycle", (State(0.0, 0.0, 0.0, 0.0, 2.0),)),
+            Actor("ego", "vehicle.unknown_future_type", (State(0.0, 10.0, 0.0, 0.0, 2.0),)),
+        ),
+        coordinate_frame="local_road_aligned",
+        provenance={"dataset": "synthetic"},
+    )
+    scenario, template = select_opendrive_template(scenario, topology=STRAIGHT_ROAD_TOPOLOGY)
+
+    root = ET.fromstring(build_openscenario_xml(scenario, template))  # type: ignore[arg-type]
+
+    categories = {
+        obj.attrib["name"]: obj.find("Vehicle").attrib["vehicleCategory"]
+        for obj in root.findall("./Entities/ScenarioObject")
+    }
+    assert categories == {"bicycle": "bicycle", "ego": "car"}
+
+
 def test_exporter_keeps_position_following_mode() -> None:
     """Trajectory following must stay on ``position``, never ``timing``.
 

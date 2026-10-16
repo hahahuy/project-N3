@@ -1,6 +1,6 @@
 """Canonical models and pipeline components for Real2Scenario."""
 
-from .models import Actor, Scenario, State, VariantConfig
+from .models import Actor, InteractionEvent, Scenario, State, VariantConfig
 from .visualization import save_replay_overlay
 from .metrics import (
     ALIGNMENT_METHOD,
@@ -249,6 +249,7 @@ from .benchmark import (
 
 __all__ = [
     "Actor",
+    "InteractionEvent",
     "ActorMotionEdit",
     "BATCH_MANIFEST_VERSION",
     "BatchManifest",

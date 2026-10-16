@@ -3,7 +3,7 @@
 > This document is a prompt. Everything above this line is project-manager
 > context. Send the agent the "Prompt" section.
 
-Status: `P0 COMPLETE / P2 PARTIAL / ISOLATED FROM MAIN APP / NEW CAPABILITY`
+Status: `P0 COMPLETE / P2 PARTIAL / FIXED-STEP HARDENED / ISOLATED FROM MAIN APP / NEW CAPABILITY`
 Written by: Project Manager, 2026-10-16
 Baseline: `aa9cf45` / `ee68ecf`
 Working tree: **clean** at time of writing.
@@ -81,11 +81,11 @@ normal `App`.
 
 **P0 — done.** esminiJS builds as an ES module (`EXPORT_ES6=1`, `MODULARIZE=1`,
 `ENVIRONMENT=web,worker`) and loads in a real browser Worker. Verified: sim time
-`0.05`, 1 active object, 2 lane surfaces, 2 road marks.
+`0.01`, 1 active object, 2 lane surfaces, 2 road marks.
 
 **P2 — partial.** A Worker protocol, a Three.js renderer and playback controls
-exist and work. Playback is currently a `window.setInterval` at `DT = 0.05`
-posting `step` messages, not a fixed-step clock driven by simulation time.
+exist and work. The playback Worker now owns a fixed `dt = 0.01` clock matching
+native; seek remains out of scope until reset-and-reintegrate behavior is added.
 
 **Isolated from the main app.** `wasm-playback` was **removed** from
 `VIEW_REGISTRY` in `frontend/src/view-panels.ts`. It is reachable only at
@@ -99,39 +99,30 @@ confined artifact route. `WasmSmokePage` passes it; the main app does not.
 
 ### Known defects and risks — fix or record these
 
-1. **`project()` is dead code.** `WasmPlaybackView.tsx:38` defines an SVG
-   projection helper left over from the pre-Three.js renderer. Nothing calls it.
-   Remove it and the now-unused `frameBounds`/`bounds` if they are only feeding it.
+1. **`project()` was dead code.** Removed along with the unused SVG bounds helpers.
 
-2. **`useEffect` dependency is `[]` but reads `scenarioId`.** Reloading works
-   only because `WasmSmokePage` passes `key={scenarioId || "fixture"}` to force a
-   remount. That is fragile and non-obvious. Make the dependency correct.
+2. **`useEffect` dependency was incorrect.** The loading effect now depends on
+   `scenarioId`; the smoke-page key remains harmless but is no longer required for
+   correctness.
 
-3. **The warning text lies when a real scenario is loaded.**
-   `WasmPlaybackView` always renders "Synthetic playback fixture" even when
-   `scenarioId` is a real nuScenes scenario. Make it conditional. This matters
-   more than it looks — a panel that mislabels its own provenance is exactly the
-   failure mode this project forbids.
+3. **Provenance warning was inaccurate for real scenarios.** It now distinguishes
+   real scenario playback from the synthetic fixture while retaining the preview
+   and Tier 0 boundary warning.
 
-4. **WASM-pair cache key ignores exporter version.**
-   `pair_key = sha256(f"wasm:{scenario_id}")`. The exporter changed at
-   `b52d423`, so a pair generated before that is stale and will be silently
-   reused. Add an exporter-version component to the key, or invalidate. Currently
-   `reports/wasm-pairs/` is empty on this host, so nothing is poisoned yet.
+4. **WASM-pair cache key ignored exporter version.** Fixed by including
+   `openscenario-exporter-v2` in the cache-key namespace.
 
 5. **`dist/` is gitignored.** A fresh clone **cannot run this at all** until
    someone rebuilds with `frontend/wasm-esmini/build.sh`. Say this in the README
    if it is not already obvious to a newcomer.
 
-6. **No frontend test covers any of this.** `wasm-smoke` and `wasm-playback`
-   have zero frontend test coverage. The backend `wasm-pair` route does have one
-   (`tests/test_web_api.py:121`). Add at least a protocol test for the Worker
-   message contract.
+6. **Worker protocol coverage was missing.** Added
+   `WasmPlaybackView.test.tsx`, covering init, play, pause, step and reset
+   messages. The backend `wasm-pair` route remains covered by
+   `tests/test_web_api.py:121`.
 
-7. **`docs/proposals/wasm-interactive-simulator/README.md` is stale.** It says
-   `Status: PROPOSAL — P0 NOT STARTED` and "the repository does not yet contain
-   the esminiJS source, Emscripten build, WASM artifact, Worker protocol or
-   renderer". All of that is now false. Update it.
+7. **Proposal README was stale.** Reconciled with the current build seam, Worker,
+   smoke page and raw Three.js renderer.
 
 ### Non-negotiable boundaries
 
@@ -305,25 +296,23 @@ Any one of these becomes true:
 
 ---
 
-### 🔴 Highest-priority defect: the Worker is running the wrong timestep
+### Highest-priority defect: fixed-step parity
 
 The owner decision on Q5 makes this concrete and urgent:
 
 ```text
 native   src/real2scenario/simulation.py:58   fixed_timestep_s = 0.01   ✅
-WASM     frontend/src/wasm-playback/worker.ts:54        dt: 0.05          ❌
-WASM     frontend/src/wasm-playback/WasmPlaybackView.tsx:6  DT = 0.05      ❌
-WASM     frontend/src/wasm-smoke/worker.ts:25            dt: 0.05          ❌
+WASM     frontend/src/wasm-playback/worker.ts           dt: 0.01          ✅
+WASM     frontend/src/wasm-smoke/worker.ts              dt: 0.01          ✅
 ```
 
-The browser engine is currently integrating at the timestep that the owner
-measured as **4.2x worse**. Any comparison drawn before this is corrected is
-meaningless, and any correlation claim would be invalid. Fix this first; it is
-small and it gates the credibility of everything else in this subsystem.
+The browser engine was integrating at the timestep that the owner measured as
+**4.2x worse**. This increment corrected the integration timestep and moved clock
+ownership into the Worker. Any correlation claim remains withheld until seek and
+sensor fusion are implemented and reviewed.
 
-Also note that `WasmPlaybackView` currently drives stepping with
-`window.setInterval(..., DT * 1000)`. The owner requires the Worker to own the
-clock, so this is a required change, not a preference.
+The view now sends `play`, `pause` and single fixed-step `step` commands; it does
+not run a UI interval or animation-frame integrator.
 
 ### Definition of done for any increment you ship
 

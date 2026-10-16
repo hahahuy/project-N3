@@ -396,6 +396,8 @@ describe("actor timeline and gate lane", () => {
     await renderWorkspace();
     fireEvent.click(screen.getByRole("button", { name: "Add view" }));
     const menu = screen.getByRole("menu");
+    expect(menu.className).toContain("add-view-menu");
+    expect(menu.closest(".add-view-control")).toBeTruthy();
     expect(within(menu).getByRole("button", { name: /Top-down/ }).textContent).toContain("view panel 2 of 3");
     expect(within(menu).getByRole("button", { name: /Sensor Evidence/ }).textContent).toContain("view panel 2 of 3");
     expect(within(menu).getByRole("button", { name: /3rd-person POV/ }).textContent).toContain("view panel 2 of 3");

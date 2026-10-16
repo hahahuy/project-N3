@@ -11,3 +11,8 @@
 .three-playback-canvas:active { cursor: grabbing; }
 .three-playback-overlay { position: absolute; left: 10px; bottom: 10px; display: flex; align-items: center; gap: 8px; color: #d7e8f2; font-size: 11px; pointer-events: none; }
 .three-playback-overlay button { pointer-events: auto; background: #203641; color: inherit; border: 1px solid #7098aa; border-radius: 3px; padding: 5px 9px; }
+.wasm-scene-ledger { list-style: none; margin: 0; padding: 6px 10px 8px; display: grid; gap: 4px; max-height: 120px; overflow: auto; font-size: 11px; border-top: 1px solid #304653; }
+.wasm-scene-ledger li { display: flex; align-items: baseline; gap: 8px; padding: 3px 8px; border: 1px solid #304653; border-radius: 3px; background: #182832; }
+.wasm-scene-ledger li[data-status="ended"] { opacity: 0.55; }
+.wasm-scene-ledger strong { color: #e6b85c; font-weight: 600; }
+.wasm-scene-ledger span { color: #9fb4c7; }

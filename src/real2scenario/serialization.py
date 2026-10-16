@@ -11,7 +11,7 @@ from collections.abc import Mapping
 from math import isfinite
 from typing import Any
 
-from .models import Actor, Scenario, State, VariantConfig
+from .models import Actor, InteractionEvent, Scenario, State, VariantConfig
 
 
 SCHEMA_VERSION = "1.0"
@@ -33,6 +33,7 @@ _STATE_OPTIONAL_FIELDS = frozenset({"source_timestamp_us", "source_record_token"
 _ACTOR_FIELDS = frozenset(
     {"actor_id", "actor_type", "trajectory", "length_m", "width_m"}
 )
+_ACTOR_OPTIONAL_FIELDS = frozenset({"height_m"})
 _SCENARIO_FIELDS = frozenset(
     {
         "scenario_id",
@@ -41,6 +42,17 @@ _SCENARIO_FIELDS = frozenset(
         "actors",
         "coordinate_frame",
         "provenance",
+    }
+)
+_SCENARIO_OPTIONAL_FIELDS = frozenset({"replay_mode", "interaction_events"})
+_INTERACTION_EVENT_FIELDS = frozenset(
+    {
+        "label",
+        "actor_ids",
+        "start_time_s",
+        "end_time_s",
+        "derivation",
+        "confidence",
     }
 )
 _VARIANT_CONFIG_FIELDS = frozenset(
@@ -95,13 +107,16 @@ def actor_to_dict(actor: Actor) -> dict[str, Any]:
         "trajectory": [state_to_dict(state) for state in actor.trajectory],
         "length_m": None if actor.length_m is None else float(actor.length_m),
         "width_m": None if actor.width_m is None else float(actor.width_m),
+        "height_m": None if actor.height_m is None else float(actor.height_m),
     }
 
 
 def actor_from_dict(payload: Mapping[str, Any]) -> Actor:
     """Reconstruct a validated actor from its JSON object."""
     data = _expect_object(payload, "actor")
-    _validate_fields(data, _ACTOR_FIELDS, "actor")
+    _validate_fields(
+        data, _ACTOR_FIELDS | _ACTOR_OPTIONAL_FIELDS, "actor", optional=_ACTOR_OPTIONAL_FIELDS
+    )
     trajectory = data["trajectory"]
     if not isinstance(trajectory, list):
         raise ValueError("actor.trajectory must be a JSON array.")
@@ -111,6 +126,7 @@ def actor_from_dict(payload: Mapping[str, Any]) -> Actor:
         trajectory=tuple(state_from_dict(item) for item in trajectory),
         length_m=_expect_optional_number(data["length_m"], "actor.length_m"),
         width_m=_expect_optional_number(data["width_m"], "actor.width_m"),
+        height_m=_expect_optional_number(data.get("height_m"), "actor.height_m"),
     )
 
 
@@ -123,16 +139,58 @@ def scenario_to_dict(scenario: Scenario) -> dict[str, Any]:
         "actors": [actor_to_dict(actor) for actor in scenario.actors],
         "coordinate_frame": scenario.coordinate_frame,
         "provenance": _provenance_to_dict(scenario.provenance),
+        "replay_mode": scenario.replay_mode,
+        "interaction_events": [interaction_event_to_dict(event) for event in scenario.interaction_events],
     }
+
+
+def interaction_event_to_dict(event: InteractionEvent) -> dict[str, Any]:
+    """Convert a derived interaction event to JSON-safe values."""
+    return {
+        "label": event.label,
+        "actor_ids": list(event.actor_ids),
+        "start_time_s": float(event.start_time_s),
+        "end_time_s": float(event.end_time_s),
+        "derivation": event.derivation,
+        "confidence": None if event.confidence is None else float(event.confidence),
+    }
+
+
+def interaction_event_from_dict(payload: Mapping[str, Any]) -> InteractionEvent:
+    """Reconstruct a validated derived interaction event."""
+    data = _expect_object(payload, "interaction_event")
+    _validate_fields(data, _INTERACTION_EVENT_FIELDS, "interaction_event")
+    actor_ids = data["actor_ids"]
+    if not isinstance(actor_ids, list) or not actor_ids:
+        raise ValueError("interaction_event.actor_ids must be a non-empty JSON array.")
+    if any(not isinstance(actor_id, str) or not actor_id for actor_id in actor_ids):
+        raise ValueError("interaction_event.actor_ids must contain non-empty strings.")
+    return InteractionEvent(
+        label=_expect_nonempty_string(data["label"], "interaction_event.label"),
+        actor_ids=tuple(actor_ids),
+        start_time_s=_expect_number(data["start_time_s"], "interaction_event.start_time_s"),
+        end_time_s=_expect_number(data["end_time_s"], "interaction_event.end_time_s"),
+        derivation=_expect_nonempty_string(
+            data["derivation"], "interaction_event.derivation"
+        ),
+        confidence=_expect_optional_number(
+            data["confidence"], "interaction_event.confidence"
+        ),
+    )
 
 
 def scenario_from_dict(payload: Mapping[str, Any]) -> Scenario:
     """Reconstruct a canonical scenario and run its model invariants."""
     data = _expect_object(payload, "scenario")
-    _validate_fields(data, _SCENARIO_FIELDS, "scenario")
+    _validate_fields(
+        data, _SCENARIO_FIELDS | _SCENARIO_OPTIONAL_FIELDS, "scenario", optional=_SCENARIO_OPTIONAL_FIELDS
+    )
     actors = data["actors"]
     if not isinstance(actors, list):
         raise ValueError("scenario.actors must be a JSON array.")
+    events = data.get("interaction_events", [])
+    if not isinstance(events, list):
+        raise ValueError("scenario.interaction_events must be a JSON array.")
     return Scenario(
         scenario_id=_expect_nonempty_string(data["scenario_id"], "scenario.scenario_id"),
         duration_s=_expect_number(data["duration_s"], "scenario.duration_s"),
@@ -142,6 +200,10 @@ def scenario_from_dict(payload: Mapping[str, Any]) -> Scenario:
             data["coordinate_frame"], "scenario.coordinate_frame"
         ),
         provenance=_provenance_from_dict(data["provenance"]),
+        replay_mode=_expect_nonempty_string(
+            data.get("replay_mode", "open_loop_trajectory"), "scenario.replay_mode"
+        ),
+        interaction_events=tuple(interaction_event_from_dict(item) for item in events),
     )
 
 

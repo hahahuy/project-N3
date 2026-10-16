@@ -40,6 +40,18 @@ export default function ThreePlaybackCanvas({ road, frame }: Props) {
   const animationRef = useRef<FocusAnimation | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
+const ACTOR_COLORS = {
+  vehicle: 0xe6b85c,
+  unknown: 0x9fb4c7,
+  selected: 0x7dd3fc,
+} as const;
+
+function actorColor(object: { type: string; kind: string }, selected: boolean): number {
+  if (selected) return ACTOR_COLORS.selected;
+  const text = `${object.type} ${object.kind}`.toLowerCase();
+  return text.includes("vehicle") ? ACTOR_COLORS.vehicle : ACTOR_COLORS.unknown;
+}
+
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
@@ -143,15 +155,17 @@ export default function ThreePlaybackCanvas({ road, frame }: Props) {
     for (const object of frame.object_states) {
       let mesh = actorsRef.current.get(object.id);
       if (!mesh) {
-        mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: 0xe6b85c }));
+        mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: actorColor(object, object.id === selectedId) }));
         mesh.userData.objectId = object.id;
         actorsRef.current.set(object.id, mesh);
         scene.add(mesh);
       }
       mesh.position.copy(pointVector(object));
+      // Recorded annotation height centres the box on the axle plane; keep the
+      // footprint readable while preserving the recorded height ratio.
       mesh.scale.set(Math.max(object.width, 1), Math.max(object.height, 1), Math.max(object.length, 2));
       mesh.rotation.y = -object.h;
-      (mesh.material as THREE.MeshStandardMaterial).color.set(object.id === selectedId ? 0x7dd3fc : 0xe6b85c);
+      (mesh.material as THREE.MeshStandardMaterial).color.set(actorColor(object, object.id === selectedId));
     }
   }, [frame, selectedId]);
 

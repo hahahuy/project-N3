@@ -75,6 +75,7 @@ from real2scenario import STRAIGHT_ROAD_TOPOLOGY, select_opendrive_template, wri
 from pathlib import Path
 from fastapi.responses import Response
 
+WASM_PAIR_EXPORTER_VERSION = "openscenario-exporter-v2"
 
 def create_app(settings: WebSettings | None = None) -> FastAPI:
     resolved_settings = settings or WebSettings.from_environment()
@@ -218,7 +219,7 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
             selected, template = select_opendrive_template(
                 record.scenario, topology=STRAIGHT_ROAD_TOPOLOGY
             )
-            pair_key = hashlib.sha256(f"wasm:{scenario_id}".encode("utf-8")).hexdigest()[:24]
+            pair_key = hashlib.sha256(f"wasm:{WASM_PAIR_EXPORTER_VERSION}:{scenario_id}".encode("utf-8")).hexdigest()[:24]
             pair_root = resolved_settings.output_root / "wasm-pairs" / pair_key
             pair_root.mkdir(parents=True, exist_ok=True)
             xosc = write_openscenario(selected, template, pair_root / "scenario.xosc")

@@ -22,9 +22,11 @@ interactive simulator:
 - [`wasm-interactive-simulator-handoff.md`](wasm-interactive-simulator-handoff.md)
 - [`interactive-object-selection-analysis.md`](interactive-object-selection-analysis.md)
 
-They are planning inputs, not current contracts. The repository does not yet
-contain the esminiJS source, Emscripten build, WASM artifact, Worker protocol or
-react-three-fiber renderer described by the proposal.
+They are planning inputs, not current contracts. The external esminiJS source and
+generated WASM artifact remain outside version control, but the repository now
+contains the reproducible build seam, Worker protocol, smoke page and raw
+Three.js renderer described by the reconciled handoff. The playback capability is
+still diagnostic-only at `/wasm-smoke`.
 
 ## Current Reconciliation
 
@@ -64,9 +66,10 @@ component in the cache key before trusting a browser artifact.
 2. **P1 hygiene:** pin existing frontend dependencies, record the selected
    esmini version and add build provenance. Do not add speculative renderer
    dependencies before P0 succeeds.
-3. **P2 playback slice:** add a Worker client/protocol and a new playback-only
-   view behind a capability flag. It should render road geometry and actor boxes,
-   support fixed-step playback/seek, and show the existing template-map warning.
+3. **P2 playback slice:** implemented as a diagnostic-only playback surface.
+   The Worker owns fixed `dt = 0.01` stepping and the raw Three.js renderer
+   supports road geometry, actor boxes, selection and camera focus. Seek remains
+   deferred until reset-and-reintegrate behavior is implemented and tested.
 4. **P3 interaction:** add selection and one-shot injection only after playback
    is smooth. Store actions by stable actor identity/name and remap engine IDs
    after reset.

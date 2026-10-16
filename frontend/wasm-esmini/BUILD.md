@@ -42,8 +42,11 @@ applies `fmt-11.2.0-emscripten-cstdlib.patch`. It builds with:
   XOSC/XODR pair. Module loading succeeded, but Node scenario construction was
   rejected by the `web,worker` target. This was not used as browser evidence.
 - Browser Worker smoke passed at `/wasm-smoke` using the committed synthetic
-  fixture: simulation time `0.05`, one active object, two lane surfaces and two
+  fixture: simulation time `0.01`, one active object, two lane surfaces and two
   road marks.
+- The playback Worker owns the fixed `dt = 0.01` clock to match native
+  `src/real2scenario/simulation.py`; the browser UI does not integrate on an
+  interval or animation frame.
 - Generated nuScenes XOSC smoke was initially blocked by an exporter change that
   added non-standard `speed` attributes to Polyline vertices. The exporter was
   restored to the esmini-compatible form: `AbsoluteTargetSpeed=0` and no custom

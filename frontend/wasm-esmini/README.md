@@ -1,6 +1,6 @@
 # esminiJS WASM Build
 
-Status: `P0 MODULE BUILD PASSED — BROWSER SMOKE PENDING`
+Status: `P0 COMPLETE — BROWSER WORKER SMOKE PASSED`
 
 This directory is the project-owned build seam for the external esminiJS
 checkout. The upstream source is intentionally kept outside this repository.
@@ -11,8 +11,8 @@ checkout. The upstream source is intentionally kept outside this repository.
 - Selected upstream tag: `v3.10.0`.
 - Emscripten: `6.0.10`.
 - Current upstream checkout was built successfully with its stock build script.
-- The stock output is not yet the project artifact: it uses classic Emscripten
-  module output and must be rebuilt with ES-module flags before integration.
+- The stock output is not the project artifact: `build.sh` rebuilds it with the
+  ES-module and Worker flags recorded in `BUILD.md`.
 
 ## Required Output
 

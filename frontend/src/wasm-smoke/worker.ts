@@ -22,7 +22,7 @@ self.onmessage = async (event: MessageEvent<SmokeRequest>) => {
       max_loop: 0,
       min_time_step: 0,
       max_time_step: 0,
-      dt: 0.05,
+      dt: 0.01,
     });
     const frame = scenario.step_frame(0);
     const road = scenario.get_road_geometry();

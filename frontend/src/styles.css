@@ -124,8 +124,8 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .chip.off { color: var(--subtle); }
 
 /* Toolbar: reference .tool geometry - margin 1px, radius 3px, padding 6px */
-.toolbar { gap: 0; overflow: hidden; box-shadow: var(--chrome-shadow); z-index: 2; }
-.toolbar-groups { display: flex; align-items: stretch; flex: 1 1 auto; min-width: 0; height: 100%; overflow: hidden; }
+.toolbar { gap: 0; overflow: visible; box-shadow: var(--chrome-shadow); z-index: 2; }
+.toolbar-groups { display: flex; align-items: stretch; flex: 1 1 auto; min-width: 0; height: 100%; overflow: visible; }
 .toolbar-tail { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; padding-left: 8px; }
 .toolbar-group { display: flex; flex-direction: column; flex: 0 0 auto; height: 100%; padding: 4px 0; border-right: 1px solid var(--line); white-space: nowrap; }
 .toolbar-group > div { display: flex; align-items: center; padding: 0 4px; }

@@ -1,11 +1,17 @@
 import createEsminiModule from "../../wasm-esmini/dist/esmini.js";
 import type { WasmFrame, WasmObjectState, WasmRoadGeometry, WasmWorkerRequest, WasmWorkerResponse } from "./types";
 
+export const FIXED_DT = 0.01;
+
 let scenario: {
   step_frame(dt: number): { simulation_time: number; object_states: unknown };
+  get_simulation_time(): number;
+  get_object_states(): unknown;
   reset(): void;
   get_road_geometry(): { lane_surfaces: unknown; road_marks: unknown };
 } | null = null;
+let playing = false;
+let timer: ReturnType<typeof setTimeout> | null = null;
 
 function vectorItems<T>(value: unknown): T[] {
   if (Array.isArray(value)) return value as T[];
@@ -38,23 +44,65 @@ function normalizeRoad(value: { lane_surfaces: unknown; road_marks: unknown }): 
   };
 }
 
-function frame(): WasmFrame {
-  const value = scenario?.step_frame(0);
-  return { simulation_time: value?.simulation_time ?? 0, object_states: vectorItems<WasmObjectState>(value?.object_states) };
+function currentFrame(): WasmFrame {
+  return {
+    simulation_time: scenario?.get_simulation_time() ?? 0,
+    object_states: vectorItems<WasmObjectState>(scenario?.get_object_states()),
+  };
+}
+
+function steppedFrame(): WasmFrame {
+  if (!scenario) throw new Error("wasm_scenario_not_initialized");
+  const value = scenario.step_frame(FIXED_DT);
+  return { simulation_time: value.simulation_time, object_states: vectorItems<WasmObjectState>(value.object_states) };
+}
+
+function roadFilename(xosc: string): string {
+  const match = xosc.match(/<LogicFile[^>]*filepath="([^"]+)"/i);
+  const filepath = match?.[1]?.trim();
+  if (!filepath) throw new Error("wasm_xosc_missing_logic_file");
+  return filepath.split(/[\\/]/).pop() ?? filepath;
+}
+
+function stopClock(): void {
+  playing = false;
+  if (timer !== null) {
+    clearTimeout(timer);
+    timer = null;
+  }
+}
+
+function step(): void {
+  self.postMessage({ type: "frame", frame: steppedFrame() } satisfies WasmWorkerResponse);
+}
+
+function scheduleNextTick(): void {
+  if (!playing || !scenario) return;
+  timer = setTimeout(() => {
+    timer = null;
+    try {
+      step();
+      scheduleNextTick();
+    } catch (error) {
+      stopClock();
+      self.postMessage({ type: "error", message: errorMessage(error) } satisfies WasmWorkerResponse);
+    }
+  }, FIXED_DT * 1000);
 }
 
 async function init(xosc: string, xodr: string): Promise<WasmWorkerResponse> {
   const module = await createEsminiModule({ noInitialRun: true });
   module.FS.writeFile("/scenario.xosc", xosc);
-  module.FS.writeFile("/smoke.xodr", xodr);
+  module.FS.writeFile(`/${roadFilename(xosc)}`, xodr);
   const nextScenario = new module.OpenScenario("/scenario.xosc", {
     max_loop: 0,
     min_time_step: 0,
     max_time_step: 0,
-    dt: 0.05,
+    dt: FIXED_DT,
   });
+  stopClock();
   scenario = nextScenario as typeof scenario;
-  return { type: "ready", road: normalizeRoad(nextScenario.get_road_geometry()), frame: frame() };
+  return { type: "ready", road: normalizeRoad(nextScenario.get_road_geometry()), frame: currentFrame() };
 }
 
 self.onmessage = async (event: MessageEvent<WasmWorkerRequest>) => {
@@ -64,12 +112,20 @@ self.onmessage = async (event: MessageEvent<WasmWorkerRequest>) => {
     } else if (!scenario) {
       throw new Error("wasm_scenario_not_initialized");
     } else if (event.data.type === "step") {
-      scenario?.step_frame(event.data.dt);
-      self.postMessage({ type: "frame", frame: frame() } satisfies WasmWorkerResponse);
+      step();
+    } else if (event.data.type === "play") {
+      if (!playing) {
+        playing = true;
+        scheduleNextTick();
+      }
+    } else if (event.data.type === "pause") {
+      stopClock();
     } else if (event.data.type === "reset") {
-      scenario?.reset();
-      self.postMessage({ type: "frame", frame: frame() } satisfies WasmWorkerResponse);
+      stopClock();
+      scenario.reset();
+      self.postMessage({ type: "frame", frame: currentFrame() } satisfies WasmWorkerResponse);
     } else if (event.data.type === "dispose") {
+      stopClock();
       scenario = null;
       self.close();
     }

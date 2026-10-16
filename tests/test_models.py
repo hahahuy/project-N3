@@ -1,6 +1,14 @@
 import pytest
 
-from real2scenario import Actor, ActorMotionEdit, Scenario, State, VariantConfig, preview_variant
+from real2scenario import (
+    Actor,
+    ActorMotionEdit,
+    InteractionEvent,
+    Scenario,
+    State,
+    VariantConfig,
+    preview_variant,
+)
 
 
 def _state(time_s: float = 0.0) -> State:
@@ -189,3 +197,75 @@ def test_preview_variant_is_actor_scoped_deterministic_and_immutable() -> None:
     assert first.actors[0] == ego
     assert first.actors[1].trajectory[0].x_m == 4.0
     assert first.actors[1].trajectory[0].yaw_rad == 0.1
+
+
+@pytest.mark.parametrize(
+    ("start_s", "end_s", "expected"),
+    [
+        (0.0, 2.0, "full_window"),
+        (0.5, 2.0, "late_entry"),
+        (0.0, 1.5, "early_exit"),
+        (0.5, 1.5, "late_entry_and_early_exit"),
+    ],
+)
+def test_actor_lifecycle_status_describes_the_observation_window(
+    start_s: float, end_s: float, expected: str
+) -> None:
+    """Lifecycle is descriptive metadata derived from the recorded track only.
+
+    A replay surface must not treat an actor as observed outside this window, so
+    the status has to distinguish a late entry from an early exit instead of
+    collapsing every actor to "present for the whole scenario".
+    """
+    actor = Actor(
+        actor_id="lead",
+        actor_type="vehicle.car",
+        trajectory=(State(start_s, 0.0, 0.0, 0.0, 1.0), State(end_s, 5.0, 0.0, 0.0, 1.0)),
+    )
+
+    assert actor.lifecycle_status(0.0, 2.0) == expected
+    assert actor.observed_start_s == start_s
+    assert actor.observed_end_s == end_s
+    assert actor.observation_count == 2
+
+
+def test_scenario_rejects_interaction_events_outside_its_actor_population() -> None:
+    """Derived interaction events may never reference an absent actor."""
+    ego = Actor("ego", "vehicle", (_state(),))
+    event = InteractionEvent(
+        label="cut_in", actor_ids=("ego", "ghost"), start_time_s=0.0, end_time_s=1.0
+    )
+
+    with pytest.raises(ValueError, match="unknown actors"):
+        Scenario("scene", 1.0, "ego", (ego,), "local", {}, interaction_events=(event,))
+
+
+def test_scenario_accepts_derived_interaction_events_for_known_actors() -> None:
+    ego = Actor("ego", "vehicle", (_state(),))
+    lead = Actor("lead", "vehicle", (_state(),))
+    event = InteractionEvent(
+        label="cut_in",
+        actor_ids=("ego", "lead"),
+        start_time_s=0.1,
+        end_time_s=0.9,
+        derivation="derived_analysis",
+        confidence=0.8,
+    )
+
+    scenario = Scenario(
+        "scene", 1.0, "ego", (ego, lead), "local", {}, interaction_events=(event,)
+    )
+
+    assert scenario.replay_mode == "open_loop_trajectory"
+    assert scenario.interaction_events == (event,)
+
+
+def test_interaction_event_rejects_out_of_range_confidence() -> None:
+    with pytest.raises(ValueError, match="confidence"):
+        InteractionEvent(
+            label="cut_in",
+            actor_ids=("ego",),
+            start_time_s=0.0,
+            end_time_s=1.0,
+            confidence=1.5,
+        )

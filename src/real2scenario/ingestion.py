@@ -300,7 +300,7 @@ def _build_actor(
     yaws: list[float] = []
     actor_timestamps: list[float] = []
     actor_tokens: list[str] = []
-    dimensions: tuple[float, float] | None = None
+    dimensions: tuple[float, float, float] | None = None
     for sample, timestamp_s in zip(samples, timestamps_s):
         annotation = annotation_index.get((_required_string(sample, "token", "sample"), instance_token))
         if annotation is None:
@@ -326,13 +326,14 @@ def _build_actor(
         origin_time_s=origin_time_s,
         source_tokens=actor_tokens,
     )
-    length_m, width_m = dimensions or (None, None)
+    length_m, width_m, height_m = dimensions or (None, None, None)
     return Actor(
         actor_id=f"instance-{instance_token}",
         actor_type=_required_string(category, "name", "category"),
         trajectory=states,
         length_m=length_m,
         width_m=width_m,
+        height_m=height_m,
     )
 
 
@@ -425,7 +426,7 @@ def _yaw_from_record(record: Mapping[str, Any], name: str) -> float:
     return atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z))
 
 
-def _size(record: Mapping[str, Any]) -> tuple[float, float]:
+def _size(record: Mapping[str, Any]) -> tuple[float, float, float]:
     size = record.get("size")
     if (
         not isinstance(size, list)
@@ -433,8 +434,8 @@ def _size(record: Mapping[str, Any]) -> tuple[float, float]:
         or any(isinstance(value, bool) or not isinstance(value, (int, float)) for value in size)
     ):
         raise ValueError("sample_annotation.size must contain numeric [width, length, height].")
-    width_m, length_m = float(size[0]), float(size[1])
-    return length_m, width_m
+    width_m, length_m, height_m = (float(size[0]), float(size[1]), float(size[2]))
+    return length_m, width_m, height_m
 
 
 def _required_record(
