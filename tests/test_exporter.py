@@ -169,3 +169,34 @@ def test_exporter_holds_actor_stationary_until_its_track_begins() -> None:
     }
 
     assert speeds == {"ego": "0", "lead": "0"}
+
+
+def test_exporter_keeps_position_following_mode() -> None:
+    """Trajectory following must stay on ``position``, never ``timing``.
+
+    Contract: the subset supports ``position`` following only. ``timing`` forces
+    the entity to be at each 2 Hz polyline vertex at that vertex's own
+    timestamp; consecutive vertices are ~0.5 s apart and differ in heading, so
+    the follower has to accelerate and brake between every pair and overshoots
+    at each vertex.
+
+    Measured on the full 850-scene nuScenes v1.0-trainval set (3215 actor
+    tracks, role A identity grid), with the trigger and hold conditions
+    otherwise identical:
+
+        followingMode   ADE median   ADE max     FDE max
+        position        0.0586 m     0.8859 m    1.0298 m
+        timing          0.1322 m     1.9154 m    1.8352 m
+
+    ``timing`` is worse on every statistic, and by 9.4x on ADE max at the
+    0.01 s timestep. This test exists because that regression reached main.
+    """
+    scenario, template = _late_start_scenario()
+
+    root = ET.fromstring(build_openscenario_xml(scenario, template))  # type: ignore[arg-type]
+
+    modes = {
+        mode.attrib["followingMode"] for mode in root.iter("TrajectoryFollowingMode")
+    }
+
+    assert modes == {"position"}

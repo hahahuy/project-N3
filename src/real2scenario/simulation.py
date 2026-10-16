@@ -55,7 +55,7 @@ class EsminiConfig:
     executable: str | Path | tuple[str, ...] | None = None
     trace_converter: str | Path | tuple[str, ...] | None = None
     timeout_s: float = 30.0
-    fixed_timestep_s: float = 0.05
+    fixed_timestep_s: float = 0.01
     capture_images: bool = False
     camera_mode: str = "orbit"
 
