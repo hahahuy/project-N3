@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { WasmFrame, WasmGround, WasmLidarCloud, WasmRecordedPath, WasmRoadGeometry, WasmOrbitState } from "./types";
+import type { RecordedAnnotationTrack } from "../api";
 import { actorKindOf, renderVehicleYaw } from "./types";
 import { OrbitRuntime } from "./orbit-runtime";
 
@@ -12,6 +13,7 @@ type Props = {
   showCuboids: boolean;
   paths: WasmRecordedPath[] | null;
   lidar: WasmLidarCloud | null;
+  recordedTracks?: RecordedAnnotationTrack[];
   orbit?: WasmOrbitState;
   onOrbitChange?: (orbit: WasmOrbitState) => void;
   showResetView?: boolean;
@@ -76,7 +78,7 @@ function recordedPathColor(actorType: string): number {
   return ACTOR_COLORS.unknown;
 }
 
-export default function ThreePlaybackCanvas({ road, frame, ground, showCuboids, paths, lidar, orbit, onOrbitChange, showResetView = false, focusActorId = null }: Props) {
+export default function ThreePlaybackCanvas({ road, frame, ground, showCuboids, paths, lidar, recordedTracks = [], orbit, onOrbitChange, showResetView = false, focusActorId = null }: Props) {
   const orbitRuntimeRef = useRef<OrbitRuntime | null>(null);
   if (!orbitRuntimeRef.current) orbitRuntimeRef.current = new OrbitRuntime(orbit ?? { position: [20, 22, 26], target: [0, 0, 0] });
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -91,6 +93,7 @@ export default function ThreePlaybackCanvas({ road, frame, ground, showCuboids, 
   const animationRef = useRef<FocusAnimation | null>(null);
   const interactionOrbitRef = useRef<WasmOrbitState | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const recordedMeshRef = useRef<THREE.InstancedMesh | null>(null);
 
 function actorColor(object: { object_type: number }, selected: boolean): number {
   if (selected) return ACTOR_COLORS.selected;
@@ -248,6 +251,10 @@ function disposeObject(root: THREE.Object3D): void {
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       controls.dispose();
       renderer.dispose();
+      if (recordedMeshRef.current) {
+        recordedMeshRef.current.geometry.dispose();
+        (recordedMeshRef.current.material as THREE.Material).dispose();
+      }
       host.removeChild(renderer.domElement);
       sceneRef.current = null;
       cameraRef.current = null;
@@ -438,6 +445,39 @@ function disposeObject(root: THREE.Object3D): void {
     }
     scene.add(overlay);
   }, [paths, lidar]);
+
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+    if (!recordedMeshRef.current) {
+      const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.35, wireframe: true }), 512);
+      mesh.userData.recordedAnnotationLayer = true;
+      recordedMeshRef.current = mesh;
+      scene.add(mesh);
+    }
+    const mesh = recordedMeshRef.current;
+    const matrix = new THREE.Matrix4();
+    const quaternion = new THREE.Quaternion();
+    const scale = new THREE.Vector3();
+    let active = 0;
+    for (const track of recordedTracks) {
+      const eligible = track.states.filter((item) => item.time_s <= frame.simulation_time);
+      const state = eligible[eligible.length - 1];
+      if (!state || frame.simulation_time > track.states[track.states.length - 1].time_s || active >= mesh.count || !state.center_local || !state.yaw_local_rad) continue;
+      const [x, y] = state.center_local;
+      const [width, length, height] = state.size_m;
+      quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), renderVehicleYaw(state.yaw_local_rad));
+      scale.set(width, height, length);
+      matrix.compose(new THREE.Vector3(x, height / 2 + ROAD_LIFT, -y), quaternion, scale);
+      mesh.setMatrixAt(active, matrix);
+      active += 1;
+    }
+    for (let index = active; index < mesh.count; index += 1) {
+      matrix.makeScale(0, 0, 0);
+      mesh.setMatrixAt(index, matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }, [recordedTracks, frame.simulation_time]);
 
   // A new selection anchors the follow lock without a camera jump; the
   // click animation still plays once, then per-frame deltas take over.

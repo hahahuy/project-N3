@@ -850,6 +850,23 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
         except KeyError as error:
             raise HTTPException(status_code=404, detail=str(error)) from error
 
+    @app.get("/api/workspace/scenarios/{scenario_id}/recorded-annotations")
+    def workspace_recorded_annotations(scenario_id: str) -> dict[str, object]:
+        try:
+            record = adapter.get(scenario_id)
+            first, _, last = record.scenario.provenance.get("source_window", "").partition(":")
+            tracks = NuScenesDatasetAdapter.for_dataset(resolved_settings.dataset_root, resolved_settings.dataset_version).recorded_annotation_tracks(first, last)
+            transform = RoadAlignedTransform.from_provenance(record.scenario.provenance)
+            for track in tracks:
+                for state in track["states"]:
+                    center = state["center_global"]
+                    local = transform.to_local_state(State(time_s=state["time_s"], x_m=center[0], y_m=center[1], yaw_rad=0.0, speed_mps=0.0))
+                    state["center_local"] = [local.x_m, local.y_m]
+                    state["yaw_local_rad"] = local.yaw_rad
+            return {"contract_version": "workspace-recorded-annotations-v1", "scenario_id": scenario_id, "coordinate_frame": "local_road_aligned", "display_only": True, "native_replay_included": False, "tracks": tracks, "provenance": {"source": "nuscenes-devkit-recorded-annotations", "artifact_visibility": "local_private"}}
+        except (KeyError, FileNotFoundError, ImportError, OSError, RuntimeError, ValueError) as error:
+            return {"contract_version": "workspace-recorded-annotations-v1", "scenario_id": scenario_id, "display_only": True, "native_replay_included": False, "tracks": [], "status": "unavailable", "unavailable_reason": str(error), "provenance": {"artifact_visibility": "local_private"}}
+
     @app.get("/api/workspace/scenarios/{scenario_id}/camera-evidence")
     def workspace_camera_evidence(scenario_id: str, channel: str = "CAM_FRONT", time_s: float = 0.0) -> dict[str, object]:
         """Resolve one recorded camera image and its independent overlay layers."""

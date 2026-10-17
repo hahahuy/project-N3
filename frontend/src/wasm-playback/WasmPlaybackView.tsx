@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { WasmActorLifecycle, WasmFrame, WasmGround, WasmLidarCloud, WasmLidarSweep, WasmRecordedPath, WasmRoadGeometry, WasmScenarioAttributes, WasmSceneSummary, WasmWorkerResponse, WasmOrbitState, WasmOverlayToggles } from "./types";
 import { applyLidarTransform, assertWellFormedXml, decodeLidarPayloadFlat, globalToLocalFrame, nearestSweepAtOrBefore, parseXoscAttributes, selectSweepStride, trackWasmActors } from "./types";
 import type { LidarRigidTransform } from "./types";
-import { createWasmScenarioPair, fetchGroundLayers, fetchLidarSweeps, fetchWorkspaceScenario, lidarPayloadUrl } from "../api";
+import { createWasmScenarioPair, fetchGroundLayers, fetchLidarSweeps, fetchWorkspaceScenario, fetchRecordedAnnotations, lidarPayloadUrl, type RecordedAnnotationTrack } from "../api";
 import ThreePlaybackCanvas from "./ThreePlaybackCanvas";
 import { ByteBoundedLru, selectSweepWindow } from "./bounded-cache";
 import { acquireWasmRuntime, releaseWasmRuntime, type WasmScenarioRuntime } from "./runtime-manager";
@@ -125,6 +125,7 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
   const [attrs, setAttrs] = useState<WasmScenarioAttributes | null>(null);
   const [ground, setGround] = useState<WasmGround | null>(null);
   const [paths, setPaths] = useState<WasmRecordedPath[] | null>(null);
+  const [recordedTracks, setRecordedTracks] = useState<RecordedAnnotationTrack[]>([]);
   const [lidar, setLidar] = useState<WasmLidarCloud | null>(null);
   const [localToggles, setLocalToggles] = useState<WasmOverlayToggles>({ cuboids: false, paths: false, lidar: mode === "sensor-evidence" });
   const activeToggles = toggles ?? localToggles;
@@ -156,6 +157,7 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
     const load = async () => {
         setGround(null);
       setPaths(null);
+      setRecordedTracks([]);
        sweepCacheRef.current.clear();
       setLidarSweeps(null);
       setLidarFrame(null);
@@ -218,6 +220,7 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
       const unsubscribe = runtime.subscribe(() => { if (!cancelled) setRuntimeSnapshot(runtime?.getSnapshot() ?? null); });
       setAttrs(parseXoscAttributes(xosc));
       loadRecordedOverlays(scenarioId, (paths) => { if (!cancelled) setPaths(paths); }, (sweeps, frame) => { if (!cancelled) { setLidarSweeps(sweeps); setLidarFrame(frame); } }).catch(() => { if (!cancelled) { setPaths(null); setLidarSweeps(null); setLidarFrame(null); } });
+      fetchRecordedAnnotations(scenarioId).then((payload) => { if (!cancelled && payload.status !== "unavailable") setRecordedTracks(payload.tracks); }).catch(() => { if (!cancelled) setRecordedTracks([]); });
       fetchGroundLayers(scenarioId).then((json) => { if (!cancelled) setGround(json !== null && typeof json === "object" && Array.isArray((json as WasmGround).layers) ? (json as WasmGround) : null); }).catch(() => { if (!cancelled) setGround(null); });
       return unsubscribe;
     };
@@ -280,7 +283,7 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
 
    return <div className="wasm-playback-view" aria-busy={displayStatus !== "ready"}>
      {displayStatus !== "ready" && <div className="view-loading-overlay"><span className="loading-spinner" aria-hidden="true" />Loading playback scene</div>}
-     <ThreePlaybackCanvas road={displayRoad} frame={displayFrame} ground={ground} showCuboids={activeToggles.cuboids} paths={activeToggles.paths ? paths : null} lidar={activeCloud} orbit={orbit} onOrbitChange={onOrbitChange} showResetView={isMainView} focusActorId={focusActorId} />
+     <ThreePlaybackCanvas road={displayRoad} frame={displayFrame} ground={ground} showCuboids={activeToggles.cuboids} paths={activeToggles.paths ? paths : null} lidar={activeCloud} recordedTracks={recordedTracks} orbit={orbit} onOrbitChange={onOrbitChange} showResetView={isMainView} focusActorId={focusActorId} />
     {mode === "standalone" && <fieldset className="wasm-overlay-toggles">
       <legend>Overlays (display-only, recorded data)</legend>
       <label><input type="checkbox" checked={activeToggles.cuboids} onChange={(event) => updateToggles({ ...activeToggles, cuboids: event.target.checked })} /> Exact cuboids instead of skins</label>

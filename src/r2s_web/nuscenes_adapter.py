@@ -229,6 +229,37 @@ class NuScenesDatasetAdapter:
             ],
         }
 
+    def recorded_annotation_tracks(self, first_sample_token: str, last_sample_token: str) -> list[dict[str, Any]]:
+        """Return all recorded annotation observations grouped by instance."""
+        tracks: dict[str, dict[str, Any]] = {}
+        current = first_sample_token
+        seen: set[str] = set()
+        first_timestamp: int | None = None
+        while current and current not in seen:
+            seen.add(current)
+            sample = self.nusc.get("sample", current)
+            timestamp = int(sample["timestamp"])
+            if first_timestamp is None:
+                first_timestamp = timestamp
+            lidar_token = str(sample.get("data", {}).get("LIDAR_TOP") or "")
+            if lidar_token:
+                for box in self.nusc.get_boxes(lidar_token):
+                    annotation = self.nusc.get("sample_annotation", box.token)
+                    instance_id = str(annotation.get("instance_token") or box.token)
+                    track = tracks.setdefault(instance_id, {"instance_id": instance_id, "category": box.name, "states": []})
+                    track["states"].append({
+                        "time_s": (timestamp - first_timestamp) / 1e6,
+                        "source_timestamp_us": timestamp,
+                        "source_record_token": box.token,
+                        "center_global": [float(value) for value in box.center],
+                        "size_m": [float(value) for value in box.wlh],
+                        "rotation_wxyz": [float(value) for value in box.orientation.elements],
+                    })
+            if current == last_sample_token:
+                break
+            current = str(sample.get("next") or "")
+        return list(tracks.values())
+
     def records(self, token: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], Path]:
         sample_data = self.sample_data(token)
         calibration = self.nusc.get("calibrated_sensor", sample_data["calibrated_sensor_token"])
