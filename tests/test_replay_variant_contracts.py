@@ -111,3 +111,10 @@ def test_short_replay_reports_insufficient_coverage_without_fde():
     assert metrics.coverage_status == "insufficient_coverage"
     assert metrics.fde_m is None
     assert metrics.sample_count == 7
+
+
+def test_replay_without_overlapping_time_is_rejected():
+    recorded = _line(0.0, 0.0, 10.0, 0.0)
+    replayed = _line(0.0, 0.0, 10.0, 0.0, t0=10.0)
+    with pytest.raises(ValueError):
+        compute_replay_metrics(recorded, replayed)
