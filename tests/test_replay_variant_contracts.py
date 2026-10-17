@@ -357,3 +357,12 @@ def test_preview_id_depends_on_edits_and_seed():
     edit = [ActorMotionEdit("lead", speed_multiplier=1.5)]
     assert preview_variant(parent, edit).scenario_id == preview_variant(parent, edit).scenario_id
     assert preview_variant(parent, edit, seed=1).scenario_id != preview_variant(parent, edit).scenario_id
+
+
+def test_motion_edit_rejects_invalid_values():
+    with pytest.raises(ValueError):
+        ActorMotionEdit("lead", braking_mps2=-1.0)
+    with pytest.raises(ValueError):
+        ActorMotionEdit("lead", start_time_s=3.0, end_time_s=1.0)
+    with pytest.raises(ValueError):
+        ActorMotionEdit("lead", speed_multiplier=0.0)
