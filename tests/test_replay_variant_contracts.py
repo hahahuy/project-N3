@@ -218,3 +218,10 @@ def test_variant_id_changes_with_speed_multiplier():
     second = perturb_scenario(parent, VariantConfig(speed_multiplier=1.2))
     assert first.scenario_id != second.scenario_id
     assert first.scenario_id.startswith("s--variant-")
+
+
+def test_perturbation_does_not_mutate_the_parent():
+    parent = _scenario(_ego(), _lead())
+    before = json.dumps(scenario_to_dict(parent), sort_keys=True)
+    perturb_scenario(parent, VariantConfig(speed_multiplier=1.4, initial_gap_delta_m=-3.0, timing_offset_s=0.5))
+    assert json.dumps(scenario_to_dict(parent), sort_keys=True) == before
