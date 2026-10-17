@@ -121,3 +121,9 @@ def test_constant_speed_moves_straight_along_x() -> None:
     preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 10.0), _steady(3))
     assert [state.x_m for state in preview.states] == pytest.approx([0.0, 0.5, 1.0])
     assert [state.y_m for state in preview.states] == pytest.approx([0.0, 0.0, 0.0])
+
+
+def test_heading_of_ninety_degrees_moves_along_y() -> None:
+    preview = integrate_kinematic_open_loop(State(0, 0, 0, math.pi / 2, 10.0), _steady(3))
+    assert preview.states[-1].x_m == pytest.approx(0.0, abs=1e-9)
+    assert preview.states[-1].y_m == pytest.approx(1.0)
