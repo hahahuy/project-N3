@@ -20,7 +20,7 @@ export class WasmScenarioRuntime {
   getSnapshot = (): WasmRuntimeSnapshot => this.snapshot;
   subscribe = (listener: Listener): (() => void) => { this.listeners.add(listener); return () => this.listeners.delete(listener); };
   acquire(): void { this.refs += 1; if (this.refs === 1) this.start(); }
-  release(): void { this.refs = Math.max(0, this.refs - 1); if (this.refs === 0) this.dispose(); }
+  release(): boolean { this.refs = Math.max(0, this.refs - 1); if (this.refs === 0) { this.dispose(); return true; } return false; }
   send(type: WasmWorkerRequest["type"], payload: Record<string, unknown> = {}): void { this.worker?.postMessage({ type, ...payload, requestId: ++this.requestId }); }
 
   private emit(): void { for (const listener of this.listeners) listener(); }
@@ -44,4 +44,8 @@ export function acquireWasmRuntime(key: WasmRuntimeKey, source: WasmRuntimeSourc
   if (!runtime) { runtime = new WasmScenarioRuntime(source); runtimes.set(key, runtime); }
   runtime.acquire();
   return runtime;
+}
+
+export function releaseWasmRuntime(key: WasmRuntimeKey, runtime: WasmScenarioRuntime): void {
+  if (runtime.release()) runtimes.delete(key);
 }
