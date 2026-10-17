@@ -240,3 +240,10 @@ def test_initial_gap_is_applied_along_the_ego_heading():
     variant = perturb_scenario(_scenario(ego, lead), VariantConfig(initial_gap_delta_m=5.0))
     start = _actor(variant, "lead").trajectory[0]
     assert (start.x_m, start.y_m) == pytest.approx((0.0, 35.0))
+
+
+def test_timing_offset_shifts_only_non_ego_timestamps():
+    variant = perturb_scenario(_scenario(_ego(), _lead()), VariantConfig(timing_offset_s=0.5))
+    assert _actor(variant, "lead").trajectory[0].time_s == pytest.approx(0.5)
+    assert _actor(variant, "ego").trajectory[0].time_s == pytest.approx(0.0)
+    assert variant.duration_s == pytest.approx(6.5)
