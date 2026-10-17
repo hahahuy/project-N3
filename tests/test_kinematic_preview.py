@@ -159,3 +159,11 @@ def test_yaw_rate_updates_yaw_by_dt() -> None:
     source = _extension((0, 0.0, 0.0), (50_000, 0.0, 0.5))
     preview = integrate_kinematic_open_loop(State(0, 0, 0, 0.1, 3.0), source)
     assert preview.states[1].yaw_rad == pytest.approx(0.125)
+
+
+def test_acceleration_over_limit_is_reported() -> None:
+    source = _extension((0, 0.0, 0.0), (50_000, 6.0, 0.0))
+    preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 10.0), source)
+    (violation,) = preview.violations
+    assert (violation.code, violation.state_index) == ("acceleration_exceeded", 1)
+    assert (violation.observed, violation.limit) == (6.0, 5.0)
