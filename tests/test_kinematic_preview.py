@@ -181,3 +181,11 @@ def test_deceleration_over_limit_reports_positive_magnitude() -> None:
     (violation,) = preview.violations
     assert violation.code == "deceleration_exceeded"
     assert (violation.observed, violation.limit) == (9.0, 8.0)
+
+
+def test_negative_yaw_rate_over_limit_is_reported_by_magnitude() -> None:
+    source = _extension((0, 0.0, 0.0), (50_000, 0.0, -2.0))
+    preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 10.0), source)
+    (violation,) = preview.violations
+    assert violation.code == "yaw_rate_exceeded"
+    assert violation.observed == 2.0
