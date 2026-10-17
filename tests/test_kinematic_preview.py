@@ -70,3 +70,8 @@ def test_limits_reject_negative_values(field: str) -> None:
 def test_limits_reject_non_finite_values(bad: float) -> None:
     with pytest.raises(ValueError, match="finite"):
         KinematicLimits(max_jerk_mps3=bad)
+
+
+def test_limits_reject_empty_version() -> None:
+    with pytest.raises(ValueError, match="versioned"):
+        KinematicLimits(version="")
