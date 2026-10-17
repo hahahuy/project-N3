@@ -56,6 +56,63 @@ def test_transform_converts_a_known_point_and_records_metadata() -> None:
     assert local.provenance["coordinate_transform_heading_rad"] == format(pi / 2, ".17g")
 
 
+def test_transform_preserves_recorded_cuboid_dimensions() -> None:
+    """The local-frame scenario must carry the recorded cuboid, not fallbacks.
+
+    Regression: the transform rebuilt actors with length/width only, dropping
+    `height_m`, so every imported scenario silently lost recorded heights and
+    the exporter fell back to constants. Dimensions are frame-independent and
+    pass through untouched.
+    """
+    scenario = _source_scenario()
+    sized = Actor(
+        actor_id="sized",
+        actor_type="human.pedestrian.adult",
+        trajectory=(State(time_s=0.0, x_m=101.0, y_m=201.0, yaw_rad=0.0, speed_mps=1.0),),
+        length_m=0.618,
+        width_m=0.634,
+        height_m=1.642,
+    )
+    scenario = Scenario(
+        scenario_id=scenario.scenario_id,
+        duration_s=scenario.duration_s,
+        ego_actor_id=scenario.ego_actor_id,
+        actors=(*scenario.actors, sized),
+        coordinate_frame=scenario.coordinate_frame,
+        provenance=scenario.provenance,
+    )
+
+    local = transform_to_local_road_aligned(
+        scenario,
+        RoadAlignedTransform(origin_x_m=100.0, origin_y_m=200.0, heading_rad=pi / 2),
+    )
+
+    moved = next(actor for actor in local.actors if actor.actor_id == "sized")
+    assert (moved.length_m, moved.width_m, moved.height_m) == (0.618, 0.634, 1.642)
+
+
+def test_transform_rebuilds_exactly_from_provenance() -> None:
+    original = RoadAlignedTransform(origin_x_m=411.5, origin_y_m=-1180.25, heading_rad=-1.9236)
+    rebuilt = RoadAlignedTransform.from_provenance(original.provenance())
+
+    assert (rebuilt.origin_x_m, rebuilt.origin_y_m, rebuilt.heading_rad) == pytest.approx(
+        (original.origin_x_m, original.origin_y_m, original.heading_rad)
+    )
+    assert rebuilt.source_frame == "nuscenes_global"
+
+
+def test_transform_from_provenance_rejects_incomplete_or_stale_versions() -> None:
+    good = RoadAlignedTransform(origin_x_m=0.0, origin_y_m=0.0, heading_rad=0.0).provenance()
+
+    with pytest.raises(ValueError, match="complete coordinate transform"):
+        RoadAlignedTransform.from_provenance({})
+    with pytest.raises(ValueError, match="complete coordinate transform"):
+        RoadAlignedTransform.from_provenance({**good, "coordinate_transform_origin_x_m": "far"})
+    stale = {**good, "coordinate_transform_version": "local-road-aligned-v0"}
+    with pytest.raises(ValueError, match="Unsupported coordinate transform version"):
+        RoadAlignedTransform.from_provenance(stale)
+
+
 def test_transform_round_trip_stays_within_configured_tolerance() -> None:
     transform = RoadAlignedTransform(
         origin_x_m=-50.25,

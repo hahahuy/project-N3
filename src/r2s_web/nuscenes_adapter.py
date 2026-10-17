@@ -85,6 +85,119 @@ class NuScenesDatasetAdapter:
         self.sample_data(lidar_token)
         return lidar_token
 
+    def camera_records(self, first_sample_token: str, last_sample_token: str, channel: str) -> list[tuple[dict[str, Any], dict[str, Any], dict[str, Any], Path]]:
+        """Return camera records across one source window, oldest first."""
+        if not channel.startswith("CAM_"):
+            raise ValueError("unsupported_camera_channel")
+        records = []
+        current_token = first_sample_token
+        seen: set[str] = set()
+        while current_token and current_token not in seen:
+            seen.add(current_token)
+            sample = self.nusc.get("sample", current_token)
+            sample_data_token = str(sample.get("data", {}).get(channel) or "")
+            if sample_data_token:
+                sample_data = self.nusc.get("sample_data", sample_data_token)
+                calibrated = self.nusc.get("calibrated_sensor", sample_data["calibrated_sensor_token"])
+                sensor = self.nusc.get("sensor", calibrated["sensor_token"])
+                if sensor.get("channel") != channel:
+                    raise ValueError("camera_channel_calibration_mismatch")
+                ego_pose = self.nusc.get("ego_pose", sample_data["ego_pose_token"])
+                path = (self.root / sample_data["filename"]).resolve()
+                if self.root not in path.parents or not path.is_file():
+                    raise FileNotFoundError("camera source file is unavailable")
+                sample_data = {**sample_data, "source_timestamp": int(sample.get("timestamp", sample_data["timestamp"]))}
+                records.append((sample_data, calibrated, ego_pose, path))
+            if current_token == last_sample_token:
+                break
+            current_token = str(sample.get("next") or "")
+        return records
+
+    def camera_annotations(self, sample_data_token: str) -> tuple[list[dict[str, Any]], list[list[float]]]:
+        """Return recorded boxes and camera intrinsic using official devkit semantics."""
+        sample_data = self.nusc.get("sample_data", sample_data_token)
+        if not str(sample_data.get("channel", "")).startswith("CAM_"):
+            raise ValueError("sample_data calibration is not a camera")
+        _, boxes, intrinsic = self.nusc.get_sample_data(sample_data_token)
+        from nuscenes.utils.geometry_utils import view_points
+        return (
+            [
+                {
+                    "token": box.token,
+                    "category_name": box.name,
+                    "corners_camera": box.corners().astype(float).tolist(),
+                    "corners_2d": view_points(box.corners(), intrinsic, normalize=True)[:2].T.astype(float).tolist() if intrinsic is not None else [],
+                    "size_m": [float(value) for value in box.wlh],
+                    "visibility": "recorded_annotation",
+                }
+                for box in boxes
+            ],
+            intrinsic.astype(float).tolist() if intrinsic is not None else [],
+        )
+
+    def camera_file(self, sample_data_token: str) -> tuple[dict[str, Any], Path]:
+        sample_data = self.nusc.get("sample_data", sample_data_token)
+        if not str(sample_data.get("channel", "")).startswith("CAM_"):
+            raise ValueError("sample_data calibration is not a camera")
+        path = (self.root / sample_data["filename"]).resolve()
+        if self.root not in path.parents or not path.is_file():
+            raise FileNotFoundError("camera source file is unavailable")
+        return sample_data, path
+
+    def camera_lidar_projection(self, camera_sample_data_token: str) -> list[dict[str, float]]:
+        """Project the matching keyframe LIDAR_TOP cloud with official devkit semantics."""
+        camera = self.nusc.get("sample_data", camera_sample_data_token)
+        sample = self.nusc.get("sample", camera["sample_token"])
+        lidar_token = str(sample.get("data", {}).get("LIDAR_TOP") or "")
+        if not lidar_token:
+            raise ValueError("recorded_lidar_sample_unavailable")
+        points, coloring, _ = self.explorer.map_pointcloud_to_image(lidar_token, camera_sample_data_token)
+        return [
+            {"u": float(points[0, index]), "v": float(points[1, index]), "depth_m": float(coloring[index])}
+            for index in range(points.shape[1])
+        ]
+
+    def recorded_annotations_window(self, first_sample_token: str, last_sample_token: str, requested_time_s: float) -> dict[str, Any]:
+        """Resolve one recorded sample and return all nuScenes annotation boxes."""
+        tokens: list[str] = []
+        timestamps: list[int] = []
+        current = first_sample_token
+        seen: set[str] = set()
+        while current and current not in seen:
+            seen.add(current)
+            sample = self.nusc.get("sample", current)
+            tokens.append(current)
+            timestamps.append(int(sample["timestamp"]))
+            if current == last_sample_token:
+                break
+            current = str(sample.get("next") or "")
+        if not tokens:
+            raise ValueError("recorded_annotation_sample_unavailable")
+        from .preview_time import resolve_preview_time
+        resolution = resolve_preview_time(requested_time_s, timestamps, policy="nearest")
+        sample = self.nusc.get("sample", tokens[resolution.index])
+        lidar_token = str(sample.get("data", {}).get("LIDAR_TOP") or "")
+        if not lidar_token:
+            raise ValueError("recorded_annotation_lidar_unavailable")
+        boxes = self.nusc.get_boxes(lidar_token)
+        return {
+            "requested_time_s": resolution.requested_time_s,
+            "resolved_time_s": resolution.resolved_time_s,
+            "timestamp_us": resolution.timestamp_us,
+            "sample_token": tokens[resolution.index],
+            "boxes": [
+                {
+                    "token": box.token,
+                    "category_name": box.name,
+                    "center_global": [float(value) for value in box.center],
+                    "size_m": [float(value) for value in box.wlh],
+                    "rotation_wxyz": [float(value) for value in box.orientation.elements],
+                    "visibility": "recorded_annotation",
+                }
+                for box in boxes
+            ],
+        }
+
     def records(self, token: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], Path]:
         sample_data = self.sample_data(token)
         calibration = self.nusc.get("calibrated_sensor", sample_data["calibrated_sensor_token"])
@@ -114,6 +227,30 @@ class NuScenesDatasetAdapter:
                 break
             current = self.sample_data(previous_token)
         return result
+
+    def sweep_window_tokens(self, first_sample_token: str, last_sample_token: str, limit: int = 500) -> list[tuple[str, int]]:
+        """Walk FORWARD from the first to the last sample of a scenario window.
+
+        Returns ``(sample_data_token, timestamp_us)`` per sample that carries a
+        LIDAR_TOP sweep, oldest first. The backward ``sweep_records`` walk only
+        covers pre-start history; the WASM overlay needs the play range itself.
+        """
+        tokens: list[tuple[str, int]] = []
+        seen: set[str] = set()
+        current_token = first_sample_token
+        while current_token and current_token not in seen and len(tokens) < limit:
+            seen.add(current_token)
+            sample = self.nusc.get("sample", current_token)
+            if not sample:
+                break
+            lidar_token = str(sample.get("data", {}).get("LIDAR_TOP") or "")
+            if lidar_token:
+                record = self.sample_data(lidar_token)
+                tokens.append((lidar_token, int(record.get("timestamp", 0))))
+            if current_token == last_sample_token:
+                break
+            current_token = str(sample.get("next") or "")
+        return tokens
 
     def multisweep(self, token: str, nsweeps: int) -> tuple[Any, np.ndarray]:
         sample_data, _, _, _ = self.records(token)

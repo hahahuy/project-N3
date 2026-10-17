@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from real2scenario import state_to_dict
 
-from .adapter import ArtifactAdapter
+from .adapter import ArtifactAdapter, ArtifactRecord
 from .config import WebSettings
 from .jobs import BatchService, PreviewService, to_results
 from .esmini import EsminiBackend, ReplayJob
@@ -65,24 +65,92 @@ from .evidence_layers import evidence_layers
 from .gate_timeline import gate_timeline
 from .lineage import variant_lineage
 from .recipe import RecipeStore
-from .source_scenes import SourceSceneAdapter
+from .source_scenes import SourceSceneAdapter, resolve_scene_map_name
 from .sensor_status import variant_sensor_status
 from .native_map import NativeMapService
+from .ground import GROUND_CONTRACT_VERSION, GroundService
 from .lidar import LidarService
-from .frames import capability as frame_capability, frame as render_frame
+from .camera import CameraEvidenceService
+from .preview_time import resolve_preview_time
+from .nuscenes_adapter import NuScenesDatasetAdapter
+from .frames import capability as frame_capability, frame as render_frame, _state_at as _state_at_preview
 from .live_session import LiveSessionService
-from real2scenario import STRAIGHT_ROAD_TOPOLOGY, select_opendrive_template, write_openscenario
+from real2scenario import (
+    MAP_BUILDER_VERSION,
+    STRAIGHT_ROAD_TOPOLOGY,
+    OpenDriveTemplate,
+    RoadAlignedTransform,
+    Scenario,
+    State,
+    atomic_write_bytes,
+    build_opendrive_from_nuscenes,
+    select_full_scene_map,
+    select_opendrive_template,
+    transform_opendrive_to_local,
+    write_openscenario,
+)
+
 from pathlib import Path
 from fastapi.responses import Response
 
-WASM_PAIR_EXPORTER_VERSION = "openscenario-exporter-v3"
+WASM_PAIR_EXPORTER_VERSION = "openscenario-exporter-v5"
+
+_TEMPLATE_MAP_WARNING = "OpenDRIVE output uses a local template approximation; it is not lossless map conversion."
+_FULLMAP_MAP_WARNING = "OpenDRIVE is a full nuScenes map reconstruction in the scenario local frame (line-segment approximation); lane-level details differ from the recorded map."
+
+
+def _fullmap_wasm_pair(
+    record: ArtifactRecord, settings: WebSettings
+) -> tuple[Scenario, OpenDriveTemplate, Path, str]:
+    """Build a wasm-pair with the scene's own full map instead of the template.
+
+    Returns (selected scenario, template, pair root, map warning). Raises
+    (KeyError, OSError, RuntimeError, ValueError) on any failure so the caller
+    falls back to the template path — a missing map must never break preview.
+    """
+    provenance = record.scenario.provenance
+    scene_token = provenance["source_scene_token"]
+    transform = RoadAlignedTransform.from_provenance(provenance)
+    map_name = resolve_scene_map_name(scene_token, settings)
+    cached = settings.output_root / "maps" / f"{map_name}.xodr"
+    if cached.is_file():
+        global_text = cached.read_text(encoding="utf-8")
+    else:
+        manifest = build_opendrive_from_nuscenes(
+            settings.dataset_root, map_name=map_name, output_path=cached
+        )
+        if manifest.get("road_count", 0) == 0:
+            raise ValueError(f"Full-map build for {map_name!r} produced no roads.")
+        global_text = cached.read_text(encoding="utf-8")
+    local_text = transform_opendrive_to_local(global_text, transform)
+    road_filename = f"{map_name}.xodr"
+    pair_key = hashlib.sha256(
+        f"wasm:{WASM_PAIR_EXPORTER_VERSION}:fullmap:{map_name}:{record.scenario.scenario_id}".encode("utf-8")
+    ).hexdigest()[:24]
+    pair_root = settings.output_root / "wasm-pairs" / pair_key
+    pair_root.mkdir(parents=True, exist_ok=True)
+    xodr_path = pair_root / road_filename
+    # Atomic: concurrent regeneration POSTs (dev StrictMode double-mount,
+    # double tabs) must never expose a half-written road to artifact GETs.
+    atomic_write_bytes(xodr_path, local_text.encode("utf-8"))
+    selected, template = select_full_scene_map(
+        record.scenario,
+        map_name=map_name,
+        road_filename=road_filename,
+        map_builder_version=str(MAP_BUILDER_VERSION),
+        staged_path=xodr_path,
+    )
+    return selected, template, pair_root, _FULLMAP_MAP_WARNING
+
 
 def create_app(settings: WebSettings | None = None) -> FastAPI:
     resolved_settings = settings or WebSettings.from_environment()
     adapter = ArtifactAdapter(resolved_settings)
     source_scenes = SourceSceneAdapter(resolved_settings)
     native_maps = NativeMapService(resolved_settings)
+    ground = GroundService(resolved_settings)
     lidar = LidarService(resolved_settings)
+    camera = CameraEvidenceService(resolve_preview_time)
     recipes = RecipeStore()
     batches = BatchService(resolved_settings, adapter)
     previews = PreviewService(resolved_settings, adapter)
@@ -95,7 +163,9 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
     app.state.previews = previews
     app.state.source_scenes = source_scenes
     app.state.native_maps = native_maps
+    app.state.ground = ground
     app.state.lidar = lidar
+    app.state.camera = camera
     app.state.recipes = recipes
     app.state.esmini = esmini
     app.state.live_sessions = live_sessions
@@ -110,7 +180,7 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
         """Resolve one artifact or fail with the API-owned message."""
         try:
             return adapter.get(scenario_id)
-        except KeyError as error:
+        except (KeyError, FileNotFoundError, ImportError, OSError, RuntimeError, ValueError) as error:
             raise HTTPException(status_code=404, detail=str(error)) from error
 
     def layers_for(record) -> dict[str, object]:
@@ -198,7 +268,7 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
             pair_root.mkdir(parents=True, exist_ok=True)
             xosc = write_openscenario(selected, template, pair_root / "scenario.xosc")
             xodr = pair_root / Path(template.relative_path).name
-            xodr.write_bytes(template.path().read_bytes())
+            atomic_write_bytes(xodr, template.path().read_bytes())
             session = live_sessions.create(request.scenario_id, str(xosc), str(xodr), request.timestep_s)
             return session.metadata() | {
                 "artifacts": {
@@ -216,19 +286,25 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
         """Materialize a private XOSC/XODR pair for browser WASM preview only."""
         try:
             record = adapter.get(scenario_id)
-            selected, template = select_opendrive_template(
-                record.scenario, topology=STRAIGHT_ROAD_TOPOLOGY
-            )
-            pair_key = hashlib.sha256(f"wasm:{WASM_PAIR_EXPORTER_VERSION}:{scenario_id}".encode("utf-8")).hexdigest()[:24]
-            pair_root = resolved_settings.output_root / "wasm-pairs" / pair_key
-            pair_root.mkdir(parents=True, exist_ok=True)
+            try:
+                selected, template, pair_root, map_warning = _fullmap_wasm_pair(
+                    record, resolved_settings
+                )
+            except (KeyError, OSError, RuntimeError, ValueError):
+                selected, template = select_opendrive_template(
+                    record.scenario, topology=STRAIGHT_ROAD_TOPOLOGY
+                )
+                pair_key = hashlib.sha256(f"wasm:{WASM_PAIR_EXPORTER_VERSION}:{scenario_id}".encode("utf-8")).hexdigest()[:24]
+                pair_root = resolved_settings.output_root / "wasm-pairs" / pair_key
+                pair_root.mkdir(parents=True, exist_ok=True)
+                map_warning = _TEMPLATE_MAP_WARNING
             xosc = write_openscenario(selected, template, pair_root / "scenario.xosc")
             xodr = pair_root / Path(template.relative_path).name
-            xodr.write_bytes(template.path().read_bytes())
+            atomic_write_bytes(xodr, template.path().read_bytes())
             return WasmScenarioPairView(
                 scenario_id=scenario_id,
                 coordinate_frame=selected.coordinate_frame,
-                map_warning="OpenDRIVE output uses a local template approximation; it is not lossless map conversion.",
+                map_warning=map_warning,
                 openscenario=f"/api/artifacts/{xosc.relative_to(resolved_settings.project_root).as_posix()}",
                 opendrive=f"/api/artifacts/{xodr.relative_to(resolved_settings.project_root).as_posix()}",
                 artifact_visibility="local_private",
@@ -550,6 +626,27 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
         except (KeyError, FileNotFoundError, ImportError, OSError, RuntimeError, ValueError) as error:
             return {"available": False, "unavailable_reason": str(error)}
 
+    @app.get("/api/workspace/scenarios/{scenario_id}/lidar-sweeps")
+    def workspace_lidar_sweeps(scenario_id: str) -> dict[str, object]:
+        try:
+            record = adapter.get(scenario_id)
+            source_window = record.scenario.provenance.get("source_window", "")
+            first_sample_token, _, last_sample_token = source_window.partition(":")
+            if not first_sample_token or not last_sample_token:
+                raise ValueError("recorded_lidar_window_unavailable")
+            return {
+                "contract_version": "nuscenes-lidar-sweeps-v1",
+                "channel": "LIDAR_TOP",
+                "sweeps": lidar.sweep_window(first_sample_token, last_sample_token),
+            }
+        except (KeyError, FileNotFoundError, ImportError, OSError, RuntimeError, ValueError) as error:
+            return {
+                "contract_version": "nuscenes-lidar-sweeps-v1",
+                "status": "unavailable",
+                "unavailable_reason": str(error),
+                "sweeps": [],
+            }
+
     @app.get("/api/workspace/scenarios/{scenario_id}/sensor-evidence")
     def workspace_sensor_evidence(scenario_id: str, nsweeps: int = 5) -> dict[str, object]:
         try:
@@ -569,6 +666,19 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
                 "artifact_visibility": "local_private",
             }
 
+    @app.get("/api/workspace/scenarios/{scenario_id}/ground-layers")
+    def workspace_ground_layers(scenario_id: str) -> dict[str, object]:
+        try:
+            record = adapter.get(scenario_id)
+            return ground.layers(record.scenario)
+        except (KeyError, FileNotFoundError, ImportError, OSError, RuntimeError, ValueError) as error:
+            return {
+                "contract_version": GROUND_CONTRACT_VERSION,
+                "status": "unavailable",
+                "unavailable_reason": str(error),
+                "layers": [],
+            }
+
     @app.get("/api/workspace/scenarios/{scenario_id}/top-down")
     def workspace_top_down(scenario_id: str, source: str = "lidar", nsweeps: int = 5):
         try:
@@ -584,6 +694,123 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
         except (KeyError, FileNotFoundError, ImportError, OSError, RuntimeError, ValueError) as error:
             raise HTTPException(status_code=404, detail=str(error)) from error
 
+    @app.get("/api/workspace/scenarios/{scenario_id}/top-down-state")
+    def workspace_top_down_state(scenario_id: str, time_s: float = 0.0) -> dict[str, object]:
+        """Return local map geometry plus canonical actor state for preview only."""
+        try:
+            record = adapter.get(scenario_id)
+            scenario = record.scenario
+            if not 0.0 <= time_s <= scenario.duration_s:
+                raise ValueError("preview_time_out_of_range")
+            map_payload = ground.full_layers(scenario)
+            source_window = scenario.provenance.get("source_window", "")
+            first_sample, _, last_sample = source_window.partition(":")
+            recorded = NuScenesDatasetAdapter.for_dataset(resolved_settings.dataset_root, resolved_settings.dataset_version).recorded_annotations_window(first_sample, last_sample, time_s)
+            transform = RoadAlignedTransform.from_provenance(scenario.provenance)
+            try:
+                from pyquaternion import Quaternion
+                for box in recorded["boxes"]:
+                    center = box["center_global"]
+                    local = transform.to_local_state(State(time_s=time_s, x_m=center[0], y_m=center[1], yaw_rad=0.0, speed_mps=0.0))
+                    box["center_local"] = [local.x_m, local.y_m]
+                    box["yaw_local_rad"] = float(Quaternion(box["rotation_wxyz"]).yaw_pitch_roll[0] - transform.heading_rad)
+            except (ImportError, KeyError, TypeError, ValueError):
+                for box in recorded["boxes"]:
+                    box["center_local"] = None
+                    box["yaw_local_rad"] = None
+            actors = []
+            for actor in scenario.actors:
+                if not actor.trajectory:
+                    continue
+                state = _state_at_preview(actor.trajectory, time_s)
+                actors.append({
+                    "actor_id": actor.actor_id,
+                    "actor_type": actor.actor_type,
+                    "role": "ego" if actor.actor_id == scenario.ego_actor_id else "actor",
+                    "time_s": state.time_s,
+                    "x_m": state.x_m,
+                    "y_m": state.y_m,
+                    "yaw_rad": state.yaw_rad,
+                    "speed_mps": state.speed_mps,
+                    "dimensions": {"length_m": actor.length_m, "width_m": actor.width_m, "height_m": actor.height_m},
+                })
+            return {
+                "contract_version": "workspace-top-down-state-v1",
+                "scenario_id": scenario_id,
+                "requested_time_s": time_s,
+                "resolved_time_s": time_s,
+                "coordinate_frame": scenario.coordinate_frame,
+                "map_name": map_payload.get("map_name", scenario.provenance.get("map_name", "unknown")),
+                "map_layers": {layer["name"]: layer["polygons"] for layer in map_payload.get("layers", [])},
+                "actors": actors,
+                "recorded_annotations": recorded,
+                "provenance": {"map_source": "nuscenes-devkit-NuScenesMap", "actor_source": "recorded_nuscenes_annotations", "artifact_visibility": "local_private"},
+            }
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+
+    @app.get("/api/workspace/scenarios/{scenario_id}/camera-evidence")
+    def workspace_camera_evidence(scenario_id: str, channel: str = "CAM_FRONT", time_s: float = 0.0) -> dict[str, object]:
+        """Resolve one recorded camera image and its independent overlay layers."""
+        try:
+            record = adapter.get(scenario_id)
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        if channel not in {"CAM_FRONT_RIGHT", "CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_RIGHT", "CAM_BACK_LEFT", "CAM_BACK"}:
+            raise HTTPException(status_code=422, detail="unsupported_camera_channel")
+        try:
+            first, _, last = record.scenario.provenance.get("source_window", "").partition(":")
+            frame = CameraEvidenceService.from_dataset_window(
+                adapter=NuScenesDatasetAdapter.for_dataset(resolved_settings.dataset_root, resolved_settings.dataset_version),
+                first_sample_token=first,
+                last_sample_token=last,
+                channel=channel,
+                requested_time_s=time_s,
+                canonical_cuboids=[
+                    {
+                        "actor_id": actor.actor_id,
+                        "actor_type": actor.actor_type,
+                        "state": {
+                            "x_m": _state_at_preview(actor.trajectory, time_s).x_m,
+                            "y_m": _state_at_preview(actor.trajectory, time_s).y_m,
+                            "yaw_rad": _state_at_preview(actor.trajectory, time_s).yaw_rad,
+                        },
+                        "size_m": [actor.length_m, actor.width_m, actor.height_m],
+                        "visibility": "canonical_scenario",
+                    }
+                    for actor in record.scenario.actors
+                    if actor.trajectory
+                ],
+            )
+            sample_token = str(frame.image.get("sample_data_token") or "")
+            return {
+                "contract_version": frame.contract_version,
+                "scenario_id": scenario_id,
+                "channel": frame.channel,
+                "requested_time_s": frame.requested_time_s,
+                "resolved_time_s": frame.resolved_time_s,
+                "timestamp_us": frame.timestamp_us,
+                "selection_policy": frame.selection_policy,
+                "status": "rendered",
+                "image": {**frame.image, "url": f"/api/workspace/camera-image/{sample_token}"},
+                "calibration": dict(frame.calibration),
+                "recorded_cuboids": list(frame.recorded_cuboids),
+                "canonical_cuboids": list(frame.canonical_cuboids),
+                "lidar_points": [{"u": point.u, "v": point.v, "depth_m": point.depth_m} for point in frame.lidar_points],
+                "provenance": dict(frame.provenance),
+            }
+        except (FileNotFoundError, ImportError, OSError, RuntimeError, ValueError, KeyError) as error:
+            return {"contract_version": "nuscenes-camera-evidence-v1", "scenario_id": scenario_id, "channel": channel, "requested_time_s": time_s, "resolved_time_s": None, "timestamp_us": None, "selection_policy": "nearest", "status": "unavailable", "unavailable_reason": str(error), "image": None, "recorded_cuboids": [], "canonical_cuboids": [], "lidar_points": [], "provenance": {"artifact_visibility": "local_private"}}
+
+    @app.get("/api/workspace/camera-image/{sample_data_token}")
+    def workspace_camera_image(sample_data_token: str):
+        if resolved_settings.dataset_root is None:
+            raise HTTPException(status_code=404, detail="dataset_not_configured")
+        try:
+            _, path = NuScenesDatasetAdapter.for_dataset(resolved_settings.dataset_root, resolved_settings.dataset_version).camera_file(sample_data_token)
+            return FileResponse(path)
+        except (FileNotFoundError, ImportError, OSError, RuntimeError, ValueError, KeyError) as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
     @app.get("/api/workspace/scenarios/{scenario_id}", response_model=ScenarioViewPayload)
     def workspace_scenario(scenario_id: str) -> ScenarioViewPayload:
         try:
@@ -612,6 +839,7 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
                 ),
                 length_m=actor.length_m,
                 width_m=actor.width_m,
+                height_m=actor.height_m,
             )
             for actor in record.scenario.actors
         ]

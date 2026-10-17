@@ -368,27 +368,26 @@ describe("actor timeline and gate lane", () => {
     expect(within(flyout.parentElement as HTMLElement).getByText(/lane_road_match_evidence_not_supplied_for_this_scenario/)).toBeTruthy();
   });
 
-  it("counts the view panels available in the grid lock", async () => {
+  it("keeps the three-view grid limit without showing a counter", async () => {
     await renderWorkspace();
     const addView = () => screen.getByRole("button", { name: "Add view" });
-    const badge = () => addView().querySelector(".tool-badge")?.textContent;
 
-    expect(badge()).toBe("2/3");
+    expect(addView().querySelector(".tool-badge")).toBeNull();
     expect((addView() as HTMLButtonElement).disabled).toBe(false);
-    expect(addView().getAttribute("title")).toContain("2 of 3 view panels available");
+    expect(addView().getAttribute("title")).toBe("Add view (Shift+V)");
 
     fireEvent.click(addView());
     fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /Top-down/ }));
-    expect(badge()).toBe("1/3");
+    expect(addView().querySelector(".tool-badge")).toBeNull();
 
     fireEvent.click(addView());
     fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /3rd-person POV/ }));
-    expect(badge()).toBe("0/3");
+    expect(addView().querySelector(".tool-badge")).toBeNull();
     expect((addView() as HTMLButtonElement).disabled).toBe(true);
-    expect(addView().getAttribute("title")).toContain("view grid locked at 3 panels, close one to add another");
+    expect(addView().getAttribute("title")).toBe("Add view (Shift+V) - unavailable in this build");
 
     fireEvent.click(screen.getByRole("button", { name: "Close view: Top-down" }));
-    expect(badge()).toBe("1/3");
+    expect(addView().querySelector(".tool-badge")).toBeNull();
     expect((addView() as HTMLButtonElement).disabled).toBe(false);
   });
 
@@ -398,15 +397,26 @@ describe("actor timeline and gate lane", () => {
     const menu = screen.getByRole("menu");
     expect(menu.className).toContain("add-view-menu");
     expect(menu.closest(".add-view-control")).toBeTruthy();
-    expect(within(menu).getByRole("button", { name: /Top-down/ }).textContent).toContain("view panel 2 of 3");
-    expect(within(menu).getByRole("button", { name: /Sensor Evidence/ }).textContent).toContain("view panel 2 of 3");
-    expect(within(menu).getByRole("button", { name: /3rd-person POV/ }).textContent).toContain("view panel 2 of 3");
-    expect(within(menu).getByRole("button", { name: /In-car POV/ }).textContent).toContain("view panel 2 of 3");
-    expect(within(menu).getByRole("button", { name: /LiDAR 3D/ }).textContent).toContain("view panel 2 of 3");
+    expect(within(menu).getByRole("button", { name: /Top-down/ }).textContent).toContain("nuScenes devkit map and point cloud");
+    expect(within(menu).getByRole("button", { name: /Sensor Evidence/ }).textContent).toContain("nuScenes LIDAR_TOP recorded sweeps");
+    expect(within(menu).getByRole("button", { name: /3rd-person POV/ }).textContent).toContain("internal transform POV");
+    expect(within(menu).getByRole("button", { name: /In-car POV/ }).textContent).toContain("ego-mounted internal transform POV");
+    expect(within(menu).queryByRole("button", { name: /LiDAR 3D/ })).toBeNull();
+    expect(within(menu).getByRole("button", { name: /Real Camera/ }).textContent).toContain("recorded camera channel view");
+  });
 
-    fireEvent.click(within(menu).getByRole("button", { name: /LiDAR 3D/ }));
+  it("shows camera POV options in a Real Camera view", async () => {
+    await renderWorkspace();
     fireEvent.click(screen.getByRole("button", { name: "Add view" }));
-    expect(within(screen.getByRole("menu")).getByRole("button", { name: /In-car POV/ }).textContent).toContain("view panel 3 of 3");
+    fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /Real Camera/ }));
+
+    expect(screen.getByText("CAM_FRONT")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "camera pov" }));
+    for (const pov of ["CAM_FRONT_RIGHT", "CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_RIGHT", "CAM_BACK_LEFT", "CAM_BACK"]) {
+      expect(screen.getByRole("menuitemradio", { name: pov })).toBeTruthy();
+    }
+    fireEvent.click(screen.getByRole("menuitemradio", { name: "CAM_BACK" }));
+    expect(screen.getByText("CAM_BACK")).toBeTruthy();
   });
 
   it("synchronizes the playhead across the main POV, top-down and replay-only sensor panes", async () => {
@@ -420,19 +430,33 @@ describe("actor timeline and gate lane", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add view" }));
     fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /Top-down/ }));
     expect(screen.getByRole("img", { name: /Top-down trajectory view at 1.00 seconds/ })).toBeTruthy();
-    fireEvent.click(replayTab());
     fireEvent.click(screen.getByRole("button", { name: "Add view" }));
     fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /Sensor Evidence/ }));
     expect(await screen.findByRole("img", { name: /nuScenes Sensor Evidence view with 2 LIDAR_TOP sweeps/ })).toBeTruthy();
     expect((screen.getByRole("button", { name: "Add view" }) as HTMLButtonElement).disabled).toBe(true);
   });
-});
 
-function replayTab(): HTMLElement {
-  const tabs = document.querySelector(".document-tabs");
-  if (!tabs) throw new Error("document tabs are not rendered");
-  return within(tabs as HTMLElement).getByRole("button", { name: "Replay" });
-}
+  it("swaps view positions when one pane is dragged onto another", async () => {
+    await renderWorkspace();
+    fireEvent.click(screen.getByRole("button", { name: "Add view" }));
+    fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /Top-down/ }));
+    const panes = () => Array.from(document.querySelectorAll<HTMLElement>(".view-pane"));
+    expect(panes()[0].textContent).toContain("3rd-person POV");
+    expect(panes()[1].textContent).toContain("Top-down");
+
+    const source = panes()[1].querySelector("header") as HTMLElement;
+    const target = panes()[0];
+    fireEvent.dragStart(source, { dataTransfer: { effectAllowed: "", setData: vi.fn() } });
+    expect(source.getAttribute("aria-label")).toContain("drag handle");
+    fireEvent.dragOver(target, { dataTransfer: { dropEffect: "none" }, preventDefault: vi.fn() });
+    expect(target.className).toContain("drop-target");
+    fireEvent.drop(target, { dataTransfer: { getData: () => "2" }, preventDefault: vi.fn() });
+
+    expect(panes()[0].textContent).toContain("Top-down");
+    expect(panes()[1].textContent).toContain("3rd-person POV");
+    expect(panes()[0].className).not.toContain("drop-target");
+  });
+});
 
 describe("measure mode", () => {
   it("measures against the active timestamp and follows the playhead", async () => {
@@ -720,8 +744,7 @@ describe("evidence layers", () => {
 describe("recorded sensor evidence and native live session", () => {
   it("keeps Sensor Evidence separate and starts a native state session", async () => {
     await renderWorkspace();
-    fireEvent.click(replayTab());
-    fireEvent.click(screen.getByRole("button", { name: "Add view" }));
+     fireEvent.click(screen.getByRole("button", { name: "Add view" }));
     fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /Sensor Evidence/ }));
     expect(await screen.findByRole("img", { name: /nuScenes Sensor Evidence view with 2 LIDAR_TOP sweeps/ })).toBeTruthy();
     expect(screen.getByText("historical sweep smearing expected")).toBeTruthy();
@@ -730,73 +753,16 @@ describe("recorded sensor evidence and native live session", () => {
     expect(await screen.findByText("native esminiLib state")).toBeTruthy();
   });
 
-  it("opens Replay when Sensor Evidence is added from the authoring tab", async () => {
+  it("keeps Sensor Evidence in Scenario studio when added", async () => {
     await renderWorkspace();
     fireEvent.click(screen.getByRole("button", { name: "Add view" }));
     const entry = within(screen.getByRole("menu")).getByRole("button", { name: /Sensor Evidence/ });
 
     expect(entry).toHaveProperty("disabled", false);
-    expect(entry.textContent).toContain("opens Replay");
     fireEvent.click(entry);
 
     expect(await screen.findByRole("img", { name: /nuScenes Sensor Evidence view/ })).toBeTruthy();
-    expect(document.querySelector(".document-tabs button.active")?.textContent).toBe("Replay");
-  });
-});
-
-describe("compare mode", () => {
-  it("compares two documents side by side on a shared timestamp", async () => {
-    await renderWorkspace();
-
-    fireEvent.click(screen.getByRole("button", { name: "Compare" }));
-    const surface = await screen.findByRole("region", { name: "Compare mode" });
-
-    expect(within(surface).getByLabelText("Left scenario").getAttribute("value")).toBe(SCENARIO_ID);
-    expect(await within(surface).findByText(/synchronized on scenario_time/)).toBeTruthy();
-    expect(within(surface).getByLabelText("left side of the comparison").textContent).toContain("branch-synthetic-root");
-    expect(within(surface).getByLabelText("right side of the comparison").textContent).toContain("slow-leads");
-    expect(within(surface).getByText("dpos 1.000 m / dyaw 0.0000 rad / dspeed 0.400 m/s")).toBeTruthy();
-    expect(within(surface).getByText(/n\/a \(actor_is_absent_from_this_side\)/)).toBeTruthy();
-    expect(within(surface).getByText("Actor deltas at t=1.00 s")).toBeTruthy();
-  });
-
-  it("shows metric and gate comparisons with status and scientific status", async () => {
-    await renderWorkspace();
-
-    fireEvent.click(screen.getByRole("button", { name: "Compare" }));
-    const surface = await screen.findByRole("region", { name: "Compare mode" });
-
-    const metrics = within(surface).getByRole("list", { name: "Metric comparison" });
-    expect(within(surface).getAllByText("PROVISIONAL").length).toBeGreaterThan(0);
-    expect(metrics.textContent).toContain("n/a (replay_trace_not_available)");
-    const gates = within(surface).getByRole("list", { name: "Gate comparison" });
-    expect(gates.textContent).toContain("G4");
-    expect(gates.textContent).toContain("lane_road_match_evidence_not_supplied_for_this_scenario");
-  });
-
-  it("follows the playhead when the comparison is re-synchronized", async () => {
-    await renderWorkspace();
-
-    fireEvent.click(screen.getByRole("button", { name: "Compare" }));
-    const surface = await screen.findByRole("region", { name: "Compare mode" });
-    await within(surface).findByText(/synchronized on scenario_time/);
-    fireEvent.change(screen.getByLabelText("Playhead"), { target: { value: "2" } });
-
-    await waitFor(() => expect(within(surface).getByText("Actor deltas at t=1.00 s")).toBeTruthy());
-    expect((fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.some((call) => String(call[0]).includes("time_s=2"))).toBe(true);
-  });
-
-  it("reports a comparison failure verbatim instead of showing an empty comparison", async () => {
-    vi.spyOn(globalThis, "fetch").mockImplementation(((input: RequestInfo | URL) => {
-      const url = String(input);
-      if (url.includes("/compare")) return Promise.resolve(json({ detail: "Scenario 'absent' was not found." }, 404));
-      return Promise.resolve(route(url));
-    }) as typeof fetch);
-    await renderWorkspace();
-
-    fireEvent.click(screen.getByRole("button", { name: "Compare" }));
-
-    expect(await screen.findByRole("alert")).toHaveProperty("textContent", "Scenario 'absent' was not found.");
+    expect(document.querySelector(".document-tabs button.active")?.textContent).toBe("Scenario studio");
   });
 });
 

@@ -6,8 +6,13 @@
 .wasm-playback-controls button { background: #203641; color: inherit; border: 1px solid #507080; border-radius: 3px; padding: 4px 9px; }
 .wasm-playback-controls button:disabled { opacity: .45; }
 .wasm-playback-warning { padding: 0 10px 8px; color: #d8a85f; }
-.three-playback-shell { position: relative; min-height: 0; height: 100%; background: #101821; }
+.three-playback-shell { position: relative; min-height: 280px; height: 100%; background: #101821; }
 .three-playback-canvas { position: absolute; inset: 0; cursor: grab; }
+.three-playback-canvas canvas { display: block; }
+.wasm-overlay-toggles { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: 0 10px; padding: 6px 10px; border: 1px solid #304653; border-radius: 3px; font-size: 11px; color: #d7e8f2; }
+.wasm-overlay-toggles legend { padding: 0 6px; color: #9fb4c7; }
+.wasm-overlay-toggles label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.wasm-overlay-toggles input:disabled + span, .wasm-overlay-toggles label:has(input:disabled) { opacity: .45; cursor: not-allowed; }
 .three-playback-canvas:active { cursor: grabbing; }
 .three-playback-overlay { position: absolute; left: 10px; bottom: 10px; display: flex; align-items: center; gap: 8px; color: #d7e8f2; font-size: 11px; pointer-events: none; }
 .three-playback-overlay button { pointer-events: auto; background: #203641; color: inherit; border: 1px solid #7098aa; border-radius: 3px; padding: 5px 9px; }
@@ -16,3 +21,14 @@
 .wasm-scene-ledger li[data-status="ended"] { opacity: 0.55; }
 .wasm-scene-ledger strong { color: #e6b85c; font-weight: 600; }
 .wasm-scene-ledger span { color: #9fb4c7; }
+.wasm-scene-ledger details { flex: 1 1 auto; min-width: 0; }
+.wasm-scene-ledger summary { display: flex; align-items: baseline; gap: 8px; cursor: pointer; }
+.wasm-scene-ledger details ul { list-style: none; margin: 4px 0 0; padding: 0 0 0 8px; display: grid; gap: 2px; color: #9fb4c7; }
+.wasm-checklist { margin: 16px 0 0; padding: 8px 12px; border: 1px solid #304653; border-radius: 6px; font-size: 12px; }
+.wasm-checklist summary { cursor: pointer; font-weight: 600; }
+.wasm-checklist li { margin: 4px 0; }
+.wasm-attributes { margin: 0; padding: 6px 10px 8px; font-size: 11px; border-top: 1px solid #304653; max-height: 160px; overflow: auto; }
+.wasm-attributes summary { cursor: pointer; color: #d7e8f2; }
+.wasm-attributes ul { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 3px; }
+.wasm-attributes li { color: #9fb4c7; }
+.wasm-attributes strong { color: #e6b85c; }

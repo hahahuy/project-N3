@@ -70,6 +70,27 @@ class LidarService:
         contract = lidar_payload_contract(sample_data, calibration)
         return {**self._metadata(sample_data, calibration, ego_pose, contract), "decimation": None, "total_count": None, "returned_count": None}
 
+    def sweep_window(self, first_sample_token: str, last_sample_token: str) -> list[dict[str, object]]:
+        """List the LIDAR_TOP sweeps spanning a scenario window, oldest first.
+
+        Each entry carries its payload address plus a ``time_s`` relative to
+        the first sweep, so a browser overlay can follow the playhead. Empty
+        (never invented) when the window holds no sweep.
+        """
+        dataset = self._adapter()
+        entries = []
+        first_us: int | None = None
+        for sample_data_token, timestamp_us in dataset.sweep_window_tokens(first_sample_token, last_sample_token):
+            if first_us is None:
+                first_us = timestamp_us
+            entries.append({
+                "sample_data_token": sample_data_token,
+                "timestamp_us": timestamp_us,
+                "time_s": (timestamp_us - first_us) / 1e6,
+                "payload_url": f"/api/workspace/lidar/{sample_data_token}",
+            })
+        return entries
+
     def sensor_evidence(self, sample_data_token: str, nsweeps: int = 5) -> dict[str, object]:
         """Describe recorded LIDAR_TOP history using nuScenes sweep semantics."""
         if not 1 <= nsweeps <= 20:

@@ -1,7 +1,6 @@
 import createEsminiModule from "../../wasm-esmini/dist/esmini.js";
 import type { WasmFrame, WasmObjectState, WasmRoadGeometry, WasmWorkerRequest, WasmWorkerResponse } from "./types";
-
-export const FIXED_DT = 0.01;
+import { ENGINE_PRIME_DT, FIXED_DT, primeEngineScenario, resetEngineScenario } from "./types";
 
 let scenario: {
   step_frame(dt: number): { simulation_time: number; object_states: unknown };
@@ -76,6 +75,16 @@ function step(): void {
   self.postMessage({ type: "frame", frame: steppedFrame() } satisfies WasmWorkerResponse);
 }
 
+function seek(timeS: number): void {
+  if (!scenario || !Number.isFinite(timeS) || timeS < 0) throw new Error("wasm_invalid_seek_time");
+  stopClock();
+  resetEngineScenario(scenario);
+  let frame = currentFrame();
+  const steps = Math.ceil(timeS / FIXED_DT) + 1;
+  for (let index = 0; index < steps && frame.simulation_time + FIXED_DT / 2 < timeS; index += 1) frame = steppedFrame();
+  self.postMessage({ type: "frame", frame } satisfies WasmWorkerResponse);
+}
+
 function scheduleNextTick(): void {
   if (!playing || !scenario) return;
   timer = setTimeout(() => {
@@ -98,10 +107,11 @@ async function init(xosc: string, xodr: string): Promise<WasmWorkerResponse> {
     max_loop: 0,
     min_time_step: 0,
     max_time_step: 0,
-    dt: FIXED_DT,
+    dt: ENGINE_PRIME_DT,
   });
   stopClock();
   scenario = nextScenario as typeof scenario;
+  primeEngineScenario(nextScenario);
   return { type: "ready", road: normalizeRoad(nextScenario.get_road_geometry()), frame: currentFrame() };
 }
 
@@ -111,6 +121,8 @@ self.onmessage = async (event: MessageEvent<WasmWorkerRequest>) => {
       self.postMessage(await init(event.data.xosc, event.data.xodr));
     } else if (!scenario) {
       throw new Error("wasm_scenario_not_initialized");
+    } else if (event.data.type === "seek") {
+      seek(event.data.time_s);
     } else if (event.data.type === "step") {
       step();
     } else if (event.data.type === "play") {
@@ -122,7 +134,7 @@ self.onmessage = async (event: MessageEvent<WasmWorkerRequest>) => {
       stopClock();
     } else if (event.data.type === "reset") {
       stopClock();
-      scenario.reset();
+      resetEngineScenario(scenario);
       self.postMessage({ type: "frame", frame: currentFrame() } satisfies WasmWorkerResponse);
     } else if (event.data.type === "dispose") {
       stopClock();

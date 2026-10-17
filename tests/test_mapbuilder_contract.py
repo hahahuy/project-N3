@@ -319,3 +319,79 @@ def test_scene_corridor_selects_trajectory_and_one_hop_closure(tmp_path, monkeyp
 def test_scene_corridor_rejects_out_of_contract_buffer_and_frame(tmp_path, monkeypatch) -> None:
     with pytest.raises(ValueError, match="between 30 and 50"):
         build_scene_local_corridor(tmp_path, _corridor_scenario(), output_path=tmp_path / "x.xodr", buffer_m=10.0)
+
+
+def _two_road_xodr() -> str:
+    return """<OpenDRIVE><header revMajor="1" revMinor="6" name="m"/><road name="r1" id="1" length="10" junction="-1"><planView><geometry s="0" x="100" y="200" hdg="1.5707963267948966" length="10"><line/></geometry></planView><lanes><laneOffset s="0" a="0" b="0" c="0" d="0"/><laneSection s="0"><center><lane id="0" type="none" level="false"/></center></laneSection></lanes></road><road name="r2" id="2" length="5" junction="-1"><planView><geometry s="0" x="110" y="200" hdg="0" length="5"><arc curvature="0.1"/></geometry></planView><lanes><laneOffset s="0" a="0" b="0" c="0" d="0"/><laneSection s="0"><center><lane id="0" type="none" level="false"/></center></laneSection></lanes></road></OpenDRIVE>"""
+
+
+def _local_transform() -> "RoadAlignedTransform":
+    from real2scenario import RoadAlignedTransform
+
+    return RoadAlignedTransform(origin_x_m=100.0, origin_y_m=200.0, heading_rad=math.pi / 2)
+
+
+def test_transform_moves_geometry_origins_and_headings_into_local_frame() -> None:
+    from real2scenario.mapbuilder import transform_opendrive_to_local
+
+    root = ET.fromstring(transform_opendrive_to_local(_two_road_xodr(), _local_transform()))
+    geos = root.findall(".//planView/geometry")
+    assert len(geos) == 2
+    # Origin maps to itself; a +90° road heading becomes 0 in the local frame.
+    assert (float(geos[0].get("x")), float(geos[0].get("y")), float(geos[0].get("hdg"))) == pytest.approx((0.0, 0.0, 0.0))
+    # (110, 200) is 10 m along global +x, which is local -y after the rotation.
+    assert (float(geos[1].get("x")), float(geos[1].get("y"))) == pytest.approx((0.0, -10.0))
+    assert float(geos[1].get("hdg")) == pytest.approx(-math.pi / 2)
+    # Frame-invariant content passes through untouched.
+    assert [g.get("length") for g in geos] == ["10", "5"]
+    assert root.find(".//road[@name='r2']/planView/geometry/arc").attrib["curvature"] == "0.1"
+    assert len(root.findall(".//lanes")) == 2
+
+
+def test_transform_round_trip_returns_source_coordinates() -> None:
+    from real2scenario.mapbuilder import transform_opendrive_to_local
+
+    there = _local_transform()
+    # Inverse rigid motion, mirroring to_source_state.
+    back = ET.fromstring(
+        transform_opendrive_to_local(
+            transform_opendrive_to_local(_two_road_xodr(), there), _inverse(there)
+        )
+    )
+    src = ET.fromstring(_two_road_xodr())
+    for want, got in zip(src.findall(".//planView/geometry"), back.findall(".//planView/geometry")):
+        assert (float(got.get("x")), float(got.get("y"))) == pytest.approx(
+            (float(want.get("x")), float(want.get("y"))), abs=1e-6
+        )
+
+
+def _inverse(transform: "RoadAlignedTransform") -> "RoadAlignedTransform":
+    """Inverse rigid motion expressed as a forward local-frame transform.
+
+    Forward maps q -> R(-h)(q - o); the inverse q -> o + R(h)q re-expresses as
+    origin -R(-h)o with heading -h.
+    """
+    from real2scenario import RoadAlignedTransform
+
+    c, s = math.cos(transform.heading_rad), math.sin(transform.heading_rad)
+    ox = transform.origin_x_m
+    oy = transform.origin_y_m
+    return RoadAlignedTransform(
+        origin_x_m=-c * ox - s * oy,
+        origin_y_m=s * ox - c * oy,
+        heading_rad=-transform.heading_rad,
+    )
+
+
+def test_transform_rejects_garbage_and_stale_transforms() -> None:
+    from real2scenario.mapbuilder import transform_opendrive_to_local
+
+    with pytest.raises(ValueError, match="Invalid OpenDRIVE"):
+        transform_opendrive_to_local("<OpenDRIVE", _local_transform())
+    with pytest.raises(ValueError, match="must be OpenDRIVE"):
+        transform_opendrive_to_local("<SceneGraph/>", _local_transform())
+    with pytest.raises(ValueError, match="no plan-view geometry"):
+        transform_opendrive_to_local("<OpenDRIVE><header/></OpenDRIVE>", _local_transform())
+    broken = _two_road_xodr().replace('hdg="0"', 'hdg="oops"')
+    with pytest.raises(ValueError, match="numeric x, y and hdg"):
+        transform_opendrive_to_local(broken, _local_transform())

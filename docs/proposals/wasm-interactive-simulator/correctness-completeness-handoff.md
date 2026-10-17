@@ -189,3 +189,242 @@ runnable (see `frontend/src/wasm-smoke/README.md` for the full procedure):
   handoff (A4 done). Frontend `51 passed`, build clean, Python `348 passed`.
 - Browser-side visual confirmation of the pedestrian fixture is still owed —
   deploy gap (§4) unchanged. Nothing here touches the live environment.
+
+## 11. Addendum 2026-10-16 — attribute/road panel + fixture trajectory (owner-requested check)
+
+So the owner can verify XOSC↔XODR correspondence on `/wasm-smoke` for any
+scenario (fixture or real wasm-pair):
+
+- `WasmPlaybackView` shows a "Scenario attributes" panel parsed from the
+  already-fetched XOSC text (display-only, never a motion path): declared
+  `LogicFile` vs served lane-surface/road-mark counts, plus per-entity tag,
+  category, mass, bbox and Properties. Unknown tags/attrs render as `—`.
+- `fixture-pedestrian.xosc` now carries `Properties` on all actors, per-actor
+  `ManeuverGroup`s (exporter-style; one shared group would apply a private
+  trajectory action to every actor), and a 3-vertex `FollowTrajectoryAction`
+  for `walk1`. Verified in-engine (primed): walk1 tracks vertices, ego holds
+  SpeedAction 5 m/s, cone static; P0 probe counts unchanged (it steps once).
+- Fixture lesson recorded in `wasm-smoke/README.md`: Act `StartTrigger` with
+  `rule="greaterThanEqual"` never fires in esminiJS (same frozen symptom as
+  the missing prime) — fixtures use `greaterThan` like the exporter, which
+  never emits `greaterThanEqual`, so production exports cannot hit this.
+- Frontend `56 passed`, build clean. The correspondence check itself
+  (looking at the panel on the live page) still needs the redeployed
+  environment — procedure in `wasm-smoke/README.md`.
+
+## 15. Addendum 2026-10-17 — 1x playhead-synced cloud + atomic artifact writes
+
+LiDAR overlay v2 (owner asked 1x + continuous): new `GET
+/api/workspace/scenarios/{id}/lidar-sweeps` lists the play-range sweeps
+oldest-first (forward `sample.next` walk — the existing evidence endpoint
+only covers pre-start history), 39 sweeps / 0.5 s stride / 19.15 s on
+scene-0061. Browser prefetches a ≤24-sweep stride at full density in the
+background and shows the latest sweep at or before the playhead (never the
+future); the label always names sweep t and Δ. Verified live t=18.41 →
+sweep t=18.05 (Δ0.36 s), 0 console errors.
+
+excPtr true root fix: two overlapping wasm-pair POSTs (dev StrictMode
+double-mount writes the same pair path twice) served 561 KB-of-3.9 MB and
+0-byte reads — the XML gate only named it. All pair writes are now atomic
+(tmp + rename): `exporter.atomic_write_bytes` (also covers xosc + staged
+template copy for all 5 callers, bytes identical) + both app.py road writes.
+Threaded test proves partial reads with direct writes (caught 0/104KB/
+204KB) and none with rename. Python 365 passed (byte-identical holds),
+frontend 59 passed, build clean.
+
+## 14. Addendum 2026-10-17 — reset re-prime, overlays, follow-lock, artifact gate
+
+Reset freeze (owner-reported): after any reset, ego held x=0.00 speed=0.00
+forever while trajectory actors resumed. Root cause is the same missing-prime
+class as construction — `reset()` restores teleports but Init-phase triggers
+(ego SpeedAction) never refire. Fix: `resetEngineScenario` (reset + zero-step
+re-prime) in the worker reset path; measured x=8.78 speed=8.75 at t=1.00 with
+it. Unit-locked (`reset → step:0` call order).
+
+excPtr root cause (owner-reported, reproduced on scene-0061): NOT malformed
+generation — the browser received 561 KB of a 3.9 MB OpenDRIVE (cut
+mid-attribute by the dev proxy; backend bytes verified well-formed).
+esmini died parsing it → opaque `{excPtr}`. Fix: `assertWellFormedXml`
+gate + one automatic refetch before engine handoff, human error otherwise.
+No backend change.
+
+Overlays (checkboxes, display-only, real scenarios only — fixtures have no
+recorded source so boxes stay disabled): exact-cuboid wireframes instead of
+skins (shared unit edges, recorded dims, selection raycast covers both);
+recorded travel polylines + heading cones from workspace `paths` (~8
+glyphs/path); one static LIDAR_TOP sweep (decimation 8, ~4.3k points) through
+sensor→ego→global→local chain re-derived in TS (verified: ego_pose z=0
+datum, ground returns ≈ surface, cloud aligns on screen). Missing pieces
+resolve to null, never invented.
+
+Follow-lock: selecting an actor (canvas click) anchors the orbit; per-frame
+deltas move camera + target together through play/step, user offset
+preserved; empty click / Reset View releases. Feet-on-road fix from §13
+follow-up also in: group origin lifted by half recorded height + asphalt
+lift (was: centered at h=0, wheels sunk).
+
+Layout fix: `.three-playback-shell` min-height 280px — the absolute canvas
+(buffer floor 280) overflowed a 239px shell and covered the new checkboxes
+(plus, latently, the controls row). Verified live: all 3 overlays on,
+follow through t=15.6s, 0 console errors. Frontend 62 passed, Python 363
+passed, build clean.
+
+## 13. Addendum 2026-10-16 — semantic ground underlay (owner-approved)
+
+`GET /api/workspace/scenarios/{id}/ground-layers` serves nuScenes
+map-expansion polygons (`drivable_area`, `walkway`, `ped_crossing`,
+`carpark_area`) for the scenario actor bbox + 40 m, already moved into the
+local frame with the exact trajectory math (verified: actor bbox inside
+ground bbox; scene-0061: 37 polygons = 3 drivable + 24 walkway + 10 crossing,
+755 verts, 33 KB, 0.2 s; actors x[0,68.6] y[0,35] inside drivable
+x[-58.7,135.2] y[-58.7,114.9]). Hard lesson: devkit `get_map_geom`
+returns patch-relative offsets, not map-global coords — vertices must be
+rebased onto the patch center before `to_local_state`, else ground lands
+~1.2 km away (seen: drivable x[1156,1350]). Guarded by a test asserting
+actor-bbox-inside-drivable, proven to fail on the old math. The browser draws them as flat
+ShapeGeometry fills under the lane ribbons (drivable darkest, crossings
+lightest). Display-only, best-effort (missing ground never breaks playback),
+unavailable-envelope on failure like sensor-evidence. OSM verdict: rejected
+as road geometry (crowd-sourced meter data + SUMO guessing would downgrade
+survey maps and add a heavy dep; SUMO cannot emit OSM anyway); OSM
+buildings/landuse remains an optional labeled-context follow-up, not needed
+for road completeness. Frontend `57 passed`, Python `363 passed`.
+
+Renderer-only, zero sim/metrics impact. Actors are procedural low-poly skins
+(car body+cabin+wheels, pedestrian torso+head, cone, plain box for unknown)
+in unit space, scaled to the exact recorded cuboid per the unclamped rule —
+footprints never lie; shapes are documented schematic, real numbers stay in
+the attributes panel. Roads are merged asphalt ribbons from recorded lane
+boundaries + edge lines + recorded road marks (marks were fetched but never
+drawn until now). Completeness boundary: everything the data provides, nothing
+invented — no lane markings where unrecorded, no shoulders/sidewalks/textures.
+No new dependencies. Like every WASM UI increment on this track, shipped
+without browser-visual confirmation (deploy gap §4); suite + build green.
+
+## 12. Addendum 2026-10-16 — full-map cover replaces local corridor (decision)
+
+Measured on the HDD dataset (`/mnt/backup/nuscenes`, all 4 expansion maps
+present; devkit 1.2.0 pinned; builder already devkit-backed so there is
+nothing to "replace with devkit" — see data handoff):
+
+| Map | Lanes+connectors | Roads | Unsupported | Junctions | Build | esmini load+run |
+|---|---|---|---|---|---|---|
+| boston-seaport | 1215+1631 | 2846 | 0 | 1627 | 2.9 s | 0.6 s, exit 0 |
+| singapore-hollandvillage | 601+719 | 1320 | 0 | 717 | 0.9 s | 0.3 s, exit 0 |
+| singapore-onenorth | 936+1066 | 2002 | 0 | 1065 | 1.4 s | 0.4 s, exit 0 |
+| singapore-queenstown | 910+1173 | 2083 | 0 | 1165 | 1.3 s | 0.4 s, exit 0 |
+
+WASM parses the biggest map (2002 lane surfaces) in ~1 s via `smoke.mjs`
+(browser frame-rate with ~4000 line objects still unmeasured — check on
+redeploy before defaulting). Builder emits no road marks (cosmetic gap).
+
+**Decision: default to per-map full cover, retire corridor usage for new
+scenarios** (corridor code+tests stay — audit trail, no deletion). Why:
+no crop boundary by construction (kills dangling refs, closure heuristics,
+intersect policy as a class); build once per map (1–3 s, cache by
+map+builder-version+params) instead of per scenario; full map is literally
+"the scene's own map". What full map does NOT solve: the global→local frame
+transform (still required — maps are global, trajectories local), provenance
+wiring, ADE re-proof, and the owner decision for the environment change.
+Proposed wiring: per scene resolve `location→map_name`, reference the cached
+full XODR as `LogicFile`, record `map_reconstruction_mode` + builder version
+in provenance. Re-proof bar: template-vs-fullmap ADE (expect ~nil),
+primed-WASM fidelity re-run on a full map, render perf check.
+
+**WIRED 2026-10-16 (owner-requested):** `/wasm-smoke` now serves the scene's
+own full map. `transform_opendrive_to_local` (exact rigid motion, round-trip
+tested) moves global-frame plan geometry into the scenario local frame —
+without it actors would sit kilometres off the roads. `select_full_scene_map`
+names the declared `LogicFile` + records provenance (exporter accepts with
+zero special cases; `staged_path` override feeds staging). The wasm-pair route
+tries full-map first and falls back to template on any failure (missing map
+never breaks preview), with a per-path `map_warning` so the UI never
+mislabels which road is served. Scene `location` is the map name (identity,
+verified across trainval).
+
+**Re-proof (native 3.10 + primed WASM, scene-0061 + scene-0047):** template
+vs fullmap ADE **identical to 4 decimals on all 8 actor-tracks**
+(0061: 0.0465/0.0468/0.0186/0.0335 both; 0047: 0.1005/0.0028/0/0 both);
+primed-WASM on fullmap matches its template numbers exactly
+(ego 0.0477, peds 0.0003/0.0010, truck 0.0008); both validators accept;
+stderr clean. Map change is replay-inert on the measured set — as predicted
+by the refuted map causation, now proven per scenario. Browser frame-rate
+with ~2000 lane surfaces is the one unmeasured item (needs the redeployed
+environment).
+
+**Data provisioning DONE 2026-10-16 (owner-ordered):** `data/v1.0-subset80/`
+(gitignored), 80 scenes = 35 quota scenes + stratified fill (30 boston / 27
+onenorth / 15 queenstown / 7 hollandvillage): metadata subset 56 MB, 4 map
+expansions + PNGs, LIDAR keyframes + sweep history (≤20 back), RADAR kf +
+sweeps, can_bus subset — ~23 GB total, 0 missing files. Excluded by measurement
+(no reader in `src/`): CAM payloads, lidarseg/panoptic. Verified: index builds
+(80 scenes), devkit map loads, import works, `sensor-evidence` returns full
+sweep history (5/4 and 20→11 on a mid-scene sample), pre-imported all 80
+scenarios + prebuilt 4 full-map XODRs (`reports/maps/`, ~12 s). Mini payloads
+(`samples/`, `sweeps/`, 5.1 GB) deleted, metadata kept — suite unaffected.
+Dev convention: `NUSCENES_ROOT=data/v1.0-subset80 NUSCENES_VERSION=v1.0-subset80`
+(shell only). Cache: distinct version name ⇒ fresh sqlite auto-builds,
+signature-gated; no manual reinit needed. Name-collision note: mini and
+trainval share scene names (`scene-0061` exists in both) — artifacts collide
+by filename, provenance `dataset_version` disambiguates.
+
+## 10. Addendum 2026-10-16 — WASM engine measurements (Node harness, `/tmp` only)
+
+Version-matched run: native 3.10.0 vs esminiJS 3.10.0 (`-06065f9` both sides),
+synthetic 6 s scenario (ego vehicle + accel-profile pedestrian + static cone,
+13 vertices), `dt 0.01`, same repo-exported XOSC. No repo production code
+changed; scripts live in `/tmp/opencode/wasmcorr/` (not committed).
+
+**Finding 1 — unprimed engine never starts events (bisect V0–V5).** Init
+Teleports/SpeedActions apply (fixture ego drives at 5 m/s), empty maneuvers
+tolerated, storyboard StopTrigger fires (time froze at 6.01 past duration) —
+but no Maneuver Event ever executes: not with `edge none`, not with `rising`,
+not triggerless, not even a non-trajectory SpeedAction event. All actors hold
+at teleports, speeds read 0. Practical meaning: trajectory playback — the
+WASM premise — currently shows frozen actors for any real/wasm-pair scenario
+(SpeedAction-only motion like the fixtures still animates).
+
+**Finding 2 — root cause: missing zero-prime frame.** Native
+`ScenarioPlayer::Init()` ends with `Frame(0.0)`; the esminiJS constructor
+never issues one, and with a `dt: 0.01` config `step_frame(0)` resolves to
+0.01 (never 0 — the earlier "zero-first" triage was a false negative).
+Verified: construct with `dt: 0`, one `step_frame(0)` (sim time stays 0),
+then step normally — ego speed reads recorded 4.0 at t=0.01, x=3.96 at t=1.
+
+**Finding 3 — primed fidelity (first version-matched numbers, diagnostic only):**
+
+| Actor | ADE native | ADE primed-WASM | Scale |
+|---|---|---|---|
+| ego | 0.0369 | 0.0400 | mm-level Δ |
+| walk1 (ped, accel profile) | 0.0159 | 0.0107 | cm-level Δ |
+| cone1 (static) | 0.0000 | 0.0000 | identical |
+
+(WASM FDE n/a is a fencepost artifact — run ends 5.9999 < recorded 6.0 — not
+a divergence. Never feed these to a report; DEC-018 holds.)
+
+**Finding 4 — Q4/reset input.** `reset()` restarts the clock (0.01→0.50
+verified), engine ids `[0,1,2]` + names stable across reset, reset[0]
+positions == run[0]. For this build, cache-once identity mapping is viable;
+re-derive-per-reset is not required — but this is one scenario, not a proof.
+
+**Finding 5 — end-of-track data point (corrected 2026-10-16).** The earlier
+"hold-at-final-pose" wording was imprecise. Measured on both engines with the
+pedestrian fixture (story runs to t=10, walk1 trajectory ends t=2): past the
+last vertex the actor **extrapolates with last velocity** (native and WASM
+agree: walk1 x=7.98@2.5, 12.98@5.0). What froze in the 6 s scenario was the
+*simulation itself* at the story StopTrigger (time halted at 6.01), not a
+per-actor hold. So: stop-at-duration halts the sim (both engines); running
+story + exhausted trajectory extrapolates (both engines). No stop/hide
+semantics observed anywhere. §6.4's "hold by engine default" is superseded by
+this paragraph; any policy change stays owner-gated.
+
+**Fix IMPLEMENTED 2026-10-16 (owner-confirmed (1)):**
+`frontend/src/wasm-playback/worker.ts` init now constructs with
+`dt: ENGINE_PRIME_DT` (= 0) and calls `primeEngineScenario()` once before
+serving `ready`; the `0.01` play/step protocol is untouched (`FIXED_DT`
+moved to `types.ts` unchanged). Zero sim-time advance, no exporter/native
+impact, browser-only. Locked by a unit test (single true-zero step;
+prime = 0 / fixed = 0.01 constants) — frontend `53 passed`, build clean.
+Post-fix behavior was pre-verified by the construction-identical Node run
+above (primed ADE table). Browser-side visual + any Q2/correlation
+discussion still gated on redeploy + review, not on further code.

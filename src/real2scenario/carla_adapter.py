@@ -150,6 +150,7 @@ def map_scenario_to_carla(
             trajectory=tuple(transform_state_to_carla(state, anchor) for state in actor.trajectory),
             length_m=actor.length_m,
             width_m=actor.width_m,
+            height_m=actor.height_m,
         )
         for actor in scenario.actors
     )

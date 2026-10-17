@@ -9,7 +9,7 @@ from math import hypot, isfinite
 from .models import Actor, Scenario, State
 
 
-SELECTION_CONFIG_VERSION = "interaction-selection-v1"
+SELECTION_CONFIG_VERSION = "interaction-selection-v2"
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,13 +18,17 @@ class SelectionConfig:
 
     Automatic candidates qualify when either their minimum synchronized
     distance or constant-velocity TTC satisfies the respective threshold.
-    ``manual_actor_ids`` preserves its supplied order and bypasses thresholds.
+    ``manual_actor_ids`` preserves its supplied order and bypasses thresholds
+    (and the vehicle quota). ``reserve_vehicle_slot`` guarantees one slot for
+    the best-ranked qualifying vehicle whenever one exists; it never changes
+    which candidates qualify, only which ranked candidates fill the cap.
     """
 
     max_distance_m: float = 30.0
     max_ttc_s: float = 5.0
     max_actors: int = 3
     manual_actor_ids: tuple[str, ...] | None = None
+    reserve_vehicle_slot: bool = False
 
     def __post_init__(self) -> None:
         if not isfinite(self.max_distance_m) or self.max_distance_m < 0:
@@ -33,6 +37,8 @@ class SelectionConfig:
             raise ValueError("Selection max_ttc_s must be finite and non-negative.")
         if self.max_actors < 1 or self.max_actors > 3:
             raise ValueError("Selection max_actors must be between 1 and 3.")
+        if not isinstance(self.reserve_vehicle_slot, bool):
+            raise ValueError("Selection reserve_vehicle_slot must be a boolean.")
         if self.manual_actor_ids is not None:
             if not self.manual_actor_ids:
                 raise ValueError("Selection manual_actor_ids must not be empty when provided.")
@@ -75,12 +81,23 @@ def select_interaction_actors(scenario: Scenario, config: SelectionConfig = Sele
         evaluated = [_evaluate_candidate(ego, actor, config) for actor in candidates]
         qualifying = [entry for entry in evaluated if entry["decision"] == "selected"]
         qualifying.sort(key=_selection_sort_key)
-        selected_ids = {entry["actor_id"] for entry in qualifying[: config.max_actors]}
-        selected = [actors_by_id[entry["actor_id"]] for entry in qualifying[: config.max_actors]]
+        rank_selected_ids = {entry["actor_id"] for entry in qualifying[: config.max_actors]}
+        ranked_ids = [entry["actor_id"] for entry in qualifying[: config.max_actors]]
+        if config.reserve_vehicle_slot:
+            ranked_ids = _apply_vehicle_quota(ranked_ids, qualifying, actors_by_id, config.max_actors)
+        selected_ids = set(ranked_ids)
+        selected = [actors_by_id[actor_id] for actor_id in ranked_ids]
         decisions = []
         for entry in evaluated:
             if entry["actor_id"] not in selected_ids and entry["decision"] == "selected":
-                entry = {**entry, "decision": "rejected", "reason": "max_actors_limit"}
+                if (
+                    config.reserve_vehicle_slot
+                    and entry["actor_id"] in rank_selected_ids
+                    and not _is_vehicle_actor(actors_by_id[entry["actor_id"]])
+                ):
+                    entry = {**entry, "decision": "rejected", "reason": "vehicle_quota_displaced"}
+                else:
+                    entry = {**entry, "decision": "rejected", "reason": "max_actors_limit"}
             decisions.append(entry)
 
     provenance = dict(scenario.provenance)
@@ -93,6 +110,7 @@ def select_interaction_actors(scenario: Scenario, config: SelectionConfig = Sele
                     "max_actors": config.max_actors,
                     "max_distance_m": config.max_distance_m,
                     "max_ttc_s": config.max_ttc_s,
+                    "reserve_vehicle_slot": config.reserve_vehicle_slot,
                 },
                 separators=(",", ":"),
                 sort_keys=True,
@@ -161,6 +179,32 @@ def _evaluate_candidate(ego: Actor, candidate: Actor, config: SelectionConfig) -
         "minimum_distance_m": minimum_distance_m,
         "minimum_ttc_s": minimum_ttc_s if isfinite(minimum_ttc_s) else None,
     }
+
+
+def _is_vehicle_actor(actor: Actor) -> bool:
+    """Whether an actor counts toward the reserved vehicle slot."""
+    return actor.actor_type == "vehicle" or actor.actor_type.startswith("vehicle.")
+
+
+def _apply_vehicle_quota(
+    ranked_ids: list[str],
+    qualifying: list[dict[str, object]],
+    actors_by_id: dict[str, Actor],
+    max_actors: int,
+) -> list[str]:
+    """Guarantee one slot for the best-ranked qualifying vehicle, if any.
+
+    Pure ranking is preserved except in the single case it leaves zero
+    vehicles selected: then the lowest-ranked pick yields to the best-ranked
+    qualifying vehicle. Never changes which candidates qualify, never changes
+    the pick count, and stays deterministic under the ranking order.
+    """
+    if any(_is_vehicle_actor(actors_by_id[actor_id]) for actor_id in ranked_ids):
+        return ranked_ids
+    for entry in qualifying[max_actors:]:
+        if _is_vehicle_actor(actors_by_id[str(entry["actor_id"])]):
+            return [*ranked_ids[:-1], str(entry["actor_id"])]
+    return ranked_ids
 
 
 def _selection_sort_key(entry: dict[str, object]) -> tuple[float, float, str]:

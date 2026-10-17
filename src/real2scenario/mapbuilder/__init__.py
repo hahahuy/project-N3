@@ -406,6 +406,53 @@ def build_scene_local_corridor(
     return manifest
 
 
+def transform_opendrive_to_local(xodr_text: str, transform) -> str:
+    """Rigidly move OpenDRIVE plan-view geometry into a local road-aligned frame.
+
+    Applies the same rotation/translation as
+    ``RoadAlignedTransform.to_local_state`` to every plan-view geometry origin
+    (`x`, `y`) and heading (`hdg`): lengths, stations, lane data, links and
+    junctions are frame-invariant and pass through untouched. Arc curvature is
+    likewise invariant — only origins and headings move. This is exact (up to
+    float formatting), not an approximation: it must be, because replay
+    trajectories already live in the target frame and any skew would silently
+    separate actors from roads.
+
+    Fail-closed: malformed XML or missing/non-numeric geometry attributes raise.
+    """
+    from ..coordinates import COORDINATE_TRANSFORM_VERSION  # noqa: local import avoids a hard cross-module edge
+    if getattr(transform, "version", None) != COORDINATE_TRANSFORM_VERSION:
+        raise ValueError("OpenDRIVE transform requires a current RoadAlignedTransform.")
+    try:
+        root = ET.fromstring(xodr_text)
+    except ET.ParseError as error:
+        raise ValueError(f"Invalid OpenDRIVE XML: {error}.") from error
+    if root.tag != "OpenDRIVE":
+        raise ValueError("OpenDRIVE root element must be OpenDRIVE.")
+    heading_cos = math.cos(transform.heading_rad)
+    heading_sin = math.sin(transform.heading_rad)
+    moved = 0
+    for geometry in root.findall(".//planView/geometry"):
+        try:
+            x = float(geometry.get("x"))
+            y = float(geometry.get("y"))
+            hdg = float(geometry.get("hdg"))
+        except (TypeError, ValueError) as error:
+            raise ValueError(
+                "OpenDRIVE plan-view geometry requires numeric x, y and hdg."
+            ) from error
+        delta_x = x - transform.origin_x_m
+        delta_y = y - transform.origin_y_m
+        geometry.set("x", _number(heading_cos * delta_x + heading_sin * delta_y))
+        geometry.set("y", _number(-heading_sin * delta_x + heading_cos * delta_y))
+        geometry.set("hdg", _number(_wrap_angle(hdg - transform.heading_rad)))
+        moved += 1
+    if moved == 0:
+        raise ValueError("OpenDRIVE contains no plan-view geometry to transform.")
+    ET.indent(root, space="  ")
+    return ET.tostring(root, encoding="unicode") + "\n"
+
+
 def _minimum_point_distance(pose, points):
     return min(math.hypot(pose[0] - point[0], pose[1] - point[1]) for point in points)
 

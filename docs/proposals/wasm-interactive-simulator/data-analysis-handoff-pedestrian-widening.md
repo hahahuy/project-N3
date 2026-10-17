@@ -156,6 +156,16 @@ controller), hence the track criteria in step 1.
    triggers, or collision dynamics. Total cost: 8 short replays
    (2 levels × 2 runs × 2 tags).
 
+   **→ RESULT 2026-10-16, data team: assumption HOLDS, mass INERT.**
+   Run exactly to this protocol on native 3.10.0, `dt 0.01`: real pedestrian
+   track (15.50 s, 32 vertices, speed range 1.30 m/s — accel present) + real
+   ego + static cone. Determinism gate **PASS** (2 runs byte-identical).
+   Each variant verified to differ from base by exactly one `mass` attribute.
+   All 4 variants exit 0; **3/3 traces byte-identical**
+   (`walk1` 75→750, `cone1` 0→100, `cone1` 0→1). Bonus per decision table:
+   `MiscObject mass=0` does **not** crash esmini 3.10 (exit 0, coverage
+   complete). The `mass=75` / `mass=0` exporter defaults stand as documented.
+
 ## 4. Harder analyses wanted (beyond this update)
 
 These are the open hard problems. Take any; each needs the same rigor as
@@ -260,18 +270,96 @@ engine — A2 runs on this binary; the vehicle-only same-engine re-run for the
 (shell config only, never committed):
 `export ESMINI_BIN="$HOME/esmini-3.10/bin/esmini" ESMINI_DAT2CSV="$HOME/esmini-3.10/bin/dat2csv"`.
 
-**Version-skew caveat (binding until resolved):** native runs here are 3.9.0;
-the browser engine is 3.10.0. Never compare 3.9.0-native numbers against
-3.10.0-WASM frames as if version-matched. Options, cheapest first: (i) keep
-native 3.9.0 for A2 and label all WASM↔native deltas version-confounded;
-(ii) build native 3.10 from source (needs OSG toolchain — size before
-attempting); (iii) point to an existing 3.10 binary if one is available.
+## 8. Data-team returns 2026-10-16 (A1–A6) + WASM-team follow-through
 
-**Native smoke 2026-10-16 (3.9.0, synthetic ego+pedestrian+cone, 2 s, `dt 0.01`,
-headless, `/tmp/opencode/esmoke`, not committed):** exit 0, `Pedestrian` and
-`MiscObject(other, mass=0)` parsed and replayed, coverage `complete` for all
-3 actors (ego ADE `0.0200`, walk1 `0.0050`, cone1 `0.0000` m — pipeline
-sanity only, n=2 vertices is **not** a convergence result and does not
-replace A2). Partial A5-native-acceptance: 3.9.0 does not reject the new
-tags; full A5 semantics verdict still open.
-   sacred.
+Full returns: `docs/reports/wasm-data-analysis-returns.md` (PROVISIONAL, with
+per-item scope limits). Engine version-matched throughout (native 3.10.0 +
+esminiJS 3.10.0); dataset trainval 850 scenes; `dt 0.01`. What the WASM team
+did with each return:
+
+- **A1** (40/40 byte-identical): accepted; vehicle baseline stands by construction.
+- **A2** (baseline portable: 3.9.0 mean 0.0411 → 3.10.0 mean 0.0413, +0.5 %;
+  pedestrian ADE median **0.0124** vs vehicle **0.0318** m, 0/432 over 0.5 m;
+  short tracks best group at max 0.0146 m — no Q6 pressure): recorded; no action.
+- **A3** (275 scenes with a selected pedestrian, 271 displace a vehicle,
+  64.52 % of displaced were rank 1, 0 ranking anomalies, 0 import
+  regressions; quota proposal: reserve one vehicle slot, affects 35 scenes):
+  recorded as **owner decision**, not implemented.
+- **A4** (engine has no `type`/`kind`; classify on `object_type` 1/2/3):
+  **implemented** — `WasmObjectState.object_type/object_category`, kind mapping
+  with source-cited ordinals, per-kind renderer colors + ledger labels,
+  probe/page report the numeric fields. Independently corroborated pre-change
+  via Node dump (ego 1, walk1 2, cone1 3). Resolves their "everything unknown"
+  finding. Their open sub-items (reset ID stability, end-of-track hold) are
+  already answered for the WASM engine in correctness-handoff §10 — pointed out,
+  not re-measured.
+- **A5** (17 valid misc values, `other` invalid, 2 exporter defects):
+  **implemented**: `miscObjectCategory="none"` (lowercase `m`; esmini has no
+  `other` — verified in `Entities.hpp`), `pedestrianCategory`
+  (`pedestrian`, exact `wheelchair` for that taxonomy), and the same bug class
+  in vehicles (`vehicle.motorcycle` → `motorbike`; esmini knows `motorbike`,
+  not `motorcycle`). Proven: XML diff is exactly the 3 attribute changes,
+  vehicle-only output byte-identical, native stderr clean (was 3 LOG_ERRORs),
+  per-actor ADE identical before/after, post-fix engine categories read
+  (moto1 = 6 = MOTORBIKE). `WASM_PAIR_EXPORTER_VERSION` bumped v3 → v4.
+- **A6** (mass inert, HOLDS): recorded; no action.
+- **Divergence, documented honestly:** data team recommended mapping 6
+  categories (4 approximate → `obstacle`, fail-closed `animal`). WASM team
+  kept uniform `none` instead: approximate mappings invent facts, and
+  fail-closed rejection of explicit selections changes population handling —
+  that is an owner decision, not a silent fix. Source taxonomy stays verbatim
+  in entity Properties either way. Owner picks: uniform `none` (current),
+  granular mapping, and/or animal fail-closed.
+- Still open per their index: A3 quota (owner), §4.3/§4.4, bbox-dimension
+  inertness (A6 covered mass only — new item, not started).
+
+**Version skew RESOLVED 2026-10-16:** native 3.10 built from source @
+`06065f9` (`~/esmini-3.10/bin/`), version-matching the esminiJS 3.10.0 engine.
+All native numbers from here on are 3.10 unless stated. The 3.9.0 install was
+deleted by owner order to prevent version confusion; its smoke numbers below
+stand as a historical record only.
+
+**Native smoke (historical, 3.9.0, synthetic ego+pedestrian+cone, 2 s):**
+exit 0, coverage `complete` all actors (ego ADE `0.0200`, walk1 `0.0050`,
+cone1 `0.0000` m — pipeline sanity, not a convergence result).
+
+## 9. D1 + D2 implemented 2026-10-16 (owner-confirmed)
+
+**D1 — exact-only `barrier→barrier`:** `_MISC_CATEGORY_BY_ACTOR_TYPE` with the
+documented exact-only rule; everything else stays `none`. Proven on native
+3.10: XML diff is exactly 1 attribute, vehicle-only output byte-identical,
+stderr clean both runs, per-actor ADE identical (`ego 0.0200`, `barr 0.0000`).
+`WASM_PAIR_EXPORTER_VERSION` bumped v4 → v5 (exporter bytes change for
+barrier scenarios). The granular-approximate and animal-fail-closed options
+stay declined for the reasons in §8 (invent facts / destroy data).
+
+**D2 — vehicle-slot quota (`reserve_vehicle_slot`, default off):**
+`SelectionConfig.reserve_vehicle_slot` + `SELECTION_CONFIG_VERSION`
+`interaction-selection-v2` (A3 bar item 5: old v1 provenance is
+non-comparable by version). Quota swaps only the lowest-ranked pick for the
+best-ranked qualifying vehicle, never changes qualification or pick count,
+manual overrides bypass it; displaced picks are labelled
+`vehicle_quota_displaced` in decisions, flag + version in provenance.
+Wired into `import_scene` as owner policy (request schema unchanged).
+
+**Independent 850-scene replication (HDD trainval, production path with CAN
+speeds, native 3.10):** changed = **35 scenes**, ped scenes = **275** —
+exact match with the data team on all three headline counts. Determinism
+(double run identical) holds, no over-cap, zero replay failures, zero engine
+errors across the re-proof. Kept-actor ADE diff **exactly 0.0** (35/35),
+35 added vehicles all sane (min 0.0000, median 0.0268, mean 0.0292, max
+0.0923 — inside the measured vehicle population envelope, 0 over 0.5 m).
+A3 bar: 850/850 vehicle coverage by construction (every scene has ≥1
+qualifying vehicle per A3 §3) + ped scenes 275 ≥ 250 ✓; ≤3 actors ✓;
+determinism ✓; version bump ✓; baseline re-run ✓ (this section).
+
+**The 35 quota-affected scenes** (publish-once list): scene-0003, scene-0006,
+scene-0007, scene-0016, scene-0017, scene-0019, scene-0024, scene-0025,
+scene-0026, scene-0031, scene-0047, scene-0092, scene-0130, scene-0134,
+scene-0155, scene-0185, scene-0187, scene-0225, scene-0278, scene-0317,
+scene-0330, scene-0477, scene-0499, scene-0771, scene-0849, scene-0967,
+scene-0983, scene-1000, scene-1004, scene-1014, scene-1015, scene-1019,
+scene-1085, scene-1086, scene-1091.
+
+Revisit clause: if pedestrian analysis needs the 35 displaced slots back, the
+quota is one flag flip (`reserve_vehicle_slot=False`) — no code change.

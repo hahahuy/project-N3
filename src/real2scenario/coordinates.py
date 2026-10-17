@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from math import cos, isfinite, pi, sin
 
@@ -71,6 +72,33 @@ class RoadAlignedTransform:
             source_record_token=state.source_record_token,
         )
 
+    @classmethod
+    def from_provenance(cls, provenance: Mapping[str, str]) -> "RoadAlignedTransform":
+        """Rebuild the exact transform that produced a local-frame scenario.
+
+        Fail-closed: missing keys, unparsable numbers, or a version mismatch
+        raise instead of guessing a frame alignment.
+        """
+        try:
+            version = provenance["coordinate_transform_version"]
+            origin_x_m = float(provenance["coordinate_transform_origin_x_m"])
+            origin_y_m = float(provenance["coordinate_transform_origin_y_m"])
+            heading_rad = float(provenance["coordinate_transform_heading_rad"])
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError("Provenance lacks a complete coordinate transform.") from error
+        if version != COORDINATE_TRANSFORM_VERSION:
+            raise ValueError(
+                f"Unsupported coordinate transform version {version!r}; "
+                f"expected {COORDINATE_TRANSFORM_VERSION!r}."
+            )
+        source_frame = provenance.get("coordinate_transform_source_frame", "nuscenes_global")
+        return cls(
+            origin_x_m=origin_x_m,
+            origin_y_m=origin_y_m,
+            heading_rad=heading_rad,
+            source_frame=source_frame,
+        )
+
     def provenance(self) -> dict[str, str]:
         """Return durable metadata describing this transform's frame contract."""
         return {
@@ -104,6 +132,7 @@ def transform_to_local_road_aligned(
             trajectory=tuple(transform.to_local_state(state) for state in actor.trajectory),
             length_m=actor.length_m,
             width_m=actor.width_m,
+            height_m=actor.height_m,
         )
         for actor in scenario.actors
     )

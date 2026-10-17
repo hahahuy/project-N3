@@ -95,6 +95,9 @@ def test_extract_scenario_from_synthetic_nuscenes_window(tmp_path: Path) -> None
     assert scenario.coordinate_frame == "nuscenes_global"
     assert scenario.duration_s == 1.0
     assert scenario.provenance["source_window"] == "sample-1:sample-2"
+    # Recording vehicle carries documented Renault Zoe specs (no annotation).
+    assert (ego.length_m, ego.width_m, ego.height_m) == (4.084, 1.73, 1.562)
+    assert scenario.provenance["ego_dimensions_source"] == "renault-zoe-manufacturer-specs-mirrors-excluded"
     assert [(state.time_s, state.x_m, state.speed_mps) for state in ego.trajectory] == [
         (0.0, 0.0, 1.0),
         (1.0, 1.0, 1.0),

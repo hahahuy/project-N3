@@ -54,6 +54,31 @@ def shared_metadata_index(settings: WebSettings) -> MetadataIndex:
         return index
 
 
+def resolve_scene_map_name(scene_token: str, settings: WebSettings) -> str:
+    """Resolve a scene to its nuScenes map name (which equals the log location).
+
+    Shared by map-serving paths (wasm-pair roads, ground layers) so both agree
+    on which map a scene belongs to. Raises on any failure; callers serving
+    previews fall back to the template road instead of failing the request.
+    """
+    import json
+
+    index = shared_metadata_index(settings)
+    scene = index.scene(scene_token)
+    log_token = scene.get("log_token", "")
+    if settings.dataset_root is None:
+        raise ValueError("No local nuScenes dataset is configured.")
+    log_path = settings.dataset_root / settings.dataset_version / "log.json"
+    try:
+        logs = json.loads(log_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise ValueError(f"Unable to read log table at {log_path}.") from error
+    location = next((row.get("location", "") for row in logs if row.get("token") == log_token), "")
+    if not location:
+        raise ValueError(f"Scene {scene_token!r} has no resolvable map location.")
+    return location
+
+
 class SourceSceneAdapter:
     """Read the local dataset metadata without importing the nuScenes devkit."""
 
@@ -110,6 +135,12 @@ class SourceSceneAdapter:
                 max_distance_m=max_distance_m,
                 max_ttc_s=max_ttc_s,
                 max_actors=max_actors,
+                # Owner policy 2026-10-16 (D2): keep one slot for the
+                # best-ranked qualifying vehicle so the vehicle replay
+                # population stays comparable pre/post widening. Recorded in
+                # interaction_selection_config; quota swaps are labelled
+                # vehicle_quota_displaced in the decisions.
+                reserve_vehicle_slot=True,
             ),
         )
         if len(selected.actors) < 2:

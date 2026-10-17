@@ -10,19 +10,19 @@
         <BoundingBox><Center x="0" y="0" z="0.9"/><Dimensions width="1.8" length="4.5" height="1.5"/></BoundingBox>
         <Performance maxSpeed="40" maxAcceleration="5" maxDeceleration="8"/>
         <Axles><FrontAxle maxSteering="0.5" wheelDiameter="0.7" trackWidth="1.5" positionX="2.8" positionZ="0.35"/><RearAxle maxSteering="0" wheelDiameter="0.7" trackWidth="1.5" positionX="0" positionZ="0.35"/></Axles>
-        <Properties/>
+        <Properties><Property name="source_actor_type" value="vehicle.ego"/><Property name="replay_mode" value="open_loop_trajectory"/><Property name="coordinate_frame" value="synthetic-fixture"/></Properties>
       </Vehicle>
     </ScenarioObject>
     <ScenarioObject name="walk1">
-      <Pedestrian name="human.pedestrian.adult" mass="75" model="">
+      <Pedestrian name="human.pedestrian.adult" mass="75" model="" pedestrianCategory="pedestrian">
         <BoundingBox><Center x="0" y="0" z="0.85"/><Dimensions width="0.6" length="0.6" height="1.7"/></BoundingBox>
-        <Properties/>
+        <Properties><Property name="source_actor_type" value="human.pedestrian.adult"/><Property name="replay_mode" value="open_loop_trajectory"/><Property name="coordinate_frame" value="synthetic-fixture"/></Properties>
       </Pedestrian>
     </ScenarioObject>
     <ScenarioObject name="cone1">
-      <MiscObject name="movable_object.trafficcone" MiscObjectCategory="other" mass="0">
+      <MiscObject name="movable_object.trafficcone" miscObjectCategory="none" mass="0">
         <BoundingBox><Center x="0" y="0" z="0.5"/><Dimensions width="0.5" length="0.5" height="1.0"/></BoundingBox>
-        <Properties/>
+        <Properties><Property name="source_actor_type" value="movable_object.trafficcone"/><Property name="replay_mode" value="open_loop_trajectory"/><Property name="coordinate_frame" value="synthetic-fixture"/></Properties>
       </MiscObject>
     </ScenarioObject>
   </Entities>
@@ -37,7 +37,7 @@
       <PrivateAction><TeleportAction><Position><WorldPosition x="6" y="0" z="0" h="0"/></Position></TeleportAction></PrivateAction>
       <PrivateAction><LongitudinalAction><SpeedAction><SpeedActionDynamics dynamicsShape="step" value="0" dynamicsDimension="time"/><SpeedActionTarget><AbsoluteTargetSpeed value="0"/></SpeedActionTarget></SpeedAction></LongitudinalAction></PrivateAction>
     </Private></Actions></Init>
-    <Story name="SmokeStory"><Act name="SmokeAct"><ManeuverGroup maximumExecutionCount="1" name="SmokeGroup"><Actors selectTriggeringEntities="false"><EntityRef entityRef="ego"/><EntityRef entityRef="walk1"/><EntityRef entityRef="cone1"/></Actors><Maneuver name="SmokeManeuver"/></ManeuverGroup><StartTrigger><ConditionGroup><Condition name="Start" delay="0" conditionEdge="rising"><ByValueCondition><SimulationTimeCondition value="0" rule="greaterThanEqual"/></ByValueCondition></Condition></ConditionGroup></StartTrigger></Act></Story>
+    <Story name="SmokeStory"><Act name="SmokeAct"><ManeuverGroup maximumExecutionCount="1" name="ego_trajectory"><Actors selectTriggeringEntities="false"><EntityRef entityRef="ego"/></Actors><Maneuver name="ego_follow"/></ManeuverGroup><ManeuverGroup maximumExecutionCount="1" name="walk1_trajectory"><Actors selectTriggeringEntities="false"><EntityRef entityRef="walk1"/></Actors><Maneuver name="walk1_follow"><Event name="walk1_start" priority="overwrite"><Action name="walk1_follow_trajectory"><PrivateAction><RoutingAction><FollowTrajectoryAction><Trajectory name="walk1_recorded" closed="false"><Shape><Polyline><Vertex time="0"><Position><WorldPosition x="3" y="1" z="0" h="0" p="0" r="0"/></Position></Vertex><Vertex time="1"><Position><WorldPosition x="5" y="1" z="0" h="0" p="0" r="0"/></Position></Vertex><Vertex time="2"><Position><WorldPosition x="7" y="1" z="0" h="0" p="0" r="0"/></Position></Vertex></Polyline></Shape></Trajectory><TimeReference><Timing domainAbsoluteRelative="relative" scale="1" offset="0"/></TimeReference><TrajectoryFollowingMode followingMode="position"/></FollowTrajectoryAction></RoutingAction></PrivateAction></Action><StartTrigger><ConditionGroup><Condition name="simulation_time" delay="0" conditionEdge="none"><ByValueCondition><SimulationTimeCondition value="0" rule="greaterThan"/></ByValueCondition></Condition></ConditionGroup></StartTrigger></Event></Maneuver></ManeuverGroup><ManeuverGroup maximumExecutionCount="1" name="cone1_trajectory"><Actors selectTriggeringEntities="false"><EntityRef entityRef="cone1"/></Actors><Maneuver name="cone1_follow"/></ManeuverGroup><StartTrigger><ConditionGroup><Condition name="Start" delay="0" conditionEdge="rising"><ByValueCondition><SimulationTimeCondition value="0" rule="greaterThan"/></ByValueCondition></Condition></ConditionGroup></StartTrigger></Act></Story>
     <StopTrigger><ConditionGroup><Condition name="Stop" delay="0" conditionEdge="rising"><ByValueCondition><SimulationTimeCondition value="10" rule="greaterThan"/></ByValueCondition></Condition></ConditionGroup></StopTrigger>
   </Storyboard>
 </OpenSCENARIO>

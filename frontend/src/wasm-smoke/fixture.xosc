@@ -19,7 +19,7 @@
       <PrivateAction><TeleportAction><Position><WorldPosition x="0" y="-1.75" z="0" h="0"/></Position></TeleportAction></PrivateAction>
       <PrivateAction><LongitudinalAction><SpeedAction><SpeedActionDynamics dynamicsShape="step" value="0" dynamicsDimension="time"/><SpeedActionTarget><AbsoluteTargetSpeed value="5"/></SpeedActionTarget></SpeedAction></LongitudinalAction></PrivateAction>
     </Private></Actions></Init>
-    <Story name="SmokeStory"><Act name="SmokeAct"><ManeuverGroup maximumExecutionCount="1" name="SmokeGroup"><Actors selectTriggeringEntities="false"><EntityRef entityRef="ego"/></Actors><Maneuver name="SmokeManeuver"/></ManeuverGroup><StartTrigger><ConditionGroup><Condition name="Start" delay="0" conditionEdge="rising"><ByValueCondition><SimulationTimeCondition value="0" rule="greaterThanEqual"/></ByValueCondition></Condition></ConditionGroup></StartTrigger></Act></Story>
+    <Story name="SmokeStory"><Act name="SmokeAct"><ManeuverGroup maximumExecutionCount="1" name="SmokeGroup"><Actors selectTriggeringEntities="false"><EntityRef entityRef="ego"/></Actors><Maneuver name="SmokeManeuver"/></ManeuverGroup><StartTrigger><ConditionGroup><Condition name="Start" delay="0" conditionEdge="rising"><ByValueCondition><SimulationTimeCondition value="0" rule="greaterThan"/></ByValueCondition></Condition></ConditionGroup></StartTrigger></Act></Story>
     <StopTrigger><ConditionGroup><Condition name="Stop" delay="0" conditionEdge="rising"><ByValueCondition><SimulationTimeCondition value="10" rule="greaterThan"/></ByValueCondition></Condition></ConditionGroup></StopTrigger>
   </Storyboard>
 </OpenSCENARIO>

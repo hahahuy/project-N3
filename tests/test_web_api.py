@@ -726,6 +726,124 @@ def test_settings_and_source_scene_import_can_use_configured_local_dataset(tmp_p
     assert any(item["scenario_id"] == imported.json()["scenario_id"] for item in catalog.json())
 
 
+def _dataset_with_expansions() -> Path | None:
+    """Return a local dataset root with map expansions, if any is present.
+
+    Fresh clones have neither: the subset needs built artifacts and the HDD
+    release is machine-local. Callers skip without them.
+    """
+    repo = Path(__file__).parents[1]
+    for candidate in (repo / "data" / "v1.0-subset80", Path("/mnt/backup/nuscenes")):
+        expansions = candidate / "maps" / "expansion"
+        if expansions.is_dir() and any(expansions.glob("*.json")):
+            return candidate
+    return None
+
+
+def test_wasm_pair_serves_scene_map_when_expansions_exist(tmp_path: Path) -> None:
+    dataset_root = _dataset_with_expansions()
+    if dataset_root is None:
+        pytest.skip("no local dataset with map expansions is available in this checkout")
+    version_file = dataset_root / "v1.0-subset80"
+    version = "v1.0-subset80" if version_file.is_dir() else "v1.0-trainval"
+    settings = WebSettings(
+        project_root=tmp_path,
+        artifact_root=tmp_path / "scenarios",
+        output_root=tmp_path / "reports",
+        dataset_root=dataset_root,
+        esmini_bin=None,
+        esmini_dat2csv=None,
+        dataset_version=version,
+    )
+    client = TestClient(create_app(settings))
+    scenes = client.get("/api/source-scenes")
+    assert scenes.status_code == 200 and len(scenes.json()) > 0
+    imported = client.post(f"/api/source-scenes/{scenes.json()[0]['scene_token']}/import", json={})
+    assert imported.status_code == 200
+    pair = client.post(f"/api/workspace/scenarios/{imported.json()['scenario_id']}/wasm-pair")
+    assert pair.status_code == 200
+    payload = pair.json()
+    assert payload["opendrive"].endswith(".xodr")
+    assert "straight-two-lane" not in payload["opendrive"]
+    assert payload["map_warning"].startswith("OpenDRIVE is a full nuScenes map")
+    assert client.get(payload["openscenario"]).status_code == 200
+    assert client.get(payload["opendrive"]).status_code == 200
+
+
+def test_ground_layers_serve_local_frame_polygons_or_unavailable(tmp_path: Path) -> None:
+    dataset_root = _dataset_with_expansions()
+    if dataset_root is None:
+        pytest.skip("no local dataset with map expansions is available in this checkout")
+    version_file = dataset_root / "v1.0-subset80"
+    version = "v1.0-subset80" if version_file.is_dir() else "v1.0-trainval"
+    settings = WebSettings(
+        project_root=tmp_path,
+        artifact_root=tmp_path / "scenarios",
+        output_root=tmp_path / "reports",
+        dataset_root=dataset_root,
+        esmini_bin=None,
+        esmini_dat2csv=None,
+        dataset_version=version,
+    )
+    client = TestClient(create_app(settings))
+    scenes = client.get("/api/source-scenes")
+    imported = client.post(f"/api/source-scenes/{scenes.json()[0]['scene_token']}/import", json={})
+    ground = client.get(f"/api/workspace/scenarios/{imported.json()['scenario_id']}/ground-layers")
+    assert ground.status_code == 200
+    payload = ground.json()
+    assert payload["contract_version"] == "ground-layers-v1"
+    assert payload["frame"] == "local_road_aligned"
+    assert sum(len(layer["polygons"]) for layer in payload["layers"]) > 0
+    # Correspondence: patch vertices are rebased onto the patch center before
+    # the trajectory transform, so the actor bbox must sit inside drivable.
+    # (Catches patch-relative vs map-global confusion — silently wrong coords.)
+    scenario = client.get(f"/api/workspace/scenarios/{imported.json()['scenario_id']}").json()
+    actor_xs = [s["x_m"] for p in scenario["paths"] for s in p["states"]]
+    actor_ys = [s["y_m"] for p in scenario["paths"] for s in p["states"]]
+    drivable = next(layer for layer in payload["layers"] if layer["name"] == "drivable_area")
+    ground_xs = [x for poly in drivable["polygons"] for x, _ in poly["exterior"]]
+    ground_ys = [y for poly in drivable["polygons"] for _, y in poly["exterior"]]
+    assert min(ground_xs) <= min(actor_xs) and max(ground_xs) >= max(actor_xs)
+    assert min(ground_ys) <= min(actor_ys) and max(ground_ys) >= max(actor_ys)
+    missing = client.get("/api/workspace/scenarios/does-not-exist/ground-layers")
+    assert missing.status_code == 200
+    assert missing.json()["status"] == "unavailable"
+
+
+def test_lidar_sweeps_span_play_range_or_unavailable(tmp_path: Path) -> None:
+    dataset_root = _dataset_with_expansions()
+    if dataset_root is None:
+        pytest.skip("no local dataset with map expansions is available in this checkout")
+    version_file = dataset_root / "v1.0-subset80"
+    version = "v1.0-subset80" if version_file.is_dir() else "v1.0-trainval"
+    settings = WebSettings(
+        project_root=tmp_path,
+        artifact_root=tmp_path / "scenarios",
+        output_root=tmp_path / "reports",
+        dataset_root=dataset_root,
+        esmini_bin=None,
+        esmini_dat2csv=None,
+        dataset_version=version,
+    )
+    client = TestClient(create_app(settings))
+    scenes = client.get("/api/source-scenes")
+    imported = client.post(f"/api/source-scenes/{scenes.json()[0]['scene_token']}/import", json={})
+    response = client.get(f"/api/workspace/scenarios/{imported.json()['scenario_id']}/lidar-sweeps")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["contract_version"] == "nuscenes-lidar-sweeps-v1"
+    sweeps = payload["sweeps"]
+    # Forward walk must cover the play range, oldest first, from t=0.
+    assert len(sweeps) > 1
+    assert sweeps[0]["time_s"] == 0.0
+    assert all(b["time_s"] > a["time_s"] for a, b in zip(sweeps, sweeps[1:]))
+    assert sweeps[-1]["time_s"] > 0
+    assert all(sweep["sample_data_token"] and sweep["payload_url"] for sweep in sweeps)
+    missing = client.get("/api/workspace/scenarios/does-not-exist/lidar-sweeps")
+    assert missing.status_code == 200
+    assert missing.json()["status"] == "unavailable"
+
+
 def test_completed_batch_exposes_domain_aggregate_for_benchmark_aggregation(tmp_path: Path) -> None:
     artifact_root = tmp_path / "scenarios"
     artifact_root.mkdir()

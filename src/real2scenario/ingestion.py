@@ -13,6 +13,17 @@ from .models import Actor, Scenario, State
 from .nuscenes_backend import NuScenesSourceAdapter, nearest_can_poses
 
 
+# Recording-vehicle dimensions (nuScenes ego is a Renault Zoe; the ego has no
+# sample_annotation, so these documented manufacturer specs stand in for the
+# missing measurement — previously the generic 4.5 x 1.8 x 1.5 fallbacks
+# applied). Width is body-only, mirrors excluded (1.945 m with mirrors),
+# per standard bounding-box convention. Owner-confirmed 2026-10-17.
+EGO_LENGTH_M = 4.084
+EGO_WIDTH_M = 1.730
+EGO_HEIGHT_M = 1.562
+EGO_DIMENSIONS_SOURCE = "renault-zoe-manufacturer-specs-mirrors-excluded"
+
+
 @dataclass(frozen=True, slots=True)
 class SourceWindow:
     """An inclusive, ordered keyframe range from one nuScenes scene."""
@@ -130,6 +141,9 @@ def extract_scenario(
             if can_matches
             else None,
         ),
+        length_m=EGO_LENGTH_M,
+        width_m=EGO_WIDTH_M,
+        height_m=EGO_HEIGHT_M,
     )
     duration_s = timestamps_s[-1] - timestamps_s[0]
     return Scenario(
@@ -149,6 +163,8 @@ def extract_scenario(
             "map_reconstruction_mode": "not-applicable-source-global",
             "map_reconstruction_version": "not-applicable",
             "generator_version": "real2scenario-ingestion-v1",
+            "ego_dimensions_m": f"{EGO_LENGTH_M}x{EGO_WIDTH_M}x{EGO_HEIGHT_M}",
+            "ego_dimensions_source": EGO_DIMENSIONS_SOURCE,
             "selected_instance_tokens": ",".join(actor_instance_tokens),
             **source_adapter.provenance(
                 scene_name=scene_name, used=matched_can, sample_count=len(can_samples)

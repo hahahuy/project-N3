@@ -223,6 +223,7 @@ class ActorPoseView(BaseModel):
     dimensions: AvailabilityView
     length_m: float | None
     width_m: float | None
+    height_m: float | None = None
 
 
 class ScenarioLayerView(BaseModel):

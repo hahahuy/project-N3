@@ -5,10 +5,10 @@ import pytest
 from real2scenario import Actor, Scenario, SelectionConfig, State, select_interaction_actors
 
 
-def _actor(actor_id: str, positions: tuple[float, float], speed_mps: float = 0.0) -> Actor:
+def _actor(actor_id: str, positions: tuple[float, float], speed_mps: float = 0.0, actor_type: str = "vehicle") -> Actor:
     return Actor(
         actor_id=actor_id,
-        actor_type="vehicle",
+        actor_type=actor_type,
         trajectory=tuple(
             State(time_s=float(index), x_m=x_m, y_m=0.0, yaw_rad=0.0, speed_mps=speed_mps)
             for index, x_m in enumerate(positions)
@@ -88,6 +88,71 @@ def test_selector_breaks_metric_ties_by_actor_id_and_caps_output() -> None:
         "minimum_distance_m": 10.0,
         "minimum_ttc_s": 1.0,
     }
+
+
+def test_vehicle_quota_swaps_lowest_ped_for_best_vehicle_and_records_reasons() -> None:
+    """Owner policy D2: one slot is reserved for the best qualifying vehicle.
+
+    Ranked order decides everything else: the lowest-ranked pick yields to the
+    best-ranked qualifying vehicle, losers below the cap keep max_actors_limit,
+    and the version bump marks v1 provenance non-comparable (A3 bar item 5).
+    """
+    scenario = _scenario(
+        _actor("ped1", (12.0, 13.0), actor_type="human.pedestrian.adult"),
+        _actor("ped2", (16.0, 17.0), actor_type="human.pedestrian.adult"),
+        _actor("car1", (25.0, 26.0), actor_type="vehicle.car"),
+    )
+
+    selected = select_interaction_actors(
+        scenario,
+        SelectionConfig(max_distance_m=30.0, max_ttc_s=5.0, max_actors=2, reserve_vehicle_slot=True),
+    )
+    decisions = {item["actor_id"]: item for item in json.loads(selected.provenance["interaction_selection_decisions"])}
+
+    assert [actor.actor_id for actor in selected.actors] == ["ego", "ped1", "car1"]
+    assert decisions["ped2"]["decision"] == "rejected"
+    assert decisions["ped2"]["reason"] == "vehicle_quota_displaced"
+    assert decisions["car1"]["decision"] == "selected"
+    assert selected.provenance["interaction_selection_version"] == "interaction-selection-v2"
+    assert json.loads(selected.provenance["interaction_selection_config"])["reserve_vehicle_slot"] is True
+
+
+def test_vehicle_quota_is_noop_when_vehicle_already_selected_or_absent() -> None:
+    ranked = _scenario(
+        _actor("car1", (12.0, 13.0), actor_type="vehicle.car"),
+        _actor("ped1", (16.0, 17.0), actor_type="human.pedestrian.adult"),
+    )
+    selected = select_interaction_actors(
+        ranked, SelectionConfig(max_distance_m=30.0, max_ttc_s=5.0, max_actors=2, reserve_vehicle_slot=True)
+    )
+    assert [actor.actor_id for actor in selected.actors] == ["ego", "car1", "ped1"]
+
+    peds_only = _scenario(
+        _actor("ped1", (12.0, 13.0), actor_type="human.pedestrian.adult"),
+        _actor("ped2", (16.0, 17.0), actor_type="human.pedestrian.adult"),
+    )
+    selected = select_interaction_actors(
+        peds_only, SelectionConfig(max_distance_m=30.0, max_ttc_s=5.0, max_actors=2, reserve_vehicle_slot=True)
+    )
+    assert [actor.actor_id for actor in selected.actors] == ["ego", "ped1", "ped2"]
+
+
+def test_vehicle_quota_off_preserves_pure_ranking() -> None:
+    """The quota is opt-in: default config never displaces by class."""
+    scenario = _scenario(
+        _actor("ped1", (12.0, 13.0), actor_type="human.pedestrian.adult"),
+        _actor("ped2", (16.0, 17.0), actor_type="human.pedestrian.adult"),
+        _actor("ped3", (20.0, 21.0), actor_type="human.pedestrian.adult"),
+        _actor("car1", (25.0, 26.0), actor_type="vehicle.car"),
+    )
+
+    selected = select_interaction_actors(
+        scenario, SelectionConfig(max_distance_m=30.0, max_ttc_s=5.0, max_actors=3)
+    )
+    decisions = {item["actor_id"]: item for item in json.loads(selected.provenance["interaction_selection_decisions"])}
+
+    assert [actor.actor_id for actor in selected.actors] == ["ego", "ped1", "ped2", "ped3"]
+    assert decisions["car1"]["reason"] == "max_actors_limit"
 
 
 def test_manual_override_preserves_order_bypasses_thresholds_and_does_not_mutate_source() -> None:

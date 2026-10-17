@@ -1214,7 +1214,7 @@ def _translated_scenario(scenario, dx, dy, yaw):
             )
             for state in actor.trajectory
         )
-        actors.append(Actor(actor.actor_id, actor.actor_type, states, actor.length_m, actor.width_m))
+        actors.append(Actor(actor.actor_id, actor.actor_type, states, actor.length_m, actor.width_m, actor.height_m))
     return Scenario(scenario.scenario_id, scenario.duration_s, scenario.ego_actor_id, tuple(actors), scenario.coordinate_frame, scenario.provenance)
 
 
@@ -1241,7 +1241,7 @@ def _shifted_reference_scenario(scenario, hypothesis):
             )
             for state in actor.trajectory
         )
-        actors.append(Actor(actor.actor_id, actor.actor_type, states, actor.length_m, actor.width_m))
+        actors.append(Actor(actor.actor_id, actor.actor_type, states, actor.length_m, actor.width_m, actor.height_m))
     return Scenario(
         scenario.scenario_id, scenario.duration_s, scenario.ego_actor_id,
         tuple(actors), scenario.coordinate_frame, scenario.provenance,

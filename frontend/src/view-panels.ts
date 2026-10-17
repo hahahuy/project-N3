@@ -1,6 +1,6 @@
 import type { IconName } from "./icons";
 
-export type ViewRenderer = "top-down" | "sensor-evidence" | "lidar" | "pov";
+export type ViewRenderer = "top-down" | "sensor-evidence" | "lidar" | "pov" | "real-camera";
 
 export type ViewDescriptor = {
   type: string;
@@ -21,6 +21,7 @@ export const VIEW_REGISTRY = {
     { type: "third-person", label: "3rd-person POV", icon: "third-person", renderer: "pov", menuDescription: "internal transform POV with optional esmini state/image", supportsNativeSession: true },
     { type: "in-car", label: "In-car POV", icon: "in-car", renderer: "pov", menuDescription: "ego-mounted internal transform POV with optional esmini state/image", supportsNativeSession: true },
     { type: "lidar", label: "LiDAR 3D", icon: "lidar", renderer: "lidar", menuDescription: "recorded LIDAR_TOP point cloud", supportsNativeSession: false },
+    { type: "real-camera", label: "Real Camera", icon: "third-person", renderer: "real-camera", menuDescription: "recorded camera channel view", supportsNativeSession: false },
   ] satisfies readonly ViewDescriptor[],
 } as const;
 

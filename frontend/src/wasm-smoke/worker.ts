@@ -4,7 +4,7 @@ import pedestrianXosc from "./fixture-pedestrian.xosc?raw";
 import xodr from "./smoke.xodr?raw";
 
 type SmokeRequest = { type: "run" };
-type SmokeObject = { name: string; type: string; kind: string };
+type SmokeObject = { name: string; object_type: number; object_category: number };
 type SmokeFixtureResult = {
   name: string;
   simulationTime: number;
@@ -38,10 +38,10 @@ async function probe(
   });
   const frame = scenario.step_frame(0);
   const road = scenario.get_road_geometry();
-  const objects = vectorItems<{ name: unknown; type: unknown; kind: unknown }>(frame.object_states).map((object) => ({
+  const objects = vectorItems<{ name: unknown; object_type: unknown; object_category: unknown }>(frame.object_states).map((object) => ({
     name: String(object.name ?? ""),
-    type: String(object.type ?? ""),
-    kind: String(object.kind ?? ""),
+    object_type: Number(object.object_type ?? 0),
+    object_category: Number(object.object_category ?? 0),
   }));
   return {
     name,

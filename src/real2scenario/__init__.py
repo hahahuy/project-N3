@@ -13,11 +13,12 @@ from .metrics import (
     aggregate_replay_metrics,
 )
 from .simulation import EsminiConfig, ReplayReport, ReplayState, ReplayTrace, parse_esmini_csv_trace, run_esmini
-from .exporter import OPENSCENARIO_VERSION, build_openscenario_xml, write_openscenario
+from .exporter import OPENSCENARIO_VERSION, atomic_write_bytes, build_openscenario_xml, write_openscenario
 from .templates import (
     STRAIGHT_ROAD_TOPOLOGY,
     TEMPLATE_REGISTRY_VERSION,
     OpenDriveTemplate,
+    select_full_scene_map,
     select_opendrive_template,
 )
 from .coordinates import (
@@ -99,6 +100,7 @@ from .mapbuilder import (
     build_opendrive_from_nuscenes,
     build_scene_local_corridor,
     stable_road_id,
+    transform_opendrive_to_local,
     validate_opendrive_subset,
 )
 from .ingestion import SourceWindow, extract_scenario, source_reference_convention
@@ -393,6 +395,7 @@ __all__ = [
     "build_opendrive_from_nuscenes",
     "build_scene_local_corridor",
     "stable_road_id",
+    "transform_opendrive_to_local",
     "validate_opendrive_subset",
     "scenario_from_dict",
     "scenario_to_dict",
@@ -401,6 +404,7 @@ __all__ = [
     "generate_random_variants",
     "perturb_scenario",
     "preview_variant",
+    "select_full_scene_map",
     "select_interaction_actors",
     "select_opendrive_template",
     "map_scenario_to_carla",
@@ -429,6 +433,7 @@ __all__ = [
     "write_aggregate_csv",
     "write_aggregate_json",
     "write_variant_report",
+    "atomic_write_bytes",
     "write_openscenario",
     "ROAD_MATCH_VERSION",
     "LANE_GRAPH_VERSION",

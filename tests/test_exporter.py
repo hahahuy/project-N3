@@ -1,5 +1,7 @@
 from xml.etree import ElementTree as ET
 
+import threading
+
 import pytest
 
 from real2scenario import (
@@ -7,6 +9,7 @@ from real2scenario import (
     Scenario,
     STRAIGHT_ROAD_TOPOLOGY,
     State,
+    atomic_write_bytes,
     build_openscenario_xml,
     select_opendrive_template,
     write_openscenario,
@@ -259,6 +262,42 @@ def test_exporter_uses_recorded_actor_dimensions_instead_of_constants() -> None:
     )
 
 
+def test_exporter_emits_renault_zoe_ego_dimensions() -> None:
+    """The nuScenes recording vehicle uses the documented Zoe body dimensions."""
+    scenario = Scenario(
+        scenario_id="export-zoe-ego",
+        duration_s=1.0,
+        ego_actor_id="ego",
+        actors=(
+            Actor(
+                "ego",
+                "vehicle.ego",
+                (State(0.0, 0.0, 0.0, 0.0, 0.0),),
+                length_m=4.084,
+                width_m=1.730,
+                height_m=1.562,
+            ),
+            Actor("lead", "vehicle.car", (State(0.0, 10.0, 0.0, 0.0, 0.0),)),
+        ),
+        coordinate_frame="local_road_aligned",
+        provenance={"dataset": "nuScenes"},
+    )
+    scenario, template = select_opendrive_template(scenario, topology=STRAIGHT_ROAD_TOPOLOGY)
+
+    root = ET.fromstring(build_openscenario_xml(scenario, template))  # type: ignore[arg-type]
+    dimensions = root.find("./Entities/ScenarioObject[@name='ego']/Vehicle/BoundingBox/Dimensions")
+    center = root.find("./Entities/ScenarioObject[@name='ego']/Vehicle/BoundingBox/Center")
+
+    assert dimensions is not None
+    assert center is not None
+    assert float(dimensions.attrib["width"]) == pytest.approx(1.730)
+    assert float(dimensions.attrib["length"]) == pytest.approx(4.084)
+    assert float(dimensions.attrib["height"]) == pytest.approx(1.562)
+    assert float(center.attrib["x"]) == pytest.approx(4.084 / 3.0)
+    assert center.attrib["y"] == "0"
+    assert float(center.attrib["z"]) == pytest.approx(1.562 / 2.0)
+
+
 def test_exporter_maps_known_vehicle_categories_and_defaults_conservatively() -> None:
     """An unmapped subtype stays ``car`` rather than being guessed.
 
@@ -286,6 +325,61 @@ def test_exporter_maps_known_vehicle_categories_and_defaults_conservatively() ->
         for obj in root.findall("./Entities/ScenarioObject")
     }
     assert categories == {"bicycle": "bicycle", "ego": "car"}
+
+
+def test_exporter_uses_esmini_readable_category_values() -> None:
+    """Every emitted category must be readable by esmini, not just schema-shaped.
+
+    esmini logs `LOG_ERROR` and leaves the category unset for anything outside
+    its own value lists (`Vehicle::SetCategory` has `motorbike`, not
+    `motorcycle`; `Pedestrian` accepts `pedestrian`/`wheelchair`/`animal`;
+    `MiscObject` has no `other`). An unread value is a dead mapping.
+    """
+    scenario = Scenario(
+        scenario_id="export-readable-categories",
+        duration_s=1.0,
+        ego_actor_id="ego",
+        actors=(
+            Actor("ego", "vehicle.ego", (State(0.0, 0.0, 0.0, 0.0, 2.0),)),
+            Actor("moto", "vehicle.motorcycle", (State(0.0, 5.0, 0.0, 0.0, 2.0),)),
+            Actor("chair", "human.pedestrian.wheelchair", (State(0.0, 3.0, 1.0, 0.0, 1.0),)),
+        ),
+        coordinate_frame="local_road_aligned",
+        provenance={"dataset": "synthetic"},
+    )
+    scenario, template = select_opendrive_template(scenario, topology=STRAIGHT_ROAD_TOPOLOGY)
+
+    root = ET.fromstring(build_openscenario_xml(scenario, template))  # type: ignore[arg-type]
+
+    assert root.find("./Entities/ScenarioObject[@name='moto']/Vehicle").attrib["vehicleCategory"] == "motorbike"
+    assert root.find("./Entities/ScenarioObject[@name='chair']/Pedestrian").attrib["pedestrianCategory"] == "wheelchair"
+
+
+def test_exporter_maps_only_exact_misc_categories() -> None:
+    """`movable_object.barrier` is an exact esmini value; all else stays `none`.
+
+    Approximate mappings (e.g. traffic cones as `obstacle`) would invent facts:
+    nothing in the source record says the object is an obstacle in esmini's
+    sense. The unmodified source taxonomy is preserved in Properties either way.
+    """
+    scenario = Scenario(
+        scenario_id="export-misc-exact",
+        duration_s=1.0,
+        ego_actor_id="ego",
+        actors=(
+            Actor("ego", "vehicle.ego", (State(0.0, 0.0, 0.0, 0.0, 2.0),)),
+            Actor("barr", "movable_object.barrier", (State(0.0, 5.0, 0.0, 0.0, 0.0),)),
+            Actor("cone", "movable_object.trafficcone", (State(0.0, 3.0, 1.0, 0.0, 0.0),)),
+        ),
+        coordinate_frame="local_road_aligned",
+        provenance={"dataset": "synthetic"},
+    )
+    scenario, template = select_opendrive_template(scenario, topology=STRAIGHT_ROAD_TOPOLOGY)
+
+    root = ET.fromstring(build_openscenario_xml(scenario, template))  # type: ignore[arg-type]
+
+    assert root.find("./Entities/ScenarioObject[@name='barr']/MiscObject").attrib["miscObjectCategory"] == "barrier"
+    assert root.find("./Entities/ScenarioObject[@name='cone']/MiscObject").attrib["miscObjectCategory"] == "none"
 
 
 def test_exporter_emits_pedestrian_and_misc_object_entities() -> None:
@@ -322,8 +416,12 @@ def test_exporter_emits_pedestrian_and_misc_object_entities() -> None:
     assert root.find("./Entities/ScenarioObject[@name='walk1']/Pedestrian/Performance") is None
     assert root.find("./Entities/ScenarioObject[@name='walk1']/Pedestrian/Axles") is None
     assert (
-        root.find("./Entities/ScenarioObject[@name='cone1']/MiscObject").attrib["MiscObjectCategory"]
-        == "other"
+        root.find("./Entities/ScenarioObject[@name='cone1']/MiscObject").attrib["miscObjectCategory"]
+        == "none"
+    )
+    assert (
+        root.find("./Entities/ScenarioObject[@name='walk1']/Pedestrian").attrib["pedestrianCategory"]
+        == "pedestrian"
     )
     for name, taxonomy in (
         ("ego", "vehicle.ego"),
@@ -394,3 +492,46 @@ def test_exporter_keeps_position_following_mode() -> None:
     }
 
     assert modes == {"position"}
+
+
+def test_atomic_write_bytes_never_exposes_partial_reads(tmp_path) -> None:
+    """Concurrent regeneration must never serve a half-written artifact.
+
+    Measured failure: two overlapping wasm-pair POSTs (dev StrictMode
+    double-mount) served 561 KB of a 3.9 MB road, then 0-byte reads, and the
+    engine died with opaque ``excPtr``. Rename is atomic: every read below
+    must observe exactly one complete generation.
+    """
+    target = tmp_path / "road.xodr"
+    first = b"<a>" + b"x" * 500000 + b"</a>"
+    second = b"<b>" + b"y" * 500000 + b"</b>"
+    errors: list[str] = []
+
+    def rewrite() -> None:
+        try:
+            for _ in range(30):
+                atomic_write_bytes(target, first)
+                atomic_write_bytes(target, second)
+        except OSError as error:
+            errors.append(str(error))
+
+    def observe() -> None:
+        try:
+            for _ in range(300):
+                try:
+                    content = target.read_bytes()
+                except FileNotFoundError:
+                    continue
+                assert content in (first, second), f"partial read of {len(content)} bytes"
+        except AssertionError as error:
+            errors.append(str(error))
+
+    writer = threading.Thread(target=rewrite)
+    readers = [threading.Thread(target=observe) for _ in range(3)]
+    writer.start()
+    for reader in readers:
+        reader.start()
+    writer.join()
+    for reader in readers:
+        reader.join()
+    assert not errors

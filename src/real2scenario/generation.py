@@ -146,7 +146,7 @@ def _preview_actor(actor: Actor, edit: ActorMotionEdit | None) -> Actor:
                                   first.y_m + relative_y * edit.speed_multiplier, state.yaw_rad + yaw_offset,
                                   speed, state.source_timestamp_us,
                                   state.source_record_token))
-    return Actor(actor.actor_id, actor.actor_type, tuple(transformed), actor.length_m, actor.width_m)
+    return Actor(actor.actor_id, actor.actor_type, tuple(transformed), actor.length_m, actor.width_m, actor.height_m)
 
 
 def generate_grid_variants(
@@ -373,6 +373,7 @@ def _perturb_actor(
         trajectory=transformed,
         length_m=actor.length_m,
         width_m=actor.width_m,
+        height_m=actor.height_m,
     )
 
 

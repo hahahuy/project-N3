@@ -146,7 +146,7 @@ The default full nuScenes dataset root is `/mnt/backup/nuscenes` with version
 dataset or artifact roots. The UI can import a selected scene into a canonical
 `local_road_aligned` baseline before generation. Imported files are written under
 `scenarios/nuscenes/`, which is ignored by git. The repository's smaller local
-fixtures under `data/` remain test fixtures, not the production dataset root.
+fixtures under `data/` remain test fixtures, not the production dataset root. For fast local browsing there is a curated 80-scene subset at `data/v1.0-subset80` (version `v1.0-subset80`: 35 quota-affected scenes plus stratified fill, full map expansions, LIDAR keyframes + sweep history, can_bus; camera payloads excluded — no code path reads them): `NUSCENES_ROOT=data/v1.0-subset80 NUSCENES_VERSION=v1.0-subset80`. Scenario artifacts are pre-imported under `scenarios/nuscenes/` and full-map XODRs under `reports/maps/`; all ignored by git.
 
 ## Docker deployment
 

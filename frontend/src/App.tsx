@@ -31,6 +31,8 @@ import {
   fetchTrajectory,
   fetchVariantLineage,
   fetchWorkspaceScenario,
+  fetchCameraEvidence,
+  fetchTopDownState,
   GateTimeline,
   LidarDescriptor,
   SensorEvidence,
@@ -60,17 +62,20 @@ import {
 } from "./api";
 import { Icon, IconName } from "./icons";
 import { getViewDescriptor, MAIN_VIEW, MAX_VIEWS, VIEW_REGISTRY, ViewType } from "./view-panels";
+import WasmPlaybackView from "./wasm-playback/WasmPlaybackView";
+import type { WasmOrbitState, WasmOverlayToggles } from "./wasm-playback/types";
 
 type View = { id: number; type: ViewType };
+type CameraPov = "CAM_FRONT_RIGHT" | "CAM_FRONT" | "CAM_FRONT_LEFT" | "CAM_BACK_RIGHT" | "CAM_BACK_LEFT" | "CAM_BACK";
+const CAMERA_POVS: CameraPov[] = ["CAM_FRONT_RIGHT", "CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_RIGHT", "CAM_BACK_LEFT", "CAM_BACK"];
 type Panel = "recipe" | "catalog" | "layers" | "comments";
 type Flyout = "metrics" | "gates" | "provenance" | "artifacts";
 type Tool = { icon: IconName; label: string; shortcut?: string; disabled?: boolean; badge?: string; note?: string; onClick?: () => void; menu?: React.ReactNode };
 type StatusLine = { label: string; available: boolean; note?: string };
-type CameraPreset = "default" | "north-up" | "ego-up";
 type Command = { label: string; group: string; icon: IconName; shortcut?: string; disabled?: boolean; run: () => void };
 
 const viewLabels: Record<ViewType, string> = Object.fromEntries(VIEW_REGISTRY.descriptors.map((descriptor) => [descriptor.type, descriptor.label])) as Record<ViewType, string>;
-const DOCUMENT_TABS = ["Scenario studio", "Variant studio", "Replay", "Report"] as const;
+const DOCUMENT_TABS = ["Scenario studio", "Variant studio", "Report"] as const;
 const PANEL_DEFAULT_WIDTH = 270;
 const PANEL_MIN_WIDTH = 180;
 const PANEL_MAX_WIDTH = 520;
@@ -204,10 +209,10 @@ function App() {
   const [overflowOpen, setOverflowOpen] = useState(false);
   const groupsRef = useRef<HTMLDivElement | null>(null);
   const [hiddenTools, setHiddenTools] = useState<string[]>([]);
-  const [maximized, setMaximized] = useState<number | null>(null);
+  const [draggingViewId, setDraggingViewId] = useState<number | null>(null);
+  const [dropTargetViewId, setDropTargetViewId] = useState<number | null>(null);
   const [hiddenKinds, setHiddenKinds] = useState<string[]>([]);
   const [layersOpen, setLayersOpen] = useState<number | null>(null);
-  const [presets, setPresets] = useState<Record<number, CameraPreset>>({});
   const [commandOpen, setCommandOpen] = useState(false);
   const [commandQuery, setCommandQuery] = useState("");
   const [artifacts, setArtifacts] = useState<ArtifactLink[] | null>(null);
@@ -230,6 +235,9 @@ function App() {
   const [sensorEvidence, setSensorEvidence] = useState<SensorEvidence | null>(null);
   const [sensorSweeps, setSensorSweeps] = useState(5);
   const [lidarDecimation, setLidarDecimation] = useState(8);
+  const [cameraPovs, setCameraPovs] = useState<Record<number, CameraPov>>({});
+  const [wasmOrbit, setWasmOrbit] = useState<WasmOrbitState>({ position: [20, 22, 26], target: [0, 0, 0] });
+  const [wasmToggles, setWasmToggles] = useState<WasmOverlayToggles>({ cuboids: false, paths: false, lidar: true });
   const [actorTimeline, setActorTimeline] = useState<ActorTimeline | null>(null);
   const [gateTimeline, setGateTimeline] = useState<GateTimeline | null>(null);
   const [selectedActor, setSelectedActor] = useState<string | null>(null);
@@ -240,8 +248,8 @@ function App() {
     { label: "Import", tools: [{ icon: "import", label: "Import scene", shortcut: "I", disabled: true, onClick: () => openPanel("catalog") }, { icon: "export", label: "Export", onClick: exportSelected, disabled: !selected }] },
     { label: "Edit", tools: [{ icon: "cursor", label: "Select actors", shortcut: "S", onClick: () => setMode("select") }, { icon: "edit", label: "Edit motion", shortcut: "E", onClick: () => setMode("edit"), disabled: !selected }, { icon: "behavior", label: "Behavior mode", disabled: true }] },
     { label: "Check / Run", tools: [{ icon: "validate", label: "Validate", shortcut: "V", disabled: true }, { icon: "replay", label: "Replay", disabled: true }] },
-    { label: "Inspect", tools: [{ icon: "measure", label: "Measure", shortcut: "M", onClick: () => setMode("measure") }, { icon: "compare", label: "Compare", shortcut: "C", onClick: () => setMode("compare"), disabled: !selected }] },
-     { label: "View", tools: [{ icon: "add-view", label: "Add view", shortcut: "Shift+V", disabled: views.length >= MAX_VIEWS, badge: `${MAX_VIEWS - views.length}/${MAX_VIEWS}`, note: views.length >= MAX_VIEWS ? `view grid locked at ${MAX_VIEWS} panels, close one to add another` : `${MAX_VIEWS - views.length} of ${MAX_VIEWS} view panels available`, onClick: () => setAddViewOpen(!addViewOpen), menu: addViewOpen && views.length < MAX_VIEWS ? <AddViewMenu viewCount={views.length} replayMode={activeTab === "Replay"} onAdd={selectAddedView} /> : undefined }] },
+    { label: "Inspect", tools: [{ icon: "measure", label: "Measure", shortcut: "M", onClick: () => setMode("measure") }] },
+     { label: "View", tools: [{ icon: "add-view", label: "Add view", shortcut: "Shift+V", disabled: views.length >= MAX_VIEWS, onClick: () => setAddViewOpen(!addViewOpen), menu: addViewOpen && views.length < MAX_VIEWS ? <AddViewMenu viewCount={views.length} onAdd={selectAddedView} /> : undefined }] },
   ];
 
   useLayoutEffect(() => {
@@ -379,14 +387,44 @@ function App() {
   }
   function selectAddedView(type: ViewType) {
     setAddViewOpen(false);
-    // Recorded sensor evidence belongs to replay: open the Replay tab for it rather
-    // than leaving the third grid slot unreachable from the authoring tab.
-    if (type === "sensor-evidence" && activeTab !== "Replay") setActiveTab("Replay");
     addView(type);
   }
-  function closeView(id: number) { setViews(views.filter((view) => view.id !== id)); if (maximized === id) setMaximized(null); }
-  function makeMain(id: number) { setViews((current) => { const chosen = current.find((view) => view.id === id); return chosen ? [chosen, ...current.filter((view) => view.id !== id)] : current; }); }
-  function resetLayout() { setViews([{ id: 1, type: MAIN_VIEW }]); setNextViewId(2); setMaximized(null); setHiddenKinds([]); }
+  function closeView(id: number) { setViews(views.filter((view) => view.id !== id)); }
+  function swapViews(sourceId: number, targetId: number) {
+    if (sourceId === targetId) return;
+    setViews((current) => {
+      const sourceIndex = current.findIndex((view) => view.id === sourceId);
+      const targetIndex = current.findIndex((view) => view.id === targetId);
+      if (sourceIndex < 0 || targetIndex < 0) return current;
+      const next = [...current];
+      [next[sourceIndex], next[targetIndex]] = [next[targetIndex], next[sourceIndex]];
+      return next;
+    });
+  }
+  function startViewDrag(id: number, event: React.DragEvent<HTMLElement>) {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(id));
+    setDraggingViewId(id);
+    setDropTargetViewId(null);
+  }
+  function dragOverView(id: number, event: React.DragEvent<HTMLElement>) {
+    if (draggingViewId === null || draggingViewId === id) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    setDropTargetViewId(id);
+  }
+  function dropView(id: number, event: React.DragEvent<HTMLElement>) {
+    event.preventDefault();
+    const sourceId = Number(event.dataTransfer.getData("text/plain"));
+    if (Number.isInteger(sourceId)) swapViews(sourceId, id);
+    setDraggingViewId(null);
+    setDropTargetViewId(null);
+  }
+  function endViewDrag() {
+    setDraggingViewId(null);
+    setDropTargetViewId(null);
+  }
+  function resetLayout() { setViews([{ id: 1, type: MAIN_VIEW }]); setNextViewId(2); setHiddenKinds([]); }
   function exportSelected() {
     if (!selected) { setError("Select a scenario before exporting."); return; }
     const payload = { exported_at: new Date().toISOString(), source: "project-N3 local workspace", scenario: selected, trajectory };
@@ -514,7 +552,6 @@ function App() {
   const commands: Command[] = [
     ...toolbarGroups.flatMap((group) => group.tools.map((tool) => ({ label: tool.label, group: group.label, icon: tool.icon, shortcut: tool.shortcut, disabled: tool.disabled, run: () => tool.onClick?.() }))),
     { label: "Reset layout", group: "View", icon: "compare", run: resetLayout },
-    { label: maximized === null ? "Maximize first view" : "Restore maximized view", group: "View", icon: "add-view", disabled: views.length === 0, run: () => setMaximized(maximized === null ? views[0].id : null) },
     { label: dark ? "Switch to light mode" : "Switch to dark mode", group: "View", icon: dark ? "sun" : "moon", run: () => setDark(!dark) },
     { label: headerOpen ? "Minimize header" : "Restore header", group: "View", icon: "chevron-up", run: () => setHeaderOpen(!headerOpen) },
   ];
@@ -588,16 +625,16 @@ function App() {
         {error && <div className="inline-error" role="alert">{error}</div>}
          {mode === "compare"
           ? <CompareSurface payload={compare} error={compareError} selected={selected} scenarios={scenarios} against={compareAgainst} onAgainst={setCompareAgainst} playhead={playhead} />
-           : activeTab === "Scenario studio" || activeTab === "Replay"
-           ? <div className={`view-grid count-${views.length}${maximized !== null ? " maximized" : ""}`}>
-                 {views.map((view) => <ViewPane key={view.id} view={view} common={{ trajectory: preview?.paths.length ? { ...trajectory!, paths: preview.paths } : trajectory, timeline: playhead, preset: presets[view.id] ?? "default", onPreset: (next) => setPresets({ ...presets, [view.id]: next }), hiddenKinds, onToggleKind: toggleKind, layersOpen: layersOpen === view.id, onToggleLayers: () => setLayersOpen(layersOpen === view.id ? null : view.id), maximized: maximized === view.id, onToggleMaximize: () => setMaximized(maximized === view.id ? null : view.id), onMakeMain: () => makeMain(view.id), onClose: () => closeView(view.id) }} content={view.type === "top-down" ? { type: view.type, selected, activeTracks, selectedActor, measurement, mode, onSelectActor: setSelectedActor } : view.type === "sensor-evidence" ? { type: view.type, evidence: sensorEvidence, onSensorSweeps: setSensorSweeps, decimation: lidarDecimation, onDecimation: setLidarDecimation } : view.type === "lidar" ? { type: view.type, descriptor: lidar, decimation: lidarDecimation, onDecimation: setLidarDecimation } : { type: view.type as "third-person" | "in-car", frame: povFrames[view.type], imageFrame: povImages[view.type], liveState, liveCapability, workspace, onStartNativeSession: startNativeSession }} />)}
+            : activeTab === "Scenario studio"
+            ? <div className={`view-grid count-${views.length}`}>
+                  {views.map((view) => <ViewPane key={view.id} view={view} dragging={draggingViewId === view.id} dropTarget={dropTargetViewId === view.id} onDragStart={(event) => startViewDrag(view.id, event)} onDragEnd={endViewDrag} onDragOver={(event) => dragOverView(view.id, event)} onDrop={(event) => dropView(view.id, event)} common={{ trajectory: preview?.paths.length ? { ...trajectory!, paths: preview.paths } : trajectory, timeline: playhead, hiddenKinds, onToggleKind: toggleKind, layersOpen: layersOpen === view.id, onToggleLayers: () => setLayersOpen(layersOpen === view.id ? null : view.id), onClose: () => closeView(view.id), wasmOrbit, onWasmOrbitChange: setWasmOrbit, wasmToggles, onWasmTogglesChange: setWasmToggles }} content={view.type === "top-down" ? { type: view.type, selected, activeTracks, selectedActor, measurement, mode, onSelectActor: setSelectedActor } : view.type === "sensor-evidence" ? { type: view.type, evidence: sensorEvidence, onSensorSweeps: setSensorSweeps, decimation: lidarDecimation, onDecimation: setLidarDecimation } : view.type === "lidar" ? { type: view.type, descriptor: lidar, decimation: lidarDecimation, onDecimation: setLidarDecimation } : view.type === "real-camera" ? { type: view.type, pov: cameraPovs[view.id] ?? "CAM_FRONT", onPov: (pov) => setCameraPovs((current) => ({ ...current, [view.id]: pov })) } : { type: view.type as "third-person" | "in-car", frame: povFrames[view.type], imageFrame: povImages[view.type], liveState, liveCapability, workspace, onStartNativeSession: startNativeSession }} />)}
              {views.length === 0 && <div className="empty-view"><strong>No views open.</strong><span>Add a view.</span><button onClick={() => addView("top-down")}>Add a Top-down view</button></div>}
           </div>
           : activeTab === "Variant studio"
           ? <VariantStudio selected={selected} lineage={lineage} evidence={evidence} workspace={workspace} />
           : <div className="view-grid count-1"><div className="empty-view"><strong>{activeTab}</strong><span>Not available in this build.</span><button onClick={() => setActiveTab("Scenario studio")}>Back to Scenario studio</button></div></div>}
         <div className={`split-handle top${timelineResizing ? " dragging" : ""}`} role="separator" aria-orientation="horizontal" aria-label="Resize timeline" aria-valuenow={timelineOpen ? timelineHeight : 0} aria-valuemin={TIMELINE_MIN_HEIGHT} aria-valuemax={TIMELINE_MAX_HEIGHT} tabIndex={0} onPointerDown={startTimelineResize} onKeyDown={resizeTimelineByKeyboard} />
-        <TimelineSurface
+  <TimelineSurface
           timeline={actorTimeline}
           gates={gateTimeline}
           error={timelineError}
@@ -608,7 +645,9 @@ function App() {
           measurement={measurement}
           onSelectActor={setSelectedActor}
           onPlayhead={(value) => setTimeline(Math.min(Math.max(value, 0), durationS || 0))}
-          onStep={(delta) => setTimeline(Math.min(Math.max(playhead + delta, 0), durationS || 0))}
+           onStep={(delta) => setTimeline(Math.min(Math.max(playhead + delta, 0), durationS || 0))}
+           wasmToggles={wasmToggles}
+           onWasmTogglesChange={setWasmToggles}
         />
       </section>
        <aside className="right-rail" aria-label="Inspection navigation">
@@ -842,29 +881,27 @@ function CompareSurface({ payload, error, selected, scenarios, against, onAgains
     </>}
   </section>;
 }
-function Catalog({ scenarios, selected, loading, filter, onFilter, onSelect, onRefresh }: { scenarios: ScenarioSummary[]; selected: ScenarioSummary | null; loading: boolean; filter: string; onFilter: (value: string) => void; onSelect: (scenario: ScenarioSummary) => void; onRefresh: () => void }) { const visible = scenarios.filter((scenario) => scenario.scenario_id.toLowerCase().includes(filter.toLowerCase())); return <div className="panel-content"><div className="panel-title"><span className="count">{scenarios.length}</span><span className="section-kicker">CATALOG</span><button className="catalog-refresh" onClick={onRefresh} disabled={loading} aria-label="Refresh catalog" title="Refresh catalog"><Icon name="reload" size={14} /></button></div><input className="filter" value={filter} onChange={(event) => onFilter(event.target.value)} placeholder="Filter scenarios" aria-label="Filter scenarios" />{loading ? <div className="skeleton-list"><i /><i /><i /></div> : scenarios.length === 0 ? <div className="panel-empty">Import a scene to start a scenario.</div> : visible.length === 0 ? <div className="panel-empty">No scenarios match this filter.</div> : <div className="scenario-list">{visible.map((scenario) => <button className={selected?.scenario_id === scenario.scenario_id ? "selected" : ""} key={scenario.scenario_id} onClick={() => onSelect(scenario)}><span><strong title={scenario.scenario_id}>{displayScenarioId(scenario.scenario_id)}</strong><small>{scenario.artifact_type} / {scenario.duration_s.toFixed(2)} s</small><small>{displayMapName(scenario)}</small></span></button>)}</div>}</div>; }
-function AddViewMenu({ viewCount, replayMode, onAdd }: { viewCount: number; replayMode: boolean; onAdd: (type: ViewType) => void }) {
+ function Catalog({ scenarios, selected, loading, filter, onFilter, onSelect, onRefresh }: { scenarios: ScenarioSummary[]; selected: ScenarioSummary | null; loading: boolean; filter: string; onFilter: (value: string) => void; onSelect: (scenario: ScenarioSummary) => void; onRefresh: () => void }) { const visible = scenarios.filter((scenario) => scenario.scenario_id.toLowerCase().includes(filter.toLowerCase())); return <div className="panel-content"><div className="panel-title"><span className="count">{scenarios.length}</span><span className="section-kicker">Scenarios</span><button className="catalog-refresh" onClick={onRefresh} disabled={loading} aria-label="Refresh catalog" title="Refresh catalog"><Icon name="reload" size={14} /></button></div><input className="filter" value={filter} onChange={(event) => onFilter(event.target.value)} placeholder="Filter scenarios" aria-label="Filter scenarios" />{loading ? <div className="skeleton-list"><i /><i /><i /></div> : scenarios.length === 0 ? <div className="panel-empty">Import a scene to start a scenario.</div> : visible.length === 0 ? <div className="panel-empty">No scenarios match this filter.</div> : <div className="scenario-list">{visible.map((scenario) => <button className={selected?.scenario_id === scenario.scenario_id ? "selected" : ""} key={scenario.scenario_id} onClick={() => onSelect(scenario)}><span><strong title={scenario.scenario_id}>{displayScenarioId(scenario.scenario_id)}</strong><small>{scenario.artifact_type} / {scenario.duration_s.toFixed(2)} s</small><small>{displayMapName(scenario)}</small></span></button>)}</div>}</div>; }
+function AddViewMenu({ viewCount, onAdd }: { viewCount: number; onAdd: (type: ViewType) => void }) {
   const atLimit = viewCount >= MAX_VIEWS;
-  const slot = atLimit ? `maximum ${MAX_VIEWS} views reached` : `view panel ${viewCount + 1} of ${MAX_VIEWS}`;
-  return <div className="add-view-menu" role="menu">{VIEW_REGISTRY.descriptors.map((descriptor) => <button key={descriptor.type} disabled={atLimit} onClick={() => onAdd(descriptor.type)}><strong>{descriptor.label}</strong><small>{atLimit ? slot : `${slot} · ${descriptor.replayOnly && !replayMode ? "opens Replay, " : ""}${descriptor.menuDescription}`}</small></button>)}</div>;
+  return <div className="add-view-menu" role="menu">{VIEW_REGISTRY.descriptors.filter((descriptor) => descriptor.type !== "lidar").map((descriptor) => <button key={descriptor.type} disabled={atLimit} onClick={() => onAdd(descriptor.type)}><strong>{descriptor.label}</strong><small>{atLimit ? `maximum ${MAX_VIEWS} views reached` : descriptor.menuDescription}</small></button>)}</div>;
 }
 
-type ViewCommonProps = { trajectory: TrajectoryResponse | null; timeline: number; preset: CameraPreset; onPreset: (next: CameraPreset) => void; hiddenKinds: string[]; onToggleKind: (kind: string) => void; layersOpen: boolean; onToggleLayers: () => void; maximized: boolean; onToggleMaximize: () => void; onMakeMain: () => void; onClose: () => void };
+type ViewCommonProps = { trajectory: TrajectoryResponse | null; timeline: number; hiddenKinds: string[]; onToggleKind: (kind: string) => void; layersOpen: boolean; onToggleLayers: () => void; onClose: () => void; wasmOrbit: WasmOrbitState; onWasmOrbitChange: (orbit: WasmOrbitState) => void; wasmToggles: WasmOverlayToggles; onWasmTogglesChange: (toggles: WasmOverlayToggles) => void };
 type ViewContent =
   | { type: "top-down"; selected: ScenarioSummary | null; activeTracks: ActiveTrack[]; selectedActor: string | null; measurement: Measurement | null; mode: string; onSelectActor: (actorId: string) => void }
   | { type: "sensor-evidence"; evidence: SensorEvidence | null; onSensorSweeps: (value: number) => void; decimation: number; onDecimation: (value: number) => void }
   | { type: "lidar"; descriptor: LidarDescriptor | null; decimation: number; onDecimation: (value: number) => void }
-  | { type: "third-person" | "in-car"; frame?: POVFrame | null; imageFrame?: POVImageFrame | null; liveState: LiveState | null; liveCapability: LiveCapability | null; workspace: WorkspaceScenario | null; onStartNativeSession: () => void };
+  | { type: "third-person" | "in-car"; frame?: POVFrame | null; imageFrame?: POVImageFrame | null; liveState: LiveState | null; liveCapability: LiveCapability | null; workspace: WorkspaceScenario | null; onStartNativeSession: () => void }
+  | { type: "real-camera"; pov: CameraPov; onPov: (pov: CameraPov) => void };
 
-function ViewPane({ view, common, content }: { view: View; common: ViewCommonProps; content: ViewContent }) {
+function ViewPane({ view, dragging, dropTarget, onDragStart, onDragEnd, onDragOver, onDrop, common, content }: { view: View; dragging: boolean; dropTarget: boolean; onDragStart: (event: React.DragEvent<HTMLElement>) => void; onDragEnd: () => void; onDragOver: (event: React.DragEvent<HTMLElement>) => void; onDrop: (event: React.DragEvent<HTMLElement>) => void; common: ViewCommonProps; content: ViewContent }) {
   const descriptor = getViewDescriptor(view.type);
   const kinds = common.trajectory ? Array.from(new Set(common.trajectory.paths.map((path) => path.path_kind))) : [];
-  return <article className={`view-pane${common.maximized ? " maximized" : ""}`}>
-    <header>
+  return <article className={`view-pane${dragging ? " dragging" : ""}${dropTarget ? " drop-target" : ""}`} onDragOver={onDragOver} onDrop={onDrop}>
+    <header draggable onDragStart={onDragStart} onDragEnd={onDragEnd} aria-label={`${descriptor.label} view panel drag handle`}>
       <span className="view-icon"><Icon name={descriptor.icon} /></span><strong>{descriptor.label}</strong>
-      <select aria-label="Camera preset" value={common.preset} onChange={(event) => common.onPreset(event.target.value as CameraPreset)}><option value="default">Auto-fit</option><option value="north-up">North-up</option><option value="ego-up">Ego-up</option></select>
-      <div className="layers-control"><button className={`view-action${common.layersOpen ? " active" : ""}`} aria-expanded={common.layersOpen} onClick={common.onToggleLayers}>Layers</button>{common.layersOpen && <div className="layers-menu" role="menu">{kinds.length === 0 ? <p>No trajectory layers loaded.</p> : kinds.map((kind) => <button key={kind} role="menuitemcheckbox" aria-checked={!common.hiddenKinds.includes(kind)} onClick={() => common.onToggleKind(kind)}><span className={`status-dot ${common.hiddenKinds.includes(kind) ? "off" : "on"}`} />{kind}</button>)}</div>}</div>
-      <button className="view-action" onClick={common.onMakeMain}>Make main</button><button className={`view-action${common.maximized ? " active" : ""}`} onClick={common.onToggleMaximize}>{common.maximized ? "Restore" : "Maximize"}</button>
+       {content.type === "real-camera" ? <CameraPovMenu pov={content.pov} onPov={content.onPov} /> : <div className="layers-control"><button className={`view-action${common.layersOpen ? " active" : ""}`} aria-expanded={common.layersOpen} onClick={common.onToggleLayers}>Layers</button>{common.layersOpen && <div className="layers-menu" role="menu">{kinds.length === 0 ? <p>No trajectory layers loaded.</p> : kinds.map((kind) => <button key={kind} role="menuitemcheckbox" aria-checked={!common.hiddenKinds.includes(kind)} onClick={() => common.onToggleKind(kind)}><span className={`status-dot ${common.hiddenKinds.includes(kind) ? "off" : "on"}`} />{kind}</button>)}</div>}</div>}
       {descriptor.supportsNativeSession && "onStartNativeSession" in content && <button className="view-action" disabled={content.liveCapability?.available !== true || content.liveState?.status === "running" || content.liveState?.status === "paused"} onClick={content.onStartNativeSession}>{content.liveState?.status === "running" || content.liveState?.status === "paused" ? "Native session active" : "Start native session"}</button>}
       <button className="close-view" aria-label={`Close view: ${descriptor.label}`} title={`Close view: ${descriptor.label}`} onClick={common.onClose}>x</button>
     </header>
@@ -874,14 +911,44 @@ function ViewPane({ view, common, content }: { view: View; common: ViewCommonPro
 
 function renderViewContent(content: ViewContent, common: ViewCommonProps) {
   const renderer = getViewDescriptor(content.type).renderer;
-  if (renderer === "top-down" && content.type === "top-down") return <TopDownView selected={content.selected} trajectory={common.trajectory} timeline={common.timeline} activeTracks={content.activeTracks} selectedActor={content.selectedActor} measurement={content.measurement} mode={content.mode} onSelectActor={content.onSelectActor} preset={common.preset} hiddenKinds={common.hiddenKinds} />;
-  if (renderer === "sensor-evidence" && content.type === "sensor-evidence") return <SensorEvidenceView evidence={content.evidence} decimation={content.decimation} onDecimation={content.onDecimation} onSweeps={content.onSensorSweeps} playhead={common.timeline} trajectory={common.trajectory} />;
+  if (renderer === "top-down" && content.type === "top-down") return <TopDownView selected={content.selected} trajectory={common.trajectory} timeline={common.timeline} activeTracks={content.activeTracks} selectedActor={content.selectedActor} measurement={content.measurement} mode={content.mode} onSelectActor={content.onSelectActor} hiddenKinds={common.hiddenKinds} />;
+  if (renderer === "sensor-evidence" && content.type === "sensor-evidence") return typeof Worker !== "undefined" && selectedScenarioId(common) ? <WasmPlaybackView scenarioId={selectedScenarioId(common) ?? undefined} mode="sensor-evidence" playhead={common.timeline} toggles={common.wasmToggles} onTogglesChange={common.onWasmTogglesChange} orbit={common.wasmOrbit} onOrbitChange={common.onWasmOrbitChange} /> : <SensorEvidenceView evidence={content.evidence} decimation={content.decimation} onDecimation={content.onDecimation} onSweeps={content.onSensorSweeps} playhead={common.timeline} trajectory={common.trajectory} />;
   if (renderer === "lidar" && content.type === "lidar") return <LidarView descriptor={content.descriptor} decimation={content.decimation} onDecimation={content.onDecimation} playhead={common.timeline} />;
+  if (renderer === "real-camera" && content.type === "real-camera") return <RealCameraView pov={content.pov} scenarioId={selectedScenarioId(common)} playhead={common.timeline} toggles={common.wasmToggles} />;
   const povContent = content as Extract<ViewContent, { type: "third-person" | "in-car" }>;
+  if (povContent.type === "third-person" && typeof Worker !== "undefined" && selectedScenarioId(common)) return <WasmPlaybackView scenarioId={selectedScenarioId(common) ?? undefined} mode="third-person" playhead={common.timeline} toggles={common.wasmToggles} onTogglesChange={common.onWasmTogglesChange} orbit={common.wasmOrbit} onOrbitChange={common.onWasmOrbitChange} />;
   if (povContent.liveState?.status === "running" || povContent.liveState?.status === "paused" || povContent.liveState?.status === "reset") return <LivePOVView state={povContent.liveState} playhead={common.timeline} />;
   if (povContent.frame) return <POVView frame={povContent.frame} imageFrame={povContent.imageFrame} playhead={common.timeline} />;
   const layer = povContent.workspace?.layers[povContent.type === "in-car" ? "in_car" : "third_person"];
   return <div className="unavailable-view"><StatusBadge status={layer?.available ? "loading" : "unavailable"} /><strong>{viewLabels[povContent.type]} {layer?.available ? "loading" : "unavailable"}</strong><p>{povContent.liveCapability?.unavailable_reason ?? layer?.unavailable_reason ?? "Select an imported scenario to query capability."}</p></div>;
+}
+
+function selectedScenarioId(common: ViewCommonProps): string | null {
+  const scenarioId = common.trajectory?.scenario_id;
+  return scenarioId ?? null;
+}
+
+function CameraPovMenu({ pov, onPov }: { pov: CameraPov; onPov: (pov: CameraPov) => void }) {
+  const [open, setOpen] = useState(false);
+  return <div className="layers-control"><button className={`view-action${open ? " active" : ""}`} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>camera pov</button>{open && <div className="layers-menu" role="menu">{CAMERA_POVS.map((option) => <button key={option} role="menuitemradio" aria-checked={pov === option} onClick={() => { onPov(option); setOpen(false); }}>{option}</button>)}</div>}</div>;
+}
+
+function RealCameraView({ pov, scenarioId, playhead, toggles }: { pov: CameraPov; scenarioId: string | null; playhead: number; toggles: WasmOverlayToggles }) {
+  const [frame, setFrame] = useState<import("./api").CameraEvidenceFrame | null>(null);
+  useEffect(() => {
+    if (!scenarioId) return;
+    let cancelled = false;
+    fetchCameraEvidence(scenarioId, pov, playhead).then((next) => { if (!cancelled) setFrame(next); }).catch(() => { if (!cancelled) setFrame(null); });
+    return () => { cancelled = true; };
+  }, [pov, scenarioId, playhead]);
+  if (!frame || frame.status !== "rendered" || !frame.image?.url) return <div className="unavailable-view"><StatusBadge status="unavailable" /><strong>{pov}</strong><p>{frame?.unavailable_reason ?? "Select an imported scenario to query recorded camera evidence."}</p></div>;
+  const recordedBoxOverlays = frame.recorded_cuboids.map((box, index) => {
+    const corners = box.corners_2d as number[][] | undefined;
+    if (!corners || corners.length < 4) return null;
+    const points = corners.map((corner) => corner.join(",")).join(" ");
+    return <polyline key={`box-${index}`} points={points} fill="none" stroke="#f27d72" strokeWidth="3" />;
+  });
+  return <div className="real-camera-view"><div className="real-camera-image"><img src={String(frame.image.url)} alt={`${pov} recorded camera at ${frame.resolved_time_s?.toFixed(2) ?? "n/a"} seconds`} />{(toggles.lidar || toggles.cuboids) && <svg className="real-camera-overlay" viewBox={`0 0 ${String(frame.image.width ?? 1600)} ${String(frame.image.height ?? 900)}`} preserveAspectRatio="none" aria-hidden="true">{toggles.lidar && frame.lidar_points.map((point, index) => <circle key={`lidar-${index}`} cx={point.u} cy={point.v} r="2" fill="#8fd3ff" opacity=".65" />)}{toggles.cuboids && recordedBoxOverlays}</svg>}</div><div className="view-legend"><span>{pov}</span><span>recorded nuScenes camera</span><span>t={frame.resolved_time_s?.toFixed(2) ?? "n/a"} s</span><span>recorded cuboids {frame.recorded_cuboids.length}</span><span>canonical cuboids {frame.canonical_cuboids.length}</span><span>LiDAR {toggles.lidar ? frame.lidar_points.length : "off"}</span></div></div>;
 }
 
 function LivePOVView({ state, playhead }: { state: LiveState; playhead: number }) {
@@ -955,8 +1022,17 @@ function POVView({ frame, imageFrame, playhead }: { frame: POVFrame; imageFrame?
   return <div className="pov-view" role="img" aria-label={`${frame.mode} simulator frame at ${frame.timestamp_s.toFixed(2)} seconds for playhead ${playhead.toFixed(2)} seconds`}>{imageFrame?.status === "rendered" && imageFrame.artifact ? <img className="pov-artifact" src={apiUrl(`/artifacts/${imageFrame.artifact.path}`)} alt={`${frame.mode} esmini image frame at ${imageFrame.timestamp_s?.toFixed(2)} seconds`} /> : <><div className="pov-horizon" /><div className="pov-road" />{frame.actors.map((actor) => <span key={actor.actor_id} className={`pov-actor${actor.actor_id === "ego" ? " ego" : ""}`} style={{ left: `${50 + ((actor.transform.x_m - Number(camera.x_m)) * 2)}%`, top: `${58 - ((actor.transform.y_m - Number(camera.y_m)) * 2)}%` }} title={`${actor.actor_id} ${actor.actor_type}`} />)}</>}<div className="view-legend"><span>{imageFrame?.status === "rendered" ? "esmini-image-artifact" : frame.simulator}</span><span>{frame.mode}</span><span>playhead t={playhead.toFixed(2)} s</span><span>frame t={imageFrame?.timestamp_s?.toFixed(2) ?? frame.timestamp_s.toFixed(2)} s</span><span>{delta <= 0.001 ? "at playhead" : `nearest frame +${delta.toFixed(2)} s`}</span></div></div>;
 }
 
-function TopDownView({ selected, trajectory, timeline, activeTracks, selectedActor, measurement, mode, onSelectActor, preset, hiddenKinds }: { selected: ScenarioSummary | null; trajectory: TrajectoryResponse | null; timeline: number; activeTracks: ActiveTrack[]; selectedActor: string | null; measurement: Measurement | null; mode: string; onSelectActor: (actorId: string) => void; preset: CameraPreset; hiddenKinds: string[] }) {
+function TopDownView({ selected, trajectory, timeline, activeTracks, selectedActor, measurement, mode, onSelectActor, hiddenKinds }: { selected: ScenarioSummary | null; trajectory: TrajectoryResponse | null; timeline: number; activeTracks: ActiveTrack[]; selectedActor: string | null; measurement: Measurement | null; mode: string; onSelectActor: (actorId: string) => void; hiddenKinds: string[] }) {
   const [pointCloud, setPointCloud] = useState<"none" | "lidar" | "radar">("lidar");
+  const [mapState, setMapState] = useState<import("./api").TopDownState | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [showRecordedAudit, setShowRecordedAudit] = useState(false);
+  useEffect(() => {
+    if (!selected) { setMapState(null); return; }
+    let cancelled = false;
+    fetchTopDownState(selected.scenario_id, timeline).then((next) => { if (!cancelled) setMapState(next); }).catch(() => { if (!cancelled) setMapState(null); });
+    return () => { cancelled = true; };
+  }, [selected?.scenario_id, timeline]);
   if (!selected) return <div className="canvas-empty">Select an imported scenario</div>;
   if (!trajectory) return <div className="canvas-empty">Loading Top-down view</div>;
   const paths = trajectory.paths.filter((path) => !hiddenKinds.includes(path.path_kind));
@@ -965,17 +1041,24 @@ function TopDownView({ selected, trajectory, timeline, activeTracks, selectedAct
   const ys = paths.flatMap((path) => path.states.map((state) => state.y_m));
   const minX = Math.min(...xs, 0), maxX = Math.max(...xs, 1), minY = Math.min(...ys, 0), maxY = Math.max(...ys, 1);
   const point = (x: number, y: number) => `${((x - minX) / Math.max(1, maxX - minX)) * 82 + 9},${91 - ((y - minY) / Math.max(1, maxY - minY)) * 80}`;
-  const ego = trajectory.paths.find((path) => path.actor_type === "vehicle") ?? trajectory.paths[0];
-  const rotation = preset === "ego-up" && ego?.states.length ? -(ego.states[0].yaw_rad * 180) / Math.PI - 90 : 0;
-    const mapLines: [number, number][][] = [];
-    const mapImage = selected && pointCloud !== "none" ? topDownImageUrl(selected.scenario_id, pointCloud) : null;
-    return <div className="top-down">{mapImage && <img className="top-down-map" src={mapImage} alt={`nuScenes devkit ${pointCloud.toUpperCase()} top-down map underlay`} />}<div className="top-down-controls"><label>point cloud <select value={pointCloud} onChange={(event) => setPointCloud(event.target.value as "none" | "lidar" | "radar")}><option value="none">none</option><option value="lidar">LiDAR</option><option value="radar">Radar</option></select></label></div>
-     <svg viewBox="0 0 100 100" role="img" aria-label={`Top-down trajectory view at ${timeline.toFixed(2)} seconds, camera preset ${preset}`}><g transform={`rotate(${rotation} 50 50)`}>{mapLines.map((line, index) => <polyline key={`map-${index}`} className="native-map-line" points={line.map(([x, y]) => point(x, y)).join(" ")} />)}{paths.map((path) => <polyline key={path.actor_id} className={path.path_kind} points={path.states.map((state) => point(state.x_m, state.y_m)).join(" ")} />)}{mode === "measure" && measurement?.status === "measured" && <line className="measure-line" x1={point(measurement.from.x_m, measurement.from.y_m).split(",")[0]} y1={point(measurement.from.x_m, measurement.from.y_m).split(",")[1]} x2={point(measurement.to.x_m, measurement.to.y_m).split(",")[0]} y2={point(measurement.to.x_m, measurement.to.y_m).split(",")[1]} />}{activeTracks.length === 0 && paths.map((path) => { const state = nearestSample(path.states.map((item) => ({ ...item, acceleration_mps2: null, acceleration_source: null, braking_pressure: null, braking_source: null })), timeline); return state === undefined ? null : <circle key={`fallback-${path.actor_id}`} className="actor-state" cx={point(state.x_m, state.y_m).split(",")[0]} cy={point(state.x_m, state.y_m).split(",")[1]} r="1.2" />; })}{activeTracks.map(({ track, sample }) => sample === undefined ? null : <g key={track.actor_id} className={selectedActor === track.actor_id ? "actor-marker selected" : "actor-marker"} onClick={() => onSelectActor(track.actor_id)}><line className="actor-heading" x1={point(sample.x_m, sample.y_m).split(",")[0]} y1={point(sample.x_m, sample.y_m).split(",")[1]} x2={point(sample.x_m + Math.cos(sample.yaw_rad) * 6, sample.y_m + Math.sin(sample.yaw_rad) * 6).split(",")[0]} y2={point(sample.x_m + Math.cos(sample.yaw_rad) * 6, sample.y_m + Math.sin(sample.yaw_rad) * 6).split(",")[1]} /><circle cx={point(sample.x_m, sample.y_m).split(",")[0]} cy={point(sample.x_m, sample.y_m).split(",")[1]} r={track.role === "ego" ? 1.5 : 1.2}><title>{`${track.actor_id} at ${sample.time_s.toFixed(2)} s: speed ${formatChannelValue("speed", sample.speed_mps)}, acceleration ${formatChannelValue("acceleration", sample.acceleration_mps2)}, braking ${formatChannelValue("braking", sample.braking_pressure)}`}</title></circle></g>)}</g></svg>
+  const rotation = 0;
+    const mapLines: [number, number][][] = Object.values(mapState?.map_layers ?? {}).flatMap((layer) => {
+      if (!Array.isArray(layer)) return [];
+      return layer.flatMap((polygon) => {
+        if (!polygon || typeof polygon !== "object") return [];
+        const exterior = (polygon as { exterior?: unknown }).exterior;
+        return Array.isArray(exterior) ? [exterior.filter((point): point is [number, number] => Array.isArray(point) && point.length >= 2 && typeof point[0] === "number" && typeof point[1] === "number")] : [];
+      });
+    });
+    const mapImage = null;
+    const recordedDots = (mapState?.recorded_annotations?.boxes ?? []).map((box, index) => { const center = box.center_local as number[] | null; if (!center) return null; const [cx, cy] = point(center[0], center[1]).split(","); return <circle key={`recorded-${index}`} className="recorded-annotation" cx={cx} cy={cy} r="1" />; });
+    return <div className="top-down">{mapImage && <img className="top-down-map" src={mapImage} alt="nuScenes full map underlay" />}<div className="top-down-controls"><button type="button" onClick={() => setZoom((value) => Math.min(4, value + .25))}>+</button><button type="button" onClick={() => setZoom((value) => Math.max(.5, value - .25))}>-</button><label title="All recorded nuScenes annotations, not only canonical replay actors"><input type="checkbox" checked={showRecordedAudit} onChange={(event) => setShowRecordedAudit(event.target.checked)} /> recorded audit</label><span title="Canonical actors are the selected replay population; recorded annotations are all nuScenes annotations at the nearest recorded sample.">canonical: {activeTracks.length} / recorded annotations: {mapState?.recorded_annotations?.boxes.length ?? 0}</span></div>
+     <svg viewBox="0 0 100 100" role="img" aria-label={`Top-down trajectory view at ${timeline.toFixed(2)} seconds`}><g transform={`rotate(${rotation} 50 50)`}>{mapLines.map((line, index) => <polyline key={`map-${index}`} className="native-map-line" points={line.map(([x, y]) => point(x, y)).join(" ")} />)}{paths.map((path) => <polyline key={path.actor_id} className={path.path_kind} points={path.states.map((state) => point(state.x_m, state.y_m)).join(" ")} />)}{mode === "measure" && measurement?.status === "measured" && <line className="measure-line" x1={point(measurement.from.x_m, measurement.from.y_m).split(",")[0]} y1={point(measurement.from.x_m, measurement.from.y_m).split(",")[1]} x2={point(measurement.to.x_m, measurement.to.y_m).split(",")[0]} y2={point(measurement.to.x_m, measurement.to.y_m).split(",")[1]} />}{activeTracks.length === 0 && paths.map((path) => { const state = nearestSample(path.states.map((item) => ({ ...item, acceleration_mps2: null, acceleration_source: null, braking_pressure: null, braking_source: null })), timeline); return state === undefined ? null : <circle key={`fallback-${path.actor_id}`} className="actor-state" cx={point(state.x_m, state.y_m).split(",")[0]} cy={point(state.x_m, state.y_m).split(",")[1]} r="1.2" />; })}{activeTracks.map(({ track, sample }) => sample === undefined ? null : <g key={track.actor_id} className={selectedActor === track.actor_id ? "actor-marker selected" : "actor-marker"} onClick={() => onSelectActor(track.actor_id)}><line className="actor-heading" x1={point(sample.x_m, sample.y_m).split(",")[0]} y1={point(sample.x_m, sample.y_m).split(",")[1]} x2={point(sample.x_m + Math.cos(sample.yaw_rad) * 6, sample.y_m + Math.sin(sample.yaw_rad) * 6).split(",")[0]} y2={point(sample.x_m + Math.cos(sample.yaw_rad) * 6, sample.y_m + Math.sin(sample.yaw_rad) * 6).split(",")[1]} /><circle cx={point(sample.x_m, sample.y_m).split(",")[0]} cy={point(sample.x_m, sample.y_m).split(",")[1]} r={track.role === "ego" ? 1.5 : 1.2}><title>{`${track.actor_id} at ${sample.time_s.toFixed(2)} s: speed ${formatChannelValue("speed", sample.speed_mps)}, acceleration ${formatChannelValue("acceleration", sample.acceleration_mps2)}, braking ${formatChannelValue("braking", sample.braking_pressure)}`}</title></circle></g>)}</g></svg>
     <div className="view-legend"><span><i className="recorded-line" /> recorded</span><span><i className="generated-line" /> generated</span><span><i className="replayed-line" /> replayed</span><span><i className="sensor-line" /> sensor-evidence</span><span>playhead t={timeline.toFixed(2)} s</span>{mode === "measure" && <span>measure: {measurement ? measureSummary(measurement) : "n/a"}</span>}</div>
   </div>;
 }
 
-function TimelineSurface({ timeline, gates, error, playhead, durationS, activeTracks, selectedActor, measurement, onSelectActor, onPlayhead, onStep }: { timeline: ActorTimeline | null; gates: GateTimeline | null; error: string | null; playhead: number; durationS: number; activeTracks: ActiveTrack[]; selectedActor: string | null; measurement: Measurement | null; onSelectActor: (actorId: string) => void; onPlayhead: (value: number) => void; onStep: (delta: number) => void }) {
+function TimelineSurface({ timeline, gates, error, playhead, durationS, activeTracks, selectedActor, measurement, onSelectActor, onPlayhead, onStep, wasmToggles, onWasmTogglesChange }: { timeline: ActorTimeline | null; gates: GateTimeline | null; error: string | null; playhead: number; durationS: number; activeTracks: ActiveTrack[]; selectedActor: string | null; measurement: Measurement | null; onSelectActor: (actorId: string) => void; onPlayhead: (value: number) => void; onStep: (delta: number) => void; wasmToggles: WasmOverlayToggles; onWasmTogglesChange: (toggles: WasmOverlayToggles) => void }) {
   const domainStart = gates?.time_domain.start_s ?? timeline?.time_domain.start_s ?? 0;
   const domainEnd = gates?.time_domain.end_s ?? timeline?.time_domain.end_s ?? durationS;
   const span = Math.max(domainEnd - domainStart, 1e-6);
@@ -1000,6 +1083,9 @@ function TimelineSurface({ timeline, gates, error, playhead, durationS, activeTr
       <button className="playhead-step" aria-label="Step playhead forward" onClick={() => onStep(PLAYHEAD_STEP_S)} disabled={durationS === 0}>&gt;</button>
       <input aria-label="Playhead" type="range" min={0} max={durationS || 1} step={PLAYHEAD_STEP_S} value={playhead} disabled={durationS === 0} onChange={(event) => onPlayhead(Number(event.target.value))} />
       <span>selection: {selectedActor ?? "none"}</span>
+      <label><input type="checkbox" checked={wasmToggles.paths} onChange={(event) => onWasmTogglesChange({ ...wasmToggles, paths: event.target.checked })} /> Recorded travel + heading</label>
+      <label><input type="checkbox" checked={wasmToggles.lidar} onChange={(event) => onWasmTogglesChange({ ...wasmToggles, lidar: event.target.checked })} /> LIDAR_TOP cloud 1x (playhead-synced)</label>
+      <label><input type="checkbox" checked={wasmToggles.cuboids} onChange={(event) => onWasmTogglesChange({ ...wasmToggles, cuboids: event.target.checked })} /> Exact cuboids instead of skins</label>
     </div>
     {error && <p className="timeline-error" role="alert">{error}</p>}
     {!timeline && !error && <p className="timeline-empty">Select an imported scenario to load time-indexed actor tracks.</p>}

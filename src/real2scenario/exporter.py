@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
@@ -58,6 +59,24 @@ def build_openscenario_xml(scenario: Scenario, template: OpenDriveTemplate) -> s
     ) + "\n"
 
 
+def atomic_write_bytes(output_path: str | Path, data: bytes) -> Path:
+    """Write ``data`` to ``output_path`` atomically (tmp file + rename).
+
+    Served artifacts (wasm-pair roads, scenario XML) are read concurrently by
+    browser fetches while a regeneration POST rewrites the same path: a
+    direct write exposes truncated mid-attribute reads (measured: 561 KB of
+    3.9 MB, then 0-byte reads), which the engine reports as opaque ``excPtr``.
+    Rename is atomic on POSIX: readers see the old-complete or the
+    new-complete file, never a partial one. Bytes identical either way.
+    """
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f"{path.name}.tmp")
+    tmp_path.write_bytes(data)
+    os.replace(tmp_path, path)
+    return path
+
+
 def write_openscenario(
     scenario: Scenario, template: OpenDriveTemplate, output_path: str | Path
 ) -> Path:
@@ -66,8 +85,8 @@ def write_openscenario(
     path.parent.mkdir(parents=True, exist_ok=True)
     template_path = template.path()
     staged_template = path.parent / template_path.name
-    staged_template.write_bytes(template_path.read_bytes())
-    path.write_text(build_openscenario_xml(scenario, template), encoding="utf-8")
+    atomic_write_bytes(staged_template, template_path.read_bytes())
+    atomic_write_bytes(path, build_openscenario_xml(scenario, template).encode("utf-8"))
     return path
 
 
@@ -128,6 +147,18 @@ def _append_vehicle(scenario_object: ET.Element, actor: Actor, scenario: Scenari
     _append_entity_properties(ET.SubElement(vehicle, "Properties"), actor, scenario)
 
 
+def _pedestrian_category(actor_type: str) -> str:
+    """Map a ``human.*`` taxonomy onto esmini's readable pedestrian categories.
+
+    esmini accepts only `pedestrian`, `wheelchair`, `animal` — anything else
+    logs an error and leaves the category unset. The unmodified source taxonomy
+    is always preserved in the entity properties.
+    """
+    if actor_type == "human.pedestrian.wheelchair":
+        return "wheelchair"
+    return "pedestrian"
+
+
 def _append_pedestrian(scenario_object: ET.Element, actor: Actor, scenario: Scenario) -> None:
     """Emit a ``human.*`` actor as an OpenSCENARIO pedestrian.
 
@@ -139,7 +170,12 @@ def _append_pedestrian(scenario_object: ET.Element, actor: Actor, scenario: Scen
     pedestrian = ET.SubElement(
         scenario_object,
         "Pedestrian",
-        {"name": actor.actor_type, "mass": "75", "model": ""},
+        {
+            "name": actor.actor_type,
+            "mass": "75",
+            "model": "",
+            "pedestrianCategory": _pedestrian_category(actor.actor_type),
+        },
     )
     bounding_box = ET.SubElement(pedestrian, "BoundingBox")
     ET.SubElement(
@@ -159,16 +195,31 @@ def _append_pedestrian(scenario_object: ET.Element, actor: Actor, scenario: Scen
     _append_entity_properties(ET.SubElement(pedestrian, "Properties"), actor, scenario)
 
 
+_MISC_CATEGORY_BY_ACTOR_TYPE = {
+    # Exact-only mapping: the source string must equal an esmini-readable
+    # value verbatim (see `MiscObject::SetCategory`). Everything else stays
+    # `none` — approximate mappings would invent facts.
+    "movable_object.barrier": "barrier",
+}
+
+
+def _misc_category(actor_type: str) -> str:
+    """Map a non-vehicle non-human taxonomy onto an esmini misc category."""
+    return _MISC_CATEGORY_BY_ACTOR_TYPE.get(actor_type, "none")
+
+
 def _append_misc_object(scenario_object: ET.Element, actor: Actor, scenario: Scenario) -> None:
     """Emit any other taxonomy (e.g. ``movable_object.*``) as a misc object.
 
-    The category stays the conservative ``other`` instead of inventing a
-    mapping; the exact source taxonomy is preserved in the entity properties.
+    The attribute name must be ``miscObjectCategory`` (lowercase `m`) —
+    esmini never reads the capitalized form. The value is `none` except for
+    exact string matches; the exact source taxonomy is always preserved in
+    the entity properties.
     """
     misc = ET.SubElement(
         scenario_object,
         "MiscObject",
-        {"name": actor.actor_type, "MiscObjectCategory": "other", "mass": "0"},
+        {"name": actor.actor_type, "miscObjectCategory": _misc_category(actor.actor_type), "mass": "0"},
     )
     bounding_box = ET.SubElement(misc, "BoundingBox")
     ET.SubElement(
@@ -192,7 +243,8 @@ _VEHICLE_CATEGORY_BY_ACTOR_TYPE = {
     "vehicle.bicycle": "bicycle",
     "vehicle.bus.bendy": "bus",
     "vehicle.bus.rigid": "bus",
-    "vehicle.motorcycle": "motorcycle",
+    # esmini names it "motorbike": "motorcycle" is unread (LOG_ERROR).
+    "vehicle.motorcycle": "motorbike",
     "vehicle.trailer": "trailer",
     "vehicle.truck": "truck",
 }
@@ -204,7 +256,9 @@ def _vehicle_category(actor_type: str) -> str:
     Unknown or ``vehicle.*`` subtypes stay ``car`` rather than being invented:
     a wrong category would change replay behaviour, while a conservative default
     preserves the measured baseline. The unmodified source taxonomy is always
-    preserved in the entity properties.
+    preserved in the entity properties. Every mapped value must be readable by
+    esmini (see its `Vehicle::SetCategory`); an unread value logs an error and
+    leaves the category unset.
     """
     return _VEHICLE_CATEGORY_BY_ACTOR_TYPE.get(actor_type, "car")
 
