@@ -395,3 +395,11 @@ def test_exported_polyline_vertices_keep_recorded_timestamps():
     for actor, trajectory in zip(scenario.actors, root.iter("Trajectory")):
         times = [float(v.get("time")) for v in trajectory.iter("Vertex")]
         assert times == pytest.approx([s.time_s for s in actor.trajectory])
+
+
+def test_late_actor_event_starts_at_its_first_recorded_time():
+    late = Actor("late", "vehicle.car", _line(50.0, 3.5, 8.0, 0.0, t0=2.0, steps=9), 4.5, 1.9)
+    root = _xml(_scenario(_ego(), late))
+    events = {e.get("name"): e for e in root.iter("Event")}
+    condition = events["late_start"].find("StartTrigger").find(".//SimulationTimeCondition")
+    assert float(condition.get("value")) == pytest.approx(2.0)
