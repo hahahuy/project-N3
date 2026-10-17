@@ -294,3 +294,11 @@ def test_batch_manifest_lists_every_variant_id_once():
     assert manifest.variant_ids == tuple(v.scenario_id for v in variants)
     assert len(set(manifest.variant_ids)) == 3
     assert manifest.parent_scenario_id == "s"
+
+
+def test_random_variants_are_reproducible_from_the_seed():
+    kwargs = dict(count=5, speed_multiplier_range=(0.8, 1.2), initial_gap_delta_range_m=(-2.0, 2.0), timing_offset_range_s=(0.0, 1.0), seed=7)
+    _, first = generate_random_variants(_scenario(_ego(), _lead()), **kwargs)
+    _, second = generate_random_variants(_scenario(_ego(), _lead()), **kwargs)
+    assert first.configurations == second.configurations
+    assert first.variant_ids == second.variant_ids
