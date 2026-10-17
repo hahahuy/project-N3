@@ -75,3 +75,9 @@ def test_limits_reject_non_finite_values(bad: float) -> None:
 def test_limits_reject_empty_version() -> None:
     with pytest.raises(ValueError, match="versioned"):
         KinematicLimits(version="")
+
+
+def test_limits_accept_zero_boundaries() -> None:
+    limits = KinematicLimits(0.0, 0.0, 0.0, 0.0)
+    assert limits.max_acceleration_mps2 == 0.0
+    assert limits.max_yaw_rate_radps == 0.0
