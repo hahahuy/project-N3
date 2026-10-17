@@ -211,3 +211,9 @@ def test_first_step_has_no_jerk_reference() -> None:
     source = _extension((0, 0.0, 0.0), (50_000, 4.0, 0.0))
     preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 10.0), source)
     assert "jerk_exceeded" not in _codes(preview)
+
+
+def test_violation_message_names_the_actor() -> None:
+    source = _extension((0, 0.0, 0.0), (50_000, 6.0, 0.0))
+    preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 10.0), source, actor_id="veh-7")
+    assert preview.violations[0].message.startswith("veh-7:")
