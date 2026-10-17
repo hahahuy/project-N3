@@ -285,3 +285,13 @@ def test_footprints_without_matching_times_are_clear() -> None:
     first = _box("a", (State(0.0, 0, 0, 0, 0),))
     later = _box("b", (State(0.1, 0, 0, 0, 0),))
     assert check_footprint_collisions((first, later)).status == "clear"
+
+
+def test_footprint_collision_records_state_indices() -> None:
+    first = _box("a", (State(0, 0, 0, 0, 0), State(1, 0, 0, 0, 0)))
+    late = _box("b", (State(1, 9, 0, 0, 0), State(2, 50, 0, 0, 0)))
+    (collision,) = check_footprint_collisions((first, late)).collisions
+    assert collision == {
+        "left_actor_id": "a", "right_actor_id": "b",
+        "left_state_index": 1, "right_state_index": 0,
+    }
