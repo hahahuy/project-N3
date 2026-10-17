@@ -285,3 +285,12 @@ def test_grid_variants_follow_cartesian_product_order():
 def test_grid_generation_rejects_an_empty_parameter_list():
     with pytest.raises(ValueError):
         generate_grid_variants(_scenario(_ego(), _lead()), speed_multipliers=(), initial_gap_deltas_m=(0.0,), timing_offsets_s=(0.0,))
+
+
+def test_batch_manifest_lists_every_variant_id_once():
+    variants, manifest = generate_grid_variants(
+        _scenario(_ego(), _lead()), speed_multipliers=(0.9, 1.0, 1.1), initial_gap_deltas_m=(0.0,), timing_offsets_s=(0.0,)
+    )
+    assert manifest.variant_ids == tuple(v.scenario_id for v in variants)
+    assert len(set(manifest.variant_ids)) == 3
+    assert manifest.parent_scenario_id == "s"
