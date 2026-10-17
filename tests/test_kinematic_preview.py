@@ -243,3 +243,10 @@ def test_provenance_records_the_limits_version() -> None:
     limits = KinematicLimits(version="custom-limits-v9")
     preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 1), _steady(2), limits=limits)
     assert preview.provenance["kinematic_limits_version"] == "custom-limits-v9"
+
+
+def test_provenance_includes_source_provenance() -> None:
+    source = _extension((0, 0.0, 0.0), (50_000, 0.0, 0.0), provenance={"source_state_status": "can_pose"})
+    preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 1), source)
+    assert preview.provenance["source_state_status"] == "can_pose"
+    assert preview.source_state_version == SOURCE_STATE_VERSION
