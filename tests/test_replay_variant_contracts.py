@@ -342,3 +342,11 @@ def test_preview_rejects_empty_unknown_and_duplicate_edits():
         preview_variant(parent, [ActorMotionEdit("ghost")])
     with pytest.raises(ValueError):
         preview_variant(parent, [ActorMotionEdit("lead"), ActorMotionEdit("lead", speed_multiplier=2.0)])
+
+
+def test_preview_speed_edit_changes_only_the_edited_actor():
+    parent = _scenario(_ego(), _lead())
+    preview = preview_variant(parent, [ActorMotionEdit("lead", speed_multiplier=2.0)])
+    lead = _actor(preview, "lead").trajectory
+    assert lead[-1].x_m - lead[0].x_m == pytest.approx(120.0)
+    assert _actor(preview, "ego").trajectory == _actor(parent, "ego").trajectory
