@@ -73,6 +73,8 @@ availability, unavailable reasons, provenance and scientific status.
 
 - Current status, decisions and acceptance state: [`../current/README.md`](../current/README.md)
 - Layer responsibilities and dependency rules: [`boundary-map.md`](boundary-map.md)
+- Visual architecture diagram (HTML): [`architecture-diagram.html`](architecture-diagram.html)
+- Consolidated specification and design (Vietnamese): [`specification-and-design.md`](specification-and-design.md)
 - Stable API/artifact/provenance rules: [`../contracts/README.md`](../contracts/README.md)
 - Subsystem implementation reference: [`../subsystems/README.md`](../subsystems/README.md)
 - Runtime and deployment procedures: [`../operations/README.md`](../operations/README.md)
