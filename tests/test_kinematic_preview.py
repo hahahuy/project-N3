@@ -271,3 +271,11 @@ def test_footprints_far_apart_actors_are_clear() -> None:
     second = _box("b", (State(0, 100, 0, 0, 0),))
     result = check_footprint_collisions((first, second))
     assert (result.status, result.reason) == ("clear", None)
+
+
+def test_footprints_touching_at_the_boundary_collide() -> None:
+    first = _box("a", (State(0, 0, 0, 0, 0),))
+    touching = _box("b", (State(0, 10, 0, 0, 0),))
+    apart = _box("c", (State(0, 10.01, 0, 0, 0),))
+    assert check_footprint_collisions((first, touching)).status == "collision"
+    assert check_footprint_collisions((first, apart)).status == "clear"
