@@ -360,3 +360,14 @@ def test_source_state_provenance_counts_can_matches() -> None:
     )
     assert matched.provenance["source_state_status"] == "can_pose"
     assert matched.provenance["source_state_can_matched_count"] == "1"
+
+
+def test_source_state_rejects_unknown_sources_and_bad_values() -> None:
+    with pytest.raises(ValueError, match="acceleration source"):
+        SourceState(0, 0.0, 0.0, "radar", "can_pose")
+    with pytest.raises(ValueError, match="yaw-rate source"):
+        SourceState(0, 0.0, 0.0, "can_pose", "radar")
+    with pytest.raises(ValueError, match="finite"):
+        SourceState(-1, 0.0, 0.0, "can_pose", "can_pose")
+    with pytest.raises(ValueError, match="finite"):
+        SourceState(0, math.nan, 0.0, "can_pose", "can_pose")
