@@ -141,3 +141,9 @@ def test_short_source_gap_is_used_instead_of_the_fixed_timestep() -> None:
         State(0, 0, 0, 0, 1), _extension((0, 0.0, 0.0), (10_000, 0.0, 0.0)), fixed_timestep_s=0.05
     )
     assert preview.states[1].time_s == pytest.approx(0.01)
+
+
+def test_repeated_source_timestamp_is_rejected_by_the_trace() -> None:
+    source = _extension((0, 0.0, 0.0), (100_000, 0.0, 0.0), (100_000, 0.0, 0.0))
+    with pytest.raises(ValueError, match="strictly increase"):
+        integrate_kinematic_open_loop(State(0, 0, 0, 0, 1), source)
