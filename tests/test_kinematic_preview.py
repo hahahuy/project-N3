@@ -153,3 +153,9 @@ def test_acceleration_updates_speed_by_dt() -> None:
     source = _extension((0, 0.0, 0.0), (50_000, 2.0, 0.0))
     preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 3.0), source)
     assert preview.states[1].speed_mps == pytest.approx(3.1)
+
+
+def test_yaw_rate_updates_yaw_by_dt() -> None:
+    source = _extension((0, 0.0, 0.0), (50_000, 0.0, 0.5))
+    preview = integrate_kinematic_open_loop(State(0, 0, 0, 0.1, 3.0), source)
+    assert preview.states[1].yaw_rad == pytest.approx(0.125)
