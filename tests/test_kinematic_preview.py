@@ -341,3 +341,10 @@ def test_can_sample_with_missing_acceleration_falls_back_for_that_channel_only()
     first = extension.states[0]
     assert (first.acceleration_source, first.yaw_rate_source) == ("finite_difference", "can_pose")
     assert first.yaw_rate_radps == 0.7
+
+
+def test_can_pose_beyond_max_gap_is_not_matched() -> None:
+    can = (CanPoseSample(200_000, None, 1.5, 0.4),)
+    args = ((0, 1_000_000), ((0.0, 0.0), (1.0, 0.0)), (0.0, 0.0), can)
+    assert build_source_state_extension(*args).states[0].acceleration_source == "finite_difference"
+    assert build_source_state_extension(*args, max_gap_us=300_000).states[0].acceleration_source == "can_pose"
