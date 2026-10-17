@@ -81,3 +81,11 @@ def test_constant_lateral_offset_sets_rmse_ade_and_fde_to_the_offset():
     assert metrics.ade_m == pytest.approx(0.5)
     assert metrics.fde_m == pytest.approx(0.5)
     assert metrics.final_displacement_m == pytest.approx(0.5)
+
+
+def test_denser_replay_is_interpolated_at_recorded_times():
+    recorded = _line(0.0, 0.0, 10.0, 0.0)
+    replayed = _line(0.0, 0.0, 10.0, 0.0, steps=25, dt=0.25)
+    metrics = compute_replay_metrics(recorded, replayed)
+    assert metrics.ade_m == pytest.approx(0.0, abs=1e-9)
+    assert metrics.sample_count == len(recorded)
