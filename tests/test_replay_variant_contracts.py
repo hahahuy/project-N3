@@ -350,3 +350,10 @@ def test_preview_speed_edit_changes_only_the_edited_actor():
     lead = _actor(preview, "lead").trajectory
     assert lead[-1].x_m - lead[0].x_m == pytest.approx(120.0)
     assert _actor(preview, "ego").trajectory == _actor(parent, "ego").trajectory
+
+
+def test_preview_id_depends_on_edits_and_seed():
+    parent = _scenario(_ego(), _lead())
+    edit = [ActorMotionEdit("lead", speed_multiplier=1.5)]
+    assert preview_variant(parent, edit).scenario_id == preview_variant(parent, edit).scenario_id
+    assert preview_variant(parent, edit, seed=1).scenario_id != preview_variant(parent, edit).scenario_id
