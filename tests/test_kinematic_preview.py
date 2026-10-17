@@ -279,3 +279,9 @@ def test_footprints_touching_at_the_boundary_collide() -> None:
     apart = _box("c", (State(0, 10.01, 0, 0, 0),))
     assert check_footprint_collisions((first, touching)).status == "collision"
     assert check_footprint_collisions((first, apart)).status == "clear"
+
+
+def test_footprints_without_matching_times_are_clear() -> None:
+    first = _box("a", (State(0.0, 0, 0, 0, 0),))
+    later = _box("b", (State(0.1, 0, 0, 0, 0),))
+    assert check_footprint_collisions((first, later)).status == "clear"
