@@ -387,3 +387,11 @@ def test_preview_id_differs_for_different_braking_strengths():
 def test_export_declares_one_scenario_object_per_actor():
     root = _xml(_scenario(_ego(), _lead(), _cross()))
     assert [o.get("name") for o in root.iter("ScenarioObject")] == ["ego", "lead", "cross"]
+
+
+def test_exported_polyline_vertices_keep_recorded_timestamps():
+    scenario = _scenario(_ego(), _lead())
+    root = _xml(scenario)
+    for actor, trajectory in zip(scenario.actors, root.iter("Trajectory")):
+        times = [float(v.get("time")) for v in trajectory.iter("Vertex")]
+        assert times == pytest.approx([s.time_s for s in actor.trajectory])
