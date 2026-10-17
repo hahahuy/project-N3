@@ -186,3 +186,12 @@ def test_speed_limit_is_checked_only_when_configured():
     assert validate_feasibility(scenario).valid
     report = validate_feasibility(scenario, FeasibilityLimits(max_speed_mps=8.0))
     assert "speed_exceeded" in {r.code for r in report.reasons}
+
+
+def test_validation_reports_every_failing_actor():
+    def jumpy(actor_id, actor_type):
+        speeds = (10.0, 20.0, 20.0)
+        return Actor(actor_id, actor_type, tuple(State(i * 0.5, i * 5.0, 0.0, 0.0, v) for i, v in enumerate(speeds)), 4.5, 1.9)
+
+    report = validate_feasibility(_scenario(jumpy("ego", "vehicle.ego"), jumpy("lead", "vehicle.car"), duration_s=1.0))
+    assert {r.actor_id for r in report.reasons} == {"ego", "lead"}
