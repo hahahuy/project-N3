@@ -382,3 +382,8 @@ def test_preview_id_differs_for_different_braking_strengths():
     soft = preview_variant(parent, [ActorMotionEdit("lead", braking_mps2=3.0, start_time_s=1.0)])
     hard = preview_variant(parent, [ActorMotionEdit("lead", braking_mps2=7.0, start_time_s=1.0)])
     assert soft.scenario_id != hard.scenario_id
+
+
+def test_export_declares_one_scenario_object_per_actor():
+    root = _xml(_scenario(_ego(), _lead(), _cross()))
+    assert [o.get("name") for o in root.iter("ScenarioObject")] == ["ego", "lead", "cross"]
