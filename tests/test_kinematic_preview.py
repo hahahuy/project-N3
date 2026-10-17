@@ -379,3 +379,13 @@ def test_source_extension_requires_supported_version_and_states() -> None:
         SourceStateExtension("source-state-extension-v0", (state,), {})
     with pytest.raises(ValueError, match="supported version"):
         SourceStateExtension(SOURCE_STATE_VERSION, (), {})
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="yaw-rate differencing divides by a zero span when only one sample is supplied",
+)
+def test_single_sample_source_state_is_buildable() -> None:
+    extension = build_source_state_extension((0,), ((0.0, 0.0),), (0.0,))
+    assert extension.states[0].acceleration_mps2 == 0.0
+    assert extension.states[0].yaw_rate_radps == 0.0
