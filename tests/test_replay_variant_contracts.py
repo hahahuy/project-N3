@@ -118,3 +118,13 @@ def test_replay_without_overlapping_time_is_rejected():
     replayed = _line(0.0, 0.0, 10.0, 0.0, t0=10.0)
     with pytest.raises(ValueError):
         compute_replay_metrics(recorded, replayed)
+
+
+def test_aggregate_reports_mean_median_and_max_ade():
+    recorded = _line(0.0, 0.0, 10.0, 0.0)
+    metrics = [compute_replay_metrics(recorded, _line(0.0, offset, 10.0, 0.0)) for offset in (1.0, 2.0, 3.0, 10.0)]
+    aggregate = aggregate_replay_metrics(metrics)
+    assert aggregate.actor_count == 4
+    assert aggregate.ade_m.mean == pytest.approx(4.0)
+    assert aggregate.ade_m.median == pytest.approx(2.5)
+    assert aggregate.ade_m.max == pytest.approx(10.0)
