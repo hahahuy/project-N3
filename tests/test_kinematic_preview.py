@@ -197,3 +197,11 @@ def test_negative_speed_is_reported_without_clamping() -> None:
     assert preview.states[1].speed_mps == pytest.approx(-0.3)
     negative = [v for v in preview.violations if v.code == "negative_speed"]
     assert len(negative) == 1 and negative[0].limit == 0.0
+
+
+def test_jerk_over_limit_is_reported_from_the_second_step() -> None:
+    source = _extension((0, 0.0, 0.0), (50_000, 0.0, 0.0), (100_000, 2.0, 0.0))
+    preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 10.0), source)
+    (violation,) = preview.violations
+    assert (violation.code, violation.state_index) == ("jerk_exceeded", 2)
+    assert violation.observed == pytest.approx(40.0)
