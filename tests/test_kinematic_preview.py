@@ -312,3 +312,12 @@ def test_source_state_rejects_mismatched_lengths() -> None:
 def test_source_state_rejects_non_increasing_timestamps() -> None:
     with pytest.raises(ValueError, match="strictly increase"):
         build_source_state_extension((0, 0), ((0.0, 0.0), (1.0, 0.0)), (0.0, 0.0))
+
+
+def test_constant_velocity_has_zero_finite_difference_acceleration() -> None:
+    extension = build_source_state_extension(
+        (0, 1_000_000, 2_000_000, 3_000_000),
+        ((0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (3.0, 0.0)),
+        (0.0, 0.0, 0.0, 0.0),
+    )
+    assert [state.acceleration_mps2 for state in extension.states] == pytest.approx([0.0] * 4)
