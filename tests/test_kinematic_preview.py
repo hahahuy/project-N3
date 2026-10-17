@@ -55,3 +55,12 @@ def test_limits_defaults_match_documented_values() -> None:
 
 def test_limits_default_version_is_the_module_constant() -> None:
     assert KinematicLimits().version == KINEMATIC_LIMITS_VERSION == "kinematic-limits-v1"
+
+
+@pytest.mark.parametrize(
+    "field",
+    ["max_acceleration_mps2", "max_deceleration_mps2", "max_jerk_mps3", "max_yaw_rate_radps"],
+)
+def test_limits_reject_negative_values(field: str) -> None:
+    with pytest.raises(ValueError, match="non-negative"):
+        KinematicLimits(**{field: -0.1})
