@@ -348,3 +348,15 @@ def test_can_pose_beyond_max_gap_is_not_matched() -> None:
     args = ((0, 1_000_000), ((0.0, 0.0), (1.0, 0.0)), (0.0, 0.0), can)
     assert build_source_state_extension(*args).states[0].acceleration_source == "finite_difference"
     assert build_source_state_extension(*args, max_gap_us=300_000).states[0].acceleration_source == "can_pose"
+
+
+def test_source_state_provenance_counts_can_matches() -> None:
+    plain = build_source_state_extension((0, 1_000_000), ((0.0, 0.0), (1.0, 0.0)), (0.0, 0.0))
+    assert plain.provenance["source_state_status"] == "fallback_finite_difference"
+    assert plain.provenance["source_state_can_matched_count"] == "0"
+    matched = build_source_state_extension(
+        (0, 1_000_000), ((0.0, 0.0), (1.0, 0.0)), (0.0, 0.0),
+        (CanPoseSample(0, 1.0, 2.0, 0.1),), max_gap_us=10,
+    )
+    assert matched.provenance["source_state_status"] == "can_pose"
+    assert matched.provenance["source_state_can_matched_count"] == "1"
