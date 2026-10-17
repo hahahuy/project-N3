@@ -217,3 +217,11 @@ def test_violation_message_names_the_actor() -> None:
     source = _extension((0, 0.0, 0.0), (50_000, 6.0, 0.0))
     preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 10.0), source, actor_id="veh-7")
     assert preview.violations[0].message.startswith("veh-7:")
+
+
+def test_trace_uses_the_requested_actor_id() -> None:
+    preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 1), _steady(3), actor_id="veh-7")
+    assert preview.trace is not None
+    assert len(preview.trace.states_for("veh-7")) == 3
+    with pytest.raises(ValueError, match="no states"):
+        preview.trace.states_for("ego")
