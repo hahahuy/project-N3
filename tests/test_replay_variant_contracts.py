@@ -210,3 +210,11 @@ def test_variant_id_is_deterministic():
     parent = _scenario(_ego(), _lead())
     config = VariantConfig(speed_multiplier=1.2, initial_gap_delta_m=3.0, timing_offset_s=0.5)
     assert perturb_scenario(parent, config).scenario_id == perturb_scenario(parent, config).scenario_id
+
+
+def test_variant_id_changes_with_speed_multiplier():
+    parent = _scenario(_ego(), _lead())
+    first = perturb_scenario(parent, VariantConfig(speed_multiplier=1.1))
+    second = perturb_scenario(parent, VariantConfig(speed_multiplier=1.2))
+    assert first.scenario_id != second.scenario_id
+    assert first.scenario_id.startswith("s--variant-")
