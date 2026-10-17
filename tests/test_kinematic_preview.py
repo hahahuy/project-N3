@@ -237,3 +237,9 @@ def test_provenance_declares_simulator_and_no_silent_clamps() -> None:
 def test_provenance_formats_the_fixed_timestep(step: float, text: str) -> None:
     preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 1), _steady(2), fixed_timestep_s=step)
     assert preview.provenance["fixed_timestep_s"] == text
+
+
+def test_provenance_records_the_limits_version() -> None:
+    limits = KinematicLimits(version="custom-limits-v9")
+    preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 1), _steady(2), limits=limits)
+    assert preview.provenance["kinematic_limits_version"] == "custom-limits-v9"
