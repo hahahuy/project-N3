@@ -263,3 +263,10 @@ def test_speed_multiplier_scales_distance_for_parallel_actors():
     variant = perturb_scenario(_scenario(_ego(), _lead()), VariantConfig(speed_multiplier=1.5))
     lead = _actor(variant, "lead").trajectory
     assert lead[-1].x_m - lead[0].x_m == pytest.approx(90.0)
+
+
+@pytest.mark.xfail(reason="L6: perturb_scenario scales displacement only along the ego axis", strict=False)
+def test_speed_multiplier_scales_distance_for_crossing_actors():
+    variant = perturb_scenario(_scenario(_ego(), _cross()), VariantConfig(speed_multiplier=1.5))
+    cross = _actor(variant, "cross").trajectory
+    assert cross[-1].y_m - cross[0].y_m == pytest.approx(45.0)
