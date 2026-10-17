@@ -164,3 +164,11 @@ def test_deceleration_above_limit_is_rejected():
     report = validate_feasibility(_scenario(actor, duration_s=2.0))
     reason = next(r for r in report.reasons if r.code == "deceleration_exceeded")
     assert reason.observed == pytest.approx(12.0)
+
+
+def test_yaw_rate_above_limit_is_rejected():
+    yaws = (0.0, 0.0, 1.0, 1.0)
+    actor = Actor("ego", "vehicle.ego", tuple(State(i * 0.5, i * 5.0, 0.0, yaw, 10.0) for i, yaw in enumerate(yaws)), 4.5, 1.9)
+    report = validate_feasibility(_scenario(actor, duration_s=2.0))
+    reason = next(r for r in report.reasons if r.code == "yaw_rate_exceeded")
+    assert reason.observed == pytest.approx(2.0)
