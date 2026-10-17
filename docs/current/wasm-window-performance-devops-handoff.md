@@ -1,11 +1,56 @@
 # WASM/ViewPane Performance Handoff
 
-Status: `READY FOR DEVOPS IMPLEMENTATION`
+Status: `IN PROGRESS — items 7 and 9 implemented and measured`
 Scope: reduce browser/API CPU, memory, request fan-out and perceived lag for the
 WASM, 3D, top-down, sensor-evidence and Real Camera windows.
 
 Scientific boundary: browser/WASM remains preview-only. These changes must not
 feed native esmini replay, `replay.csv`, ADE/FDE, gates or reports.
+
+## Progress log
+
+### Items 7 and 9 — implemented
+
+`GroundService.full_layers` no longer rebuilds the map per process. It writes a
+gzipped, versioned artifact to
+`{PROJECT_N3_METADATA_CACHE}/map-cache/map-{dataset_version}-{map_name}-{transform_hash}-{signature}-full-map-v1.json.gz`,
+written via a temp file and `os.replace`, guarded by a per-key lock, and read
+through a four-entry in-process LRU. A dataset-signature or transform-hash
+mismatch regenerates rather than reuses. Measured: extraction ~26s to 0.03s.
+
+The static geometry is now served on its own at
+`GET /api/workspace/scenarios/{id}/top-down-map` with an `ETag` and
+`Cache-Control: private, max-age=3600`, and `top-down-state` takes
+`include_map` (default `true`, so existing callers are unaffected). The
+frontend fetches the map once per scenario and asks for slim state per
+playhead. Measured in the browser: per-playhead state went from 1,764,266
+bytes to 5,192 bytes, about 99.7 percent less.
+
+Normalizing `full_layers` output also fixed a latent defect: the preview reads
+`polygon.exterior` while `full_layers` emitted `geometry`, so the top-down map
+had never actually drawn. The response now exposes `exterior`/`holes` and drops
+the raw `geometry` ring to avoid shipping every coordinate twice.
+
+### Blocking defect found and fixed
+
+`top-down-state` returned 500 with `TypeError: string indices must be integers`
+because it iterated the layer mapping as if it were a list of records. It paid
+the full map cost and then failed. Fixed, with a regression test.
+
+### Remaining bottleneck, not yet addressed
+
+`NuScenesDatasetAdapter.recorded_annotations_window` takes roughly 25-40s and
+dominates the cold top-down request. The map cache removed the other half.
+This is the next thing to measure and is not covered by items 1-11 as written.
+
+### Operational hazard observed
+
+Both stacks run a single uvicorn worker with synchronous, CPU-bound nuScenes
+devkit handlers. A burst of large preview requests can starve the event loop
+until even `/api/health` times out and Docker marks the container unhealthy,
+while individual requests still eventually succeed. Item 11 (bounded
+concurrency) is the intended mitigation and should be treated as a stability
+fix, not only a throughput one.
 
 ## Current Hotspots
 
@@ -147,7 +192,7 @@ single `<canvas>` positioned above it. Do not create one SVG DOM node per point.
 
 ## P1: Backend Cache and Streaming
 
-### 7. Persist full-map geometry as a versioned artifact
+### 7. Persist full-map geometry as a versioned artifact — DONE
 
 Replace unbounded process-local-only map reuse with a cache artifact under the
 configured output/cache root:
@@ -196,7 +241,7 @@ Suggested keys:
 Never cache a variant as if it were a generated sensor frame. Preserve parent
 recorded-evidence labeling and DEC-018 provenance.
 
-### 9. Separate static and dynamic payloads
+### 9. Separate static and dynamic payloads — DONE
 
 Avoid returning full map geometry and all actor annotations on every playhead
 request. Prefer:

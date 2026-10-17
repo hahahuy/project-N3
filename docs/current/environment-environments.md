@@ -20,15 +20,31 @@ Both run **the same application code**. Only the configuration differs.
 | Compose file | `compose.dev.yml` | `compose.demo.yml` |
 | Docker project | `project-n3` | `project-n3-prod` |
 | Frontend | Vite dev server, hot reload | built bundle from `frontend/dist` |
-| Source on disk | bind-mounted, edits are live | built assets only |
+| Source on disk | bind-mounted, edits are live | bind-mounted, but **not** reloaded |
+| API hot reload | yes (`uvicorn --reload`) | no — code changes need a restart |
 | Access control | none | nginx shared key + TLS |
 | Reachable from | LAN / Tailscale only | public internet |
 | Restarts freely | yes | deliberately, rarely |
 
 The API runs as the configured host UID/GID in both Compose environments. A
-short-lived root-only `api-permissions` service initializes the reports volume
-before the API starts, so replay, preview and WASM-pair artifacts remain
-writable without running the API as root.
+short-lived root-only `api-permissions` service initializes the writable
+volumes before the API starts, so replay, preview and WASM-pair artifacts
+remain writable without running the API as root. It chowns both the reports
+volume and the metadata-cache volume; chowning only reports leaves the cache
+root-owned and unable to rebuild. See `docs/guides/datastreaming.md` D-1.
+
+### Product no longer hot-reloads
+
+The product API runs the same `Dockerfile.dev` image as dev, whose default
+`CMD` includes `--reload`. `compose.demo.yml` overrides the command to drop it.
+Without that override, editing any `.py` file on the host restarted the
+judge-facing API within about a second, and a worker OOM-killed inside the
+memory limit was never respawned, leaving the container `Up` while nothing
+listened on the port.
+
+The product still bind-mounts the repository, so edited files are visible on
+its disk, but the running process only changes on a deliberate restart. Treat
+a product deploy as an explicit step.
 
 ### Why they must differ
 
@@ -173,6 +189,17 @@ make dev-down            # close the LAN exposure
 
 If the public site still shows your previous change, run `make prod-rebuild`
 rather than `make prod`.
+
+Because the product API no longer hot-reloads, a source edit alone does not
+change what it serves. Restart the API container to pick up Python changes:
+
+```bash
+docker compose -f compose.demo.yml restart api
+```
+
+The frontend bundle in `frontend/dist` is served from the bind mount, so
+rebuild it with `cd frontend && npm run build` before restarting if you changed
+frontend code.
 
 ## 7. Verification performed
 

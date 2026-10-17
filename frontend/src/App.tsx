@@ -33,6 +33,8 @@ import {
   fetchWorkspaceScenario,
   fetchCameraEvidence,
   fetchTopDownState,
+  fetchTopDownMap,
+  TopDownMap,
   GateTimeline,
   LidarDescriptor,
   SensorEvidence,
@@ -884,7 +886,7 @@ function CompareSurface({ payload, error, selected, scenarios, against, onAgains
  function Catalog({ scenarios, selected, loading, filter, onFilter, onSelect, onRefresh }: { scenarios: ScenarioSummary[]; selected: ScenarioSummary | null; loading: boolean; filter: string; onFilter: (value: string) => void; onSelect: (scenario: ScenarioSummary) => void; onRefresh: () => void }) { const visible = scenarios.filter((scenario) => scenario.scenario_id.toLowerCase().includes(filter.toLowerCase())); return <div className="panel-content"><div className="panel-title"><span className="count">{scenarios.length}</span><span className="section-kicker">Scenarios</span><button className="catalog-refresh" onClick={onRefresh} disabled={loading} aria-label="Refresh catalog" title="Refresh catalog"><Icon name="reload" size={14} /></button></div><input className="filter" value={filter} onChange={(event) => onFilter(event.target.value)} placeholder="Filter scenarios" aria-label="Filter scenarios" />{loading ? <div className="skeleton-list"><i /><i /><i /></div> : scenarios.length === 0 ? <div className="panel-empty">Import a scene to start a scenario.</div> : visible.length === 0 ? <div className="panel-empty">No scenarios match this filter.</div> : <div className="scenario-list">{visible.map((scenario) => <button className={selected?.scenario_id === scenario.scenario_id ? "selected" : ""} key={scenario.scenario_id} onClick={() => onSelect(scenario)}><span><strong title={scenario.scenario_id}>{displayScenarioId(scenario.scenario_id)}</strong><small>{scenario.artifact_type} / {scenario.duration_s.toFixed(2)} s</small><small>{displayMapName(scenario)}</small></span></button>)}</div>}</div>; }
 function AddViewMenu({ viewCount, onAdd }: { viewCount: number; onAdd: (type: ViewType) => void }) {
   const atLimit = viewCount >= MAX_VIEWS;
-  return <div className="add-view-menu" role="menu">{VIEW_REGISTRY.descriptors.filter((descriptor) => descriptor.type !== "lidar").map((descriptor) => <button key={descriptor.type} disabled={atLimit} onClick={() => onAdd(descriptor.type)}><strong>{descriptor.label}</strong><small>{atLimit ? `maximum ${MAX_VIEWS} views reached` : descriptor.menuDescription}</small></button>)}</div>;
+   return <div className="add-view-menu" role="menu">{VIEW_REGISTRY.descriptors.filter((descriptor) => descriptor.type !== "lidar" && descriptor.type !== "in-car").map((descriptor) => <button key={descriptor.type} disabled={atLimit} onClick={() => onAdd(descriptor.type)}><strong>{descriptor.label}</strong><small>{atLimit ? `maximum ${MAX_VIEWS} views reached` : descriptor.menuDescription}</small></button>)}</div>;
 }
 
 type ViewCommonProps = { trajectory: TrajectoryResponse | null; timeline: number; hiddenKinds: string[]; onToggleKind: (kind: string) => void; layersOpen: boolean; onToggleLayers: () => void; onClose: () => void; wasmOrbit: WasmOrbitState; onWasmOrbitChange: (orbit: WasmOrbitState) => void; wasmToggles: WasmOverlayToggles; onWasmTogglesChange: (toggles: WasmOverlayToggles) => void };
@@ -1025,12 +1027,23 @@ function POVView({ frame, imageFrame, playhead }: { frame: POVFrame; imageFrame?
 function TopDownView({ selected, trajectory, timeline, activeTracks, selectedActor, measurement, mode, onSelectActor, hiddenKinds }: { selected: ScenarioSummary | null; trajectory: TrajectoryResponse | null; timeline: number; activeTracks: ActiveTrack[]; selectedActor: string | null; measurement: Measurement | null; mode: string; onSelectActor: (actorId: string) => void; hiddenKinds: string[] }) {
   const [pointCloud, setPointCloud] = useState<"none" | "lidar" | "radar">("lidar");
   const [mapState, setMapState] = useState<import("./api").TopDownState | null>(null);
+  const [staticMap, setStaticMap] = useState<TopDownMap | null>(null);
   const [zoom, setZoom] = useState(1);
   const [showRecordedAudit, setShowRecordedAudit] = useState(false);
+  // Static geometry depends only on the scenario, so it is fetched once here.
+  // Fetching it with every playhead change re-sent ~1.7MB per slider event.
+  useEffect(() => {
+    if (!selected) { setStaticMap(null); return; }
+    let cancelled = false;
+    fetchTopDownMap(selected.scenario_id)
+      .then((next) => { if (!cancelled) setStaticMap(next); })
+      .catch(() => { if (!cancelled) setStaticMap(null); });
+    return () => { cancelled = true; };
+  }, [selected?.scenario_id]);
   useEffect(() => {
     if (!selected) { setMapState(null); return; }
     let cancelled = false;
-    fetchTopDownState(selected.scenario_id, timeline).then((next) => { if (!cancelled) setMapState(next); }).catch(() => { if (!cancelled) setMapState(null); });
+    fetchTopDownState(selected.scenario_id, timeline, false).then((next) => { if (!cancelled) setMapState(next); }).catch(() => { if (!cancelled) setMapState(null); });
     return () => { cancelled = true; };
   }, [selected?.scenario_id, timeline]);
   if (!selected) return <div className="canvas-empty">Select an imported scenario</div>;
@@ -1042,7 +1055,7 @@ function TopDownView({ selected, trajectory, timeline, activeTracks, selectedAct
   const minX = Math.min(...xs, 0), maxX = Math.max(...xs, 1), minY = Math.min(...ys, 0), maxY = Math.max(...ys, 1);
   const point = (x: number, y: number) => `${((x - minX) / Math.max(1, maxX - minX)) * 82 + 9},${91 - ((y - minY) / Math.max(1, maxY - minY)) * 80}`;
   const rotation = 0;
-    const mapLines: [number, number][][] = Object.values(mapState?.map_layers ?? {}).flatMap((layer) => {
+    const mapLines: [number, number][][] = Object.values(staticMap?.layers ?? mapState?.map_layers ?? {}).flatMap((layer) => {
       if (!Array.isArray(layer)) return [];
       return layer.flatMap((polygon) => {
         if (!polygon || typeof polygon !== "object") return [];

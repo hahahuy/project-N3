@@ -340,8 +340,18 @@ export const fetchVariantSensorStatus = (id: string) => request<VariantSensorSta
 export const fetchScenarioArtifacts = (id: string) => request<{ scenario_id: string; artifacts: ArtifactLink[] }>(`/scenarios/${encodeURIComponent(id)}/artifacts`);
 export const createWasmScenarioPair = (id: string) => request<WasmScenarioPair>(`/workspace/scenarios/${encodeURIComponent(id)}/wasm-pair`, { method: "POST" });
 export const fetchGroundLayers = (id: string) => request<unknown>(`/workspace/scenarios/${encodeURIComponent(id)}/ground-layers`);
+export type TopDownMap = { contract_version: string; frame: string; map_name: string; layers: Record<string, unknown>; artifact_visibility?: string };
 export type TopDownState = { contract_version: string; scenario_id: string; requested_time_s: number; resolved_time_s: number; coordinate_frame: string; map_name: string; map_layers: Record<string, unknown>; actors: Array<Record<string, unknown>>; recorded_annotations?: { requested_time_s: number; resolved_time_s: number; timestamp_us: number; boxes: Array<Record<string, unknown>> }; provenance: Record<string, string> };
-export const fetchTopDownState = (id: string, timeS: number) => request<TopDownState>(`/workspace/scenarios/${encodeURIComponent(id)}/top-down-state?time_s=${encodeURIComponent(String(timeS))}`);
+/**
+ * Static map geometry, fetched once per scenario. It does not depend on the
+ * playhead, so it is served on its own and reused across playhead changes.
+ */
+export const fetchTopDownMap = (id: string) => request<TopDownMap>(`/workspace/scenarios/${encodeURIComponent(id)}/top-down-map`);
+/**
+ * Per-playhead state. `includeMap` is false by default because the caller
+ * already holds the static geometry: including it re-ships ~1.7MB per change.
+ */
+export const fetchTopDownState = (id: string, timeS: number, includeMap = false) => request<TopDownState>(`/workspace/scenarios/${encodeURIComponent(id)}/top-down-state?time_s=${encodeURIComponent(String(timeS))}&include_map=${includeMap}`);
 export type CameraEvidenceFrame = { contract_version: string; scenario_id: string; channel: string; requested_time_s: number; resolved_time_s: number | null; timestamp_us: number | null; selection_policy: string; status?: string; unavailable_reason?: string | null; image: Record<string, unknown> | null; calibration?: Record<string, unknown>; recorded_cuboids: Array<Record<string, unknown>>; canonical_cuboids: Array<Record<string, unknown>>; lidar_points: Array<{ u: number; v: number; depth_m: number }>; provenance: Record<string, string> };
 export const fetchCameraEvidence = (id: string, channel: string, timeS: number) => request<CameraEvidenceFrame>(`/workspace/scenarios/${encodeURIComponent(id)}/camera-evidence?channel=${encodeURIComponent(channel)}&time_s=${encodeURIComponent(String(timeS))}`);
 export const fetchTrajectory = (id: string) => request<TrajectoryResponse>(`/scenarios/${encodeURIComponent(id)}/trajectory`);

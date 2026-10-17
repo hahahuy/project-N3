@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import hashlib
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -99,24 +99,71 @@ _TEMPLATE_MAP_WARNING = "OpenDRIVE output uses a local template approximation; i
 _FULLMAP_MAP_WARNING = "OpenDRIVE is a full nuScenes map reconstruction in the scenario local frame (line-segment approximation); lane-level details differ from the recorded map."
 
 
-def _map_layers_by_name(layers: object) -> dict[str, object]:
-    """Normalize map layers to the ``layer name -> geometry records`` mapping.
+def _scenario_map_name(scenario: Scenario, settings: WebSettings) -> str | None:
+    """Resolve a scenario's map name without extracting any geometry.
 
-    ``GroundService.full_layers`` keys layers by name (``layers[layer] = output``
-    in ground.py), so the preview contract receives that mapping directly. The
-    sibling ``GroundService.layers`` instead returns a list of
-    ``{"name", "polygons"}`` records. Both are display-only previews, so both
-    shapes are accepted rather than indexed as if they were records.
+    ``include_map=false`` skips the full-map build, which would otherwise leave
+    the response without a map name even though resolving it is cheap.
     """
-    if isinstance(layers, dict):
-        return {str(name): records for name, records in layers.items()}
+    scene_token = scenario.provenance.get("source_scene_token")
+    if not scene_token:
+        return None
+    try:
+        return resolve_scene_map_name(scene_token, settings)
+    except (KeyError, OSError, ValueError):
+        return None
+
+
+def _preview_etag(payload: object) -> str:
+    """Stable validator for a static preview payload.
+
+    Derived from the canonical JSON encoding, so the tag changes if and only if
+    the geometry changes. Display-only: this is a cache validator, not provenance.
+    """
+    digest = hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    )
+    return f'"{digest.hexdigest()[:32]}"'
+
+
+def _map_layers_by_name(layers: object) -> dict[str, object]:
+    """Normalize map layers to the ``layer name -> polygons`` mapping.
+
+    Two shapes reach here. ``GroundService.layers`` already returns
+    ``{"name", "polygons"}`` records whose polygons carry ``exterior``/``holes``,
+    which is what the preview draws. ``GroundService.full_layers`` keys layers
+    by name instead and records geometry as ``{"token", "geometry": [ring, ...]}``,
+    so its records are rewritten into the same ``exterior`` form; without that the
+    preview silently drew no map at all.
+    """
     if isinstance(layers, list):
         return {
             str(layer["name"]): layer.get("polygons", [])
             for layer in layers
             if isinstance(layer, dict) and "name" in layer
         }
-    return {}
+    if not isinstance(layers, dict):
+        return {}
+    normalized: dict[str, object] = {}
+    for name, records in layers.items():
+        if not isinstance(records, list):
+            normalized[str(name)] = records
+            continue
+        polygons = []
+        for record in records:
+            if not isinstance(record, dict):
+                continue
+            if "exterior" in record:
+                polygons.append(record)
+                continue
+            rings = record.get("geometry")
+            if isinstance(rings, list) and rings and isinstance(rings[0], list):
+                # Emit only what the preview draws. Keeping the raw `geometry`
+                # alongside would ship every coordinate ring twice, which grew
+                # the static map payload from 1.4MB to 3.3MB.
+                polygons.append({"token": record.get("token"), "exterior": rings[0], "holes": rings[1:]})
+        normalized[str(name)] = polygons
+    return normalized
 
 
 def _fullmap_wasm_pair(
@@ -714,15 +761,45 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
         except (KeyError, FileNotFoundError, ImportError, OSError, RuntimeError, ValueError) as error:
             raise HTTPException(status_code=404, detail=str(error)) from error
 
+    @app.get("/api/workspace/scenarios/{scenario_id}/top-down-map")
+    def workspace_top_down_map(scenario_id: str, request: Request, response: Response) -> dict[str, object]:
+        """Return the scenario's static map geometry, separate from the playhead.
+
+        The geometry depends only on the scenario's map and local transform, so
+        it does not change while the playhead moves. Serving it on its own lets
+        the browser fetch it once and reuse the response, instead of re-shipping
+        roughly 1.7 MB of polygons on every playhead change.
+        """
+        try:
+            record = adapter.get(scenario_id)
+            raw = ground.full_layers(record.scenario)
+            map_payload = {**raw, "layers": _map_layers_by_name(raw.get("layers"))}
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        etag = _preview_etag(map_payload)
+        if request.headers.get("if-none-match") == etag:
+            response.status_code = 304
+            return {}
+        response.headers["ETag"] = etag
+        response.headers["Cache-Control"] = "private, max-age=3600"
+        return map_payload
+
     @app.get("/api/workspace/scenarios/{scenario_id}/top-down-state")
-    def workspace_top_down_state(scenario_id: str, time_s: float = 0.0) -> dict[str, object]:
-        """Return local map geometry plus canonical actor state for preview only."""
+    def workspace_top_down_state(
+        scenario_id: str, time_s: float = 0.0, include_map: bool = True
+    ) -> dict[str, object]:
+        """Return local map geometry plus canonical actor state for preview only.
+
+        ``include_map`` lets a caller that already holds the static geometry
+        request only the per-playhead state. It defaults to True so existing
+        callers keep the combined payload.
+        """
         try:
             record = adapter.get(scenario_id)
             scenario = record.scenario
             if not 0.0 <= time_s <= scenario.duration_s:
                 raise ValueError("preview_time_out_of_range")
-            map_payload = ground.full_layers(scenario)
+            map_payload = ground.full_layers(scenario) if include_map else {}
             source_window = scenario.provenance.get("source_window", "")
             first_sample, _, last_sample = source_window.partition(":")
             recorded = NuScenesDatasetAdapter.for_dataset(resolved_settings.dataset_root, resolved_settings.dataset_version).recorded_annotations_window(first_sample, last_sample, time_s)
@@ -760,8 +837,12 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
                 "requested_time_s": time_s,
                 "resolved_time_s": time_s,
                 "coordinate_frame": scenario.coordinate_frame,
-                "map_name": map_payload.get("map_name", scenario.provenance.get("map_name", "unknown")),
-                "map_layers": _map_layers_by_name(map_payload.get("layers")),
+                "map_name": (
+                map_payload.get("map_name")
+                if include_map
+                else _scenario_map_name(scenario, resolved_settings)
+            ) or scenario.provenance.get("map_name", "unknown"),
+                "map_layers": _map_layers_by_name(map_payload.get("layers")) if include_map else {},
                 "actors": actors,
                 "recorded_annotations": recorded,
                 "provenance": {"map_source": "nuscenes-devkit-NuScenesMap", "actor_source": "recorded_nuscenes_annotations", "artifact_visibility": "local_private"},

@@ -122,6 +122,20 @@ volumes:
   project-n3-metadata-cache:                                     # add
 ```
 
+The volume must also be writable by the api's uid. `api-permissions` runs as
+root before the api starts and chowns the paths the api writes to. Chowning
+only the reports volume leaves the metadata cache root-owned `0755`, which is
+readable but not writable: the api can then reuse the existing SQLite index
+and silently fails to rebuild it, and any other cache write fails outright.
+Both stacks therefore chown `/reports` and `/metadata-cache`. Verified with
+`touch` inside the running container, not from the volume spec alone.
+
+The same cache root now also holds the preview map artifacts written by
+`r2s_web/ground.py` under `map-cache/`. They are versioned by dataset version,
+map, transform hash and dataset signature, so a stale artifact is regenerated
+rather than reused. See
+`docs/current/wasm-window-performance-devops-handoff.md` items 7 and 9.
+
 More portable than hardcoding `/root`, and independent of D-4:
 
 ```yaml
