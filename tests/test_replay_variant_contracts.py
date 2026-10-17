@@ -428,3 +428,8 @@ def test_export_holds_zero_initial_speed():
     assert {t.get("value") for t in root.iter("AbsoluteTargetSpeed")} == {"0"}
     policies = {p.get("value") for p in root.iter("Property") if p.get("name") == "initial_speed_policy"}
     assert policies == {"hold_zero_until_trajectory_start"}
+
+
+def test_export_is_deterministic():
+    scenario, template = select_opendrive_template(_scenario(_ego(), _lead()), topology="straight_road")
+    assert build_openscenario_xml(scenario, template) == build_openscenario_xml(scenario, template)
