@@ -115,3 +115,9 @@ def test_first_state_is_the_unmodified_initial_state() -> None:
 def test_time_advances_by_the_fixed_timestep() -> None:
     preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 1), _steady(4, step_us=50_000))
     assert [state.time_s for state in preview.states] == pytest.approx([0.0, 0.05, 0.10, 0.15])
+
+
+def test_constant_speed_moves_straight_along_x() -> None:
+    preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 10.0), _steady(3))
+    assert [state.x_m for state in preview.states] == pytest.approx([0.0, 0.5, 1.0])
+    assert [state.y_m for state in preview.states] == pytest.approx([0.0, 0.0, 0.0])
