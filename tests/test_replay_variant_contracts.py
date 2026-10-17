@@ -302,3 +302,14 @@ def test_random_variants_are_reproducible_from_the_seed():
     _, second = generate_random_variants(_scenario(_ego(), _lead()), **kwargs)
     assert first.configurations == second.configurations
     assert first.variant_ids == second.variant_ids
+
+
+def test_random_variant_parameters_stay_inside_their_ranges():
+    _, manifest = generate_random_variants(
+        _scenario(_ego(), _lead()), count=50, speed_multiplier_range=(0.8, 1.2),
+        initial_gap_delta_range_m=(-2.0, 2.0), timing_offset_range_s=(0.0, 1.0), seed=3,
+    )
+    for config in manifest.configurations:
+        assert 0.8 <= config.speed_multiplier <= 1.2
+        assert -2.0 <= config.initial_gap_delta_m <= 2.0
+        assert 0.0 <= config.timing_offset_s <= 1.0
