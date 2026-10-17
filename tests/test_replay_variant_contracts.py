@@ -403,3 +403,11 @@ def test_late_actor_event_starts_at_its_first_recorded_time():
     events = {e.get("name"): e for e in root.iter("Event")}
     condition = events["late_start"].find("StartTrigger").find(".//SimulationTimeCondition")
     assert float(condition.get("value")) == pytest.approx(2.0)
+
+
+def test_export_references_road_template_and_duration():
+    root = _xml(_scenario(_ego(), _lead()))
+    assert root.find("RoadNetwork/LogicFile").get("filepath") == "straight-two-lane-v1.xodr"
+    parameter = root.find("ParameterDeclarations/ParameterDeclaration")
+    assert parameter.get("name") == "$ScenarioDuration"
+    assert float(parameter.get("value")) == pytest.approx(6.0)
