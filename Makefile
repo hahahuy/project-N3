@@ -94,29 +94,26 @@ prod-rebuild: ## Rebuild the image from the committed tree and recreate the stac
 
 ## ---------------------------------------------------------------- promotion
 
-# READ THIS FIRST.
+# The product image bakes in the repository instead of bind-mounting it, so
+# there is now a real promotion boundary:
 #
-# There is no code promotion boundary today. Both stacks bind-mount the same
-# host directory (.:/app) and the product api runs `uvicorn --reload`, so:
+#   * Python and frontend source edits -> NOT live in product. They land when
+#     the image is rebuilt from the committed tree.
 #
-#   * Python / backend edits  -> live in product within ~1 second. Saving a file
-#                               while working in dev changes production now.
-#                               `make promote` does nothing for these.
-#   * Frontend edits          -> NOT live. Product serves the frozen bundle in
-#                               frontend/dist until the bundle is rebuilt.
-#
-# Only the frontend needs a promote step. That asymmetry is the whole story.
+# `promote` is therefore a full rebuild of the product image, which also
+# recompiles the frontend bundle inside the image. There is no longer an
+# asymmetry between backend and frontend.
 # See docs/current/environment-environments.md.
 
-promote: ## Publish the current frontend bundle to the product environment
+promote: ## Publish the committed tree to the product environment
+	@$(MAKE) --no-print-directory prod-check-clean
 	@echo "==> Running the full suite first"
 	$(MAKE) test
-	@echo "==> Building and publishing the bundle"
-	cd frontend && npm run build
-	$(COMPOSE_PROD_RUN) up -d --remove-orphans
+	@echo "==> Rebuilding and publishing the product image"
+	$(COMPOSE_PROD_RUN) up -d --build --force-recreate --remove-orphans
 	@echo
 	@echo "  Published. Verify: https://project-n3.hahuy.cloud"
-	@echo "  Backend code was already live via the shared bind mount."
+	@echo "  Backend and frontend both came from $$(git rev-parse --short HEAD)."
 
 revert: ## Roll back to a known-good commit. Usage: make revert SHA=<commit>
 	@test -n "$(SHA)" || { echo "usage: make revert SHA=<commit>"; exit 2; }
