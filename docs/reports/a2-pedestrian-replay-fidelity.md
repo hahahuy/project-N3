@@ -28,9 +28,22 @@ baseline was measured on, and 85x more scenes.
 
 A second deviation: this harness **does not apply the kinematic feasibility
 gate**, so it replays all 850 scenes where the production benchmark rejected 42.
-That makes the A2a population a strict **superset** of the recorded baseline, by
-exactly `3215 + 42 x 4 = 3383` tracks. This is disclosed because it changes the
+That makes the A2a population a strict **superset** of the recorded baseline:
+**`3215 -> 3383` tracks, a measured `+168`**, entirely from the 42 scenes the
+production benchmark rejected. This is disclosed because it changes the
 denominator and would otherwise look like a population mismatch.
+
+Note the two arms of this report use **different populations**, which is
+intentional and must not be conflated:
+
+| arm | selection | tracks |
+|---|---|---|
+| **A2a** (§1, engine portability) | vehicle-only, same as the recorded baseline | **3383** |
+| **A2b** (§2, per-category) | pedestrian-inclusive | **3395** (`850` ego + `432` pedestrian + `2113` vehicle) |
+
+A2a must match the recorded baseline's vehicle-only selection, otherwise the
+engine-portability comparison is not like-for-like. A2b is deliberately wider.
+Do not compare an A2a figure against an A2b figure.
 
 ## 1. A2a — engine-identity check on the 0.0411 m baseline
 
@@ -46,9 +59,10 @@ prove the **engine** agrees. This arm re-runs vehicle-only selection on 3.10.0.
 | ADE max | 0.1726 m | 0.2112 m | +22 % (max only, n=1 track) |
 
 **The `0.0411 m` baseline is engine-portable.** Across a minor esmini version the
-central statistics agree to better than 1 %, on a population that is strictly
-larger. The baseline can be quoted as a value, and the version should be recorded
-alongside it. This also closes the version-skew caveat the handoff flagged for
+central statistics agree to **within about 1 %** (ADE mean +0.5 %, median +1.1 %,
+p95 +0.6 %) on a population that is strictly larger. The baseline can be quoted as
+a value, and the version should be recorded alongside it. Only the ADE **max**
+moved materially (`+22 %`), and that is a single track — not a central statistic. This also closes the version-skew caveat the handoff flagged for
 native verification.
 
 ## 2. A2b — per-category ADE/FDE (never blended)
@@ -65,7 +79,8 @@ native verification.
 
 - median ADE **0.0124 m vs 0.0318 m** — pedestrians are 2.6x tighter;
 - **max ADE 0.0468 m vs 0.2112 m** — the pedestrian tail is 4.5x tighter;
-- pedestrian p95 (0.0359 m) is below the vehicle *median* (0.0318 m) band.
+- the pedestrian p95 (`0.0359 m`) sits near the vehicle *median* (`0.0318 m`)
+  rather than far below it — the separation is in the tail, not the bulk.
 
 The pedestrian count **432 matches A3's `total_pedestrians_added = 432` exactly**,
 an independent cross-check that the two analyses agree on the selected

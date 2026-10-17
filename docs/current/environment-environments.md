@@ -16,7 +16,7 @@ Both run **the same application code**. Only the configuration differs.
 | | **Development** | **Product** |
 |---|---|---|
 | Audience | you | judges / contest |
-| URL | `http://100.114.248.93:5173` | `https://project-n3.hahuy.cloud` |
+| URL | `http://<tailscale-host>:5173` | `https://project-n3.hahuy.cloud` |
 | Compose file | `compose.dev.yml` | `compose.demo.yml` |
 | Docker project | `project-n3` | `project-n3-prod` |
 | Frontend | Vite dev server, hot reload | built bundle from `frontend/dist` |
@@ -130,7 +130,7 @@ containers on this host. `hhf-server` also runs `banking-agent`, `kavita`,
 ## 4. Commands
 
 ```
-make dev          start development        -> http://100.114.248.93:5173
+make dev          start development        -> http://<tailscale-host>:5173
 make prod         build bundle, start prod -> https://project-n3.hahuy.cloud
 make status       what is running in both
 make stop         stop everything
@@ -163,7 +163,7 @@ The shared key protects the **public route only**.
 ## 6. Day-to-day workflow
 
 ```bash
-make dev                 # work on code, view at 100.114.248.93:5173
+make dev                 # work on code, view at <tailscale-host>:5173
 # ... edit files; the browser hot-reloads ...
 make test                # before showing anyone
 make prod                # publish what you just built

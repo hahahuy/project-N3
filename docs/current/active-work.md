@@ -5,16 +5,21 @@ remaining work is acceptance and closure, not a new architecture track. Seven
 active task groups remain; their owner, evidence and exact next actions are
 recorded in `docs/reports/tracks-1-6-disposition.md`.
 
-> **Uncommitted working tree — read first.** 15 tracked files are modified and
-> two documentation paths are untracked. The changes are substantive, not
-> cosmetic: they correct a real `LIDAR_TOP` token-resolution defect that made
-> five API routes address the wrong record, correct multisweep history walking,
-> add an untested `/top-down` route, cap demo memory at 12G, and change the view
-> grid from four panes to three with a different default pane. None of this is
-> committed, and none of it is described in the committed evidence index.
-> `gitnexus detect_changes` reports `risk_level: critical` across 59 changed
-> symbols and 53 affected processes. **Track 5 CP5 release sign-off cannot be
-> given while this tree is uncommitted.**
+> **Working tree state — verify before relying on it.** The large
+> `LIDAR_TOP` token-resolution fix, the multisweep history correction, the
+> `/top-down` route, the 12G demo memory cap and the three-pane view grid were
+> all **committed** (`e9ad9b8` and later). That earlier "15 modified files,
+> risk_level: critical" description no longer applies.
+>
+> What remains uncommitted is small in-flight **WASM-DATA** work
+> (`src/r2s_web/app.py`, `tests/test_web_api.py`, and an untracked
+> `frontend/wasm-esmini/a4_probe.mjs`), plus a `log.txt` diff that should not
+> be committed. This is active work by a parallel agent, so it changes without
+> notice — **run `git status --short` yourself** rather than trusting this
+> paragraph. Do not commit another agent's in-progress files.
+>
+> **Track 5 CP5 release sign-off** should still wait until the WASM work is
+> committed, but not because of the historical fix.
 
 The next execution order is: (1) WASM interactive-simulator P0 feasibility, (2)
 private runtime/browser walkthrough, (3) native

@@ -46,6 +46,10 @@ Controlling documents for deployment state:
 - `docs/current/mission-batch-concurrency-benchmark.md` - S-6 cap selection
 - `docs/guides/production-push.md` - promote and rollback command helper
 - `docs/current/local-artifact-bundles.md` - local/private evidence index
+- `docs/guides/huong-dan-slides-thuyet-trinh.md` - judge-facing presentation guide
+  (how to state the numbers honestly, and which claims not to make)
+- `docs/current/wasm-window-performance-devops-handoff.md` - WASM/esmini window
+  performance and devops plan
 
 ## Documentation Rules
 
@@ -65,7 +69,8 @@ Controlling documents for deployment state:
 - `docs/current/`: source of truth for current status and contracts.
 - `docs/current/nuscenes-devkit-makeover-handoff.md`: active implementation plan.
 - `docs/reports/`: English phase and implementation reports.
-- `docs/evidence/`: runtime or acceptance evidence grouped by milestone.
+- `docs/evidence/`: runtime or acceptance evidence grouped by milestone. The M1-M5
+  waves are **historical**; see `docs/evidence/README.md`.
 - `docs/experiments/`: exploratory results not yet accepted as evidence.
 - `docs/guides/`: setup and operational guides.
 - `docs/architecture/`: current architecture and API boundaries.

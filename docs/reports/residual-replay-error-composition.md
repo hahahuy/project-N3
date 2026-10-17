@@ -61,7 +61,14 @@ what distinguishes a genuine fix from a global distortion of the metric.
 
 ## 3. What the remaining 0.06 m actually is
 
-Residual composition, 3214 tracks:
+Residual composition, 3214 tracks.
+
+> **Denominator note.** Three counts appear in this report and they are **not**
+> interchangeable: `3215` is the §2 headline actor-track count over 808 valid
+> scenes; `3214` is the composition population (808 ego + 2406 non-ego); `3206`
+> is the subset with enough samples to evaluate the §5 envelope. The one-track
+> gap between 3215 and 3214 is **not explained in this report** — see the open
+> item in `docs/current/active-work.md`. Do not present the three as one number.
 
 | population | n | median | mean | p95 | max |
 |---|---|---|---|---|---|
@@ -290,7 +297,7 @@ compare against.
 | ADE mean 0.1728 m (850 scenes) | superseded, correct mode but coarse step |
 | **ADE mean 0.0411 m, ADE max 0.1726 m (850 scenes)** | **current, `b52d423`** |
 
-The 100-scene figures in sections 2 and 9 remain valid as the experiment record
+The 100-scene figures in **section 9** remain valid as the experiment record
 that justified each decision, but the reported baseline is the 850-scene one.
 
 ## 13. Handoff note for the WASM / esminiJS team

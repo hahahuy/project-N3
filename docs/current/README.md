@@ -40,6 +40,11 @@ relevant page under [`../subsystems/`](../subsystems/README.md).
 - `mission-batch-concurrency-benchmark.md`: the S-6 record. Load-bearing — the
   production guide cites it for the open batch-cap risk.
 - `product-scene-exposure.md`: scene exposure recommendation.
+- `wasm-window-performance-devops-handoff.md`: **performance and devops plan for
+  the WASM/esmini window plus the 3D, top-down and sensor views.** Keeps
+  `FIXED_DT=0.01` per DEC-020 and holds the scientific boundary: browser/WASM
+  stays preview-only and must not feed native replay, `replay.csv`, ADE/FDE,
+  gates or reports. Contains the deployment and memory-cap work.
 
 ## Frontend
 

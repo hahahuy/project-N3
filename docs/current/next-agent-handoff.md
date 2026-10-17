@@ -28,8 +28,11 @@ anything**, and do not silently change another agent's scope.
 | **ProjectManager** | Context, docs, codebase hygiene, and issuing prompts when new open items appear. | — |
 | **WASM-DATA** | Replacing the current view panel with the WASM/esmini player. Frontend and XOSC connector. | Do not reimplement their work. |
 
-The current tree is **committed and clean**. There is no pending uncommitted
-baseline problem to solve.
+The tree is committed apart from **small in-flight WASM-DATA work** (see
+`docs/current/active-work.md`). There is no pending uncommitted *baseline*
+problem to solve — the `LIDAR_TOP` fix and its follow-ups are committed. Run
+`git status --short` before assuming anything, and never commit another agent's
+in-progress files.
 
 ## Current direction
 

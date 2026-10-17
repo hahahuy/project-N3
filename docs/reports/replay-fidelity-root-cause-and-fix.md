@@ -1,6 +1,22 @@
 # Replay fidelity: root cause, full-850 validation, and fix
 
-`scientific_status: PROVISIONAL`
+`scientific_status: SUPERSEDED-BY-b52d423 / HISTORICAL / PROVISIONAL`
+
+> **SUPERSEDED — historical record only.** Every ADE/FDE figure in this report,
+> including the "after" column of the headline table in section 1, was measured at
+> **`--fixed_timestep 0.05`** and is **intermediate**. It is **not** the current
+> baseline and must not be quoted as current.
+>
+> **Current approved baseline (`b52d423` and later):** native esmini `v3.9.0`,
+> `--fixed_timestep 0.01`, 850 scenes / 3215 tracks — **ADE mean 0.0411 m**,
+> median 0.0348 m, p95 0.1035 m, max 0.1726 m, **FDE max 0.2052 m**, validity
+> unchanged at 808/850. See `docs/reports/residual-replay-error-composition.md`
+> §10 and §12 for the authoritative provenance chain.
+>
+> **What remains valid here:** the root cause (the XOSC `StartTrigger`
+> time-origin defect), the disproof of the map-template hypothesis, the control
+> experiment, and the finding that `per-vertex speed` is inert. Those are
+> mechanism findings and are unaffected by the timestep change.
 
 Companion to `docs/reports/replay-variant-metric-diagnostics.md`. That report
 characterised the metric distribution on a 100-scene index and did **not**
@@ -20,7 +36,8 @@ unless explicitly labelled otherwise. The advisory nuScenes prediction metric
 | `scene.json` SHA-256 | `bdc3211bfbfda652d5e9dab73c45c7132925ca84f869bf45e8e14edeafb1d20b` |
 | Index policy | `scene.json` sorted by `token` ascending, slice `[0:850]`, no location cherry-picking |
 | esmini | `v3.9.0-0-efbf7ee1` |
-| Git revision | `e9ad9b80e9f1835d4c2311d53854783faab1f100` (working tree, uncommitted) |
+| `--fixed_timestep` | **`0.05`** — intermediate; the approved baseline uses `0.01` |
+| Git revision | `e9ad9b80e9f1835d4c2311d53854783faab1f100` (superseded by `b52d423`) |
 | Valid scenes | 808 / 850 (42 rejected by kinematic feasibility; identical before and after the fix) |
 | Actor tracks | **3215** (808 ego + 2407 non-ego) |
 
@@ -35,7 +52,7 @@ truth at every compared timestamp.
 
 One-line fix, validated on all 850 scenes:
 
-| statistic (role A, 3215 tracks) | before | after | reduction |
+| statistic (role A, 3215 tracks, **dt 0.05 — intermediate**) | before | after | reduction |
 |---|---|---|---|
 | ADE mean | 16.040 m | **1.138 m** | **92.9 %** |
 | ADE median | 0.300 m | 0.122 m | 59.5 % |
@@ -216,8 +233,8 @@ evaluated 0, G6 evaluated 10200 with 0 passes. The fix does not affect gating.
 
 ## Status and required approval
 
-The one-line exporter change is **currently applied to the working tree and
-uncommitted**. It is a correctness fix with a mechanism, a controlled
+The one-line exporter change was **approved by the project owner and committed
+as `b52d423`**. It is a correctness fix with a mechanism, a controlled
 experiment, a bit-identical control population and a 92.9 % mean reduction on
 850 scenes. It has not been tuned, and no threshold was moved.
 

@@ -212,7 +212,7 @@ make prod-rebuild         # rebuild so the image is clean too
 
 | | Development | Product |
 |---|---|---|
-| URL | `http://100.114.248.93:5173` | `https://project-n3.hahuy.cloud` |
+| URL | `http://<tailscale-host>:5173` | `https://project-n3.hahuy.cloud` |
 | Compose file | `compose.dev.yml` | `compose.demo.yml` |
 | Project name | `project-n3` | `project-n3-prod` |
 | Frontend served | Vite dev server, live | frozen bundle in `frontend/dist` |

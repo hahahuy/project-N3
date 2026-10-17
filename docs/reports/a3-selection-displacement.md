@@ -90,6 +90,13 @@ Selected actors only, n = 420 displaced vehicles and 432 added pedestrians.
 | added pedestrians, min TTC (s) | 432 | 0.422 | **1.346** | 3.473 | — | 188.260 |
 | displaced vehicles, min TTC (s) | 408 | 0.529 | **2.645** | — | — | see below |
 
+> **`n` differs between the two displaced-vehicle rows: 420 for min-distance,
+> 408 for min-TTC.** The TTC statistic is undefined for a track pair with no
+> closing event inside the horizon, so 12 of the 420 pairs drop out. This
+> report does **not** independently verify that the 12 are genuinely
+> non-closing rather than unmeasured; treat the TTC row as `n = 408` and do not
+> compare it to the 420 row as if they were the same population.
+
 The pedestrians that win a slot are roughly **twice as close** (4.61 m vs
 9.86 m) and **roughly twice as imminent** (1.35 s vs 2.65 s median TTC) than the
 vehicles they displace. This is the metric working, not the metric failing.

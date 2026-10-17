@@ -107,11 +107,17 @@ displacement rather than force, so no term involving mass is ever evaluated on
 this path.
 
 This is consistent with the residual behaviour measured independently in
-`docs/reports/residual-replay-error-composition.md`: the post-fix residual is
-**100 % along-track**, starts at exactly `0.0000 m`, cross-track stays at
-`0.001–0.006 m`, and scales with distance travelled. That signature is a pure
-geometric path-following lag and is exactly what a mass-insensitive controller
-produces.
+`docs/reports/residual-replay-error-composition.md` §7: the post-fix residual is
+**100 % along-track**, starts at exactly `0.0000 m`, and is a pure geometric
+path-following lag — which is exactly what a mass-insensitive controller
+produces. Per population, quoting that report exactly:
+
+| population | mean abs ADE | mean abs cross-track (ego) | along-track / distance |
+|---|---|---|---|
+| ego (`808` tracks) | 0.2618 m | median 0.0037 m, p95 0.0095 m | ~0.25 % |
+| non-ego (`2406` tracks) | 0.0358 m | — | far smaller |
+
+Do not reduce this to one blended percentage: ego and non-ego differ by ~7x.
 
 Note that observation is **corroborating, not proof**: it constrains the
 longitudinal channel and says nothing about mass on any other path.

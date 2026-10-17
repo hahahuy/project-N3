@@ -17,7 +17,7 @@ Integration step: `--fixed_timestep 0.01`.
 | item | question | verdict | report |
 |---|---|---|---|
 | **A1** | does the widening change vehicle XOSC output? | **NO — 40/40 byte-identical** | inline below |
-| **A2a** | does the `0.0411 m` baseline survive on 3.10? | **YES — agrees to <1 %** | `a2-pedestrian-replay-fidelity.md` |
+| **A2a** | does the `0.0411 m` baseline survive on 3.10? | **YES — central statistics agree to within ~1 %** | `a2-pedestrian-replay-fidelity.md` |
 | **A2b** | per-category pedestrian vs vehicle ADE/FDE | pedestrians **2.6x tighter median, 4.5x tighter max** | same |
 | **A2c** | do pedestrians show short-track convergence failure? | **NO** | same |
 | **A3** | does a pedestrian displace a vehicle? | **32.35 % of scenes, 0 ranking anomalies** | `a3-selection-displacement.md` |
@@ -52,9 +52,10 @@ The ADE recompute is vacuous **for the input**. A1 alone could not prove the
 
 Engine portability (A2a): esmini 3.9.0 baseline mean 0.0411 m → 3.10.0 mean
 0.0413 m (+0.5 %); median +1.1 %; p95 +0.6 %, on a strictly **larger**
-population (3383 vs 3215 tracks, because this harness does not apply the
-kinematic feasibility gate and therefore also replays the 42 scenes the
-production benchmark rejects).
+population (A2a is vehicle-only: `3383` vs the baseline `3215`, because this
+harness does not apply the kinematic feasibility gate and therefore also
+replays the 42 scenes the production benchmark rejects. A2b above is
+pedestrian-inclusive at `3395`. Do not compare an A2a figure to an A2b figure.)
 
 Convergence (A2c): no class exceeds 0.5 m ADE. Pedestrian short tracks (< 2 s)
 are the *best* group at max 0.0146 m — short tracks are not a pedestrian problem.
@@ -135,8 +136,18 @@ failure mode the protocol exists to catch.
    back through `compute_replay_metrics()` costs **0.000144 m** median. The
    metric is not the bottleneck at any residual measured here.
 2. **Residual character.** After the export-timing fix, error is **100 %
-   along-track**, starts at exactly `0.0000 m`, cross-track stays at
-   0.001–0.006 m, and scales with distance travelled at ~0.05 %.
+   along-track** and starts at exactly `0.0000 m`. Per population, quoting
+   `residual-replay-error-composition.md` §7:
+
+   | population | mean abs ADE | mean abs cross-track | along-track / distance |
+   |---|---|---|---|
+   | **ego** (`808` tracks) | 0.2618 m | median 0.0037 m, p95 0.0095 m | **~0.25 %** (0.2617 m over 104.98 m) |
+   | **non-ego** (`2406` tracks) | 0.0358 m | — | far smaller |
+
+   Ego is the largest single error population and its residual is almost purely
+   accumulated along-track drift. **There is no single blended percentage** —
+   ego and non-ego differ by ~7x, so quoting one number for "the residual"
+   would misrepresent both.
 3. **Timestep converged.** `dt = 0.005` is bit-identical to `dt = 0.01`;
    `dt = 0.05 → 0.01` was worth 4.2x on ADE mean.
 4. **The 850-scene role A baseline** (`b52d423`): ADE mean 0.0411 m, median
