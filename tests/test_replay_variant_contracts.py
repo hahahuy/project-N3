@@ -313,3 +313,14 @@ def test_random_variant_parameters_stay_inside_their_ranges():
         assert 0.8 <= config.speed_multiplier <= 1.2
         assert -2.0 <= config.initial_gap_delta_m <= 2.0
         assert 0.0 <= config.timing_offset_s <= 1.0
+
+
+def test_batch_manifest_json_is_stable_and_parseable():
+    _, manifest = generate_grid_variants(
+        _scenario(_ego(), _lead()), speed_multipliers=(0.9, 1.1), initial_gap_deltas_m=(0.0, 2.0), timing_offsets_s=(0.0,)
+    )
+    text = batch_manifest_to_json(manifest)
+    assert text == batch_manifest_to_json(manifest)
+    payload = json.loads(text)
+    assert payload["mode"] == "grid"
+    assert len(payload["variants"]) == 4
