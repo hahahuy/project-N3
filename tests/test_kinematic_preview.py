@@ -389,3 +389,13 @@ def test_single_sample_source_state_is_buildable() -> None:
     extension = build_source_state_extension((0,), ((0.0, 0.0),), (0.0,))
     assert extension.states[0].acceleration_mps2 == 0.0
     assert extension.states[0].yaw_rate_radps == 0.0
+
+
+def test_end_to_end_straight_line_reproduces_the_input_path() -> None:
+    timestamps = tuple(range(0, 250_000, 50_000))
+    positions = tuple((10.0 * t / 1_000_000, 0.0) for t in timestamps)
+    extension = build_source_state_extension(timestamps, positions, (0.0,) * len(timestamps))
+    preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 10.0), extension)
+    expected = [10.0 * t / 1_000_000 for t in timestamps]
+    assert [state.x_m for state in preview.states] == pytest.approx(expected)
+    assert preview.violations == ()
