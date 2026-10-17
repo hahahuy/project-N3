@@ -179,3 +179,10 @@ def test_heading_crossing_pi_is_not_a_yaw_rate_violation():
     actor = Actor("ego", "vehicle.ego", tuple(State(i * 0.5, -i * 5.0, 0.0, yaw, 10.0) for i, yaw in enumerate(yaws)), 4.5, 1.9)
     report = validate_feasibility(_scenario(actor, duration_s=1.0))
     assert "yaw_rate_exceeded" not in {r.code for r in report.reasons}
+
+
+def test_speed_limit_is_checked_only_when_configured():
+    scenario = _scenario(_ego(), _lead())
+    assert validate_feasibility(scenario).valid
+    report = validate_feasibility(scenario, FeasibilityLimits(max_speed_mps=8.0))
+    assert "speed_exceeded" in {r.code for r in report.reasons}
