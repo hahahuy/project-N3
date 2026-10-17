@@ -172,3 +172,10 @@ def test_yaw_rate_above_limit_is_rejected():
     report = validate_feasibility(_scenario(actor, duration_s=2.0))
     reason = next(r for r in report.reasons if r.code == "yaw_rate_exceeded")
     assert reason.observed == pytest.approx(2.0)
+
+
+def test_heading_crossing_pi_is_not_a_yaw_rate_violation():
+    yaws = (math.pi - 0.05, -math.pi + 0.05, -math.pi + 0.15)
+    actor = Actor("ego", "vehicle.ego", tuple(State(i * 0.5, -i * 5.0, 0.0, yaw, 10.0) for i, yaw in enumerate(yaws)), 4.5, 1.9)
+    report = validate_feasibility(_scenario(actor, duration_s=1.0))
+    assert "yaw_rate_exceeded" not in {r.code for r in report.reasons}
