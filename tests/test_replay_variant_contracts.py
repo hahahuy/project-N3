@@ -332,3 +332,13 @@ def test_one_invalid_configuration_does_not_abort_the_batch():
         _scenario(_ego(), _lead()), speed_multipliers=(1.0,), initial_gap_deltas_m=(0.0,), timing_offsets_s=(0.0, -0.5)
     )
     assert len(variants) == 1
+
+
+def test_preview_rejects_empty_unknown_and_duplicate_edits():
+    parent = _scenario(_ego(), _lead())
+    with pytest.raises(ValueError):
+        preview_variant(parent, [])
+    with pytest.raises(ValueError):
+        preview_variant(parent, [ActorMotionEdit("ghost")])
+    with pytest.raises(ValueError):
+        preview_variant(parent, [ActorMotionEdit("lead"), ActorMotionEdit("lead", speed_multiplier=2.0)])
