@@ -138,3 +138,10 @@ def test_aggregate_fde_ignores_actors_without_full_coverage():
     assert aggregate.actor_count == 2
     assert aggregate.fde_m.max == pytest.approx(1.0)
     assert aggregate.ade_m.max == pytest.approx(9.0)
+
+
+def test_constant_speed_scenario_is_feasible():
+    report = validate_feasibility(_scenario(_ego(), _lead()))
+    assert report.valid
+    assert report.reasons == ()
+    assert report.validation_version == FeasibilityLimits().version
