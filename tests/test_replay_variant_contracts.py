@@ -252,3 +252,8 @@ def test_timing_offset_shifts_only_non_ego_timestamps():
 def test_negative_timing_offset_below_zero_is_rejected():
     with pytest.raises(ValueError):
         perturb_scenario(_scenario(_ego(), _lead()), VariantConfig(timing_offset_s=-0.5))
+
+
+def test_speed_multiplier_scales_recorded_speeds():
+    variant = perturb_scenario(_scenario(_ego(), _lead()), VariantConfig(speed_multiplier=1.5))
+    assert [s.speed_mps for s in _actor(variant, "lead").trajectory] == pytest.approx([15.0] * 13)
