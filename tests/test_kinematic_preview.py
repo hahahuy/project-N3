@@ -97,3 +97,10 @@ def test_integrate_rejects_negative_timestep() -> None:
 def test_integrate_rejects_non_finite_timestep(bad: float) -> None:
     with pytest.raises(ValueError, match="fixed_timestep_s"):
         integrate_kinematic_open_loop(State(0, 0, 0, 0, 1), _steady(2), fixed_timestep_s=bad)
+
+
+def test_single_measurement_returns_only_the_initial_state() -> None:
+    initial = State(0.0, 1.0, 2.0, 0.3, 4.0)
+    preview = integrate_kinematic_open_loop(initial, _steady(1))
+    assert preview.states == (initial,)
+    assert preview.violations == ()
