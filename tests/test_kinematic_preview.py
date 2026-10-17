@@ -250,3 +250,9 @@ def test_provenance_includes_source_provenance() -> None:
     preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 1), source)
     assert preview.provenance["source_state_status"] == "can_pose"
     assert preview.source_state_version == SOURCE_STATE_VERSION
+
+
+def test_footprints_empty_actor_list_is_clear() -> None:
+    result = check_footprint_collisions(())
+    assert result.status == "clear"
+    assert result.collisions == ()
