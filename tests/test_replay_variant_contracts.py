@@ -448,3 +448,9 @@ def test_export_follows_openscenario_element_structure():
 def test_bounding_box_is_centred_on_the_recorded_position():
     root = _xml(_scenario(_ego(), _lead()))
     assert {float(c.get("x")) for c in root.iter("Center")} == {0.0}
+
+
+def test_scenario_survives_a_dictionary_round_trip():
+    scenario = _scenario(_ego(), _lead(), _cross())
+    restored = scenario_from_dict(scenario_to_dict(scenario))
+    assert scenario_to_dict(restored) == scenario_to_dict(scenario)
