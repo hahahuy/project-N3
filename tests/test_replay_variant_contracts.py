@@ -366,3 +366,11 @@ def test_motion_edit_rejects_invalid_values():
         ActorMotionEdit("lead", start_time_s=3.0, end_time_s=1.0)
     with pytest.raises(ValueError):
         ActorMotionEdit("lead", speed_multiplier=0.0)
+
+
+@pytest.mark.xfail(reason="L4: preview braking changes the speed column but not the positions", strict=False)
+def test_preview_braking_shortens_the_distance_travelled():
+    preview = preview_variant(_scenario(_ego(), _lead()), [ActorMotionEdit("lead", braking_mps2=3.0, start_time_s=1.0)])
+    lead = _actor(preview, "lead").trajectory
+    assert lead[-1].x_m == pytest.approx(40.0 + 10.0**2 / (2 * 3.0), abs=0.5)
+    assert min(s.speed_mps for s in lead) >= 0.0
