@@ -204,3 +204,9 @@ def test_identity_variant_reproduces_parent_motion():
         assert [(s.time_s, s.x_m, s.y_m, s.speed_mps) for s in before.trajectory] == pytest.approx(
             [(s.time_s, s.x_m, s.y_m, s.speed_mps) for s in after.trajectory]
         )
+
+
+def test_variant_id_is_deterministic():
+    parent = _scenario(_ego(), _lead())
+    config = VariantConfig(speed_multiplier=1.2, initial_gap_delta_m=3.0, timing_offset_s=0.5)
+    assert perturb_scenario(parent, config).scenario_id == perturb_scenario(parent, config).scenario_id
