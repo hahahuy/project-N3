@@ -256,3 +256,11 @@ def test_footprints_empty_actor_list_is_clear() -> None:
     result = check_footprint_collisions(())
     assert result.status == "clear"
     assert result.collisions == ()
+
+
+def test_footprints_missing_dimension_is_unsupported_with_reason() -> None:
+    sized = _box("a", (State(0, 0, 0, 0, 0),))
+    unsized = Actor("b", "vehicle", (State(0, 50, 0, 0, 0),), length_m=4.0)
+    result = check_footprint_collisions((sized, unsized))
+    assert result.status == "unsupported"
+    assert result.reason == "actor_dimensions_missing"
