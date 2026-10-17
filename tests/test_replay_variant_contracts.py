@@ -71,3 +71,13 @@ def test_identical_replay_has_zero_error_and_complete_coverage():
     assert metrics.speed_mae_mps == 0.0
     assert metrics.coverage_status == "complete"
     assert metrics.sample_count == len(states)
+
+
+def test_constant_lateral_offset_sets_rmse_ade_and_fde_to_the_offset():
+    recorded = _line(0.0, 0.0, 10.0, 0.0)
+    replayed = _line(0.0, 0.5, 10.0, 0.0)
+    metrics = compute_replay_metrics(recorded, replayed)
+    assert metrics.position_rmse_m == pytest.approx(0.5)
+    assert metrics.ade_m == pytest.approx(0.5)
+    assert metrics.fde_m == pytest.approx(0.5)
+    assert metrics.final_displacement_m == pytest.approx(0.5)
