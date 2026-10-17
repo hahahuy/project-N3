@@ -302,3 +302,8 @@ def test_footprint_times_match_after_rounding() -> None:
     second = _box("b", (State(0.3, 1, 0, 0, 0),))
     assert 0.1 + 0.2 != 0.3
     assert check_footprint_collisions((first, second)).status == "collision"
+
+
+def test_source_state_rejects_mismatched_lengths() -> None:
+    with pytest.raises(ValueError, match="equal, non-empty"):
+        build_source_state_extension((0, 1_000_000), ((0.0, 0.0),), (0.0, 0.0))
