@@ -321,3 +321,12 @@ def test_constant_velocity_has_zero_finite_difference_acceleration() -> None:
         (0.0, 0.0, 0.0, 0.0),
     )
     assert [state.acceleration_mps2 for state in extension.states] == pytest.approx([0.0] * 4)
+
+
+def test_yaw_rate_wraps_across_pi() -> None:
+    extension = build_source_state_extension(
+        (0, 1_000_000), ((0.0, 0.0), (0.0, 0.0)), (3.1, -3.1)
+    )
+    expected = 2 * math.pi - 6.2
+    assert extension.states[0].yaw_rate_radps == pytest.approx(expected)
+    assert extension.states[1].yaw_rate_radps == pytest.approx(expected)
