@@ -225,3 +225,10 @@ def test_perturbation_does_not_mutate_the_parent():
     before = json.dumps(scenario_to_dict(parent), sort_keys=True)
     perturb_scenario(parent, VariantConfig(speed_multiplier=1.4, initial_gap_delta_m=-3.0, timing_offset_s=0.5))
     assert json.dumps(scenario_to_dict(parent), sort_keys=True) == before
+
+
+def test_initial_gap_moves_only_non_ego_actors():
+    parent = _scenario(_ego(), _lead())
+    variant = perturb_scenario(parent, VariantConfig(initial_gap_delta_m=5.0))
+    assert _actor(variant, "lead").trajectory[0].x_m == pytest.approx(35.0)
+    assert _actor(variant, "ego").trajectory[0].x_m == pytest.approx(0.0)
