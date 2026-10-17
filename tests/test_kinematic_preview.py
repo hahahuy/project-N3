@@ -371,3 +371,11 @@ def test_source_state_rejects_unknown_sources_and_bad_values() -> None:
         SourceState(-1, 0.0, 0.0, "can_pose", "can_pose")
     with pytest.raises(ValueError, match="finite"):
         SourceState(0, math.nan, 0.0, "can_pose", "can_pose")
+
+
+def test_source_extension_requires_supported_version_and_states() -> None:
+    state = SourceState(0, 0.0, 0.0, "can_pose", "can_pose")
+    with pytest.raises(ValueError, match="supported version"):
+        SourceStateExtension("source-state-extension-v0", (state,), {})
+    with pytest.raises(ValueError, match="supported version"):
+        SourceStateExtension(SOURCE_STATE_VERSION, (), {})
