@@ -324,3 +324,11 @@ def test_batch_manifest_json_is_stable_and_parseable():
     payload = json.loads(text)
     assert payload["mode"] == "grid"
     assert len(payload["variants"]) == 4
+
+
+@pytest.mark.xfail(raises=ValueError, reason="L7: one invalid configuration aborts the whole batch", strict=False)
+def test_one_invalid_configuration_does_not_abort_the_batch():
+    variants, _ = generate_grid_variants(
+        _scenario(_ego(), _lead()), speed_multipliers=(1.0,), initial_gap_deltas_m=(0.0,), timing_offsets_s=(0.0, -0.5)
+    )
+    assert len(variants) == 1
