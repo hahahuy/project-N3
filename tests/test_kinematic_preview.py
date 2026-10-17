@@ -225,3 +225,9 @@ def test_trace_uses_the_requested_actor_id() -> None:
     assert len(preview.trace.states_for("veh-7")) == 3
     with pytest.raises(ValueError, match="no states"):
         preview.trace.states_for("ego")
+
+
+def test_provenance_declares_simulator_and_no_silent_clamps() -> None:
+    preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 1), _steady(2))
+    assert preview.provenance["simulator_version"] == KINEMATIC_VERSION
+    assert preview.provenance["silent_clamps"] == "forbidden"
