@@ -374,3 +374,11 @@ def test_preview_braking_shortens_the_distance_travelled():
     lead = _actor(preview, "lead").trajectory
     assert lead[-1].x_m == pytest.approx(40.0 + 10.0**2 / (2 * 3.0), abs=0.5)
     assert min(s.speed_mps for s in lead) >= 0.0
+
+
+@pytest.mark.xfail(reason="L5: the preview ID hash ignores braking, acceleration and steering", strict=False)
+def test_preview_id_differs_for_different_braking_strengths():
+    parent = _scenario(_ego(), _lead())
+    soft = preview_variant(parent, [ActorMotionEdit("lead", braking_mps2=3.0, start_time_s=1.0)])
+    hard = preview_variant(parent, [ActorMotionEdit("lead", braking_mps2=7.0, start_time_s=1.0)])
+    assert soft.scenario_id != hard.scenario_id
