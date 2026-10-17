@@ -147,3 +147,9 @@ def test_repeated_source_timestamp_is_rejected_by_the_trace() -> None:
     source = _extension((0, 0.0, 0.0), (100_000, 0.0, 0.0), (100_000, 0.0, 0.0))
     with pytest.raises(ValueError, match="strictly increase"):
         integrate_kinematic_open_loop(State(0, 0, 0, 0, 1), source)
+
+
+def test_acceleration_updates_speed_by_dt() -> None:
+    source = _extension((0, 0.0, 0.0), (50_000, 2.0, 0.0))
+    preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 3.0), source)
+    assert preview.states[1].speed_mps == pytest.approx(3.1)
