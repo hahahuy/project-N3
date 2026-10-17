@@ -247,3 +247,8 @@ def test_timing_offset_shifts_only_non_ego_timestamps():
     assert _actor(variant, "lead").trajectory[0].time_s == pytest.approx(0.5)
     assert _actor(variant, "ego").trajectory[0].time_s == pytest.approx(0.0)
     assert variant.duration_s == pytest.approx(6.5)
+
+
+def test_negative_timing_offset_below_zero_is_rejected():
+    with pytest.raises(ValueError):
+        perturb_scenario(_scenario(_ego(), _lead()), VariantConfig(timing_offset_s=-0.5))
