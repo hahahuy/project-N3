@@ -264,3 +264,10 @@ def test_footprints_missing_dimension_is_unsupported_with_reason() -> None:
     result = check_footprint_collisions((sized, unsized))
     assert result.status == "unsupported"
     assert result.reason == "actor_dimensions_missing"
+
+
+def test_footprints_far_apart_actors_are_clear() -> None:
+    first = _box("a", (State(0, 0, 0, 0, 0),))
+    second = _box("b", (State(0, 100, 0, 0, 0),))
+    result = check_footprint_collisions((first, second))
+    assert (result.status, result.reason) == ("clear", None)
