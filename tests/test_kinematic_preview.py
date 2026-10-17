@@ -127,3 +127,10 @@ def test_heading_of_ninety_degrees_moves_along_y() -> None:
     preview = integrate_kinematic_open_loop(State(0, 0, 0, math.pi / 2, 10.0), _steady(3))
     assert preview.states[-1].x_m == pytest.approx(0.0, abs=1e-9)
     assert preview.states[-1].y_m == pytest.approx(1.0)
+
+
+def test_long_source_gap_is_capped_at_the_fixed_timestep() -> None:
+    preview = integrate_kinematic_open_loop(
+        State(0, 0, 0, 0, 1), _extension((0, 0.0, 0.0), (1_000_000, 0.0, 0.0)), fixed_timestep_s=0.05
+    )
+    assert preview.states[1].time_s == pytest.approx(0.05)
