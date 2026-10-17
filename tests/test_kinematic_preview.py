@@ -205,3 +205,9 @@ def test_jerk_over_limit_is_reported_from_the_second_step() -> None:
     (violation,) = preview.violations
     assert (violation.code, violation.state_index) == ("jerk_exceeded", 2)
     assert violation.observed == pytest.approx(40.0)
+
+
+def test_first_step_has_no_jerk_reference() -> None:
+    source = _extension((0, 0.0, 0.0), (50_000, 4.0, 0.0))
+    preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 10.0), source)
+    assert "jerk_exceeded" not in _codes(preview)
