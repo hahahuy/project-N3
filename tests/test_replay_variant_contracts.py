@@ -96,3 +96,9 @@ def test_heading_error_wraps_across_the_pi_boundary():
     replayed = _line(0.0, 0.0, 10.0, 0.0, yaw=-math.pi + 0.01)
     metrics = compute_replay_metrics(recorded, replayed)
     assert metrics.heading_mae_rad == pytest.approx(0.02, abs=1e-9)
+
+
+def test_speed_error_is_the_mean_absolute_difference():
+    recorded = _line(0.0, 0.0, 10.0, 0.0)
+    replayed = tuple(State(s.time_s, s.x_m, s.y_m, s.yaw_rad, 12.0) for s in recorded)
+    assert compute_replay_metrics(recorded, replayed).speed_mae_mps == pytest.approx(2.0)
