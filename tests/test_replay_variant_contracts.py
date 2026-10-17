@@ -89,3 +89,10 @@ def test_denser_replay_is_interpolated_at_recorded_times():
     metrics = compute_replay_metrics(recorded, replayed)
     assert metrics.ade_m == pytest.approx(0.0, abs=1e-9)
     assert metrics.sample_count == len(recorded)
+
+
+def test_heading_error_wraps_across_the_pi_boundary():
+    recorded = _line(0.0, 0.0, 10.0, 0.0, yaw=math.pi - 0.01)
+    replayed = _line(0.0, 0.0, 10.0, 0.0, yaw=-math.pi + 0.01)
+    metrics = compute_replay_metrics(recorded, replayed)
+    assert metrics.heading_mae_rad == pytest.approx(0.02, abs=1e-9)
