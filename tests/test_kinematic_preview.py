@@ -51,3 +51,7 @@ def test_limits_defaults_match_documented_values() -> None:
     assert limits.max_deceleration_mps2 == 8.0
     assert limits.max_jerk_mps3 == 20.0
     assert limits.max_yaw_rate_radps == 1.5
+
+
+def test_limits_default_version_is_the_module_constant() -> None:
+    assert KinematicLimits().version == KINEMATIC_LIMITS_VERSION == "kinematic-limits-v1"
