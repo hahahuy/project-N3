@@ -128,3 +128,13 @@ def test_aggregate_reports_mean_median_and_max_ade():
     assert aggregate.ade_m.mean == pytest.approx(4.0)
     assert aggregate.ade_m.median == pytest.approx(2.5)
     assert aggregate.ade_m.max == pytest.approx(10.0)
+
+
+def test_aggregate_fde_ignores_actors_without_full_coverage():
+    recorded = _line(0.0, 0.0, 10.0, 0.0)
+    complete = compute_replay_metrics(recorded, _line(0.0, 1.0, 10.0, 0.0))
+    partial = compute_replay_metrics(recorded, _line(0.0, 9.0, 10.0, 0.0, steps=5))
+    aggregate = aggregate_replay_metrics([complete, partial])
+    assert aggregate.actor_count == 2
+    assert aggregate.fde_m.max == pytest.approx(1.0)
+    assert aggregate.ade_m.max == pytest.approx(9.0)
