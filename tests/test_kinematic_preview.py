@@ -307,3 +307,8 @@ def test_footprint_times_match_after_rounding() -> None:
 def test_source_state_rejects_mismatched_lengths() -> None:
     with pytest.raises(ValueError, match="equal, non-empty"):
         build_source_state_extension((0, 1_000_000), ((0.0, 0.0),), (0.0, 0.0))
+
+
+def test_source_state_rejects_non_increasing_timestamps() -> None:
+    with pytest.raises(ValueError, match="strictly increase"):
+        build_source_state_extension((0, 0), ((0.0, 0.0), (1.0, 0.0)), (0.0, 0.0))
