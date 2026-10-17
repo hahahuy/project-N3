@@ -104,3 +104,9 @@ def test_single_measurement_returns_only_the_initial_state() -> None:
     preview = integrate_kinematic_open_loop(initial, _steady(1))
     assert preview.states == (initial,)
     assert preview.violations == ()
+
+
+def test_first_state_is_the_unmodified_initial_state() -> None:
+    initial = State(0.0, 5.0, -3.0, 0.2, 7.0, source_timestamp_us=123, source_record_token="tok")
+    preview = integrate_kinematic_open_loop(initial, _steady(3))
+    assert preview.states[0] is initial
