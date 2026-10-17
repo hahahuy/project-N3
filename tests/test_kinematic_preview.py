@@ -64,3 +64,9 @@ def test_limits_default_version_is_the_module_constant() -> None:
 def test_limits_reject_negative_values(field: str) -> None:
     with pytest.raises(ValueError, match="non-negative"):
         KinematicLimits(**{field: -0.1})
+
+
+@pytest.mark.parametrize("bad", [math.nan, math.inf, -math.inf])
+def test_limits_reject_non_finite_values(bad: float) -> None:
+    with pytest.raises(ValueError, match="finite"):
+        KinematicLimits(max_jerk_mps3=bad)
