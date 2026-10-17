@@ -391,7 +391,7 @@ describe("actor timeline and gate lane", () => {
     expect((addView() as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it("derives add-view slots from the next insertion position and exposes every registered view", async () => {
+  it("derives add-view slots from the next insertion position", async () => {
     await renderWorkspace();
     fireEvent.click(screen.getByRole("button", { name: "Add view" }));
     const menu = screen.getByRole("menu");
@@ -400,7 +400,7 @@ describe("actor timeline and gate lane", () => {
     expect(within(menu).getByRole("button", { name: /Top-down/ }).textContent).toContain("nuScenes devkit map and point cloud");
     expect(within(menu).getByRole("button", { name: /Sensor Evidence/ }).textContent).toContain("nuScenes LIDAR_TOP recorded sweeps");
     expect(within(menu).getByRole("button", { name: /3rd-person POV/ }).textContent).toContain("internal transform POV");
-    expect(within(menu).getByRole("button", { name: /In-car POV/ }).textContent).toContain("ego-mounted internal transform POV");
+    expect(within(menu).queryByRole("button", { name: /In-car POV/ })).toBeNull();
     expect(within(menu).queryByRole("button", { name: /LiDAR 3D/ })).toBeNull();
     expect(within(menu).getByRole("button", { name: /Real Camera/ }).textContent).toContain("recorded camera channel view");
   });
@@ -729,28 +729,24 @@ describe("evidence layers", () => {
     expect(provenance.parentElement?.textContent).toContain("source_scene_token: synthetic-scene-001");
   });
 
-  it("keeps the four evidence layers in the top-down legend", async () => {
+  it("renders the top-down trajectory view without a legend", async () => {
     await renderWorkspace();
     fireEvent.click(screen.getByRole("button", { name: "Add view" }));
     fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /Top-down/ }));
 
-    const legend = screen.getByRole("img", { name: /Top-down trajectory view/ }).parentElement;
-    for (const label of ["recorded", "generated", "replayed", "sensor-evidence"]) {
-      expect(legend?.textContent).toContain(label);
-    }
+    expect(screen.getByRole("img", { name: /Top-down trajectory view/ }).parentElement?.querySelector(".view-legend")).toBeNull();
   });
 });
 
-describe("recorded sensor evidence and native live session", () => {
-  it("keeps Sensor Evidence separate and starts a native state session", async () => {
+describe("recorded sensor evidence", () => {
+  it("keeps Sensor Evidence separate without a native session action", async () => {
     await renderWorkspace();
      fireEvent.click(screen.getByRole("button", { name: "Add view" }));
     fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /Sensor Evidence/ }));
     expect(await screen.findByRole("img", { name: /nuScenes Sensor Evidence view with 2 LIDAR_TOP sweeps/ })).toBeTruthy();
     expect(screen.getByText("historical sweep smearing expected")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Start native session" }));
-    expect(await screen.findByText("native esminiLib state")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Start native session" })).toBeNull();
   });
 
   it("keeps Sensor Evidence in Scenario studio when added", async () => {

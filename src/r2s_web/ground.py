@@ -50,7 +50,8 @@ class GroundService:
         provenance = scenario.provenance
         transform = RoadAlignedTransform.from_provenance(provenance)
         map_name = resolve_scene_map_name(provenance["source_scene_token"], self._settings)
-        key = (map_name, str(transform.origin_x_m), str(transform.origin_y_m), str(transform.heading_rad))
+        signature = self._dataset_signature(map_name)
+        key = (map_name, str(transform.origin_x_m), str(transform.origin_y_m), f"{transform.heading_rad}:{signature}")
         with self._full_cache_lock:
             cached = self._full_cache.get(key)
             if cached is not None:
@@ -68,7 +69,6 @@ class GroundService:
                 if cached is not None:
                     self._full_cache.move_to_end(key)
                     return cached
-            signature = self._dataset_signature(map_name)
             artifact = self._read_artifact(map_name, transform, signature)
             if artifact is None:
                 artifact = self._build_full_layers(scenario, map_name, transform)

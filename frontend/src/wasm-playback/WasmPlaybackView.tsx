@@ -4,8 +4,9 @@ import { applyLidarTransform, assertWellFormedXml, decodeLidarPayloadFlat, globa
 import type { LidarRigidTransform } from "./types";
 import { createWasmScenarioPair, fetchGroundLayers, fetchLidarSweeps, fetchWorkspaceScenario, lidarPayloadUrl } from "../api";
 import ThreePlaybackCanvas from "./ThreePlaybackCanvas";
+import { ByteBoundedLru, selectSweepWindow } from "./bounded-cache";
 
-type Props = { scenarioId?: string; fixture?: "vehicle" | "pedestrian"; mode?: "standalone" | "third-person" | "sensor-evidence"; playhead?: number; toggles?: WasmOverlayToggles; onTogglesChange?: (toggles: WasmOverlayToggles) => void; orbit?: WasmOrbitState; onOrbitChange?: (orbit: WasmOrbitState) => void };
+type Props = { scenarioId?: string; fixture?: "vehicle" | "pedestrian"; mode?: "standalone" | "third-person" | "sensor-evidence"; playhead?: number; toggles?: WasmOverlayToggles; onTogglesChange?: (toggles: WasmOverlayToggles) => void; orbit?: WasmOrbitState; onOrbitChange?: (orbit: WasmOrbitState) => void; isMainView?: boolean; focusActorId?: string | null };
 
 const FIXTURE_FILES = {
   vehicle: "fixture.xosc",
@@ -80,8 +81,9 @@ async function loadRecordedOverlays(
 async function fetchSweepCloud(
   sweep: WasmLidarSweep,
   frame: { originX: number; originY: number; heading: number },
+  signal?: AbortSignal,
 ): Promise<WasmLidarCloud | null> {
-  const response = await fetch(lidarPayloadUrl(sweep.sample_data_token, 1));
+  const response = await fetch(lidarPayloadUrl(sweep.sample_data_token, 4), { signal });
   if (!response.ok) return null;
   const header = response.headers.get("X-R2S-Lidar-Metadata");
   if (!header) return null;
@@ -110,7 +112,7 @@ async function fetchSweepCloud(
   };
 }
 
-export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode = "standalone", playhead, toggles, onTogglesChange, orbit, onOrbitChange }: Props) {
+export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode = "standalone", playhead, toggles, onTogglesChange, orbit, onOrbitChange, isMainView = false, focusActorId = null }: Props) {
   const workerRef = useRef<Worker | null>(null);
   const [status, setStatus] = useState("loading");
   const [road, setRoad] = useState<WasmRoadGeometry>({ lane_surfaces: [], road_marks: [] });
@@ -125,7 +127,7 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
   const activeToggles = toggles ?? localToggles;
   const updateToggles = (next: WasmOverlayToggles) => { setLocalToggles(next); onTogglesChange?.(next); };
   const lifecycleRef = useRef<Map<number, WasmActorLifecycle>>(new Map());
-  const sweepCacheRef = useRef<Map<string, WasmLidarCloud>>(new Map());
+  const sweepCacheRef = useRef(new ByteBoundedLru<string, WasmLidarCloud>({ maxBytes: 32 * 1024 * 1024, byteSize: (cloud) => cloud.xyz.byteLength }));
   const [lidarSweeps, setLidarSweeps] = useState<WasmLidarSweep[] | null>(null);
   const [lidarFrame, setLidarFrame] = useState<{ originX: number; originY: number; heading: number } | null>(null);
   const [lidarCached, setLidarCached] = useState(0);
@@ -138,6 +140,7 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
   };
 
   useEffect(() => {
+    let cancelled = false;
     const worker = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
     workerRef.current = worker;
     worker.onmessage = (event: MessageEvent<WasmWorkerResponse>) => {
@@ -147,9 +150,9 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
       applyFrame(message.frame);
     };
     const load = async () => {
-      setGround(null);
+        setGround(null);
       setPaths(null);
-      sweepCacheRef.current = new Map();
+       sweepCacheRef.current.clear();
       setLidarSweeps(null);
       setLidarFrame(null);
       setLidarCached(0);
@@ -159,7 +162,9 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
           fetchArtifactText(new URL("../wasm-smoke/smoke.xodr", import.meta.url).toString(), "xodr"),
         ]);
         worker.postMessage({ type: "init", xosc, xodr });
+        if (cancelled) return;
         setAttrs(parseXoscAttributes(xosc));
+        setStatus("ready");
         return;
       }
       const pair = await createWasmScenarioPair(scenarioId);
@@ -168,26 +173,27 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
         fetchArtifactText(pair.opendrive, "xodr"),
       ]);
       worker.postMessage({ type: "init", xosc, xodr });
+      if (cancelled) return;
       setAttrs(parseXoscAttributes(xosc));
       // Best-effort context: a missing ground must never break playback.
       fetchGroundLayers(scenarioId)
-        .then((json) => setGround(
+        .then((json) => { if (cancelled) return; return setGround(
           json !== null && typeof json === "object" && Array.isArray((json as WasmGround).layers)
             ? (json as WasmGround)
             : null,
-        ))
-        .catch(() => setGround(null));
+        ); })
+        .catch(() => { if (!cancelled) setGround(null); });
       // Recorded overlays (paths + lidar sweep list): same best-effort rule.
       // Sweep payloads prefetch in the background (effect below) so the cloud
       // can follow the playhead instead of freezing on one static sweep.
       loadRecordedOverlays(
         scenarioId,
-        setPaths,
-        (sweeps, frame) => { setLidarSweeps(sweeps); setLidarFrame(frame); },
-      ).catch(() => { setPaths(null); setLidarSweeps(null); setLidarFrame(null); });
+        (paths) => { if (!cancelled) setPaths(paths); },
+        (sweeps, frame) => { if (!cancelled) { setLidarSweeps(sweeps); setLidarFrame(frame); } },
+      ).catch(() => { if (!cancelled) { setPaths(null); setLidarSweeps(null); setLidarFrame(null); } });
     };
-    load().catch((error) => setStatus(`error: ${error instanceof Error ? error.message : String(error)}`));
-    return () => { worker.postMessage({ type: "dispose" }); worker.terminate(); workerRef.current = null; };
+    load().catch((error) => { if (!cancelled) setStatus(`error: ${error instanceof Error ? error.message : String(error)}`); });
+    return () => { cancelled = true; worker.postMessage({ type: "dispose" }); worker.terminate(); workerRef.current = null; };
   }, [scenarioId, fixture]);
 
   useEffect(() => {
@@ -204,11 +210,15 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
   useEffect(() => {
     if (!lidarSweeps?.length || !lidarFrame) return;
     let cancelled = false;
+    const controller = new AbortController();
+    const inFlight = new Set<string>();
     (async () => {
-      for (const sweep of lidarSweeps) {
-        if (cancelled || sweepCacheRef.current.has(sweep.sample_data_token)) continue;
+      const candidateSweeps = selectSweepWindow(lidarSweeps, frame.simulation_time, 5);
+      for (const sweep of candidateSweeps) {
+        if (cancelled || controller.signal.aborted || sweepCacheRef.current.touch(sweep.sample_data_token) || inFlight.has(sweep.sample_data_token)) continue;
+        inFlight.add(sweep.sample_data_token);
         try {
-          const cloud = await fetchSweepCloud(sweep, lidarFrame);
+          const cloud = await fetchSweepCloud(sweep, lidarFrame, controller.signal);
           if (cancelled) return;
           if (cloud) {
             sweepCacheRef.current.set(sweep.sample_data_token, cloud);
@@ -216,11 +226,11 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
           }
         } catch {
           // Best-effort per sweep: a missing sweep only thins coverage.
-        }
+        } finally { inFlight.delete(sweep.sample_data_token); }
       }
     })();
-    return () => { cancelled = true; };
-  }, [lidarSweeps, lidarFrame]);
+    return () => { cancelled = true; controller.abort(); };
+  }, [lidarSweeps, lidarFrame, frame.simulation_time]);
 
   // Playhead-synced cloud: latest cached sweep at or before now. The label
   // always names the sweep time and its delta, so a stale cloud reads stale.
@@ -228,8 +238,9 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
   const activeCloud = activeToggles.lidar && mode !== "third-person" && activeSweep ? sweepCacheRef.current.get(activeSweep.sample_data_token) ?? null : null;
   const lidarDelta = activeCloud ? frame.simulation_time - activeCloud.time_s : null;
 
-  return <div className="wasm-playback-view">
-    <ThreePlaybackCanvas road={road} frame={frame} ground={ground} showCuboids={activeToggles.cuboids} paths={activeToggles.paths ? paths : null} lidar={activeCloud} orbit={orbit} onOrbitChange={onOrbitChange} />
+   return <div className="wasm-playback-view" aria-busy={status !== "ready"}>
+     {status !== "ready" && <div className="view-loading-overlay"><span className="loading-spinner" aria-hidden="true" />Loading playback scene</div>}
+     <ThreePlaybackCanvas road={road} frame={frame} ground={ground} showCuboids={activeToggles.cuboids} paths={activeToggles.paths ? paths : null} lidar={activeCloud} orbit={orbit} onOrbitChange={onOrbitChange} showResetView={isMainView} focusActorId={focusActorId} />
     {mode === "standalone" && <fieldset className="wasm-overlay-toggles">
       <legend>Overlays (display-only, recorded data)</legend>
       <label><input type="checkbox" checked={activeToggles.cuboids} onChange={(event) => updateToggles({ ...activeToggles, cuboids: event.target.checked })} /> Exact cuboids instead of skins</label>
@@ -245,42 +256,9 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
       <button onClick={() => workerRef.current?.postMessage({ type: "step" })} disabled={status !== "ready"}>Step</button>
       <button onClick={() => { setPlaying(false); workerRef.current?.postMessage({ type: "reset" }); }} disabled={status !== "ready"}>Reset</button>
       <span>WASM {status} / t={frame.simulation_time.toFixed(2)} s / objects={frame.object_states.length}{scene.ended_count > 0 ? ` / ended=${scene.ended_count}` : ""}</span>
-    </div>}
-    <ul className="wasm-scene-ledger" aria-label="Actor lifecycle ledger">
-      {scene.actors.map((actor) => {
-        const declared = attrs?.entities.find((entity) => entity.name === actor.name);
-        return (
-          <li key={actor.id} data-status={actor.status}>
-            <details>
-              <summary>
-                <strong>{actor.name}</strong>
-                <span>{actor.actor_kind} · {actor.status} · seen {actor.seen_count}× · last {actor.last_speed_mps.toFixed(2)} m/s</span>
-              </summary>
-              {declared && <ul aria-label={`Declared attributes for ${actor.name}`}>
-                <li>{declared.tag} · category={declared.category} · mass={declared.mass} · bbox={declared.dimensions}</li>
-                {declared.properties.map((prop) => (
-                  <li key={prop.name}>{prop.name}={prop.value}</li>
-                ))}
-              </ul>}
-            </details>
-          </li>
-        );
-      })}
-    </ul>
-    {attrs && <details className="wasm-attributes">
-      <summary>Scenario attributes — XOSC declaration vs served road (display only)</summary>
-      <p>Road file: {attrs.road ?? "—"} · lane surfaces={road.lane_surfaces.length} · road marks={road.road_marks.length}</p>
-      <ul>
-        {attrs.entities.map((entity) => (
-          <li key={entity.name}>
-            <strong>{entity.name}</strong> · {entity.tag} · category={entity.category} · mass={entity.mass} · bbox={entity.dimensions}
-            {entity.properties.length > 0 && <ul>{entity.properties.map((prop) => (
-              <li key={prop.name}>{prop.name}={prop.value}</li>
-            ))}</ul>}
-          </li>
-        ))}
-      </ul>
-    </details>}
+     </div>}
+     <ul className="wasm-scene-ledger" aria-label="Actor lifecycle ledger">{scene.actors.map((actor) => { const declared = attrs?.entities.find((entity) => entity.name === actor.name); return <li key={actor.id} data-status={actor.status}><details><summary><strong>{actor.name}</strong><span>{actor.actor_kind} · {actor.status} · seen {actor.seen_count}× · last {actor.last_speed_mps.toFixed(2)} m/s</span></summary>{declared && <ul aria-label={`Declared attributes for ${actor.name}`}><li>{declared.tag} · category={declared.category} · mass={declared.mass} · bbox={declared.dimensions}</li>{declared.properties.map((prop) => <li key={prop.name}>{prop.name}={prop.value}</li>)}</ul>}</details></li>; })}</ul>
+     {attrs && <details className="wasm-attributes"><summary>Scenario attributes — XOSC declaration vs served road (display only)</summary><p>Road file: {attrs.road ?? "—"} · lane surfaces={road.lane_surfaces.length} · road marks={road.road_marks.length}</p><ul>{attrs.entities.map((entity) => <li key={entity.name}><strong>{entity.name}</strong> · {entity.tag} · category={entity.category} · mass={entity.mass} · bbox={entity.dimensions}{entity.properties.length > 0 && <ul>{entity.properties.map((prop) => <li key={prop.name}>{prop.name}={prop.value}</li>)}</ul>}</li>)}</ul></details>}
      <small className="wasm-playback-warning">{scenarioId ? "Real scenario playback preview." : fixture === "pedestrian" ? "Synthetic pedestrian-tag fixture (Vehicle + Pedestrian + MiscObject)." : "Synthetic playback fixture."} Browser frames are preview-only and never feed Tier 0 metrics.</small>
-  </div>;
+   </div>;
 }
