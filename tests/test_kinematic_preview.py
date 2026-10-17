@@ -173,3 +173,11 @@ def test_acceleration_at_the_limit_is_not_reported() -> None:
     source = _extension((0, 0.0, 0.0), (50_000, 5.0, 0.0))
     preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 10.0), source)
     assert preview.violations == ()
+
+
+def test_deceleration_over_limit_reports_positive_magnitude() -> None:
+    source = _extension((0, 0.0, 0.0), (50_000, -9.0, 0.0))
+    preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 10.0), source)
+    (violation,) = preview.violations
+    assert violation.code == "deceleration_exceeded"
+    assert (violation.observed, violation.limit) == (9.0, 8.0)
