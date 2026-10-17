@@ -295,3 +295,10 @@ def test_footprint_collision_records_state_indices() -> None:
         "left_actor_id": "a", "right_actor_id": "b",
         "left_state_index": 1, "right_state_index": 0,
     }
+
+
+def test_footprint_times_match_after_rounding() -> None:
+    first = _box("a", (State(0.1 + 0.2, 0, 0, 0, 0),))
+    second = _box("b", (State(0.3, 1, 0, 0, 0),))
+    assert 0.1 + 0.2 != 0.3
+    assert check_footprint_collisions((first, second)).status == "collision"
