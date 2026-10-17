@@ -257,3 +257,9 @@ def test_negative_timing_offset_below_zero_is_rejected():
 def test_speed_multiplier_scales_recorded_speeds():
     variant = perturb_scenario(_scenario(_ego(), _lead()), VariantConfig(speed_multiplier=1.5))
     assert [s.speed_mps for s in _actor(variant, "lead").trajectory] == pytest.approx([15.0] * 13)
+
+
+def test_speed_multiplier_scales_distance_for_parallel_actors():
+    variant = perturb_scenario(_scenario(_ego(), _lead()), VariantConfig(speed_multiplier=1.5))
+    lead = _actor(variant, "lead").trajectory
+    assert lead[-1].x_m - lead[0].x_m == pytest.approx(90.0)
