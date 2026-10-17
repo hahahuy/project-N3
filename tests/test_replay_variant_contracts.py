@@ -411,3 +411,13 @@ def test_export_references_road_template_and_duration():
     parameter = root.find("ParameterDeclarations/ParameterDeclaration")
     assert parameter.get("name") == "$ScenarioDuration"
     assert float(parameter.get("value")) == pytest.approx(6.0)
+
+
+def test_export_maps_taxonomy_to_entity_types():
+    walker = Actor("walker", "human.pedestrian.adult", _line(20.0, 5.0, 1.0, 0.0), 0.6, 0.6)
+    truck = Actor("truck", "vehicle.truck", _line(60.0, 3.5, 8.0, 0.0), 8.0, 2.5)
+    cone = Actor("cone", "movable_object.trafficcone", _line(25.0, -3.0, 0.0, 0.0, yaw=0.0), 0.4, 0.4)
+    objects = {o.get("name"): o for o in _xml(_scenario(_ego(), walker, truck, cone)).iter("ScenarioObject")}
+    assert objects["walker"].find("Pedestrian") is not None
+    assert objects["truck"].find("Vehicle").get("vehicleCategory") == "truck"
+    assert objects["cone"].find("MiscObject") is not None
