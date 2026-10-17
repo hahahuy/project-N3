@@ -92,6 +92,8 @@ export default function ThreePlaybackCanvas({ road, frame, ground, showCuboids, 
   const followRef = useRef<THREE.Vector3 | null>(null);
   const animationRef = useRef<FocusAnimation | null>(null);
   const interactionOrbitRef = useRef<WasmOrbitState | null>(null);
+  const visibleRef = useRef(true);
+  const renderRef = useRef<(() => void) | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const recordedMeshRef = useRef<THREE.InstancedMesh | null>(null);
 
@@ -221,8 +223,14 @@ function disposeObject(root: THREE.Object3D): void {
     resize();
     const observer = new ResizeObserver(resize);
     observer.observe(host);
+    const visibilityObserver = new IntersectionObserver(([entry]) => {
+      visibleRef.current = entry.isIntersecting;
+      if (visibleRef.current) renderRef.current?.();
+    }, { threshold: 0.01 });
+    visibilityObserver.observe(host);
     let animationFrame = 0;
     const render = () => {
+      if (!visibleRef.current) { animationFrame = 0; return; }
       const focus = animationRef.current;
       if (focus) {
         focus.progress = Math.min(1, focus.progress + 0.08);
@@ -240,6 +248,7 @@ function disposeObject(root: THREE.Object3D): void {
       renderer.render(scene, camera);
       animationFrame = requestAnimationFrame(render);
     };
+    renderRef.current = render;
     render();
 
     return () => {
@@ -248,6 +257,7 @@ function disposeObject(root: THREE.Object3D): void {
       controls.removeEventListener("change", captureOrbit);
       controls.removeEventListener("end", persistOrbit);
       observer.disconnect();
+      visibilityObserver.disconnect();
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       controls.dispose();
       renderer.dispose();
@@ -260,6 +270,7 @@ function disposeObject(root: THREE.Object3D): void {
       cameraRef.current = null;
       controlsRef.current = null;
       rendererRef.current = null;
+      renderRef.current = null;
     };
   }, []);
 
@@ -449,9 +460,12 @@ function disposeObject(root: THREE.Object3D): void {
   useEffect(() => {
     const scene = sceneRef.current;
     if (!scene) return;
-    if (!recordedMeshRef.current) {
-      const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.35, wireframe: true }), 512);
+    if (!recordedMeshRef.current || recordedTracks.length > recordedMeshRef.current.count) {
+      const previous = recordedMeshRef.current;
+      const capacity = Math.max(512, Math.pow(2, Math.ceil(Math.log2(Math.max(1, recordedTracks.length)))));
+      const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.35, wireframe: true }), capacity);
       mesh.userData.recordedAnnotationLayer = true;
+      if (previous) { scene.remove(previous); previous.geometry.dispose(); (previous.material as THREE.Material).dispose(); }
       recordedMeshRef.current = mesh;
       scene.add(mesh);
     }

@@ -16,4 +16,20 @@ describe("WasmScenarioRuntime", () => {
     releaseWasmRuntime("scenario:s1", second);
     expect(FakeWorker.instances[0].terminate).toHaveBeenCalledTimes(1);
   });
+
+  it("broadcasts one worker frame to both subscribers", () => {
+    vi.stubGlobal("Worker", FakeWorker);
+    const first = acquireWasmRuntime("scenario:frame", { xosc: "x", xodr: "r" });
+    const second = acquireWasmRuntime("scenario:frame", { xosc: "x", xodr: "r" });
+    const listener = vi.fn();
+    first.subscribe(listener);
+    second.subscribe(listener);
+    const worker = FakeWorker.instances[0];
+    worker.onmessage?.({ data: { type: "ready", road: { lane_surfaces: [], road_marks: [] }, frame: { simulation_time: 0, object_states: [] } } } as MessageEvent);
+    expect(first.getSnapshot().status).toBe("ready");
+    expect(second.getSnapshot().frame.simulation_time).toBe(0);
+    expect(listener).toHaveBeenCalled();
+    releaseWasmRuntime("scenario:frame", first);
+    releaseWasmRuntime("scenario:frame", second);
+  });
 });
