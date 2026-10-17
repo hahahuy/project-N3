@@ -47,6 +47,24 @@ services:
       MPLCONFIGDIR: /tmp/matplotlib
     ports:
       - "${PROJECT_N3_WEB_API_PORT:-8001}:8000"
+    # Bounded because unbounded dev is a host-availability hazard, not just a
+    # dev annoyance. Measured 2026-10-17: one `NuScenes(v1.0-trainval)` load
+    # costs 7.74GB, and the dev api with `--reload` starts a fresh worker on
+    # every save. Unbounded, a session reached a 28.7GB peak, the kernel
+    # OOM-killed the worker, and because `--reload` does not respawn a dead
+    # worker the container stayed `Up` while nothing listened: the Vite proxy
+    # answered 502 and Docker marked the api unhealthy while the product stack
+    # shared the same 32GB host.
+    #
+    # 12G matches the product limit and leaves headroom for the devkit load
+    # plus the recorded-annotation work, without letting one stack starve the
+    # other. A 4G limit was previously OOM-killed serving
+    # `/api/workspace/scenarios/{id}/sensor-evidence` and `.../lidar`.
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 12G
     volumes:
       - .:/app
       - project-n3-dev-reports:/app/reports

@@ -52,6 +52,33 @@ while individual requests still eventually succeed. Item 11 (bounded
 concurrency) is the intended mitigation and should be treated as a stability
 fix, not only a throughput one.
 
+### Root cause of the dev 502s and OOM kills: duplicated devkit metadata
+
+Measured 2026-10-17: a single `NuScenes(v1.0-trainval)` load holds **7.74GB**
+resident. Three call sites each constructed their own object:
+
+- `NuScenesDatasetAdapter.nusc` (was cached per adapter),
+- `ArtifactAdapter._map_name`, which built an entire second devkit just to read
+  one location string per scene,
+- `real2scenario.devkit._load_nuscenes`, which had no cache at all.
+
+That is roughly 23GB before any other allocation. Because dev runs
+`--reload`, each save started a fresh worker that paid the cost again, and a
+session reached a **28.7GB peak**. The kernel OOM-killed the worker, and
+because `--reload` does not respawn a dead worker the container stayed `Up`
+while nothing listened on 8000: the Vite proxy answered **502** and Docker
+marked the api unhealthy while the product stack shared the same 32GB host.
+
+All three now share one process-wide instance via
+`r2s_web.nuscenes_adapter.shared_nuscenes`. Verified in both stacks: after
+exercising the scenario-detail, camera-evidence, top-down-state and top-down-map
+paths, resident memory is flat at ~7.6GB with a single metadata object.
+
+Both stacks are now bounded at 12G / 4 CPUs. Unbounded dev was a
+host-availability hazard rather than a dev annoyance. Note the baseline cost:
+7.74GB of the 12G budget is the metadata object, so the remaining headroom is
+about 4GB and is worth watching during recorded-annotation work.
+
 ## Current Hotspots
 
 ### Frontend

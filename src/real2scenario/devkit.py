@@ -79,6 +79,16 @@ def _load_nuscenes(dataroot: Path, version: str) -> Any:
             "'devkit' extra: pip install -e '.[dev,devkit]'."
         ) from error
 
+    # Share one instance per (dataroot, version) with the web layer. A single
+    # load holds ~7.74GB, so an uncached copy here meant the process could hold
+    # several. Lazily import to avoid a module cycle with r2s_web.
+    try:
+        from r2s_web.nuscenes_adapter import shared_nuscenes
+    except ImportError:
+        pass
+    else:
+        return shared_nuscenes(dataroot, version)
+
     try:
         return NuScenes(version=version, dataroot=str(dataroot), verbose=False)
     except (FileNotFoundError, KeyError, json.JSONDecodeError) as error:

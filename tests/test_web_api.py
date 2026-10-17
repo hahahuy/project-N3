@@ -1508,3 +1508,37 @@ def test_top_down_state_can_omit_the_static_map(tmp_path, monkeypatch) -> None:
     assert slim["actors"] == combined["actors"]
     assert slim["recorded_annotations"] == combined["recorded_annotations"]
     assert slim["map_name"] == combined["map_name"]
+
+
+def test_devkit_metadata_is_shared_across_call_sites(tmp_path, monkeypatch) -> None:
+    """Only one nuScenes metadata object may exist per dataset per process.
+
+    Measured 2026-10-17: one ``NuScenes(v1.0-trainval)`` load holds ~7.74GB. The
+    adapter, the artifact catalog's map-name lookup and the devkit helper each
+    built their own, so the api process could hold ~23GB and the kernel
+    OOM-killed the worker. All three must share a single cached instance.
+    """
+    from nuscenes.nuscenes import NuScenes
+
+    from r2s_web import nuscenes_adapter
+
+    created: list[str] = []
+
+    def fake_init(self, version: str, dataroot: str, verbose: bool = False) -> None:
+        created.append(dataroot)
+        self.version = version
+        self.dataroot = dataroot
+        self.scene = []
+        self.sample = {}
+
+    monkeypatch.setattr(NuScenes, "__init__", fake_init)
+    nuscenes_adapter._SHARED_NUSC.clear()
+
+    adapter = nuscenes_adapter.NuScenesDatasetAdapter(tmp_path, "v1.0-trainval")
+    # Three independent consumers reach for the metadata.
+    adapter.nusc  # noqa: B018 - property access is the point
+    nuscenes_adapter.shared_nuscenes(tmp_path, "v1.0-trainval")
+    nuscenes_adapter.shared_nuscenes(tmp_path, "v1.0-trainval")
+
+    assert len(created) == 1, f"expected one metadata load, got {len(created)}"
+    assert nuscenes_adapter.shared_nuscenes_cache_size() == 1

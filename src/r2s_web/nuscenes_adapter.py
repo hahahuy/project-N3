@@ -11,6 +11,41 @@ from typing import Any
 import numpy as np
 
 
+# One nuScenes object per (dataroot, version) per process. Measured 2026-10-17:
+# a single `NuScenes(v1.0-trainval)` load costs 7.74GB of resident memory. Three
+# call sites each built their own, so the api process could hold ~23GB and the
+# kernel OOM-killed the worker once dev's `--reload` churn added another copy.
+# All three now share this cache.
+_SHARED_NUSC: dict[tuple[str, str], Any] = {}
+_SHARED_NUSC_LOCK = threading.RLock()
+
+
+def shared_nuscenes(root: str | Path, version: str) -> Any:
+    """Return the process-wide nuScenes object for one dataset.
+
+    Read-only metadata lookups only. Callers must not mutate the returned
+    object; the devkit exposes tables, and sharing them is the point.
+    """
+    resolved_root = str(Path(root).expanduser().resolve())
+    key = (resolved_root, version)
+    with _SHARED_NUSC_LOCK:
+        instance = _SHARED_NUSC.get(key)
+        if instance is None:
+            try:
+                from nuscenes.nuscenes import NuScenes
+            except ImportError as error:
+                raise RuntimeError("nuscenes_devkit_not_installed") from error
+            instance = NuScenes(version=version, dataroot=resolved_root, verbose=False)
+            _SHARED_NUSC[key] = instance
+        return instance
+
+
+def shared_nuscenes_cache_size() -> int:
+    """Report how many devkit instances this process holds."""
+    with _SHARED_NUSC_LOCK:
+        return len(_SHARED_NUSC)
+
+
 class NuScenesDatasetAdapter:
     """Own official nuScenes semantics while keeping request payloads JSON-safe."""
 
@@ -37,11 +72,7 @@ class NuScenesDatasetAdapter:
     @property
     def nusc(self) -> Any:
         if self._nusc is None:
-            try:
-                from nuscenes.nuscenes import NuScenes
-            except ImportError as error:
-                raise RuntimeError("nuscenes_devkit_not_installed") from error
-            self._nusc = NuScenes(version=self.version, dataroot=str(self.root), verbose=False)
+            self._nusc = shared_nuscenes(self.root, self.version)
         return self._nusc
 
     @property
