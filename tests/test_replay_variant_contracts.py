@@ -195,3 +195,12 @@ def test_validation_reports_every_failing_actor():
 
     report = validate_feasibility(_scenario(jumpy("ego", "vehicle.ego"), jumpy("lead", "vehicle.car"), duration_s=1.0))
     assert {r.actor_id for r in report.reasons} == {"ego", "lead"}
+
+
+def test_identity_variant_reproduces_parent_motion():
+    parent = _scenario(_ego(), _lead())
+    variant = perturb_scenario(parent, VariantConfig())
+    for before, after in zip(parent.actors, variant.actors):
+        assert [(s.time_s, s.x_m, s.y_m, s.speed_mps) for s in before.trajectory] == pytest.approx(
+            [(s.time_s, s.x_m, s.y_m, s.speed_mps) for s in after.trajectory]
+        )
