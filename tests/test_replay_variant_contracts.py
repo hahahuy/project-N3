@@ -433,3 +433,12 @@ def test_export_holds_zero_initial_speed():
 def test_export_is_deterministic():
     scenario, template = select_opendrive_template(_scenario(_ego(), _lead()), topology="straight_road")
     assert build_openscenario_xml(scenario, template) == build_openscenario_xml(scenario, template)
+
+
+@pytest.mark.xfail(reason="L10: StopTrigger sits inside Story and VehicleCatalog lacks a Directory child", strict=False)
+def test_export_follows_openscenario_element_structure():
+    root = _xml(_scenario(_ego(), _lead()))
+    assert root.find("Storyboard/Story/StopTrigger") is None
+    assert root.find("Storyboard/StopTrigger") is not None
+    catalog = root.find("CatalogLocations/VehicleCatalog")
+    assert catalog is None or catalog.find("Directory") is not None
