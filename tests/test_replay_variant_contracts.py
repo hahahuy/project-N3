@@ -102,3 +102,12 @@ def test_speed_error_is_the_mean_absolute_difference():
     recorded = _line(0.0, 0.0, 10.0, 0.0)
     replayed = tuple(State(s.time_s, s.x_m, s.y_m, s.yaw_rad, 12.0) for s in recorded)
     assert compute_replay_metrics(recorded, replayed).speed_mae_mps == pytest.approx(2.0)
+
+
+def test_short_replay_reports_insufficient_coverage_without_fde():
+    recorded = _line(0.0, 0.0, 10.0, 0.0)
+    replayed = _line(0.0, 0.0, 10.0, 0.0, steps=7)
+    metrics = compute_replay_metrics(recorded, replayed)
+    assert metrics.coverage_status == "insufficient_coverage"
+    assert metrics.fde_m is None
+    assert metrics.sample_count == 7
