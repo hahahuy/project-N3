@@ -5,6 +5,7 @@ import type { LidarRigidTransform } from "./types";
 import { createWasmScenarioPair, fetchGroundLayers, fetchLidarSweeps, fetchWorkspaceScenario, lidarPayloadUrl } from "../api";
 import ThreePlaybackCanvas from "./ThreePlaybackCanvas";
 import { ByteBoundedLru, selectSweepWindow } from "./bounded-cache";
+import { acquireWasmRuntime, releaseWasmRuntime, type WasmScenarioRuntime } from "./runtime-manager";
 
 type Props = { scenarioId?: string; fixture?: "vehicle" | "pedestrian"; mode?: "standalone" | "third-person" | "sensor-evidence"; playhead?: number; toggles?: WasmOverlayToggles; onTogglesChange?: (toggles: WasmOverlayToggles) => void; orbit?: WasmOrbitState; onOrbitChange?: (orbit: WasmOrbitState) => void; isMainView?: boolean; focusActorId?: string | null };
 
@@ -114,6 +115,8 @@ async function fetchSweepCloud(
 
 export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode = "standalone", playhead, toggles, onTogglesChange, orbit, onOrbitChange, isMainView = false, focusActorId = null }: Props) {
   const workerRef = useRef<Worker | null>(null);
+  const runtimeRef = useRef<WasmScenarioRuntime | null>(null);
+  const [runtimeSnapshot, setRuntimeSnapshot] = useState<ReturnType<WasmScenarioRuntime["getSnapshot"]> | null>(null);
   const [status, setStatus] = useState("loading");
   const [road, setRoad] = useState<WasmRoadGeometry>({ lane_surfaces: [], road_marks: [] });
   const [frame, setFrame] = useState<WasmFrame>({ simulation_time: 0, object_states: [] });
@@ -140,6 +143,7 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
   };
 
   useEffect(() => {
+    if (scenarioId) return;
     let cancelled = false;
     const worker = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
     workerRef.current = worker;
@@ -197,13 +201,42 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
   }, [scenarioId, fixture]);
 
   useEffect(() => {
-    workerRef.current?.postMessage({ type: playing ? "play" : "pause" });
-  }, [playing]);
+    if (!scenarioId) return;
+    let cancelled = false;
+    let key: `scenario:${string}` = `scenario:${scenarioId}`;
+    let runtime: WasmScenarioRuntime | null = null;
+    const load = async () => {
+      const pair = await createWasmScenarioPair(scenarioId);
+      const [xosc, xodr] = await Promise.all([
+        fetchArtifactText(pair.openscenario, "xosc"),
+        fetchArtifactText(pair.opendrive, "xodr"),
+      ]);
+      if (cancelled) return;
+      runtime = acquireWasmRuntime(key, { xosc, xodr });
+      runtimeRef.current = runtime;
+      setRuntimeSnapshot(runtime.getSnapshot());
+      const unsubscribe = runtime.subscribe(() => { if (!cancelled) setRuntimeSnapshot(runtime?.getSnapshot() ?? null); });
+      setAttrs(parseXoscAttributes(xosc));
+      loadRecordedOverlays(scenarioId, (paths) => { if (!cancelled) setPaths(paths); }, (sweeps, frame) => { if (!cancelled) { setLidarSweeps(sweeps); setLidarFrame(frame); } }).catch(() => { if (!cancelled) { setPaths(null); setLidarSweeps(null); setLidarFrame(null); } });
+      fetchGroundLayers(scenarioId).then((json) => { if (!cancelled) setGround(json !== null && typeof json === "object" && Array.isArray((json as WasmGround).layers) ? (json as WasmGround) : null); }).catch(() => { if (!cancelled) setGround(null); });
+      return unsubscribe;
+    };
+    let unsubscribe: (() => void) | undefined;
+    load().then((cleanup) => { unsubscribe = cleanup; }).catch((error) => { if (!cancelled) setStatus(`error: ${error instanceof Error ? error.message : String(error)}`); });
+    return () => { cancelled = true; unsubscribe?.(); if (runtime) releaseWasmRuntime(key, runtime); runtimeRef.current = null; setRuntimeSnapshot(null); };
+  }, [scenarioId]);
 
   useEffect(() => {
-    if (playhead === undefined || status !== "ready") return;
-    workerRef.current?.postMessage({ type: "seek", time_s: playhead });
-  }, [playhead, status]);
+    if (scenarioId) { runtimeRef.current?.send(playing ? "play" : "pause"); return; }
+    workerRef.current?.postMessage({ type: playing ? "play" : "pause" });
+  }, [playing, scenarioId]);
+
+  useEffect(() => {
+    const ready = scenarioId ? runtimeSnapshot?.status === "ready" : status === "ready";
+    if (playhead === undefined || !ready) return;
+    if (scenarioId) runtimeRef.current?.send("seek", { time_s: playhead });
+    else workerRef.current?.postMessage({ type: "seek", time_s: playhead });
+  }, [playhead, status, scenarioId, runtimeSnapshot?.status]);
 
   // Background prefetch: full-density sweeps arrive oldest-first while the
   // user reviews; each cached sweep re-renders so the cloud can catch up.
@@ -234,13 +267,20 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
 
   // Playhead-synced cloud: latest cached sweep at or before now. The label
   // always names the sweep time and its delta, so a stale cloud reads stale.
-  const activeSweep = lidarSweeps ? nearestSweepAtOrBefore(lidarSweeps, frame.simulation_time) : null;
+  const displayFrame = scenarioId ? (runtimeSnapshot?.frame ?? frame) : frame;
+  const displayRoad = scenarioId ? (runtimeSnapshot?.road ?? road) : road;
+  const displayStatus = scenarioId ? (runtimeSnapshot?.status ?? "loading") : status;
+  const activeSweep = lidarSweeps ? nearestSweepAtOrBefore(lidarSweeps, displayFrame.simulation_time) : null;
   const activeCloud = activeToggles.lidar && mode !== "third-person" && activeSweep ? sweepCacheRef.current.get(activeSweep.sample_data_token) ?? null : null;
-  const lidarDelta = activeCloud ? frame.simulation_time - activeCloud.time_s : null;
+  const lidarDelta = activeCloud ? displayFrame.simulation_time - activeCloud.time_s : null;
 
-   return <div className="wasm-playback-view" aria-busy={status !== "ready"}>
-     {status !== "ready" && <div className="view-loading-overlay"><span className="loading-spinner" aria-hidden="true" />Loading playback scene</div>}
-     <ThreePlaybackCanvas road={road} frame={frame} ground={ground} showCuboids={activeToggles.cuboids} paths={activeToggles.paths ? paths : null} lidar={activeCloud} orbit={orbit} onOrbitChange={onOrbitChange} showResetView={isMainView} focusActorId={focusActorId} />
+  useEffect(() => {
+    if (scenarioId && runtimeSnapshot?.frame) applyFrame(runtimeSnapshot.frame);
+  }, [scenarioId, runtimeSnapshot?.frame]);
+
+   return <div className="wasm-playback-view" aria-busy={displayStatus !== "ready"}>
+     {displayStatus !== "ready" && <div className="view-loading-overlay"><span className="loading-spinner" aria-hidden="true" />Loading playback scene</div>}
+     <ThreePlaybackCanvas road={displayRoad} frame={displayFrame} ground={ground} showCuboids={activeToggles.cuboids} paths={activeToggles.paths ? paths : null} lidar={activeCloud} orbit={orbit} onOrbitChange={onOrbitChange} showResetView={isMainView} focusActorId={focusActorId} />
     {mode === "standalone" && <fieldset className="wasm-overlay-toggles">
       <legend>Overlays (display-only, recorded data)</legend>
       <label><input type="checkbox" checked={activeToggles.cuboids} onChange={(event) => updateToggles({ ...activeToggles, cuboids: event.target.checked })} /> Exact cuboids instead of skins</label>
