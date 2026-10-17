@@ -91,3 +91,9 @@ def test_integrate_rejects_zero_timestep() -> None:
 def test_integrate_rejects_negative_timestep() -> None:
     with pytest.raises(ValueError, match="fixed_timestep_s"):
         integrate_kinematic_open_loop(State(0, 0, 0, 0, 1), _steady(2), fixed_timestep_s=-0.05)
+
+
+@pytest.mark.parametrize("bad", [math.nan, math.inf])
+def test_integrate_rejects_non_finite_timestep(bad: float) -> None:
+    with pytest.raises(ValueError, match="fixed_timestep_s"):
+        integrate_kinematic_open_loop(State(0, 0, 0, 0, 1), _steady(2), fixed_timestep_s=bad)
