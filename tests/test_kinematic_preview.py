@@ -330,3 +330,14 @@ def test_yaw_rate_wraps_across_pi() -> None:
     expected = 2 * math.pi - 6.2
     assert extension.states[0].yaw_rate_radps == pytest.approx(expected)
     assert extension.states[1].yaw_rate_radps == pytest.approx(expected)
+
+
+def test_can_sample_with_missing_acceleration_falls_back_for_that_channel_only() -> None:
+    extension = build_source_state_extension(
+        (0, 1_000_000), ((0.0, 0.0), (1.0, 0.0)), (0.0, 0.0),
+        (CanPoseSample(0, None, None, 0.7),),
+        max_gap_us=10,
+    )
+    first = extension.states[0]
+    assert (first.acceleration_source, first.yaw_rate_source) == ("finite_difference", "can_pose")
+    assert first.yaw_rate_radps == 0.7
