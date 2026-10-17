@@ -110,3 +110,8 @@ def test_first_state_is_the_unmodified_initial_state() -> None:
     initial = State(0.0, 5.0, -3.0, 0.2, 7.0, source_timestamp_us=123, source_record_token="tok")
     preview = integrate_kinematic_open_loop(initial, _steady(3))
     assert preview.states[0] is initial
+
+
+def test_time_advances_by_the_fixed_timestep() -> None:
+    preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 1), _steady(4, step_us=50_000))
+    assert [state.time_s for state in preview.states] == pytest.approx([0.0, 0.05, 0.10, 0.15])
