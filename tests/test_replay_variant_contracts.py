@@ -270,3 +270,13 @@ def test_speed_multiplier_scales_distance_for_crossing_actors():
     variant = perturb_scenario(_scenario(_ego(), _cross()), VariantConfig(speed_multiplier=1.5))
     cross = _actor(variant, "cross").trajectory
     assert cross[-1].y_m - cross[0].y_m == pytest.approx(45.0)
+
+
+def test_grid_variants_follow_cartesian_product_order():
+    variants, manifest = generate_grid_variants(
+        _scenario(_ego(), _lead()), speed_multipliers=(0.9, 1.1), initial_gap_deltas_m=(0.0, 2.0), timing_offsets_s=(0.0, 0.5, 1.0)
+    )
+    assert len(variants) == 12
+    first, second = manifest.configurations[:2]
+    assert (first.speed_multiplier, first.initial_gap_delta_m, first.timing_offset_s) == (0.9, 0.0, 0.0)
+    assert (second.speed_multiplier, second.initial_gap_delta_m, second.timing_offset_s) == (0.9, 0.0, 0.5)
