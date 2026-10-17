@@ -20,9 +20,14 @@ services:
   api-permissions:
     image: alpine:3.22
     user: "0:0"
-    command: ["sh", "-c", "chown -R ${PROJECT_N3_UID:-1000}:${PROJECT_N3_GID:-1000} /reports && chmod -R u+rwX /reports"]
+    # The metadata cache volume holds the persistent nuScenes SQLite index and
+    # the versioned map artifacts. It ships root-owned, so without this chown
+    # the api (uid 1000) can read the existing index but can never rebuild it,
+    # and map-cache writes fail outright. See docs/guides/datastreaming.md D-1.
+    command: ["sh", "-c", "chown -R ${PROJECT_N3_UID:-1000}:${PROJECT_N3_GID:-1000} /reports /metadata-cache && chmod -R u+rwX /reports /metadata-cache"]
     volumes:
       - project-n3-prod-reports:/reports
+      - project-n3-metadata-cache:/metadata-cache
 
   api:
     build:
