@@ -1,8 +1,56 @@
-# Real2Scenario
+# Project - N3
+
+> **Project name: `Project - N3`**
+>
+> This repository is **Project - N3**. That is the name to use when referring to
+> the project in writing, discussion, slides or commit messages.
+
+## Naming
+
+This repository carries three different strings. They are **not**
+interchangeable, and only the first one is the project's name.
+
+| name | value | role |
+|---|---|---|
+| **Project name** | **`Project - N3`** | how the project is referred to in prose |
+| Code / codename | `Real2Scenario` | the pipeline's own name, used in code, docs titles and the PyPI-free distribution |
+| Repo / remote | `project-N3` | the git repository and checkout directory name |
+
+### Code identifiers — do not rename either
+
+These are already settled by packaging, not by taste:
+
+| identifier | defined in |
+|---|---|
+| `real2scenario` | `pyproject.toml` `name` — the Python distribution name; the environment is installed under it |
+| `real2scenario-local-demo` | `frontend/package.json` `name` |
+| `r2s_web` | the Python import package |
+
+### Operational identifiers — do not rename
+
+These are live infrastructure names, not aliases for the project. Renaming one
+breaks a running deployment or orphans a Docker volume:
+
+| identifier | where it comes from |
+|---|---|
+| `project-n3` | Docker Compose project name (dev stack) |
+| `project-n3-prod` | Docker Compose project name (production stack) |
+| `project-n3-prod-api`, `project-n3-prod-gateway`, `project-n3-prod-cloudflared` | generated container names |
+| `project-n3-metadata-cache`, `project-n3-prod-reports` | named Docker volumes |
+| `project-n3.hahuy.cloud` | public DNS name and TLS certificate CN |
+| `project-N3-3.10.0-local` | local esmini build directory |
+
+Docker derives container and volume names from the Compose project name, so
+changing `project-n3-prod` to something else does not rename anything — it
+creates a **second, empty stack** and leaves the running one orphaned. If the
+deployment name genuinely has to change, that is a migration with its own plan,
+not a find-and-replace.
+
+---
 
 > **One-line summary:** An auditable pipeline that turns recorded driving interactions into replayable OpenSCENARIO scenarios, measurable simulator traces and controlled variants.
 
-Real2Scenario chuyển các tương tác phương tiện được ghi nhận trong nuScenes thành tệp OpenSCENARIO có thể phát lại, đo độ trung thực của quá trình phát lại, và sinh các biến thể tình huống hiếm có ràng buộc.
+Project - N3 (`Real2Scenario`) chuyển các tương tác phương tiện được ghi nhận trong nuScenes thành tệp OpenSCENARIO có thể phát lại, đo độ trung thực của quá trình phát lại, và sinh các biến thể tình huống hiếm có ràng buộc.
 
 MVP đầu tiên dùng esmini để thực thi OpenSCENARIO ở chế độ headless. Hệ thống chủ đích chỉ hỗ trợ tái dựng cục bộ theo hướng đường, không tuyên bố chuyển đổi không mất thông tin từ bản đồ nuScenes sang OpenDRIVE.
 
@@ -202,7 +250,7 @@ jobs, structured simulator artifacts, and fake-executable tests.
 
 ## Giấy phép dữ liệu
 
-Source code của `project-N3` được phát hành theo Apache-2.0, xem `LICENSE` và
+Source code của **Project - N3** được phát hành theo Apache-2.0, xem `LICENSE` và
 `NOTICE`. Apache-2.0 không áp dụng cho dữ liệu nuScenes, map assets hoặc bất kỳ
 trajectory, `.xosc`, `.xodr`, replay CSV/PNG/video hay artifact nào dẫn xuất từ
 nuScenes. Các artifact này là local/private only và vẫn tuân theo điều khoản

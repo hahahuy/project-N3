@@ -1,7 +1,7 @@
 # Development and Product Environments
 
 Status: `CURRENT`
-Audience: anyone maintaining `project-N3`, especially readers new to running
+Audience: anyone maintaining **Project - N3**, especially readers new to running
 separate environments.
 
 Related: `docs/current/demo-hardening-backlog.md`,

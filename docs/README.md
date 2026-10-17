@@ -1,5 +1,41 @@
 # Project Documentation
 
+## Project identity
+
+**This project is `Project - N3`.** Use that name when referring to the project
+in prose — in documentation, slides, commit messages and discussion.
+
+| name | value | role |
+|---|---|---|
+| **Project name** | **`Project - N3`** | how the project is referred to in prose |
+| Code / codename | `Real2Scenario` | the pipeline's own name |
+| Repo / remote | `project-N3` | the git repository and checkout directory name |
+
+### Code identifiers — do not rename
+
+`real2scenario` (`pyproject.toml`, the Python distribution name),
+`real2scenario-local-demo` (`frontend/package.json`) and the import package
+`r2s_web` are settled by packaging.
+
+### Operational identifiers — do not rename
+
+These appear throughout the guides and deployment docs. They are **live
+infrastructure names**, not ways of writing the project name. Renaming any of
+them breaks a running deployment or orphans a Docker volume:
+
+| identifier | what it is |
+|---|---|
+| `project-n3` | Docker Compose project name (dev stack) |
+| `project-n3-prod` | Docker Compose project name (production stack) |
+| `project-n3-prod-api` / `-gateway` / `-cloudflared` | generated container names |
+| `project-n3-metadata-cache`, `project-n3-prod-reports` | named Docker volumes |
+| `project-n3.hahuy.cloud` | public DNS name and TLS certificate CN |
+| `project-N3-3.10.0-local` | local esmini build directory |
+
+Docker derives container and volume names from the Compose project name, so
+"fixing" one of these strings to read like the project name would create a
+second empty stack rather than rename the existing one.
+
 ## Reading Order
 
 New agents and sessions must read these files first:

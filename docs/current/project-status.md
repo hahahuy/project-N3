@@ -4,11 +4,13 @@ status: CURRENT
 updated_at: 2026-10-16
 ---
 
-# Project Status
+# Project - N3: Project Status
+
+**Project name: `Project - N3`** (repo `project-N3`, codename `Real2Scenario`).
 
 ## Scope
 
-Plan A in `MVP&ProjectSummary.md` remains the project baseline. The project is
+Plan A in `MVP&ProjectSummary.md` remains the project baseline. **Project - N3** is
 an academic nuScenes-to-OpenSCENARIO tool and paper with esmini and CARLA as
 long-term simulator targets; under the superseding MVP decision, current MVP
 acceptance uses esmini plus the internal kinematic preview, while CARLA is

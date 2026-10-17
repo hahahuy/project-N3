@@ -427,7 +427,7 @@ any format, "tables and charts", is subject to these terms.
 
 **6.3 The ShareAlike trap — this is the one that actually bites.**
 
-`project-N3` source is Apache-2.0. That is unaffected — your *code* is yours.
+**Project - N3** source is Apache-2.0. That is unaffected — your *code* is yours.
 But if the demo site serves trajectories derived from nuScenes, those
 **derived data files become CC BY-NC-SA 4.0**, not Apache-2.0.
 
