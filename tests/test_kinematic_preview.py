@@ -81,3 +81,8 @@ def test_limits_accept_zero_boundaries() -> None:
     limits = KinematicLimits(0.0, 0.0, 0.0, 0.0)
     assert limits.max_acceleration_mps2 == 0.0
     assert limits.max_yaw_rate_radps == 0.0
+
+
+def test_integrate_rejects_zero_timestep() -> None:
+    with pytest.raises(ValueError, match="fixed_timestep_s"):
+        integrate_kinematic_open_loop(State(0, 0, 0, 0, 1), _steady(2), fixed_timestep_s=0.0)
