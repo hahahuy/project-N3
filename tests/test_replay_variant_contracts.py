@@ -156,3 +156,11 @@ def test_acceleration_above_limit_is_reported_with_observed_value():
     assert reason.actor_id == "ego"
     assert reason.observed == pytest.approx(8.0)
     assert reason.limit == pytest.approx(5.0)
+
+
+def test_deceleration_above_limit_is_rejected():
+    speeds = (10.0, 10.0, 4.0, 4.0, 4.0)
+    actor = Actor("ego", "vehicle.ego", tuple(State(i * 0.5, i * 4.0, 0.0, 0.0, v) for i, v in enumerate(speeds)), 4.5, 1.9)
+    report = validate_feasibility(_scenario(actor, duration_s=2.0))
+    reason = next(r for r in report.reasons if r.code == "deceleration_exceeded")
+    assert reason.observed == pytest.approx(12.0)
