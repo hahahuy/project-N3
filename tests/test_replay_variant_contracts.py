@@ -442,3 +442,9 @@ def test_export_follows_openscenario_element_structure():
     assert root.find("Storyboard/StopTrigger") is not None
     catalog = root.find("CatalogLocations/VehicleCatalog")
     assert catalog is None or catalog.find("Directory") is not None
+
+
+@pytest.mark.xfail(reason="L3: BoundingBox Center x is offset by a third of the length", strict=False)
+def test_bounding_box_is_centred_on_the_recorded_position():
+    root = _xml(_scenario(_ego(), _lead()))
+    assert {float(c.get("x")) for c in root.iter("Center")} == {0.0}
