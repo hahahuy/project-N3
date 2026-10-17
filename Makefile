@@ -53,8 +53,7 @@ dev-down: ## Stop the dev environment
 ## ---------------------------------------------------------------- product
 
 prod: ## Build the frontend bundle, then start the product environment
-	@echo "==> Building the production bundle (judges never see a dev server)"
-	cd frontend && npm run build
+	@$(MAKE) --no-print-directory prod-check-clean
 	@echo "==> Starting the product stack"
 	$(COMPOSE_PROD_RUN) up -d --remove-orphans
 	@echo
@@ -64,7 +63,23 @@ prod: ## Build the frontend bundle, then start the product environment
 	@echo "  Remember: 'make dev-down' before the contest. The dev stack serves"
 	@echo "  the same app unauthenticated on 0.0.0.0:8001 and 0.0.0.0:5173."
 
+# The product image bakes in the repository instead of bind-mounting it, so the
+# served code is whatever was committed at build time. Refuse to publish a
+# half-finished working tree: an uncommitted edit in the product stack is
+# invisible in git and cannot be reproduced or rolled back.
+prod-check-clean:
+	@dirty=$$(git status --porcelain -- . ':!log.txt' ':!frontend/wasm-esmini/a4_probe.mjs'); \
+	if [ -n "$$dirty" ]; then \
+		echo "==> Refusing to publish product from a dirty working tree:"; \
+		echo "$$dirty" | sed 's/^/    /'; \
+		echo ""; \
+		echo "  Commit or stash first, then redeploy. The product image serves the"; \
+		echo "  committed tree; see docs/current/environment-environments.md."; \
+		exit 1; \
+	fi
+
 prod-build-only: ## Rebuild the product images and bundle, then restart
+	@$(MAKE) --no-print-directory prod-check-clean
 	$(COMPOSE_PROD_RUN) up -d --build --remove-orphans
 
 prod-logs: ## Tail product logs
@@ -73,8 +88,8 @@ prod-logs: ## Tail product logs
 prod-down: ## Stop the product environment
 	$(COMPOSE_PROD_RUN) down
 
-prod-rebuild: ## Rebuild the bundle and recreate the product stack
-	cd frontend && npm run build
+prod-rebuild: ## Rebuild the image from the committed tree and recreate the stack
+	@$(MAKE) --no-print-directory prod-check-clean
 	$(COMPOSE_PROD_RUN) up -d --build --force-recreate --remove-orphans
 
 ## ---------------------------------------------------------------- promotion

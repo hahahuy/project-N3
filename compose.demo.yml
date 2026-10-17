@@ -20,24 +20,22 @@ services:
   api-permissions:
     image: alpine:3.22
     user: "0:0"
-    # The metadata cache volume holds the persistent nuScenes SQLite index and
-    # the versioned map artifacts. It ships root-owned, so without this chown
-    # the api (uid 1000) can read the existing index but can never rebuild it,
-    # and map-cache writes fail outright. See docs/guides/datastreaming.md D-1.
-    command: ["sh", "-c", "chown -R ${PROJECT_N3_UID:-1000}:${PROJECT_N3_GID:-1000} /reports /metadata-cache && chmod -R u+rwX /reports /metadata-cache"]
+    # The product image no longer bind-mounts the repository, so the paths the
+    # api writes to arrive as root-owned volumes: reports, the scenario catalog,
+    # and the metadata cache holding the persistent nuScenes SQLite index plus
+    # the versioned map artifacts. Without this chown the api can read the
+    # existing index but can never rebuild it, and cache writes fail outright.
+    # See docs/guides/datastreaming.md D-1.
+    command: ["sh", "-c", "chown -R ${PROJECT_N3_UID:-1000}:${PROJECT_N3_GID:-1000} /reports /scenarios /metadata-cache && chmod -R u+rwX /reports /scenarios /metadata-cache"]
     volumes:
       - project-n3-prod-reports:/reports
+      - project-n3-prod-scenarios:/scenarios
       - project-n3-metadata-cache:/metadata-cache
 
   api:
     build:
       context: .
-      dockerfile: Dockerfile.dev
-    # Drop the image default's `--reload`. This image is shared with the dev
-    # stack and its CMD runs uvicorn in reload mode; because prod bind-mounts
-    # the repository at /app, every host source edit was restarting the judge-
-    # facing API. Prod must only change code on a deliberate redeploy.
-    command: ["uvicorn", "r2s_web.app:app", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8000"]
+      dockerfile: Dockerfile.prod
     user: "${PROJECT_N3_UID:-1000}:${PROJECT_N3_GID:-1000}"
     restart: unless-stopped
     depends_on:
@@ -54,7 +52,10 @@ services:
       ESMINI_BIN: ${ESMINI_BIN:-/opt/esmini/bin/esmini}
       ESMINI_DAT2CSV: ${ESMINI_DAT2CSV:-/opt/esmini/bin/dat2csv}
     volumes:
-      - .:/app
+      # Deliberately no `.:/app`. The repository is baked into the image, so
+      # the product serves the committed tree and cannot pick up an uncommitted
+      # host edit. Redeploy to change what it serves.
+      #
       # Product artifacts are isolated from the dev environment so judge imports
       # do not clutter the dev catalog and dev experiments do not appear in the
       # demo. Seeded from the repository on first run.
