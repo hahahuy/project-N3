@@ -231,3 +231,9 @@ def test_provenance_declares_simulator_and_no_silent_clamps() -> None:
     preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 1), _steady(2))
     assert preview.provenance["simulator_version"] == KINEMATIC_VERSION
     assert preview.provenance["silent_clamps"] == "forbidden"
+
+
+@pytest.mark.parametrize(("step", "text"), [(0.05, "0.05"), (0.1, "0.1"), (1.0, "1")])
+def test_provenance_formats_the_fixed_timestep(step: float, text: str) -> None:
+    preview = integrate_kinematic_open_loop(State(0, 0, 0, 0, 1), _steady(2), fixed_timestep_s=step)
+    assert preview.provenance["fixed_timestep_s"] == text
