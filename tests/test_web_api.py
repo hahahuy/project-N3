@@ -1334,3 +1334,77 @@ def test_actor_timeline_survives_present_timestamps_with_no_brake_channel(
     from r2s_web.actor_timeline import _match_braking
 
     assert _match_braking([1_000, 2_000, 3_000], ()) == [None, None, None]
+
+
+def test_top_down_state_map_layers_are_keyed_by_layer_name(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """``map_layers`` must be a mapping, not a list of records.
+
+    ``GroundService.full_layers`` keys its ``layers`` by layer name, but the
+    endpoint used to iterate that mapping and subscript each item as if it were
+    a record. Iterating a dict yields strings, so ``layer["name"]`` raised
+    ``TypeError: string indices must be integers, not 'str'`` and the endpoint
+    answered 500 after building the whole map. The frontend consumes
+    ``Record<string, unknown>``, so the mapping is the contract.
+    """
+    from r2s_web.ground import GroundService
+    from r2s_web.nuscenes_adapter import NuScenesDatasetAdapter
+    from real2scenario import RoadAlignedTransform
+
+    class _FakeRecordedAnnotations:
+        def recorded_annotations_window(
+            self, first_sample_token: str, last_sample_token: str, requested_time_s: float
+        ) -> dict[str, object]:
+            return {
+                "requested_time_s": requested_time_s,
+                "resolved_time_s": requested_time_s,
+                "timestamp_us": 0,
+                "sample_token": first_sample_token,
+                "boxes": [],
+            }
+
+    monkeypatch.setattr(
+        GroundService,
+        "full_layers",
+        lambda self, scenario: {
+            "contract_version": "ground-full-map-v1",
+            "frame": "local_road_aligned",
+            "map_name": "singapore-onenorth",
+            "layers": {
+                "drivable_area": [
+                    {"token": "t-1", "geometry": [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]]}
+                ],
+                "lane": [],
+            },
+            "artifact_visibility": "local_private",
+        },
+    )
+    monkeypatch.setattr(
+        NuScenesDatasetAdapter,
+        "for_dataset",
+        classmethod(lambda cls, root, version: _FakeRecordedAnnotations()),
+    )
+    # The synthetic fixture records only the transform version, so supply the
+    # origin/heading the handler needs to place recorded boxes in local frame.
+    monkeypatch.setattr(
+        RoadAlignedTransform,
+        "from_provenance",
+        classmethod(lambda cls, provenance: RoadAlignedTransform(0.0, 0.0, 0.0)),
+    )
+
+    response = _client(tmp_path).get(
+        "/api/workspace/scenarios/synthetic-variant-001/top-down-state",
+        params={"time_s": 0.5},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["contract_version"] == "workspace-top-down-state-v1"
+    assert isinstance(payload["map_layers"], dict)
+    assert payload["map_layers"] == {
+        "drivable_area": [
+            {"token": "t-1", "geometry": [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]]}
+        ],
+        "lane": [],
+    }

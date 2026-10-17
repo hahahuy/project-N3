@@ -99,6 +99,26 @@ _TEMPLATE_MAP_WARNING = "OpenDRIVE output uses a local template approximation; i
 _FULLMAP_MAP_WARNING = "OpenDRIVE is a full nuScenes map reconstruction in the scenario local frame (line-segment approximation); lane-level details differ from the recorded map."
 
 
+def _map_layers_by_name(layers: object) -> dict[str, object]:
+    """Normalize map layers to the ``layer name -> geometry records`` mapping.
+
+    ``GroundService.full_layers`` keys layers by name (``layers[layer] = output``
+    in ground.py), so the preview contract receives that mapping directly. The
+    sibling ``GroundService.layers`` instead returns a list of
+    ``{"name", "polygons"}`` records. Both are display-only previews, so both
+    shapes are accepted rather than indexed as if they were records.
+    """
+    if isinstance(layers, dict):
+        return {str(name): records for name, records in layers.items()}
+    if isinstance(layers, list):
+        return {
+            str(layer["name"]): layer.get("polygons", [])
+            for layer in layers
+            if isinstance(layer, dict) and "name" in layer
+        }
+    return {}
+
+
 def _fullmap_wasm_pair(
     record: ArtifactRecord, settings: WebSettings
 ) -> tuple[Scenario, OpenDriveTemplate, Path, str]:
@@ -741,7 +761,7 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
                 "resolved_time_s": time_s,
                 "coordinate_frame": scenario.coordinate_frame,
                 "map_name": map_payload.get("map_name", scenario.provenance.get("map_name", "unknown")),
-                "map_layers": {layer["name"]: layer["polygons"] for layer in map_payload.get("layers", [])},
+                "map_layers": _map_layers_by_name(map_payload.get("layers")),
                 "actors": actors,
                 "recorded_annotations": recorded,
                 "provenance": {"map_source": "nuscenes-devkit-NuScenesMap", "actor_source": "recorded_nuscenes_annotations", "artifact_visibility": "local_private"},
