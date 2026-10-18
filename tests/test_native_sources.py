@@ -185,3 +185,8 @@ def test_map_patch_rejects_a_zero_height_patch() -> None:
 def test_map_patch_rejects_an_unsupported_layer() -> None:
     with pytest.raises(ValueError, match="Unsupported native map layer: lane"):
         native_map_patch(QueryMapApi(), (0.0, 0.0, 1.0, 1.0), layers=("walkway", "lane"))
+
+
+def test_map_patch_names_the_first_unsupported_layer_alphabetically() -> None:
+    with pytest.raises(ValueError, match="Unsupported native map layer: alpha"):
+        native_map_patch(QueryMapApi(), (0.0, 0.0, 1.0, 1.0), layers=("zeta", "alpha"))
