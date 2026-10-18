@@ -96,3 +96,7 @@ def test_map_records_sort_missing_tokens_first() -> None:
     records = native_map_records(api, "ped_crossing")
 
     assert records[0] == {"name": "untokened"}
+
+
+def test_map_records_return_empty_for_an_empty_layer() -> None:
+    assert native_map_records(FakeMapApi(lane_divider=[]), "lane_divider") == ()
