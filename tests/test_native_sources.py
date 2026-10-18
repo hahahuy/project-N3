@@ -55,3 +55,8 @@ def test_map_records_reject_an_unsupported_layer() -> None:
 def test_map_records_reject_a_missing_layer_attribute() -> None:
     with pytest.raises(ValueError, match="unavailable: stop_line"):
         native_map_records(FakeMapApi(), "stop_line")
+
+
+def test_map_records_reject_a_layer_that_is_not_a_list() -> None:
+    with pytest.raises(ValueError, match="unavailable: walkway"):
+        native_map_records(FakeMapApi(walkway=({"token": "w"},)), "walkway")
