@@ -325,3 +325,10 @@ def test_lidar_contract_rejects_public_visibility() -> None:
         LidarPayloadContract(
             LIDAR_CONTRACT_VERSION, "LIDAR_TOP", 1, "a.bin", "ego_vehicle", "c", 8, "public"
         )
+
+
+def test_lidar_contract_is_immutable() -> None:
+    contract = lidar_payload_contract(_sample_data(), _calibration())
+
+    with pytest.raises(FrozenInstanceError):
+        contract.decimation = 2  # type: ignore[misc]
