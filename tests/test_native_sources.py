@@ -190,3 +190,8 @@ def test_map_patch_rejects_an_unsupported_layer() -> None:
 def test_map_patch_names_the_first_unsupported_layer_alphabetically() -> None:
     with pytest.raises(ValueError, match="Unsupported native map layer: alpha"):
         native_map_patch(QueryMapApi(), (0.0, 0.0, 1.0, 1.0), layers=("zeta", "alpha"))
+
+
+def test_map_patch_validates_layers_before_checking_the_devkit_query() -> None:
+    with pytest.raises(ValueError, match="Unsupported native map layer"):
+        native_map_patch(FakeMapApi(), (0.0, 0.0, 1.0, 1.0), layers=("lane",))
