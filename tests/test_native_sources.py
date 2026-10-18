@@ -289,3 +289,12 @@ def test_lidar_contract_uses_the_requested_decimation() -> None:
 def test_lidar_contract_rejects_zero_decimation() -> None:
     with pytest.raises(ValueError, match="Invalid private LiDAR payload contract"):
         lidar_payload_contract(_sample_data(), _calibration(), decimation=0)
+
+
+def test_lidar_contract_coerces_string_timestamps_and_tokens() -> None:
+    contract = lidar_payload_contract(
+        {"timestamp": "42", "filename": "a.bin"}, {"token": 7}
+    )
+
+    assert contract.timestamp_us == 42
+    assert contract.calibration_token == "7"
