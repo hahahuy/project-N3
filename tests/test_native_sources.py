@@ -155,3 +155,8 @@ def test_road_ahead_copies_the_devkit_records_into_a_new_list() -> None:
     result = road_ahead_query(QueryMapApi(next_roads=devkit_records), 0.0, 0.0)
 
     assert result["records"] is not devkit_records
+
+
+def test_map_patch_rejects_a_patch_without_four_values() -> None:
+    with pytest.raises(ValueError, match="positive area"):
+        native_map_patch(QueryMapApi(), (0.0, 0.0, 1.0))  # type: ignore[arg-type]
