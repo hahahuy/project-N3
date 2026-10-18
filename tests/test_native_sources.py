@@ -362,3 +362,9 @@ def test_prediction_advisory_averages_euclidean_displacement() -> None:
     result = evaluate_prediction_advisory([[(3.0, 4.0), (0.0, 0.0)]], [(0.0, 0.0), (0.0, 0.0)])
 
     assert result["min_ade_m"] == pytest.approx(2.5)
+
+
+def test_prediction_advisory_measures_final_displacement_on_the_last_step() -> None:
+    result = evaluate_prediction_advisory([[(9.0, 9.0), (6.0, 8.0)]], [(0.0, 0.0), (0.0, 0.0)])
+
+    assert result["min_fde_m"] == pytest.approx(10.0)
