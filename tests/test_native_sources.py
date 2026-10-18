@@ -280,3 +280,7 @@ def test_lidar_contract_describes_the_sample_without_point_bytes() -> None:
 
 def test_lidar_contract_defaults_to_local_private_visibility() -> None:
     assert lidar_payload_contract(_sample_data(), _calibration()).artifact_visibility == "local_private"
+
+
+def test_lidar_contract_uses_the_requested_decimation() -> None:
+    assert lidar_payload_contract(_sample_data(), _calibration(), decimation=1).decimation == 1
