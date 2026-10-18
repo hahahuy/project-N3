@@ -176,7 +176,10 @@ def _sensor_layer(
 ) -> EvidenceLayer:
     """Report recorded sensor evidence, or the explicit post-edit gap."""
     token = _source_window_token(scenario, lidar)
-    availability = lidar.availability(token)
+    try:
+        availability = lidar.availability(token)
+    except (AssertionError, FileNotFoundError, ImportError, KeyError, OSError, RuntimeError, ValueError):
+        availability = {"available": False, "unavailable_reason": "dataset_not_configured"}
     reference = f"{reference_prefix}/{scenario.scenario_id}/lidar"
     if artifact_type == "variant":
         return EvidenceLayer(
@@ -212,7 +215,7 @@ def _source_window_token(scenario: Scenario, lidar: LidarService) -> str:
         return ""
     try:
         return lidar.sample_data_token(window_token)
-    except (FileNotFoundError, ImportError, KeyError, OSError, RuntimeError, ValueError):
+    except (AssertionError, FileNotFoundError, ImportError, KeyError, OSError, RuntimeError, ValueError):
         return window_token
 
 

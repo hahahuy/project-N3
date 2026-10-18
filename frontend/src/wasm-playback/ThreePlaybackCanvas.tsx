@@ -16,6 +16,10 @@ type Props = {
   onOrbitChange?: (orbit: WasmOrbitState) => void;
   showResetView?: boolean;
   focusActorId?: string | null;
+  vehicleTint?: number;
+  vehicleTints?: Record<string, number>;
+  /** Reports the actor picked on the canvas so the workspace can select it. */
+  onActorPick?: (actorId: string | null) => void;
 };
 
 const GROUND_STYLE: Record<string, { color: number; lift: number }> = {
@@ -76,7 +80,7 @@ function recordedPathColor(actorType: string): number {
   return ACTOR_COLORS.unknown;
 }
 
-export default function ThreePlaybackCanvas({ road, frame, ground, showCuboids, paths, lidar, orbit, onOrbitChange, showResetView = false, focusActorId = null }: Props) {
+export default function ThreePlaybackCanvas({ road, frame, ground, showCuboids, paths, lidar, orbit, onOrbitChange, showResetView = false, focusActorId = null, vehicleTint, vehicleTints, onActorPick }: Props) {
   const orbitRuntimeRef = useRef<OrbitRuntime | null>(null);
   if (!orbitRuntimeRef.current) orbitRuntimeRef.current = new OrbitRuntime(orbit ?? { position: [20, 22, 26], target: [0, 0, 0] });
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -92,8 +96,11 @@ export default function ThreePlaybackCanvas({ road, frame, ground, showCuboids, 
   const interactionOrbitRef = useRef<WasmOrbitState | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
-function actorColor(object: { object_type: number }, selected: boolean): number {
+function actorColor(object: { object_type: number; name: string }, selected: boolean, tint?: number, tints?: Record<string, number>): number {
   if (selected) return ACTOR_COLORS.selected;
+  if (tints?.[object.name] !== undefined && actorKindOf(object) === "vehicle") return tints[object.name];
+  if (actorKindOf(object) === "misc") return 0xff5c7a;
+  if (tint !== undefined && actorKindOf(object) === "vehicle") return tint;
   return ACTOR_COLORS[actorKindOf(object)];
 }
 
@@ -199,12 +206,13 @@ function disposeObject(root: THREE.Object3D): void {
       const hit = raycaster.intersectObjects([...Array.from(actorsRef.current.values()), ...Array.from(cuboidsRef.current.values())], true)[0];
       let node: THREE.Object3D | null = hit?.object ?? null;
       while (node && node.userData.objectId === undefined) node = node.parent;
-      if (!node) { setSelectedId(null); return; }
+      if (!node) { setSelectedId(null); onActorPick?.(null); return; }
       const id = Number((node as THREE.Group).userData.objectId);
       const target = (node as THREE.Group).position.clone();
       const offset = new THREE.Vector3(8, 6, 10);
       animationRef.current = { position: target.clone().add(offset), target, progress: 0, fromPosition: camera.position.clone(), fromTarget: controls.target.clone() };
       setSelectedId(id);
+      onActorPick?.(String(node.userData.actorName ?? ""));
     };
     renderer.domElement.addEventListener("pointerdown", onPointerDown);
 
@@ -409,11 +417,16 @@ function disposeObject(root: THREE.Object3D): void {
       const coneGeometry = new THREE.ConeGeometry(0.35, 1.0, 8);
       for (const path of paths) {
         if (path.points.length < 2) continue;
-        const color = recordedPathColor(path.actor_type);
-        overlay.add(new THREE.Line(
+        const color = path.role === "origin" ? 0x8395a1 : recordedPathColor(path.actor_type);
+        const material = path.role === "origin"
+          ? new THREE.LineDashedMaterial({ color, dashSize: 0.6, gapSize: 0.35, transparent: true, opacity: 0.75 })
+          : new THREE.LineBasicMaterial({ color });
+        const line = new THREE.Line(
           new THREE.BufferGeometry().setFromPoints(path.points.map((point) => new THREE.Vector3(point.x_m, PATH_LIFT, -point.y_m))),
-          new THREE.LineBasicMaterial({ color }),
-        ));
+          material,
+        );
+        if (path.role === "origin") line.computeLineDistances();
+        overlay.add(line);
         const stride = Math.max(1, Math.floor((path.points.length - 1) / 8));
         for (let index = 0; index + 1 < path.points.length; index += stride) {
           const a = path.points[index];
@@ -483,13 +496,13 @@ function disposeObject(root: THREE.Object3D): void {
       group.scale.set(object.width, object.height, object.length);
        group.rotation.y = renderVehicleYaw(object.h);
       group.visible = !showCuboids;
-      tintGroup(group, actorColor(object, object.id === selectedId));
+      tintGroup(group, actorColor(object, object.id === selectedId, vehicleTint, vehicleTints));
       // Exact-cuboid overlay: unit wireframe scaled to the recorded dims,
       // centered on the data cuboid (group origin minus the asphalt lift).
       const dimsFinite = [object.width, object.height, object.length].every((dim) => Number.isFinite(dim) && (dim as number) > 0);
       let cuboid = cuboidsRef.current.get(object.id);
       if (dimsFinite && !cuboid) {
-        cuboid = new THREE.LineSegments(cuboidEdgesRef.current, new THREE.LineBasicMaterial({ color: actorColor(object, object.id === selectedId) }));
+        cuboid = new THREE.LineSegments(cuboidEdgesRef.current, new THREE.LineBasicMaterial({ color: actorColor(object, object.id === selectedId, vehicleTint, vehicleTints) }));
         cuboid.userData.objectId = object.id;
         cuboidsRef.current.set(object.id, cuboid);
         scene.add(cuboid);
@@ -498,7 +511,7 @@ function disposeObject(root: THREE.Object3D): void {
         cuboid.position.set(group.position.x, group.position.y - ROAD_LIFT, group.position.z);
          cuboid.rotation.y = group.rotation.y;
         cuboid.scale.set(object.width, object.height, object.length);
-        (cuboid.material as THREE.LineBasicMaterial).color.set(actorColor(object, object.id === selectedId));
+        (cuboid.material as THREE.LineBasicMaterial).color.set(actorColor(object, object.id === selectedId, vehicleTint, vehicleTints));
         cuboid.visible = showCuboids && dimsFinite;
       }
     }

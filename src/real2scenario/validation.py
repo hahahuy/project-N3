@@ -35,8 +35,8 @@ class FeasibilityLimits:
     max_acceleration_mps2: float = 5.0
     max_deceleration_mps2: float = 8.0
     max_jerk_mps3: float = 20.0
-    max_yaw_rate_rps: float = 1.5
-    max_speed_mps: float | None = None
+    max_yaw_rate_rps: float = 2.5
+    max_speed_mps: float | None = 20.0
     road_boundary: RoadBoundary | None = None
     version: str = VALIDATION_VERSION
 

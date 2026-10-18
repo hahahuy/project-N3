@@ -60,6 +60,10 @@ export type ActorMotionEdit = {
   start_time_s?: number;
   end_time_s?: number | null;
 };
+export type CanvasKeyframe = { keyframe_id: string; time_s: number; x_m: number; y_m: number; yaw_rad: number; speed_mps: number };
+export type CanvasBranchRequest = { actor_id: string; keyframes: CanvasKeyframe[]; coordinate_frame: "local_road_aligned"; branch_name?: string | null; seed: number; include_origin_reference?: boolean };
+export type CanvasBranchResponse = { parent_scenario_id: string; scenario: ScenarioSummary; validation: Validation; artifacts: ArtifactLink[]; wasm_pair: WasmScenarioPair | null; sensor_status: Record<string, unknown> };
+export type TestingPhysicsResponse = { status: string; mode: string; world: string; server_version: string; collision_count: number; collisions: Array<Record<string, unknown>>; metrics: Record<string, unknown>; trace: TrajectoryState[]; physics_enabled: boolean; same_xosc: boolean; sensor_output: boolean };
 export type RecipeStepRequest = { step_id: string; name: string; kind?: "constrained-maneuver"; actor_edit: ActorMotionEdit; active?: boolean };
 export type PreviewRequest = {
   actor_edits: ActorMotionEdit[];
@@ -68,6 +72,14 @@ export type PreviewRequest = {
   behavior?: "parameterized" | "behavior";
   seed: number;
 };
+/**
+ * Mode string reported by the internal physics endpoint
+ * (`src/r2s_web/testing_physics.py`). Mirrored here so the header can name the
+ * algorithm without inventing a version; keep in sync with the backend.
+ */
+export const INTERNAL_PHYSICS_MODE = "testing-internal-single-track-v1";
+export const createCanvasBranch = (id: string, body: CanvasBranchRequest) => request<CanvasBranchResponse>(`/workspace/scenarios/${encodeURIComponent(id)}/branches`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+export const recalculateTestingCarla = (id: string, body: CanvasBranchRequest, signal?: AbortSignal) => request<TestingPhysicsResponse>(`/testing/scenarios/${encodeURIComponent(id)}/carla-recalculate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal });
 export type GateResult = {
   gate_id: string;
   status: "pass" | "fail" | "skipped" | "error";
@@ -311,6 +323,10 @@ export type CP1ReviewItem = { item_id: string; category: string; title: string; 
 export type CP1Review = { review_version: string; diagnostic_status: "diagnostic"; scientific_status: "PROVISIONAL"; scene: string; corridor_baseline: { states: number; matched_states: number; raw_match_rate: number; display: string; all_vehicle_rate: string; must_remain_unchanged: boolean }; scope_note: string; items: CP1ReviewItem[] };
 
 const API = import.meta.env.VITE_API_URL ?? "/api";
+/** The api this build talks to. Shown in the footer so a confusing empty
+ *  catalog can be attributed to the stack rather than guessed at: several
+ *  stacks serve the same UI from different artifact roots. */
+export const API_BASE = API;
 export const apiUrl = (path: string) => `${API}${path}`;
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {

@@ -19,14 +19,17 @@ def variant_sensor_status(record: ArtifactRecord, lidar: LidarService) -> dict[s
     window_token = record.scenario.provenance.get("source_window", "").split(":", 1)[0]
     try:
         token = lidar.sample_data_token(window_token)
-    except (FileNotFoundError, ImportError, KeyError, OSError, RuntimeError, ValueError):
+    except (AssertionError, FileNotFoundError, ImportError, KeyError, OSError, RuntimeError, ValueError):
         token = window_token
-    availability = lidar.availability(token)
+    try:
+        availability = lidar.availability(token)
+    except (AssertionError, FileNotFoundError, ImportError, KeyError, OSError, RuntimeError, ValueError):
+        availability = {"available": False, "unavailable_reason": "dataset_not_configured"}
     descriptor = None
     if availability["available"]:
         try:
             descriptor = lidar.descriptor(token)
-        except (FileNotFoundError, ImportError, KeyError, OSError, RuntimeError, ValueError):
+        except (AssertionError, FileNotFoundError, ImportError, KeyError, OSError, RuntimeError, ValueError):
             descriptor = None
     parent = {
         "available": bool(availability["available"]),

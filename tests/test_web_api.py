@@ -59,7 +59,65 @@ def test_empty_artifact_root_is_a_valid_health_state(tmp_path: Path) -> None:
         "dataset_configured": False,
         "dataset_version": "v1.0-trainval",
         "dataset_metadata_available": False,
+        "configuration": {
+            "project_root": tmp_path.as_posix(),
+            "artifact_root": (tmp_path / "missing").as_posix(),
+            "output_root": (tmp_path / "reports").as_posix(),
+            "dataset_root": None,
+            "roots_present": {
+                "project_root": True,
+                "artifact_root": False,
+                "output_root": False,
+                "dataset_root": None,
+            },
+        },
     }
+
+
+def test_health_reports_which_roots_the_stack_actually_reads(tmp_path: Path) -> None:
+    """A wrong artifact root looks exactly like an empty catalog from the UI.
+
+    Two stacks on one host can serve the same UI while reading different
+    directories, so health must name every root and whether it exists rather
+    than only reporting a boolean.
+    """
+    settings = WebSettings(
+        project_root=tmp_path,
+        artifact_root=tmp_path / "scenarios",
+        output_root=tmp_path / "reports",
+        dataset_root=None,
+        esmini_bin=None,
+        esmini_dat2csv=None,
+    )
+    (tmp_path / "scenarios").mkdir()
+    shutil.copy(FIXTURE, tmp_path / "scenarios" / "baseline.json")
+
+    configuration = TestClient(create_app(settings)).get("/api/health").json()["configuration"]
+
+    assert configuration["artifact_root"] == (tmp_path / "scenarios").as_posix()
+    assert configuration["roots_present"]["artifact_root"] is True
+    assert configuration["roots_present"]["dataset_root"] is None
+
+
+def test_canvas_branch_is_session_only_and_returns_capability_boundary(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+    response = client.post(
+        "/api/workspace/scenarios/synthetic-variant-001/branches",
+        json={
+            "actor_id": "lead",
+            "coordinate_frame": "local_road_aligned",
+            "keyframes": [
+                {"keyframe_id": "k0", "time_s": 0, "x_m": 20, "y_m": 0, "yaw_rad": 0, "speed_mps": 8},
+                {"keyframe_id": "k1", "time_s": 1, "x_m": 28, "y_m": 1, "yaw_rad": 0.1, "speed_mps": 8},
+            ],
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["scenario"]["provenance"]["authoring_mode"] == "canvas_keyframes"
+    assert payload["sensor_status"]["status"] == "unsupported"
+    branch_id = payload["scenario"]["scenario_id"]
+    assert client.get(f"/api/scenarios/{branch_id}/trajectory").status_code == 200
 
 
 def test_live_esmini_capability_and_unavailable_session_are_explicit(tmp_path: Path) -> None:

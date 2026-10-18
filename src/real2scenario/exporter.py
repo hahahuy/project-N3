@@ -95,9 +95,27 @@ def _validate_export_input(scenario: Scenario, template: OpenDriveTemplate) -> N
         raise ValueError("OpenSCENARIO export requires a 'local_road_aligned' scenario.")
     if scenario.provenance.get("opendrive_template_id") != template.template_id:
         raise ValueError("Scenario provenance does not identify the selected OpenDRIVE template.")
-    non_ego_count = len(scenario.actors) - 1
+    non_ego_count = _non_ego_traffic_count(scenario)
     if not 1 <= non_ego_count <= 3:
         raise ValueError("OpenSCENARIO baseline export requires one to three non-ego actors.")
+
+
+def _non_ego_traffic_count(scenario: Scenario) -> int:
+    """Non-ego actors that are actual road users.
+
+    The 1..3 export limit sizes the baseline road template to the traffic
+    participants. A canvas branch committed with ``include_origin_reference``
+    carries an extra actor that replays the edited actor's own recorded start
+    trajectory, declared in provenance as ``origin_reference_actor_id``. That
+    actor is a diagnostic overlay of the same vehicle, not another road user:
+    counting it pushed every reference branch from 3 to 4 and made the WASM
+    pair for that branch unexportable. Every scenario without that provenance
+    key keeps the previous count exactly.
+    """
+    reference_id = scenario.provenance.get("origin_reference_actor_id")
+    return sum(
+        1 for actor in scenario.actors[1:] if actor.actor_id != reference_id
+    )
 
 
 def _append_entity(entities: ET.Element, actor: Actor, scenario: Scenario) -> None:

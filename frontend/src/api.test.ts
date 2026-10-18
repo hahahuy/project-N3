@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   addRecipeStep,
+  createCanvasBranch,
   addRollbackMarker,
   apiUrl,
   fetchActorTimeline,
@@ -70,6 +71,23 @@ describe("API boundary", () => {
       expect.objectContaining({ method: "POST", headers: { "Content-Type": "application/json" } }),
     );
     expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toMatchObject({ seed: 7, behavior: "parameterized" });
+  });
+
+  it("posts a one-actor canvas branch with required velocity", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({}), { status: 200 }));
+    await createCanvasBranch("scene 1", {
+      actor_id: "lead",
+      coordinate_frame: "local_road_aligned",
+      seed: 0,
+      keyframes: [
+        { keyframe_id: "k0", time_s: 0, x_m: 1, y_m: 2, yaw_rad: 0, speed_mps: 3 },
+        { keyframe_id: "k1", time_s: 1, x_m: 4, y_m: 2, yaw_rad: 0, speed_mps: 3 },
+      ],
+    });
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/workspace/scenarios/scene%201/branches",
+      expect.objectContaining({ method: "POST", headers: { "Content-Type": "application/json" } }),
+    );
   });
 
   it("keeps native map and LiDAR capability calls typed and local", async () => {

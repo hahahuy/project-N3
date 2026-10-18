@@ -1,0 +1,37 @@
+services:
+  api:
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 6G
+    command: ["uvicorn", "r2s_web.app:app", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "${PROJECT_N3_WEB_API_PORT:-8002}:8000"
+    volumes:
+      - .:/app
+      - ./reports:/app/reports
+      # The 84 already-imported nuScenes scenarios live in the main project's
+      # artifact root, not in this stack's testing-scenarios root, so the
+      # catalog here listed a single synthetic scenario. Expose them read-only
+      # under a distinct subdirectory: ArtifactAdapter.discover() rglobs the
+      # whole artifact root, so this needs no code change and no copy, while
+      # new imports still write to the writable artifact_root/nuscenes/.
+      - /home/hahuy/github/project-N3/scenarios/nuscenes:/app/reports/testing-scenarios/shared-catalog:ro
+      - project-n3-testing-metadata-cache:/var/cache/real2scenario
+    environment:
+      PROJECT_N3_ARTIFACT_ROOT: /app/reports/testing-scenarios
+      PROJECT_N3_OUTPUT_ROOT: /app/reports/testing-output
+      PROJECT_N3_METADATA_CACHE: /var/cache/real2scenario
+      NUSCENES_ROOT: /mnt/backup/nuscenes
+      NUSCENES_VERSION: v1.0-trainval
+      PROJECT_N3_EXTRA_DATA_ROOTS: /mnt/backup/nuscenes
+      PROJECT_N3_SKIP_MAP_NAME_LOOKUP: "1"
+
+  frontend:
+    ports:
+      - "${PROJECT_N3_WEB_FRONTEND_PORT:-5174}:5173"
+
+volumes:
+  project-n3-testing-metadata-cache:
+    name: project-n3-testing-metadata-cache
