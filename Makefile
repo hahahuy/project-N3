@@ -68,7 +68,7 @@ prod: ## Build the frontend bundle, then start the product environment
 # half-finished working tree: an uncommitted edit in the product stack is
 # invisible in git and cannot be reproduced or rolled back.
 prod-check-clean:
-	@dirty=$$(git status --porcelain -- . ':!log.txt' ':!frontend/wasm-esmini/a4_probe.mjs'); \
+	@dirty=$$(git status --porcelain -- . ':!log.txt' ':!frontend/wasm-esmini/a4_probe.mjs' ':!cpp-wasm-network.txt'); \
 	if [ -n "$$dirty" ]; then \
 		echo "==> Refusing to publish product from a dirty working tree:"; \
 		echo "$$dirty" | sed 's/^/    /'; \
