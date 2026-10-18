@@ -79,3 +79,12 @@ def test_map_records_are_copies_of_the_api_records() -> None:
 
     assert original["token"] == "a"
     assert records[0] is not original
+
+
+def test_map_records_never_reorder_the_api_list() -> None:
+    layer = [{"token": "b"}, {"token": "a"}]
+    api = FakeMapApi(traffic_light=layer)
+
+    native_map_records(api, "traffic_light")
+
+    assert [record["token"] for record in layer] == ["b", "a"]
