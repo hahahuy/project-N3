@@ -298,3 +298,8 @@ def test_lidar_contract_coerces_string_timestamps_and_tokens() -> None:
 
     assert contract.timestamp_us == 42
     assert contract.calibration_token == "7"
+
+
+def test_lidar_contract_requires_a_sample_timestamp() -> None:
+    with pytest.raises(KeyError, match="timestamp"):
+        lidar_payload_contract({"filename": "a.bin"}, _calibration())
