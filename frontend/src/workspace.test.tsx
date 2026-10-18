@@ -349,23 +349,16 @@ describe("actor timeline and gate lane", () => {
     expect(screen.queryByText("G1-G7 gate lane")).toBeNull();
   });
 
-  it("keeps the timeline free of gate overlays and reports gate detail from the Gates flyout", async () => {
+  it("keeps the timeline free of gate overlays and removes the Gates flyout", async () => {
     const surface = await renderWorkspace();
 
     expect(within(surface).queryByRole("list", { name: "Gate lane" })).toBeNull();
     expect(within(surface).queryByRole("list", { name: "Gate status list" })).toBeNull();
     expect(within(surface).queryAllByRole("listitem", { name: /G\d/ })).toHaveLength(0);
 
-    fireEvent.click(screen.getByRole("button", { name: "Gates" }));
-    const flyout = await screen.findByRole("heading", { name: "G1-G7 gates" });
-    const rows = Array.from((flyout.parentElement as HTMLElement).querySelectorAll(".flyout-row"));
-    expect(rows).toHaveLength(gateTimeline.gates.length);
-    for (const gate of gateTimeline.gates) {
-      const row = rows.find((item) => item.textContent?.includes(gate.gate_id));
-      expect(row?.textContent).toContain(gate.status);
-      expect(row?.textContent).toContain(`${gate.start_s.toFixed(2)}-${gate.end_s.toFixed(2)} s`);
-    }
-    expect(within(flyout.parentElement as HTMLElement).getByText(/lane_road_match_evidence_not_supplied_for_this_scenario/)).toBeTruthy();
+    // The gate detail flyout was removed, so its rail entry must be gone too.
+    expect(screen.queryByRole("button", { name: "Gates" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "G1-G7 gates" })).toBeNull();
   });
 
   it("keeps the three-view grid limit without showing a counter", async () => {
@@ -483,8 +476,11 @@ describe("keyboard operation", () => {
   it("switches modes from the keyboard and clears selection with Escape", async () => {
     const surface = await renderWorkspace();
 
+    // "e" only opens the Variant studio editor when an actor is handed off;
+    // the legacy canvas-branch dock is gone and no editor surface may appear.
     fireEvent.keyDown(window, { key: "e" });
-    expect(screen.getByRole("region", { name: "Constrained maneuver editor" })).toBeTruthy();
+    expect(screen.queryByRole("region", { name: "Canvas motion editor" })).toBeNull();
+    expect(document.querySelector(".document-tabs button.active")?.textContent).toBe("Scenario studio");
     fireEvent.keyDown(window, { key: "m" });
     expect(screen.queryByRole("region", { name: "Constrained maneuver editor" })).toBeNull();
     fireEvent.keyDown(window, { key: "s" });
@@ -579,14 +575,16 @@ describe("accessibility", () => {
 
     expect(within(surface).getAllByText("Braking")[0].closest(".track-channel")?.textContent).toContain("n/a");
 
-    fireEvent.click(screen.getByRole("button", { name: "Gates" }));
-    const flyout = await screen.findByRole("heading", { name: "G1-G7 gates" });
-    const text = flyout.parentElement?.textContent ?? "";
-    for (const status of ["pass", "fail", "skipped", "error", "unsupported"]) {
-      expect(text).toContain(status);
-    }
-    expect(text).toContain("PROVISIONAL");
-    expect(text).toContain("xosc_subset_not_evaluated_in_workspace_surface");
+    // The metrics table spells every unavailable cell out rather than leaving
+    // it blank, so the value is readable without relying on colour.
+    fireEvent.click(screen.getByRole("button", { name: "Metrics" }));
+    const heading = await screen.findByRole("heading", { name: "ADE / FDE per actor" });
+    const text = heading.parentElement?.textContent ?? "";
+    expect(text).toContain("no parent trajectory to measure ADE/FDE against");
+    // A root scenario has nothing to compare against, so the panel explains
+    // that instead of rendering an empty numeric grid.
+    expect(screen.queryByRole("table", { name: "ADE and FDE per actor" })).toBeNull();
+    expect(text).toContain("Parent scenario is the reference");
   });
 
   it("exposes a text equivalent for every timeline visualization", async () => {
@@ -620,58 +618,7 @@ describe("mobile layout", () => {
     expect(mobile).toContain(".actor-track { grid-template-columns: 1fr; }");
   });
 });
-describe("recipe, rollback and lineage surfaces", () => {
-  it("renders ordered steps with parameters, status and API-owned inactive reasons", async () => {
-    await renderWorkspace();
-    fireEvent.click(screen.getByRole("button", { name: "Recipe" }));
-
-    const panel = await screen.findByRole("list", { name: "Ordered recipe steps" });
-    const rows = within(panel).getAllByRole("listitem");
-    expect(rows).toHaveLength(2);
-    expect(rows[0].textContent).toContain("1. Ease off the lead");
-    expect(rows[0].textContent).toContain("brake 2 m/s2");
-    expect(rows[0].textContent).toContain("valid");
-    expect(rows[0].textContent).toContain("active");
-    expect(rows[1].textContent).toContain("2. Impossible braking");
-    expect(rows[1].textContent).toContain("invalid");
-    expect(rows[1].textContent).toContain("after_active_rollback_marker");
-    expect(rows[1].textContent).toContain("deceleration_exceeded: observed 12 against limit 8");
-    expect(within(panel).getByRole("button", { name: "Move Ease off the lead up" }).hasAttribute("disabled")).toBe(true);
-    expect(within(panel).getByRole("button", { name: "Move Impossible braking down" }).hasAttribute("disabled")).toBe(true);
-  });
-
-  it("reports persistence, undo and redo state from the API document", async () => {
-    await renderWorkspace();
-    fireEvent.click(screen.getByRole("button", { name: "Recipe" }));
-
-    const history = await screen.findByRole("note");
-    expect(history.textContent).toContain("recipe_document_is_held_in_process_and_is_not_persisted_to_disk");
-    expect(within(history.parentElement as HTMLElement).getByRole("button", { name: "Undo" }).hasAttribute("disabled")).toBe(false);
-    expect(within(history.parentElement as HTMLElement).getByRole("button", { name: "Redo" }).hasAttribute("disabled")).toBe(true);
-    expect(screen.getByText("revision 4")).toBeTruthy();
-  });
-
-  it("posts ordered step mutations and rollback markers to the API", async () => {
-    await renderWorkspace();
-    fireEvent.click(screen.getByRole("button", { name: "Recipe" }));
-    await screen.findByRole("list", { name: "Ordered recipe steps" });
-
-    fireEvent.click(screen.getByRole("button", { name: "Move Impossible braking up" }));
-    fireEvent.click(screen.getByRole("button", { name: "Remove Ease off the lead" }));
-    fireEvent.click(screen.getByRole("button", { name: "deactivate" }));
-    fireEvent.click(screen.getByRole("button", { name: "Restore before the cut-in" }));
-    fireEvent.click(screen.getByRole("button", { name: "Add rollback marker" }));
-
-    await waitFor(() => expect(recipePosts.length).toBe(5));
-    expect(recipePosts.map((post) => post.url.replace(/^.*\/recipe/, "/recipe"))).toEqual([
-      "/recipe/steps/move",
-      "/recipe/steps/step-1/remove",
-      "/recipe/steps/step-1/active",
-      "/recipe/markers/marker-1/restore",
-      "/recipe/markers",
-    ]);
-  });
-
+describe("version tree and lineage surfaces", () => {
   it("shows branch identity, seed and config hash in the status bar and variant studio", async () => {
     await renderWorkspace();
 
@@ -689,44 +636,82 @@ describe("recipe, rollback and lineage surfaces", () => {
     expect(pov.textContent).not.toContain("frame-t0000");
   });
 
-  it("shows branch identity, seed and config hash in the variant studio", async () => {
+  it("shows only the selected scenario as the branch-tree root", async () => {
+    await renderWorkspace();
+
+    fireEvent.click(screen.getByRole("button", { name: "Versions" }));
+    const tree = await screen.findByRole("tree", { name: "Committed scenario versions" });
+
+    // The tree is scoped to the scenario open in Scenario studio, not the whole
+    // catalog: one root, plus scene-timeline-002 which declares it as parent.
+    expect(within(tree).getByRole("button", { name: "scene-timeline-001" })).toBeTruthy();
+    expect(within(tree).getByRole("button", { name: "scene-timeline-002" })).toBeTruthy();
+    // The unrelated second root must not appear.
+    expect(within(tree).queryByRole("button", { name: "unrelated-scenario" })).toBeNull();
+    expect(within(tree).getAllByRole("treeitem")).toHaveLength(2);
+    expect(within(tree).getByText(/1 version$/)).toBeTruthy();
+
+    // Selecting the child moves the selection marker.
+    fireEvent.click(within(tree).getByRole("button", { name: "scene-timeline-002" }));
+    await waitFor(() => expect(within(tree).getByRole("treeitem", { selected: true }).textContent).toContain("scene-timeline-002"));
+  });
+
+  it("routes the Select actors tool to Scenario studio and disables it there", async () => {
+    await renderWorkspace();
+
+    const tool = () => screen.getByRole("button", { name: /^Select actors/ });
+    // Start on Variant studio by opening the motion editor.
+    (document.querySelectorAll(".actor-track .track-label")[1] as HTMLElement | undefined)?.click();
+    await waitFor(() => screen.getByText("selection: lead"));
+    fireEvent.click(screen.getByRole("button", { name: "Variant studio" }));
+    await screen.findByRole("region", { name: "Variant studio" });
+
+    expect(tool().hasAttribute("disabled")).toBe(false);
+    fireEvent.click(tool());
+    // Activating it returns to Scenario studio.
+    expect(document.querySelector(".document-tabs button.active")?.textContent).toBe("Scenario studio");
+    // Already there: the tool reports itself and stops accepting clicks.
+    await waitFor(() => expect(tool().hasAttribute("disabled")).toBe(true));
+    expect(tool().getAttribute("title")).toContain("You have selected this buttons");
+  });
+
+  it("scopes the variant studio to the selected actor instead of dumping raw metadata", async () => {
     await renderWorkspace();
 
     fireEvent.click(screen.getByRole("button", { name: "Variant studio" }));
     const studio = await screen.findByRole("region", { name: "Variant studio" });
-    expect(within(studio).getByRole("list", { name: "Variant lineage path" }).textContent).toContain("synthetic-root");
-    expect(within(studio).getByText("config_hash").parentElement?.textContent).toContain("sha256:0123456789abcdef");
-    expect(within(studio).getByText("run_id").parentElement?.textContent).toContain("scenario_provenance_declares_no_run_id");
-    expect(within(studio).getByText("branch_name").parentElement?.textContent).toContain("scenario_provenance_declares_no_branch_name");
+
+    // The raw lineage/metadata dump was removed from this surface, so the
+    // Variant studio now answers with the editing contract instead: one
+    // editable actor, its own timeline, and the guardrails it must satisfy.
+    // The guardrail table moved out of this surface into the right-rail
+    // Guardrails flyout, so the editor keeps only the editing actions.
+    expect(within(studio).queryByText("Guardrails")).toBeNull();
+    // "Add keyframe" is now the "+" pinned to the canvas corner, not a panel
+    // button, and deletion moved to the Delete/Backspace keys.
+    expect(within(studio).getByRole("button", { name: "Add keyframe" }).className).toBe("motion-add-keyframe");
+    expect(within(studio).queryByRole("button", { name: "Delete selected keyframe" })).toBeNull();
+    expect(within(studio).queryByRole("button", { name: "Commit branch" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Guardrails" })).toBeTruthy();
+    expect(within(studio).queryByRole("list", { name: "Variant lineage path" })).toBeNull();
+    // The selected-actor timeline strip was removed from this surface.
+    expect(within(studio).queryByLabelText("Selected actor playhead")).toBeNull();
   });
 });
 
 describe("evidence layers", () => {
-  it("separates recorded, generated, replayed and sensor-evidence with reasons", async () => {
+  it("no longer exposes a Map layers panel", async () => {
     await renderWorkspace();
-    fireEvent.click(screen.getByRole("button", { name: "Map layers" }));
 
-    const panel = await screen.findByRole("list", { name: "Evidence layers" });
-    const rows = within(panel).getAllByRole("listitem");
-    expect(rows.map((row) => row.querySelector("strong")?.textContent)).toEqual([
-      "recorded",
-      "generated",
-      "replayed",
-      "sensor-evidence",
-    ]);
-    expect(rows[0].textContent).toContain("available");
-    expect(rows[1].textContent).toContain("generated_trajectory_requires_a_variant_artifact");
-    expect(rows[2].textContent).toContain("replay_trace_artifact_absent_for_this_scenario");
-    expect(rows[3].textContent).toContain("dataset_not_configured");
-  });
-
-  it("shows metric provenance and scientific status with the layers", async () => {
-    await renderWorkspace();
-    fireEvent.click(screen.getByRole("button", { name: "Map layers" }));
-
-    const provenance = await screen.findByText("Metric provenance");
-    expect(provenance.parentElement?.textContent).toContain("PROVISIONAL");
-    expect(provenance.parentElement?.textContent).toContain("source_scene_token: synthetic-scene-001");
+    // The Map layers rail button and its evidence-layer panel were removed, so
+    // neither the entry point nor the panel it opened may remain reachable.
+    expect(screen.queryByRole("button", { name: "Map layers" })).toBeNull();
+    expect(screen.queryByRole("list", { name: "Evidence layers" })).toBeNull();
+    expect(screen.queryByText("Metric provenance")).toBeNull();
+    // The surviving rail entries are untouched.
+    expect(screen.getByRole("button", { name: "Versions" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Catalog" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Comments" })).toBeTruthy();
   });
 
   it("renders the top-down trajectory view without a legend", async () => {

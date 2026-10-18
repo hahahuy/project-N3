@@ -50,6 +50,26 @@ class TrajectoryPath(BaseModel):
     states: list[TrajectoryState]
 
 
+class CanvasKeyframeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    keyframe_id: str = Field(min_length=1)
+    time_s: float = Field(ge=0)
+    x_m: float
+    y_m: float
+    yaw_rad: float
+    speed_mps: float = Field(ge=0)
+
+
+class CanvasBranchRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    actor_id: str = Field(min_length=1)
+    keyframes: list[CanvasKeyframeRequest] = Field(min_length=2)
+    coordinate_frame: Literal["local_road_aligned"] = "local_road_aligned"
+    branch_name: str | None = None
+    seed: int = 0
+    include_origin_reference: bool = False
+
+
 class ReplayMetricView(BaseModel):
     sample_count: int
     alignment_method: str
@@ -467,6 +487,29 @@ class ValidationView(BaseModel):
     reasons: list[ValidationReasonView]
 
 
+class CanvasBranchResponse(BaseModel):
+    parent_scenario_id: str
+    scenario: ScenarioSummary
+    validation: ValidationView
+    artifacts: list[ArtifactLink]
+    wasm_pair: WasmScenarioPairView | None = None
+    sensor_status: dict[str, object]
+
+
+class TestingPhysicsResponse(BaseModel):
+    status: str
+    mode: str
+    world: str
+    server_version: str
+    collision_count: int
+    collisions: list[dict[str, object]]
+    metrics: dict[str, object]
+    trace: list[TrajectoryState]
+    physics_enabled: bool
+    same_xosc: bool
+    sensor_output: bool
+
+
 class RankingFeatureView(BaseModel):
     minimum_distance_m: float | None
     minimum_ttc_s: float | None
@@ -500,7 +543,8 @@ class ValidationLimitsRequest(BaseModel):
     max_acceleration_mps2: float = 5.0
     max_deceleration_mps2: float = 8.0
     max_jerk_mps3: float = 20.0
-    max_yaw_rate_rps: float = 1.5
+    max_yaw_rate_rps: float = 2.5
+    max_speed_mps: float = 20.0
     road_boundary: RoadBoundaryRequest | None = None
 
 

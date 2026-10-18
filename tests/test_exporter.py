@@ -73,6 +73,63 @@ def test_exporter_writes_the_xml_without_changing_content(tmp_path) -> None:
     assert (tmp_path / "straight-two-lane-v1.xodr").read_text(encoding="utf-8").startswith("<?xml")
 
 
+def test_exporter_excludes_the_origin_reference_actor_from_the_traffic_count() -> None:
+    """Regression lock for the canvas-branch WASM failure.
+
+    A branch committed with include_origin_reference carries a fifth actor.
+    Counting that diagnostic overlay as a road user pushed the count to 4 and
+    every reference branch failed with "requires one to three non-ego actors".
+    """
+    scenario, template = _selected_scenario()
+    # ego + lead + a3 + a4 == 3 non-ego road users, exactly at the export limit,
+    # which is the real shape of the nuScenes scenario that first failed.
+    traffic = scenario.actors + tuple(
+        Actor(f"a{n}", "vehicle.car", (State(0.0, 20.0 + n, 0.0, 0.0, 3.0), State(2.0, 26.0 + n, 0.0, 0.0, 3.0)))
+        for n in (3, 4)
+    )
+    reference_id = "lead-origin-reference"
+    with_reference = Scenario(
+        scenario_id="branch",
+        duration_s=2.0,
+        ego_actor_id="ego",
+        actors=traffic
+        + (Actor(reference_id, "vehicle.car", traffic[1].trajectory, 4.0, 2.0),),
+        coordinate_frame="local_road_aligned",
+        provenance={"opendrive_template_id": template.template_id, "origin_reference_actor_id": reference_id},
+    )
+
+    # 4 actors + reference = 3 real road users, which is inside the limit.
+    assert len(with_reference.actors) == 5
+    root = ET.fromstring(build_openscenario_xml(with_reference, template))  # type: ignore[arg-type]
+
+    # The reference is still exported, so the 3D preview can show it.
+    assert [item.attrib["name"] for item in root.findall("Entities/ScenarioObject")] == [
+        "ego", "lead", "a3", "a4", reference_id,
+    ]
+
+
+def test_exporter_keeps_counting_real_actors_alongside_a_reference() -> None:
+    """The exclusion must not become a loophole for extra traffic."""
+    scenario, template = _selected_scenario()
+    reference_id = "lead-origin-reference"
+    # ego + 4 road users: over the limit even before the reference is added.
+    traffic = scenario.actors + tuple(
+        Actor(f"a{n}", "vehicle.car", (State(0.0, 20.0 + n, 0.0, 0.0, 3.0), State(2.0, 26.0 + n, 0.0, 0.0, 3.0)))
+        for n in (3, 4, 5)
+    )
+    too_many = Scenario(
+        scenario_id="branch",
+        duration_s=2.0,
+        ego_actor_id="ego",
+        actors=traffic + (Actor(reference_id, "vehicle.car", traffic[1].trajectory, 4.0, 2.0),),
+        coordinate_frame="local_road_aligned",
+        provenance={"opendrive_template_id": template.template_id, "origin_reference_actor_id": reference_id},
+    )
+
+    with pytest.raises(ValueError, match="one to three non-ego actors"):
+        build_openscenario_xml(too_many, template)  # type: ignore[arg-type]
+
+
 def test_exporter_rejects_more_than_three_non_ego_actors() -> None:
     scenario, template = _selected_scenario()
     actors = scenario.actors + tuple(

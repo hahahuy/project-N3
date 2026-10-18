@@ -1,6 +1,17 @@
 """Canonical models and pipeline components for Real2Scenario."""
 
 from .models import Actor, InteractionEvent, Scenario, State, VariantConfig
+from .authoring import CANVAS_KEYFRAME_VERSION, MAX_KEYFRAME_SPEED_MPS, MAX_KEYFRAME_TURN_ANGLE_RAD, MAX_KEYFRAME_YAW_RATE_RPS, MIN_KEYFRAME_INTERVAL_S, CanvasBranch, CanvasKeyframe, build_canvas_keyframe_branch
+from .dynamic_single_track import (
+    DYNAMIC_SINGLE_TRACK_PARAMETERS_VERSION,
+    DYNAMIC_SINGLE_TRACK_VERSION,
+    DynamicSingleTrackParameters,
+    DynamicSingleTrackPreview,
+    DynamicSingleTrackState,
+    DynamicViolation,
+    integrate_dynamic_single_track,
+)
+from .experiment_metrics import EXPERIMENT_METRICS_VERSION, ExperimentMetrics, compare_trajectory
 from .visualization import save_replay_overlay
 from .metrics import (
     ALIGNMENT_METHOD,
@@ -433,6 +444,24 @@ __all__ = [
     "write_aggregate_csv",
     "write_aggregate_json",
     "write_variant_report",
+    "CANVAS_KEYFRAME_VERSION",
+    "MIN_KEYFRAME_INTERVAL_S",
+    "MAX_KEYFRAME_SPEED_MPS",
+    "MAX_KEYFRAME_YAW_RATE_RPS",
+    "MAX_KEYFRAME_TURN_ANGLE_RAD",
+    "CanvasBranch",
+    "CanvasKeyframe",
+    "build_canvas_keyframe_branch",
+    "DYNAMIC_SINGLE_TRACK_PARAMETERS_VERSION",
+    "DYNAMIC_SINGLE_TRACK_VERSION",
+    "DynamicSingleTrackParameters",
+    "DynamicSingleTrackPreview",
+    "DynamicSingleTrackState",
+    "DynamicViolation",
+    "integrate_dynamic_single_track",
+    "EXPERIMENT_METRICS_VERSION",
+    "ExperimentMetrics",
+    "compare_trajectory",
     "atomic_write_bytes",
     "write_openscenario",
     "ROAD_MATCH_VERSION",

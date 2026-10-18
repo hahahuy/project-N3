@@ -1,0 +1,3 @@
+37. [GET] http://127.0.0.1:5187/src/cpp-wasm/worker.ts?worker_file&type=module
+
+Note: 43 static requests not shown, run with "static" option to see them.

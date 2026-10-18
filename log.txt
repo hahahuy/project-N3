@@ -1,22 +1,27 @@
-esmini GIT REV: v3.9.0-0-efbf7ee1
-esmini GIT TAG: v3.9.0
-esmini GIT BRANCH: tags/v3.9.0^0
-esmini BUILD VERSION: 6434
-[] [info] Loaded /app/reports/replay-3005056d60f3/scenario.xosc
-[2026-10-15 03:50:57]
-[] [info] Player options: --osc /app/reports/replay-3005056d60f3/scenario.xosc --camera_mode orbit --ground_plane auto --headless --info_text 1 --logfile_path log.txt --log_level info --text_scale 1.0 --traj_filter 0.1 --light_mode auto 
-[] [info] No fixed timestep specified - running in realtime speed
-[] [info] Generated seed 911635548
-[] [info] Loading /app/reports/replay-3005056d60f3/scenario.xosc (v1.1)
+esmini GIT REV: v3.10.0-0-06065f9
+esmini GIT TAG: v3.10.0
+esmini GIT BRANCH: tags/v3.10.0^0
+esmini BUILD VERSION: project-N3-3.10.0-local
+[] [info] Loaded /home/hahuy/r2s-diagnostic/a6/fix_base.xosc
+[2026-10-16 16:40:12]
+[] [info] Player options: --osc /home/hahuy/r2s-diagnostic/a6/fix_base.xosc --camera_mode orbit --fixed_timestep 0.01 --ground_plane auto --headless --info_text 1 --logfile_path log.txt --log_level info --record /tmp/a4native.dat --text_scale 1.0 --traj_filter 0.1 
+[] [info] Run simulation decoupled from realtime, with fixed timestep: 0.01
+[] [info] Generated seed 1454302907
+[] [info] Loading /home/hahuy/r2s-diagnostic/a6/fix_base.xosc (v1.1)
 [] [info] 0 variables
-[] [info] Loaded OpenDRIVE: /app/reports/replay-3005056d60f3/straight-two-lane-v1.xodr
+[] [info] Loaded OpenDRIVE: /home/hahuy/r2s-diagnostic/a6/straight-two-lane-v1.xodr
 [] [warn] Catalog VehicleCatalog sub element Directory not found - skipping
 [] [info] Add and deactivate new object "ego" (id 0)
-[] [info] Add and deactivate new object "instance-e91afa15647c4c4994f19aeb302c7179" (id 1)
-[] [info] Add and deactivate new object "instance-e3c5b72c12c34c85aac247734ad83bef" (id 2)
-[] [info] Add and deactivate new object "instance-fdd3fe14d1c044b9a9f6c24383c6207c" (id 3)
+[] [info] 3D model search paths attempted for file walkman.osgb:
+[] [info]   walkman.osgb
+[] [info]   /home/hahuy/r2s-diagnostic/a6/./walkman.osgb
+[] [info]   /home/hahuy/esmini-3.10/bin/../resources/models//./walkman.osgb
+[] [warn] 3D model walkman.osgb not located, using specified file path
+[] [info] Add and deactivate new object "walk1" (id 1)
+[] [info] Add and deactivate new object "cone1" (id 2)
 [] [info] 1 parameters:
-[] [info]    $ScenarioDuration = 19.149566173553467
+[] [info]    $ScenarioDuration = 19.34914493560791
+[0.000] [info] Recording data to file /tmp/a4native.dat
 [0.000] [info] Init ego TeleportAction initState -> startTransition -> runningState
 [0.000] [info] Starting teleport Action
 [0.000] [info] ego New position:
@@ -24,125 +29,83 @@ esmini BUILD VERSION: 6434
 [0.000] [info] Init ego TeleportAction runningState -> endTransition -> completeState
 [0.000] [info] Init ego LongitudinalAction initState -> startTransition -> runningState
 [0.000] [info] Init ego LongitudinalAction runningState -> endTransition -> completeState
-[0.000] [info] Init instance-e91afa15647c4c4994f19aeb302c7179 TeleportAction initState -> startTransition -> runningState
+[0.000] [info] Init walk1 TeleportAction initState -> startTransition -> runningState
 [0.000] [info] Starting teleport Action
-[0.000] [info] instance-e91afa15647c4c4994f19aeb302c7179 New position:
-[0.000] [info] Pos(16.21, 4.57, 0.00) Rot(0.03, 0.00, 0.00) roadId 1 laneId 1 s 16.21 offset 2.82 t 4.57
-[0.000] [info] Init instance-e91afa15647c4c4994f19aeb302c7179 TeleportAction runningState -> endTransition -> completeState
-[0.000] [info] Init instance-e91afa15647c4c4994f19aeb302c7179 LongitudinalAction initState -> startTransition -> runningState
-[0.000] [info] Init instance-e91afa15647c4c4994f19aeb302c7179 LongitudinalAction runningState -> endTransition -> completeState
-[0.000] [info] Init instance-e3c5b72c12c34c85aac247734ad83bef TeleportAction initState -> startTransition -> runningState
+[0.000] [info] walk1 New position:
+[0.000] [info] Pos(24.25, 26.37, 0.00) Rot(3.18, 0.00, 0.00) roadId 1 laneId 1 s 24.25 offset 24.62 t 26.37
+[0.000] [info] Init walk1 TeleportAction runningState -> endTransition -> completeState
+[0.000] [info] Init walk1 LongitudinalAction initState -> startTransition -> runningState
+[0.000] [info] Init walk1 LongitudinalAction runningState -> endTransition -> completeState
+[0.000] [info] Init cone1 TeleportAction initState -> startTransition -> runningState
 [0.000] [info] Starting teleport Action
-[0.000] [info] instance-e3c5b72c12c34c85aac247734ad83bef New position:
-[0.000] [info] Pos(70.88, 12.53, 0.00) Rot(4.66, 0.00, 0.00) roadId 1 laneId 1 s 70.88 offset 10.78 t 12.53
-[0.000] [info] Init instance-e3c5b72c12c34c85aac247734ad83bef TeleportAction runningState -> endTransition -> completeState
-[0.000] [info] Init instance-e3c5b72c12c34c85aac247734ad83bef LongitudinalAction initState -> startTransition -> runningState
-[0.000] [info] Init instance-e3c5b72c12c34c85aac247734ad83bef LongitudinalAction runningState -> endTransition -> completeState
-[0.000] [info] Init instance-fdd3fe14d1c044b9a9f6c24383c6207c TeleportAction initState -> startTransition -> runningState
-[0.000] [info] Starting teleport Action
-[0.000] [info] instance-fdd3fe14d1c044b9a9f6c24383c6207c New position:
-[0.000] [info] Pos(60.73, 20.10, 0.00) Rot(4.12, 0.00, 0.00) roadId 1 laneId 1 s 60.73 offset 18.35 t 20.10
-[0.000] [info] Init instance-fdd3fe14d1c044b9a9f6c24383c6207c TeleportAction runningState -> endTransition -> completeState
-[0.000] [info] Init instance-fdd3fe14d1c044b9a9f6c24383c6207c LongitudinalAction initState -> startTransition -> runningState
-[0.000] [info] Init instance-fdd3fe14d1c044b9a9f6c24383c6207c LongitudinalAction runningState -> endTransition -> completeState
+[0.000] [info] cone1 New position:
+[0.000] [info] Pos(-504.15, 1596.50, 0.00) Rot(3.70, 0.00, 0.00) roadId 1 laneId 1 s 0.00 offset 1594.75 t 1596.50
+[0.000] [info] Init cone1 TeleportAction runningState -> endTransition -> completeState
+[0.000] [info] Init cone1 LongitudinalAction initState -> startTransition -> runningState
+[0.000] [info] Init cone1 LongitudinalAction runningState -> endTransition -> completeState
 [0.000] [info] storyBoard initState -> startTransition -> runningState
 [0.000] [info] baseline_replay initState -> startTransition -> runningState
 [0.000] [info] recorded_trajectories initState -> initToStandbyTransition -> standbyState
-[0.000] [info] Ignoring missing default config: /opt/esmini/bin/../config.yml
-[0.000] [info] Loaded /app/reports/replay-3005056d60f3/scenario.xosc
-[2026-10-15 03:52:02]
-[0.000] [info] Player options: --osc /app/reports/replay-3005056d60f3/scenario.xosc --camera_mode orbit --ground_plane auto --headless --info_text 1 --logfile_path log.txt --log_level info --text_scale 1.0 --traj_filter 0.1 --light_mode auto 
-[0.000] [info] No fixed timestep specified - running in realtime speed
-[0.000] [info] Generated seed 911635548
-[0.000] [info] Loading /app/reports/replay-3005056d60f3/scenario.xosc (v1.1)
-[0.000] [info] 0 variables
-[0.000] [info] Loaded OpenDRIVE: /app/reports/replay-3005056d60f3/straight-two-lane-v1.xodr
-[0.000] [warn] Catalog VehicleCatalog sub element Directory not found - skipping
-[0.000] [info] Add and deactivate new object "ego" (id 0)
-[0.000] [info] Add and deactivate new object "instance-e91afa15647c4c4994f19aeb302c7179" (id 1)
-[0.000] [info] Add and deactivate new object "instance-e3c5b72c12c34c85aac247734ad83bef" (id 2)
-[0.000] [info] Add and deactivate new object "instance-fdd3fe14d1c044b9a9f6c24383c6207c" (id 3)
-[0.000] [info] 1 parameters:
-[0.000] [info]    $ScenarioDuration = 19.149566173553467
-[0.000] [info] Init ego TeleportAction initState -> startTransition -> runningState
-[0.000] [info] Starting teleport Action
-[0.000] [info] ego New position:
-[0.000] [info] Pos(0.00, 0.00, 0.00) Rot(0.00, 0.00, 0.00) roadId 1 laneId 1 s 0.00 offset -1.75 t 0.00
-[0.000] [info] Init ego TeleportAction runningState -> endTransition -> completeState
-[0.000] [info] Init ego LongitudinalAction initState -> startTransition -> runningState
-[0.000] [info] Init ego LongitudinalAction runningState -> endTransition -> completeState
-[0.000] [info] Init instance-e91afa15647c4c4994f19aeb302c7179 TeleportAction initState -> startTransition -> runningState
-[0.000] [info] Starting teleport Action
-[0.000] [info] instance-e91afa15647c4c4994f19aeb302c7179 New position:
-[0.000] [info] Pos(16.21, 4.57, 0.00) Rot(0.03, 0.00, 0.00) roadId 1 laneId 1 s 16.21 offset 2.82 t 4.57
-[0.000] [info] Init instance-e91afa15647c4c4994f19aeb302c7179 TeleportAction runningState -> endTransition -> completeState
-[0.000] [info] Init instance-e91afa15647c4c4994f19aeb302c7179 LongitudinalAction initState -> startTransition -> runningState
-[0.000] [info] Init instance-e91afa15647c4c4994f19aeb302c7179 LongitudinalAction runningState -> endTransition -> completeState
-[0.000] [info] Init instance-e3c5b72c12c34c85aac247734ad83bef TeleportAction initState -> startTransition -> runningState
-[0.000] [info] Starting teleport Action
-[0.000] [info] instance-e3c5b72c12c34c85aac247734ad83bef New position:
-[0.000] [info] Pos(70.88, 12.53, 0.00) Rot(4.66, 0.00, 0.00) roadId 1 laneId 1 s 70.88 offset 10.78 t 12.53
-[0.000] [info] Init instance-e3c5b72c12c34c85aac247734ad83bef TeleportAction runningState -> endTransition -> completeState
-[0.000] [info] Init instance-e3c5b72c12c34c85aac247734ad83bef LongitudinalAction initState -> startTransition -> runningState
-[0.000] [info] Init instance-e3c5b72c12c34c85aac247734ad83bef LongitudinalAction runningState -> endTransition -> completeState
-[0.000] [info] Init instance-fdd3fe14d1c044b9a9f6c24383c6207c TeleportAction initState -> startTransition -> runningState
-[0.000] [info] Starting teleport Action
-[0.000] [info] instance-fdd3fe14d1c044b9a9f6c24383c6207c New position:
-[0.000] [info] Pos(60.73, 20.10, 0.00) Rot(4.12, 0.00, 0.00) roadId 1 laneId 1 s 60.73 offset 18.35 t 20.10
-[0.000] [info] Init instance-fdd3fe14d1c044b9a9f6c24383c6207c TeleportAction runningState -> endTransition -> completeState
-[0.000] [info] Init instance-fdd3fe14d1c044b9a9f6c24383c6207c LongitudinalAction initState -> startTransition -> runningState
-[0.000] [info] Init instance-fdd3fe14d1c044b9a9f6c24383c6207c LongitudinalAction runningState -> endTransition -> completeState
-[0.000] [info] storyBoard initState -> startTransition -> runningState
-[0.000] [info] baseline_replay initState -> startTransition -> runningState
-[0.000] [info] recorded_trajectories initState -> initToStandbyTransition -> standbyState
-[0.050] [info] simulation_time: true, delay: 0.00, 0.0500 > 0.0000, edge: rising
-[0.050] [info] Trigger /------------------------------------------------
-[0.050] [info] Group 0:
-[0.050] [info] simulation_time: true
-[0.050] [info] Trigger  ------------------------------------------------/
-[0.050] [info] recorded_trajectories standbyState -> startTransition -> runningState
-[0.050] [info] ego_trajectory initState -> startTransition -> runningState
-[0.050] [info] ego_follow initState -> startTransition -> runningState
-[0.050] [info] ego_start initState -> initToStandbyTransition -> standbyState
-[0.050] [info] instance-e91afa15647c4c4994f19aeb302c7179_trajectory initState -> startTransition -> runningState
-[0.050] [info] instance-e91afa15647c4c4994f19aeb302c7179_follow initState -> startTransition -> runningState
-[0.050] [info] instance-e91afa15647c4c4994f19aeb302c7179_start initState -> initToStandbyTransition -> standbyState
-[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_trajectory initState -> startTransition -> runningState
-[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_follow initState -> startTransition -> runningState
-[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_start initState -> initToStandbyTransition -> standbyState
-[0.050] [info] instance-fdd3fe14d1c044b9a9f6c24383c6207c_trajectory initState -> startTransition -> runningState
-[0.050] [info] instance-fdd3fe14d1c044b9a9f6c24383c6207c_follow initState -> startTransition -> runningState
-[0.050] [info] instance-fdd3fe14d1c044b9a9f6c24383c6207c_start initState -> initToStandbyTransition -> standbyState
-[0.050] [info] simulation_time: true, delay: 0.00, 0.0500 > 0.0000, edge: none
-[0.050] [info] Trigger /------------------------------------------------
-[0.050] [info] Group 0:
-[0.050] [info] simulation_time: true
-[0.050] [info] Trigger  ------------------------------------------------/
-[0.050] [info] ego_start standbyState -> startTransition -> runningState
-[0.050] [info] ego_follow_trajectory initState -> startTransition -> runningState
-[0.050] [info] simulation_time: true, delay: 0.00, 0.0500 > 0.0000, edge: none
-[0.050] [info] Trigger /------------------------------------------------
-[0.050] [info] Group 0:
-[0.050] [info] simulation_time: true
-[0.050] [info] Trigger  ------------------------------------------------/
-[0.050] [info] instance-e91afa15647c4c4994f19aeb302c7179_start standbyState -> startTransition -> runningState
-[0.050] [info] instance-e91afa15647c4c4994f19aeb302c7179_follow_trajectory initState -> startTransition -> runningState
-[0.050] [info] simulation_time: true, delay: 0.00, 0.0500 > 0.0000, edge: none
-[0.050] [info] Trigger /------------------------------------------------
-[0.050] [info] Group 0:
-[0.050] [info] simulation_time: true
-[0.050] [info] Trigger  ------------------------------------------------/
-[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_start standbyState -> startTransition -> runningState
-[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_follow_trajectory initState -> startTransition -> runningState
-[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_follow_trajectory runningState -> endTransition -> completeState
-[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_start complete after 1 execution
-[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_start runningState -> endTransition -> completeState
-[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_follow runningState -> endTransition -> completeState
-[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_trajectory complete after 1 execution
-[0.050] [info] instance-e3c5b72c12c34c85aac247734ad83bef_trajectory runningState -> endTransition -> completeState
-[0.050] [info] simulation_time: true, delay: 0.00, 0.0500 > 0.0000, edge: none
-[0.050] [info] Trigger /------------------------------------------------
-[0.050] [info] Group 0:
-[0.050] [info] simulation_time: true
-[0.050] [info] Trigger  ------------------------------------------------/
-[0.
+[0.010] [info] simulation_time: true, delay: 0.00, 0.0100 > 0.0000, edge: rising
+[0.010] [info] Trigger /------------------------------------------------
+[0.010] [info] Group 0:
+[0.010] [info] simulation_time: true
+[0.010] [info] Trigger  ------------------------------------------------/
+[0.010] [info] recorded_trajectories standbyState -> startTransition -> runningState
+[0.010] [info] ego_trajectory initState -> startTransition -> runningState
+[0.010] [info] ego_follow initState -> startTransition -> runningState
+[0.010] [info] ego_start initState -> initToStandbyTransition -> standbyState
+[0.010] [info] walk1_trajectory initState -> startTransition -> runningState
+[0.010] [info] walk1_follow initState -> startTransition -> runningState
+[0.010] [info] walk1_start initState -> initToStandbyTransition -> standbyState
+[0.010] [info] cone1_trajectory initState -> startTransition -> runningState
+[0.010] [info] cone1_follow initState -> startTransition -> runningState
+[0.010] [info] cone1_start initState -> initToStandbyTransition -> standbyState
+[0.010] [info] simulation_time: true, delay: 0.00, 0.0100 > 0.0000, edge: none
+[0.010] [info] Trigger /------------------------------------------------
+[0.010] [info] Group 0:
+[0.010] [info] simulation_time: true
+[0.010] [info] Trigger  ------------------------------------------------/
+[0.010] [info] ego_start standbyState -> startTransition -> runningState
+[0.010] [info] ego_follow_trajectory initState -> startTransition -> runningState
+[0.010] [info] simulation_time: true, delay: 0.00, 0.0100 > 0.0000, edge: none
+[0.010] [info] Trigger /------------------------------------------------
+[0.010] [info] Group 0:
+[0.010] [info] simulation_time: true
+[0.010] [info] Trigger  ------------------------------------------------/
+[0.010] [info] cone1_start standbyState -> startTransition -> runningState
+[0.010] [info] cone1_follow_trajectory initState -> startTransition -> runningState
+[0.010] [info] cone1_follow_trajectory runningState -> endTransition -> completeState
+[0.010] [info] cone1_start complete after 1 execution
+[0.010] [info] cone1_start runningState -> endTransition -> completeState
+[0.010] [info] cone1_follow runningState -> endTransition -> completeState
+[0.010] [info] cone1_trajectory complete after 1 execution
+[0.010] [info] cone1_trajectory runningState -> endTransition -> completeState
+[2.400] [info] simulation_time: true, delay: 0.00, 2.4000 > 2.3998, edge: none
+[2.400] [info] Trigger /------------------------------------------------
+[2.400] [info] Group 0:
+[2.400] [info] simulation_time: true
+[2.400] [info] Trigger  ------------------------------------------------/
+[2.400] [info] walk1_start standbyState -> startTransition -> runningState
+[2.400] [info] walk1_follow_trajectory initState -> startTransition -> runningState
+[17.910] [info] walk1_follow_trajectory runningState -> endTransition -> completeState
+[17.910] [info] walk1_start complete after 1 execution
+[17.910] [info] walk1_start runningState -> endTransition -> completeState
+[17.910] [info] walk1_follow runningState -> endTransition -> completeState
+[17.910] [info] walk1_trajectory complete after 1 execution
+[17.910] [info] walk1_trajectory runningState -> endTransition -> completeState
+[19.350] [info] simulation_time: true, delay: 0.00, 19.3500 > 19.3491, edge: rising
+[19.350] [info] Trigger /------------------------------------------------
+[19.350] [info] Group 0:
+[19.350] [info] simulation_time: true
+[19.350] [info] Trigger  ------------------------------------------------/
+[19.350] [info] ego_follow_trajectory runningState -> stopTransition -> completeState
+[19.350] [info] ego_start complete after 1 execution
+[19.350] [info] ego_start runningState -> endTransition -> completeState
+[19.350] [info] ego_follow runningState -> endTransition -> completeState
+[19.350] [info] ego_trajectory complete after 1 execution
+[19.350] [info] ego_trajectory runningState -> endTransition -> completeState
+[19.350] [info] recorded_trajectories runningState -> endTransition -> completeState
+[19.350] [info] baseline_replay runningState -> endTransition -> completeState
+[19.350] [info] storyBoard runningState -> stopTransition -> completeState
+[19.350] [info] Closing

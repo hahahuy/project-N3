@@ -3,7 +3,11 @@ import type { ReactElement } from "react";
 const icons = {
   undo: <><path d="M3 8h7a3 3 0 1 1 0 6H7" /><path d="M6 5 3 8l3 3" /></>,
   redo: <><path d="M13 8H6a3 3 0 1 0 0 6h3" /><path d="M10 5l3 3-3 3" /></>,
-  import: <><path d="M8 10.5V2.5" /><path d="m5 5.5 3-3 3 3" /><path d="M2.5 10.5V13a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-2.5" /></>,
+  // Arrow points DOWN into the tray (data coming in). It used to share the
+  // export glyph's upward arrow and differed only by a 0.1 gap in the tray
+  // base, which made "Import scene" read as the export icon. The pair is now
+  // directionally opposite, so the two are distinguishable at 16px.
+  import: <><path d="M8 2.5v8" /><path d="m5 7.5 3 3 3-3" /><path d="M2.5 11.5V13a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-1.5" /></>,
   export: <><path d="M8 10.5V2.5" /><path d="m5 5.5 3-3 3 3" /><path d="M2.6 10.5H2.5v2.5a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-2.5h-.1" /></>,
   cursor: <><path d="M4 2.2 12.4 8 9 8.9 10.6 12.4 8.9 13.2 7.3 9.7 4 11.6z" /></>,
   edit: <><path d="M11.4 2.4 13.6 4.6 5.6 12.6 2.4 13.6 3.4 10.4z" /><path d="m9.4 4.4 2.2 2.2" /></>,

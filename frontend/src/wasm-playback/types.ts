@@ -173,6 +173,7 @@ export type WasmGround = { layers: WasmGroundLayer[] };
 export type WasmRecordedPath = {
   actor_id: string;
   actor_type: string;
+  role: "origin" | "edited";
   points: Array<{ x_m: number; y_m: number }>;
 };
 

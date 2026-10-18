@@ -45,8 +45,12 @@ services:
       ESMINILIB_VERSION: ${ESMINILIB_VERSION:-configured-esminiLib}
       ESMINI_CAPTURE_IMAGES: ${ESMINI_CAPTURE_IMAGES:-0}
       MPLCONFIGDIR: /tmp/matplotlib
+      R2S_CARLA_HOST: ${R2S_CARLA_HOST:-host.docker.internal}
+      R2S_CARLA_PORT: ${R2S_CARLA_PORT:-2000}
     ports:
       - "${PROJECT_N3_WEB_API_PORT:-8001}:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     # Bounded because unbounded dev is a host-availability hazard, not just a
     # dev annoyance. Measured 2026-10-17: one `NuScenes(v1.0-trainval)` load
     # costs 7.74GB, and the dev api with `--reload` starts a fresh worker on

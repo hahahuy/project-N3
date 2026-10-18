@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -48,10 +49,11 @@ class ArtifactAdapter:
     def __init__(self, settings: WebSettings):
         self.settings = settings
         self._map_names: dict[str, str] | None = None
+        self._ephemeral: dict[str, ArtifactRecord] = {}
 
     def discover(self) -> tuple[ArtifactRecord, ...]:
         if not self.settings.artifact_root.is_dir():
-            return ()
+            return tuple(self._ephemeral.values())
         records: list[ArtifactRecord] = []
         for path in sorted(self.settings.artifact_root.rglob("*.json")):
             if path.name.endswith(".replay.json") or path.name in {
@@ -73,7 +75,11 @@ class ArtifactAdapter:
                     variant_config=config,
                 )
             )
-        return tuple(records)
+        return tuple(records) + tuple(self._ephemeral.values())
+
+    def register_ephemeral(self, record: ArtifactRecord) -> None:
+        """Expose a session branch without making it discoverable after restart."""
+        self._ephemeral[record.scenario.scenario_id] = record
 
     def get(self, scenario_id: str) -> ArtifactRecord:
         for record in self.discover():
@@ -112,15 +118,19 @@ class ArtifactAdapter:
         )
 
     def _map_name(self, scene_token: str) -> str | None:
+        if os.environ.get("PROJECT_N3_SKIP_MAP_NAME_LOOKUP") == "1":
+            return None
         if self._map_names is None:
             self._map_names = {}
             root = self.settings.dataset_root
             if root is None:
                 return None
             try:
+                version = self.settings.dataset_version
+                if not (root / version).is_dir():
+                    return None
                 from .nuscenes_adapter import shared_nuscenes
 
-                version = self.settings.dataset_version
                 metadata = root / version
                 if not (metadata / "attribute.json").is_file() and (root / "v1.0-trainval" / "attribute.json").is_file():
                     version = "v1.0-trainval"
