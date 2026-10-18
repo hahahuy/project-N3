@@ -50,3 +50,8 @@ def _calibration() -> dict[str, object]:
 def test_map_records_reject_an_unsupported_layer() -> None:
     with pytest.raises(ValueError, match="Unsupported native map layer: lane"):
         native_map_records(FakeMapApi(lane=[]), "lane")
+
+
+def test_map_records_reject_a_missing_layer_attribute() -> None:
+    with pytest.raises(ValueError, match="unavailable: stop_line"):
+        native_map_records(FakeMapApi(), "stop_line")
