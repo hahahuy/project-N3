@@ -342,3 +342,8 @@ def test_prediction_advisory_rejects_no_predicted_paths() -> None:
 def test_prediction_advisory_rejects_an_empty_reference() -> None:
     with pytest.raises(ValueError, match="non-empty and equal"):
         evaluate_prediction_advisory([[]], [])
+
+
+def test_prediction_advisory_rejects_a_path_with_a_different_horizon() -> None:
+    with pytest.raises(ValueError, match="non-empty and equal"):
+        evaluate_prediction_advisory([[(0.0, 0.0)], [(0.0, 0.0), (1.0, 0.0)]], [(0.0, 0.0)])
