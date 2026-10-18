@@ -107,3 +107,14 @@ def test_map_records_accept_every_supported_layer() -> None:
 
     for layer in MAP_LAYERS:
         assert native_map_records(api, layer) == ({"token": layer},)
+
+
+def test_road_ahead_reports_unavailable_without_the_devkit_query() -> None:
+    result = road_ahead_query(FakeMapApi(), 1.0, 2.0)
+
+    assert result == {
+        "version": NATIVE_MAP_VERSION,
+        "status": "unavailable",
+        "reason": "devkit_query_missing",
+        "records": [],
+    }
