@@ -224,3 +224,11 @@ def test_map_patch_passes_only_the_requested_layers_to_the_devkit() -> None:
     native_map_patch(api, (0.0, 0.0, 1.0, 1.0), layers=("stop_line",))
 
     assert api.calls == [("patch", [0.0, 0.0, 1.0, 1.0], ["stop_line"])]
+
+
+def test_map_patch_sorts_record_tokens_per_layer() -> None:
+    api = QueryMapApi(patch_records={"walkway": ["w3", "w1", "w2"]})
+
+    result = native_map_patch(api, (0.0, 0.0, 1.0, 1.0), layers=("walkway",))
+
+    assert result["layers"] == {"walkway": ["w1", "w2", "w3"]}
