@@ -540,7 +540,7 @@ class RoadBoundaryRequest(BaseModel):
 
 
 class ValidationLimitsRequest(BaseModel):
-    max_acceleration_mps2: float = 5.0
+    max_acceleration_mps2: float = 10.0
     max_deceleration_mps2: float = 8.0
     max_jerk_mps3: float = 20.0
     max_yaw_rate_rps: float = 2.5

@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from r2s_web.app import create_app
 from r2s_web.config import WebSettings
 from r2s_web.adapter import ArtifactAdapter
+from r2s_web.schemas import ValidationLimitsRequest
 from r2s_web.jobs import BatchService
 from r2s_web.schemas import BatchRequest
 from real2scenario import (
@@ -1600,3 +1601,14 @@ def test_devkit_metadata_is_shared_across_call_sites(tmp_path, monkeypatch) -> N
 
     assert len(created) == 1, f"expected one metadata load, got {len(created)}"
     assert nuscenes_adapter.shared_nuscenes_cache_size() == 1
+
+
+def test_default_generation_validation_limits_allow_ten_mps2() -> None:
+    """The default acceleration ceiling is 10 m/s2, not the original 5.
+
+    Batches that omit ``validation_limits`` inherit this default, which
+    ``jobs`` forwards into the feasibility limits used to raise
+    ``acceleration_exceeded`` maneuver violations. It is a diagnostic ceiling:
+    nothing clamps propagation to it.
+    """
+    assert ValidationLimitsRequest().max_acceleration_mps2 == 10.0
