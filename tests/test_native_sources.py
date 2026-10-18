@@ -195,3 +195,15 @@ def test_map_patch_names_the_first_unsupported_layer_alphabetically() -> None:
 def test_map_patch_validates_layers_before_checking_the_devkit_query() -> None:
     with pytest.raises(ValueError, match="Unsupported native map layer"):
         native_map_patch(FakeMapApi(), (0.0, 0.0, 1.0, 1.0), layers=("lane",))
+
+
+def test_map_patch_reports_unavailable_without_the_devkit_query() -> None:
+    result = native_map_patch(FakeMapApi(), (0.0, 0.0, 1.0, 1.0))
+
+    assert result == {
+        "version": NATIVE_MAP_VERSION,
+        "status": "unavailable",
+        "reason": "devkit_query_missing",
+        "patch": [0.0, 0.0, 1.0, 1.0],
+        "layers": {},
+    }
