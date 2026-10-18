@@ -60,3 +60,11 @@ def test_map_records_reject_a_missing_layer_attribute() -> None:
 def test_map_records_reject_a_layer_that_is_not_a_list() -> None:
     with pytest.raises(ValueError, match="unavailable: walkway"):
         native_map_records(FakeMapApi(walkway=({"token": "w"},)), "walkway")
+
+
+def test_map_records_are_sorted_by_token() -> None:
+    api = FakeMapApi(road_segment=[{"token": "c"}, {"token": "a"}, {"token": "b"}])
+
+    records = native_map_records(api, "road_segment")
+
+    assert [record["token"] for record in records] == ["a", "b", "c"]
