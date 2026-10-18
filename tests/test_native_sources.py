@@ -303,3 +303,8 @@ def test_lidar_contract_coerces_string_timestamps_and_tokens() -> None:
 def test_lidar_contract_requires_a_sample_timestamp() -> None:
     with pytest.raises(KeyError, match="timestamp"):
         lidar_payload_contract({"filename": "a.bin"}, _calibration())
+
+
+def test_lidar_contract_requires_a_calibration_token() -> None:
+    with pytest.raises(KeyError, match="token"):
+        lidar_payload_contract(_sample_data(), {})
