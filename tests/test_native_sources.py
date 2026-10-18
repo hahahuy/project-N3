@@ -68,3 +68,14 @@ def test_map_records_are_sorted_by_token() -> None:
     records = native_map_records(api, "road_segment")
 
     assert [record["token"] for record in records] == ["a", "b", "c"]
+
+
+def test_map_records_are_copies_of_the_api_records() -> None:
+    original = {"token": "a", "polygon_token": "p"}
+    api = FakeMapApi(drivable_area=[original])
+
+    records = native_map_records(api, "drivable_area")
+    records[0]["token"] = "mutated"
+
+    assert original["token"] == "a"
+    assert records[0] is not original
