@@ -232,3 +232,11 @@ def test_map_patch_sorts_record_tokens_per_layer() -> None:
     result = native_map_patch(api, (0.0, 0.0, 1.0, 1.0), layers=("walkway",))
 
     assert result["layers"] == {"walkway": ["w1", "w2", "w3"]}
+
+
+def test_map_patch_fills_layers_missing_from_the_devkit_result_with_empty_lists() -> None:
+    api = QueryMapApi(patch_records={"walkway": ["w1"]})
+
+    result = native_map_patch(api, (0.0, 0.0, 1.0, 1.0), layers=("walkway", "stop_line"))
+
+    assert result["layers"] == {"walkway": ["w1"], "stop_line": []}
