@@ -254,3 +254,11 @@ def test_map_patch_drops_devkit_layers_that_were_not_requested() -> None:
     result = native_map_patch(api, (0.0, 0.0, 1.0, 1.0), layers=("walkway",))
 
     assert list(result["layers"]) == ["walkway"]
+
+
+def test_map_patch_marks_available_results_local_private_with_the_patch() -> None:
+    result = native_map_patch(QueryMapApi(patch_records={}), (-1.0, -2.0, 3.0, 4.0), layers=())
+
+    assert result["status"] == "available"
+    assert result["patch"] == [-1.0, -2.0, 3.0, 4.0]
+    assert result["artifact_visibility"] == "local_private"
