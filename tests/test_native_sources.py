@@ -126,3 +126,10 @@ def test_road_ahead_passes_the_query_position_to_the_devkit() -> None:
     road_ahead_query(api, 12.5, -3.25)
 
     assert api.calls == [("next", 12.5, -3.25)]
+
+
+def test_road_ahead_returns_devkit_records_as_available() -> None:
+    result = road_ahead_query(QueryMapApi(next_roads=["road-1", "road-2"]), 0.0, 0.0)
+
+    assert result["status"] == "available"
+    assert result["records"] == ["road-1", "road-2"]
