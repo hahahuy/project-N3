@@ -318,3 +318,10 @@ def test_lidar_contract_rejects_an_unknown_version() -> None:
 def test_lidar_contract_rejects_a_non_top_channel() -> None:
     with pytest.raises(ValueError, match="Invalid private LiDAR payload contract"):
         LidarPayloadContract(LIDAR_CONTRACT_VERSION, "RADAR_FRONT", 1, "a.bin", "ego_vehicle", "c", 8)
+
+
+def test_lidar_contract_rejects_public_visibility() -> None:
+    with pytest.raises(ValueError, match="must remain local_private"):
+        LidarPayloadContract(
+            LIDAR_CONTRACT_VERSION, "LIDAR_TOP", 1, "a.bin", "ego_vehicle", "c", 8, "public"
+        )
