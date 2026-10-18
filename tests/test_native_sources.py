@@ -284,3 +284,8 @@ def test_lidar_contract_defaults_to_local_private_visibility() -> None:
 
 def test_lidar_contract_uses_the_requested_decimation() -> None:
     assert lidar_payload_contract(_sample_data(), _calibration(), decimation=1).decimation == 1
+
+
+def test_lidar_contract_rejects_zero_decimation() -> None:
+    with pytest.raises(ValueError, match="Invalid private LiDAR payload contract"):
+        lidar_payload_contract(_sample_data(), _calibration(), decimation=0)
