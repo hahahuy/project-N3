@@ -379,3 +379,11 @@ def test_prediction_advisory_takes_ade_and_fde_minima_independently() -> None:
 
     assert result["min_ade_m"] == pytest.approx(1.0)
     assert result["min_fde_m"] == pytest.approx(1.0)
+
+
+def test_prediction_advisory_is_labelled_provisional_and_advisory_only() -> None:
+    result = evaluate_prediction_advisory([[(0.0, 0.0)]], [(0.0, 0.0)])
+
+    assert result["evaluation_version"] == PREDICTION_EVAL_VERSION
+    assert result["metric_role"] == "advisory_prediction_only"
+    assert result["scientific_status"] == "PROVISIONAL"
