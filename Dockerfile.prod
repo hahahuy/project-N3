@@ -1,0 +1,73 @@
+# Product image: what judges reach at https://project-n3.hahuy.cloud
+#
+# Unlike Dockerfile.dev, this image does NOT bind-mount the repository at
+# runtime. The Python sources and the compiled frontend bundle are baked in at
+# build time, so the product serves exactly the committed tree. A bind mount
+# meant any uncommitted edit on the host was live in the judge-facing stack
+# within about a second, which is the opposite of what a product surface needs.
+#
+# The frontend is compiled in a Node stage because .dockerignore excludes
+# frontend/dist; copying a host-built bundle would reintroduce a way for the
+# served assets to differ from the committed source.
+#
+# See docs/current/environment-environments.md.
+
+# ---------------------------------------------------------------- web build
+FROM node:22-bookworm-slim AS web
+
+WORKDIR /web
+COPY frontend/package.json frontend/package-lock.json ./frontend/
+RUN cd frontend && npm ci --no-audit --no-fund
+
+COPY frontend/ ./frontend/
+RUN cd frontend && npm run build
+
+# ---------------------------------------------------------------- python app
+FROM python:3.11-slim-bookworm
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PROJECT_N3_ROOT=/app \
+    PROJECT_N3_ARTIFACT_ROOT=scenarios \
+    PROJECT_N3_OUTPUT_ROOT=reports \
+    PROJECT_N3_METADATA_CACHE=/var/cache/real2scenario \
+    MPLCONFIGDIR=/tmp/matplotlib
+
+WORKDIR /app
+COPY pyproject.toml README.md ./
+COPY src/ ./src/
+
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+        libgl1 \
+        libglib2.0-0 \
+        libx11-6 \
+        libxext6 \
+        libxi6 \
+        libxinerama1 \
+        libxrandr2 \
+        libxrender1 \
+        libxxf86vm1 \
+        libfontconfig1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && python -m pip install --no-cache-dir ".[web,devkit]"
+
+# The browser bundle is served by the API from PROJECT_N3_ROOT/frontend/dist.
+COPY --from=web /web/frontend/dist ./frontend/dist
+
+# Runs as a non-root user. The repository is no longer bind-mounted, so
+# ownership here is fixed at build time rather than tracking the host uid.
+# Write paths that arrive as volumes are initialized by the api-permissions
+# service instead. See docs/guides/security-deployment.md S-4.
+RUN useradd --create-home --uid 10001 appuser \
+    && mkdir -p /var/cache/real2scenario /app/scenarios /app/reports \
+    && chmod 0777 /var/cache/real2scenario /app/scenarios /app/reports \
+    && chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 8000
+
+# No --reload. A product process must only change on a deliberate redeploy, and
+# a worker killed by the memory limit has to be respawned by the restart policy
+# rather than silently never coming back.
+CMD ["uvicorn", "r2s_web.app:app", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8000"]

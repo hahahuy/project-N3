@@ -1,5 +1,8 @@
-# nuScenes → OpenSCENARIO: MVP & Project Summary
+# Project - N3: nuScenes → OpenSCENARIO MVP & Project Summary
 
+> **Project name: `Project - N3`** (repo `project-N3`, codename `Real2Scenario`).
+> This document is the long-term scope baseline for **Project - N3**.
+>
 > **Long-term scope baseline, not the current execution plan.** DEC-011
 > supersedes the original CARLA-first MVP acceptance wording in this document:
 > current MVP execution uses esmini and the internal Tier 1 kinematic preview;

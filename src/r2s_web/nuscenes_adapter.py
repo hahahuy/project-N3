@@ -11,6 +11,41 @@ from typing import Any
 import numpy as np
 
 
+# One nuScenes object per (dataroot, version) per process. Measured 2026-10-17:
+# a single `NuScenes(v1.0-trainval)` load costs 7.74GB of resident memory. Three
+# call sites each built their own, so the api process could hold ~23GB and the
+# kernel OOM-killed the worker once dev's `--reload` churn added another copy.
+# All three now share this cache.
+_SHARED_NUSC: dict[tuple[str, str], Any] = {}
+_SHARED_NUSC_LOCK = threading.RLock()
+
+
+def shared_nuscenes(root: str | Path, version: str) -> Any:
+    """Return the process-wide nuScenes object for one dataset.
+
+    Read-only metadata lookups only. Callers must not mutate the returned
+    object; the devkit exposes tables, and sharing them is the point.
+    """
+    resolved_root = str(Path(root).expanduser().resolve())
+    key = (resolved_root, version)
+    with _SHARED_NUSC_LOCK:
+        instance = _SHARED_NUSC.get(key)
+        if instance is None:
+            try:
+                from nuscenes.nuscenes import NuScenes
+            except ImportError as error:
+                raise RuntimeError("nuscenes_devkit_not_installed") from error
+            instance = NuScenes(version=version, dataroot=resolved_root, verbose=False)
+            _SHARED_NUSC[key] = instance
+        return instance
+
+
+def shared_nuscenes_cache_size() -> int:
+    """Report how many devkit instances this process holds."""
+    with _SHARED_NUSC_LOCK:
+        return len(_SHARED_NUSC)
+
+
 class NuScenesDatasetAdapter:
     """Own official nuScenes semantics while keeping request payloads JSON-safe."""
 
@@ -37,11 +72,7 @@ class NuScenesDatasetAdapter:
     @property
     def nusc(self) -> Any:
         if self._nusc is None:
-            try:
-                from nuscenes.nuscenes import NuScenes
-            except ImportError as error:
-                raise RuntimeError("nuscenes_devkit_not_installed") from error
-            self._nusc = NuScenes(version=self.version, dataroot=str(self.root), verbose=False)
+            self._nusc = shared_nuscenes(self.root, self.version)
         return self._nusc
 
     @property
@@ -197,6 +228,37 @@ class NuScenesDatasetAdapter:
                 for box in boxes
             ],
         }
+
+    def recorded_annotation_tracks(self, first_sample_token: str, last_sample_token: str) -> list[dict[str, Any]]:
+        """Return all recorded annotation observations grouped by instance."""
+        tracks: dict[str, dict[str, Any]] = {}
+        current = first_sample_token
+        seen: set[str] = set()
+        first_timestamp: int | None = None
+        while current and current not in seen:
+            seen.add(current)
+            sample = self.nusc.get("sample", current)
+            timestamp = int(sample["timestamp"])
+            if first_timestamp is None:
+                first_timestamp = timestamp
+            lidar_token = str(sample.get("data", {}).get("LIDAR_TOP") or "")
+            if lidar_token:
+                for box in self.nusc.get_boxes(lidar_token):
+                    annotation = self.nusc.get("sample_annotation", box.token)
+                    instance_id = str(annotation.get("instance_token") or box.token)
+                    track = tracks.setdefault(instance_id, {"instance_id": instance_id, "category": box.name, "states": []})
+                    track["states"].append({
+                        "time_s": (timestamp - first_timestamp) / 1e6,
+                        "source_timestamp_us": timestamp,
+                        "source_record_token": box.token,
+                        "center_global": [float(value) for value in box.center],
+                        "size_m": [float(value) for value in box.wlh],
+                        "rotation_wxyz": [float(value) for value in box.orientation.elements],
+                    })
+            if current == last_sample_token:
+                break
+            current = str(sample.get("next") or "")
+        return list(tracks.values())
 
     def records(self, token: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], Path]:
         sample_data = self.sample_data(token)

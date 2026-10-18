@@ -1,7 +1,7 @@
 # Development and Product Environments
 
 Status: `CURRENT`
-Audience: anyone maintaining `project-N3`, especially readers new to running
+Audience: anyone maintaining **Project - N3**, especially readers new to running
 separate environments.
 
 Related: `docs/current/demo-hardening-backlog.md`,
@@ -19,16 +19,46 @@ Both run **the same application code**. Only the configuration differs.
 | URL | `http://<tailscale-host>:5173` | `https://project-n3.hahuy.cloud` |
 | Compose file | `compose.dev.yml` | `compose.demo.yml` |
 | Docker project | `project-n3` | `project-n3-prod` |
-| Frontend | Vite dev server, hot reload | built bundle from `frontend/dist` |
-| Source on disk | bind-mounted, edits are live | built assets only |
+| Frontend | Vite dev server, hot reload | compiled into the image at build time |
+| Source on disk | bind-mounted, edits are live | **baked into the image**, not mounted |
+| API hot reload | yes (`uvicorn --reload`) | no — code changes need a redeploy |
 | Access control | none | nginx shared key + TLS |
 | Reachable from | LAN / Tailscale only | public internet |
 | Restarts freely | yes | deliberately, rarely |
 
 The API runs as the configured host UID/GID in both Compose environments. A
-short-lived root-only `api-permissions` service initializes the reports volume
-before the API starts, so replay, preview and WASM-pair artifacts remain
-writable without running the API as root.
+short-lived root-only `api-permissions` service initializes the writable
+volumes before the API starts, so replay, preview and WASM-pair artifacts
+remain writable without running the API as root. In the product stack it chowns
+the reports, scenarios and metadata-cache volumes; chowning only reports leaves
+the others root-owned and unable to rebuild. See `docs/guides/datastreaming.md`
+D-1.
+
+### Product serves the committed tree only
+
+The product api builds `Dockerfile.prod`, which compiles the frontend in a Node
+stage and copies the Python sources and the bundle into the image. The
+repository is deliberately **not** bind-mounted at `/app`. Prod previously
+mounted `.:/app`, which meant any uncommitted edit on the host was live in the
+judge-facing stack within about a second, with nothing recording what the
+product was actually serving.
+
+Consequences worth knowing:
+
+- A host edit no longer reaches prod at all. To change what prod serves, commit
+  and redeploy.
+- The served bundle is compiled inside the image, so it cannot drift from the
+  committed frontend source. `.dockerignore` excludes `frontend/dist` precisely
+  so a host-built bundle cannot be copied in.
+- The product image installs `[web,devkit]` rather than `[dev,web,devkit]`, and
+  runs without `--reload`, so a worker killed by the memory limit is respawned
+  by the restart policy rather than never coming back.
+- Because there is no mount, the file paths in a prod stack no longer match the
+  host checkout. Debugging reads the image, not your working tree.
+- `make prod`, `make prod-build-only` and `make prod-rebuild` refuse to run on a
+  dirty working tree. Code that is live in prod but absent from git cannot be
+  reproduced or rolled back. `log.txt` and `frontend/wasm-esmini/a4_probe.mjs`
+  are exempt.
 
 ### Why they must differ
 
@@ -173,6 +203,18 @@ make dev-down            # close the LAN exposure
 
 If the public site still shows your previous change, run `make prod-rebuild`
 rather than `make prod`.
+
+Because the product API no longer hot-reloads or bind-mounts the repository,
+a source edit alone does not change what it serves. Commit, then redeploy:
+
+```bash
+git commit -am "..."
+make prod-rebuild        # or `make prod` for a no-op restart
+```
+
+`make prod-rebuild` rebuilds the image, which recompiles the frontend bundle
+and re-copies the sources. `make prod` starts the stack without rebuilding and
+will not pick up new code.
 
 ## 7. Verification performed
 

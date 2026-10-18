@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { WasmFrame, WasmGround, WasmLidarCloud, WasmRecordedPath, WasmRoadGeometry, WasmOrbitState } from "./types";
+import type { RecordedAnnotationTrack } from "../api";
 import { actorKindOf, renderVehicleYaw } from "./types";
+import { OrbitRuntime } from "./orbit-runtime";
 
 type Props = {
   road: WasmRoadGeometry;
@@ -11,8 +13,11 @@ type Props = {
   showCuboids: boolean;
   paths: WasmRecordedPath[] | null;
   lidar: WasmLidarCloud | null;
+  recordedTracks?: RecordedAnnotationTrack[];
   orbit?: WasmOrbitState;
   onOrbitChange?: (orbit: WasmOrbitState) => void;
+  showResetView?: boolean;
+  focusActorId?: string | null;
 };
 
 const GROUND_STYLE: Record<string, { color: number; lift: number }> = {
@@ -73,7 +78,9 @@ function recordedPathColor(actorType: string): number {
   return ACTOR_COLORS.unknown;
 }
 
-export default function ThreePlaybackCanvas({ road, frame, ground, showCuboids, paths, lidar, orbit, onOrbitChange }: Props) {
+export default function ThreePlaybackCanvas({ road, frame, ground, showCuboids, paths, lidar, recordedTracks = [], orbit, onOrbitChange, showResetView = false, focusActorId = null }: Props) {
+  const orbitRuntimeRef = useRef<OrbitRuntime | null>(null);
+  if (!orbitRuntimeRef.current) orbitRuntimeRef.current = new OrbitRuntime(orbit ?? { position: [20, 22, 26], target: [0, 0, 0] });
   const hostRef = useRef<HTMLDivElement | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -84,7 +91,11 @@ export default function ThreePlaybackCanvas({ road, frame, ground, showCuboids, 
   const cuboidEdgesRef = useRef<THREE.EdgesGeometry | null>(null);
   const followRef = useRef<THREE.Vector3 | null>(null);
   const animationRef = useRef<FocusAnimation | null>(null);
+  const interactionOrbitRef = useRef<WasmOrbitState | null>(null);
+  const visibleRef = useRef(true);
+  const renderRef = useRef<(() => void) | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const recordedMeshRef = useRef<THREE.InstancedMesh | null>(null);
 
 function actorColor(object: { object_type: number }, selected: boolean): number {
   if (selected) return ACTOR_COLORS.selected;
@@ -170,8 +181,18 @@ function disposeObject(root: THREE.Object3D): void {
     cameraRef.current = camera;
     controlsRef.current = controls;
     rendererRef.current = renderer;
-    const reportOrbit = () => onOrbitChange?.({ position: camera.position.toArray() as [number, number, number], target: controls.target.toArray() as [number, number, number] });
-    controls.addEventListener("change", reportOrbit);
+    const captureOrbit = () => {
+      const next = { position: camera.position.toArray() as [number, number, number], target: controls.target.toArray() as [number, number, number] };
+      interactionOrbitRef.current = next;
+      orbitRuntimeRef.current?.update(next);
+    };
+    const persistOrbit = () => {
+      const next = interactionOrbitRef.current;
+      if (next && orbitRuntimeRef.current?.getRevision() !== undefined) onOrbitChange?.(next);
+      interactionOrbitRef.current = null;
+    };
+    controls.addEventListener("change", captureOrbit);
+    controls.addEventListener("end", persistOrbit);
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
@@ -202,43 +223,80 @@ function disposeObject(root: THREE.Object3D): void {
     resize();
     const observer = new ResizeObserver(resize);
     observer.observe(host);
+    const visibilityObserver = new IntersectionObserver(([entry]) => {
+      visibleRef.current = entry.isIntersecting;
+      if (visibleRef.current) renderRef.current?.();
+    }, { threshold: 0.01 });
+    visibilityObserver.observe(host);
     let animationFrame = 0;
     const render = () => {
+      if (!visibleRef.current) { animationFrame = 0; return; }
       const focus = animationRef.current;
       if (focus) {
         focus.progress = Math.min(1, focus.progress + 0.08);
         const eased = 1 - Math.pow(1 - focus.progress, 3);
         camera.position.lerpVectors(focus.fromPosition, focus.position, eased);
         controls.target.lerpVectors(focus.fromTarget, focus.target, eased);
-        if (focus.progress >= 1) animationRef.current = null;
+        if (focus.progress >= 1) {
+          animationRef.current = null;
+           const next = { position: camera.position.toArray() as [number, number, number], target: controls.target.toArray() as [number, number, number] };
+           orbitRuntimeRef.current?.update(next);
+           onOrbitChange?.(next);
+        }
       }
       controls.update();
       renderer.render(scene, camera);
       animationFrame = requestAnimationFrame(render);
     };
+    renderRef.current = render;
     render();
 
     return () => {
+      persistOrbit();
       cancelAnimationFrame(animationFrame);
-      controls.removeEventListener("change", reportOrbit);
+      controls.removeEventListener("change", captureOrbit);
+      controls.removeEventListener("end", persistOrbit);
       observer.disconnect();
+      visibilityObserver.disconnect();
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       controls.dispose();
       renderer.dispose();
+      if (recordedMeshRef.current) {
+        recordedMeshRef.current.geometry.dispose();
+        (recordedMeshRef.current.material as THREE.Material).dispose();
+      }
       host.removeChild(renderer.domElement);
       sceneRef.current = null;
       cameraRef.current = null;
       controlsRef.current = null;
       rendererRef.current = null;
+      renderRef.current = null;
     };
   }, []);
 
   useEffect(() => {
-    if (!orbit || !cameraRef.current || !controlsRef.current) return;
-    cameraRef.current.position.fromArray(orbit.position);
-    controlsRef.current.target.fromArray(orbit.target);
-    controlsRef.current.update();
+    if (!orbit || animationRef.current || !cameraRef.current || !controlsRef.current) return;
+    const camera = cameraRef.current;
+    const controls = controlsRef.current;
+    const samePosition = camera.position.toArray().every((value, index) => Math.abs(value - orbit.position[index]) < 1e-4);
+    const sameTarget = controls.target.toArray().every((value, index) => Math.abs(value - orbit.target[index]) < 1e-4);
+    if (samePosition && sameTarget) return;
+    camera.position.fromArray(orbit.position);
+    controls.target.fromArray(orbit.target);
+    controls.update();
   }, [orbit]);
+
+  useEffect(() => {
+    if (!focusActorId) return;
+    const actor = [...actorsRef.current.values()].find((item) => String(item.userData.actorName).toLowerCase() === focusActorId.toLowerCase());
+    const camera = cameraRef.current;
+    const controls = controlsRef.current;
+    if (!actor || !camera || !controls) return;
+    const target = actor.position.clone();
+    animationRef.current = { position: target.clone().add(new THREE.Vector3(8, 6, 10)), target, progress: 0, fromPosition: camera.position.clone(), fromTarget: controls.target.clone() };
+    setSelectedId(Number(actor.userData.objectId));
+    followRef.current = target.clone();
+  }, [focusActorId]);
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -399,6 +457,42 @@ function disposeObject(root: THREE.Object3D): void {
     scene.add(overlay);
   }, [paths, lidar]);
 
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+    if (!recordedMeshRef.current || recordedTracks.length > recordedMeshRef.current.count) {
+      const previous = recordedMeshRef.current;
+      const capacity = Math.max(512, Math.pow(2, Math.ceil(Math.log2(Math.max(1, recordedTracks.length)))));
+      const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.35, wireframe: true }), capacity);
+      mesh.userData.recordedAnnotationLayer = true;
+      if (previous) { scene.remove(previous); previous.geometry.dispose(); (previous.material as THREE.Material).dispose(); }
+      recordedMeshRef.current = mesh;
+      scene.add(mesh);
+    }
+    const mesh = recordedMeshRef.current;
+    const matrix = new THREE.Matrix4();
+    const quaternion = new THREE.Quaternion();
+    const scale = new THREE.Vector3();
+    let active = 0;
+    for (const track of recordedTracks) {
+      const eligible = track.states.filter((item) => item.time_s <= frame.simulation_time);
+      const state = eligible[eligible.length - 1];
+      if (!state || frame.simulation_time > track.states[track.states.length - 1].time_s || active >= mesh.count || !state.center_local || !state.yaw_local_rad) continue;
+      const [x, y] = state.center_local;
+      const [width, length, height] = state.size_m;
+      quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), renderVehicleYaw(state.yaw_local_rad));
+      scale.set(width, height, length);
+      matrix.compose(new THREE.Vector3(x, height / 2 + ROAD_LIFT, -y), quaternion, scale);
+      mesh.setMatrixAt(active, matrix);
+      active += 1;
+    }
+    for (let index = active; index < mesh.count; index += 1) {
+      matrix.makeScale(0, 0, 0);
+      mesh.setMatrixAt(index, matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }, [recordedTracks, frame.simulation_time]);
+
   // A new selection anchors the follow lock without a camera jump; the
   // click animation still plays once, then per-frame deltas take over.
   useEffect(() => {
@@ -425,6 +519,7 @@ function disposeObject(root: THREE.Object3D): void {
       if (!group) {
         group = makeActorGroup(object, object.id === selectedId);
         group.userData.objectId = object.id;
+        group.userData.actorName = object.name;
         actorsRef.current.set(object.id, group);
         scene.add(group);
       }
@@ -487,12 +582,15 @@ function disposeObject(root: THREE.Object3D): void {
     const camera = cameraRef.current;
     const controls = controlsRef.current;
     if (!camera || !controls) return;
-    animationRef.current = { position: DEFAULT_POSITION.clone(), target: roadCenter(road), progress: 0, fromPosition: camera.position.clone(), fromTarget: controls.target.clone() };
-    setSelectedId(null);
+    const ego = [...actorsRef.current.values()].find((actor) => String(actor.userData.actorName ?? "").toLowerCase() === "ego");
+    const target = ego?.position.clone() ?? roadCenter(road);
+    animationRef.current = { position: target.clone().add(new THREE.Vector3(8, 6, 10)), target, progress: 0, fromPosition: camera.position.clone(), fromTarget: controls.target.clone() };
+    setSelectedId(ego?.userData.objectId === undefined ? null : Number(ego.userData.objectId));
+    followRef.current = target.clone();
   };
 
   return <div className="three-playback-shell">
     <div ref={hostRef} className="three-playback-canvas" role="img" aria-label={`3D WASM playback at ${frame.simulation_time.toFixed(2)} seconds`} />
-    <div className="three-playback-overlay"><button type="button" onClick={resetView}>Reset View</button><span>{selectedId === null ? "Click an actor to focus" : `Following actor ${selectedId} · click empty space to release`}</span><span>Orbit / zoom enabled</span></div>
+    <div className="three-playback-overlay">{showResetView && <button type="button" onClick={resetView}>Reset View</button>}<span>{selectedId === null ? "Click an actor to focus" : `Following actor ${selectedId} · click empty space to release`}</span><span>Orbit / zoom enabled</span></div>
   </div>;
 }

@@ -127,7 +127,7 @@ Each additional compute or bulk-data surface widens the exposure while
 
 ### Host contention
 
-`hhf-server` is shared. `project-N3` does not run alone; the host also runs
+`hhf-server` is shared. **Project - N3** does not run alone; the host also runs
 `banking-agent` on port 8000, `normalhahuysite` on 8081, `kavita` on 5000,
 `searxng` on 8888, `stratum-site`, and a `carla` container. A batch-generation
 flood starves those services, not just this project.

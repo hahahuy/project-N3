@@ -1,4 +1,4 @@
-# Stale Code Audit — project-N3
+# Stale Code Audit — Project - N3
 
 Date: 2026-10-15
 Method: GitNexus graph (5,629 nodes / 10,872 edges / 493 flows, index refreshed) + text verification.

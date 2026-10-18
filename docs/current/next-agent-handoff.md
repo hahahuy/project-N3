@@ -1,4 +1,7 @@
-# Next Agent Handoff
+# Project - N3: Next Agent Handoff
+
+**Project name: `Project - N3`** (repo `project-N3`, codename `Real2Scenario`).
+Refer to the project by that name in all output.
 
 Status: `READY FOR ACCEPTANCE / OWNER REVIEW`
 Updated: 2026-10-16

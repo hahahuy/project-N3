@@ -118,13 +118,16 @@ class ArtifactAdapter:
             if root is None:
                 return None
             try:
-                from nuscenes.nuscenes import NuScenes
+                from .nuscenes_adapter import shared_nuscenes
 
                 version = self.settings.dataset_version
                 metadata = root / version
                 if not (metadata / "attribute.json").is_file() and (root / "v1.0-trainval" / "attribute.json").is_file():
                     version = "v1.0-trainval"
-                nusc = NuScenes(version=version, dataroot=str(root), verbose=False)
+                # Shared process-wide instance. Building a second devkit here
+                # costs another 7.74GB just to read one location string per
+                # scene; that duplication was what pushed the api to ~29GB.
+                nusc = shared_nuscenes(root, version)
                 self._map_names = {
                     scene.get("token"): nusc.get("log", scene["log_token"]).get("location", "")
                     for scene in nusc.scene

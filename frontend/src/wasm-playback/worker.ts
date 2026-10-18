@@ -11,6 +11,9 @@ let scenario: {
 } | null = null;
 let playing = false;
 let timer: ReturnType<typeof setTimeout> | null = null;
+let pendingSeekTime: number | null = null;
+let seekRunning = false;
+let seekGeneration = 0;
 
 function vectorItems<T>(value: unknown): T[] {
   if (Array.isArray(value)) return value as T[];
@@ -71,18 +74,46 @@ function stopClock(): void {
   }
 }
 
+function cancelSeek(): void {
+  seekGeneration += 1;
+  pendingSeekTime = null;
+}
+
 function step(): void {
   self.postMessage({ type: "frame", frame: steppedFrame() } satisfies WasmWorkerResponse);
 }
 
+async function drainSeeks(): Promise<void> {
+  if (seekRunning) return;
+  seekRunning = true;
+  try {
+    while (pendingSeekTime !== null) {
+      const timeS = pendingSeekTime;
+      pendingSeekTime = null;
+      if (!scenario || !Number.isFinite(timeS) || timeS < 0) throw new Error("wasm_invalid_seek_time");
+      const generation = seekGeneration;
+      stopClock();
+      resetEngineScenario(scenario);
+      let frame = currentFrame();
+      const steps = Math.ceil(timeS / FIXED_DT) + 1;
+      for (let index = 0; index < steps && frame.simulation_time + FIXED_DT / 2 < timeS; index += 1) {
+        frame = steppedFrame();
+        if (index % 256 === 255) {
+          await new Promise<void>((resolve) => setTimeout(resolve, 0));
+          if (generation !== seekGeneration) break;
+        }
+      }
+      if (generation === seekGeneration) self.postMessage({ type: "frame", frame } satisfies WasmWorkerResponse);
+    }
+  } finally {
+    seekRunning = false;
+  }
+}
+
 function seek(timeS: number): void {
-  if (!scenario || !Number.isFinite(timeS) || timeS < 0) throw new Error("wasm_invalid_seek_time");
-  stopClock();
-  resetEngineScenario(scenario);
-  let frame = currentFrame();
-  const steps = Math.ceil(timeS / FIXED_DT) + 1;
-  for (let index = 0; index < steps && frame.simulation_time + FIXED_DT / 2 < timeS; index += 1) frame = steppedFrame();
-  self.postMessage({ type: "frame", frame } satisfies WasmWorkerResponse);
+  if (!Number.isFinite(timeS) || timeS < 0) throw new Error("wasm_invalid_seek_time");
+  pendingSeekTime = timeS;
+  void drainSeeks().catch((error) => self.postMessage({ type: "error", message: errorMessage(error) } satisfies WasmWorkerResponse));
 }
 
 function scheduleNextTick(): void {
@@ -118,25 +149,31 @@ async function init(xosc: string, xodr: string): Promise<WasmWorkerResponse> {
 self.onmessage = async (event: MessageEvent<WasmWorkerRequest>) => {
   try {
     if (event.data.type === "init") {
+      cancelSeek();
       self.postMessage(await init(event.data.xosc, event.data.xodr));
     } else if (!scenario) {
       throw new Error("wasm_scenario_not_initialized");
     } else if (event.data.type === "seek") {
       seek(event.data.time_s);
     } else if (event.data.type === "step") {
+      cancelSeek();
       step();
     } else if (event.data.type === "play") {
+      cancelSeek();
       if (!playing) {
         playing = true;
         scheduleNextTick();
       }
     } else if (event.data.type === "pause") {
+      cancelSeek();
       stopClock();
     } else if (event.data.type === "reset") {
+      cancelSeek();
       stopClock();
       resetEngineScenario(scenario);
       self.postMessage({ type: "frame", frame: currentFrame() } satisfies WasmWorkerResponse);
     } else if (event.data.type === "dispose") {
+      cancelSeek();
       stopClock();
       scenario = null;
       self.close();

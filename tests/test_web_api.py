@@ -11,6 +11,7 @@ from r2s_web.adapter import ArtifactAdapter
 from r2s_web.jobs import BatchService
 from r2s_web.schemas import BatchRequest
 from real2scenario import (
+    RoadAlignedTransform,
     BenchmarkRun,
     ReplayReport,
     ReplayState,
@@ -1373,7 +1374,7 @@ def test_top_down_state_map_layers_are_keyed_by_layer_name(
             "map_name": "singapore-onenorth",
             "layers": {
                 "drivable_area": [
-                    {"token": "t-1", "geometry": [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]]}
+                    {"token": "t-1", "geometry": [[[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]]]}
                 ],
                 "lane": [],
             },
@@ -1404,7 +1405,140 @@ def test_top_down_state_map_layers_are_keyed_by_layer_name(
     assert isinstance(payload["map_layers"], dict)
     assert payload["map_layers"] == {
         "drivable_area": [
-            {"token": "t-1", "geometry": [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]]}
+            {
+                "token": "t-1",
+                "exterior": [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]],
+                "holes": [],
+            }
         ],
         "lane": [],
     }
+
+
+def _stub_ground(monkeypatch: pytest.MonkeyPatch) -> None:
+    from r2s_web.ground import GroundService
+
+    monkeypatch.setattr(
+        GroundService,
+        "full_layers",
+        lambda self, scenario: {
+            "contract_version": "ground-full-map-v1",
+            "frame": "local_road_aligned",
+            "map_name": "singapore-onenorth",
+            "layers": {"lane": [{"token": "t-1", "geometry": [[[0.0, 0.0], [1.0, 1.0]]]}]},
+            "artifact_visibility": "local_private",
+        },
+    )
+    monkeypatch.setattr(
+        RoadAlignedTransform,
+        "from_provenance",
+        classmethod(lambda cls, provenance: RoadAlignedTransform(0.0, 0.0, 0.0)),
+    )
+    # The fixture carries no dataset, so map-name resolution cannot succeed
+    # against nuScenes. The slim response must still name the scenario's map,
+    # so stub the resolver the same way the geometry builder is stubbed.
+    monkeypatch.setattr(
+        "r2s_web.app.resolve_scene_map_name", lambda scene_token, settings: "singapore-onenorth"
+    )
+
+    class _FakeRecordedAnnotations:
+        def recorded_annotations_window(
+            self, first_sample_token: str, last_sample_token: str, requested_time_s: float
+        ) -> dict[str, object]:
+            return {
+                "requested_time_s": requested_time_s,
+                "resolved_time_s": requested_time_s,
+                "timestamp_us": 0,
+                "sample_token": first_sample_token,
+                "boxes": [],
+            }
+
+    from r2s_web.nuscenes_adapter import NuScenesDatasetAdapter
+
+    monkeypatch.setattr(
+        NuScenesDatasetAdapter,
+        "for_dataset",
+        classmethod(lambda cls, root, version: _FakeRecordedAnnotations()),
+    )
+
+
+def test_top_down_map_is_served_separately_and_revalidates(tmp_path, monkeypatch) -> None:
+    """The static geometry must be fetchable on its own and carry a validator.
+
+    Playhead changes used to re-ship the whole map. Serving it once with an
+    ETag lets the browser keep it, so only the per-playhead state is refetched.
+    """
+    _stub_ground(monkeypatch)
+    client = _client(tmp_path)
+
+    first = client.get("/api/workspace/scenarios/synthetic-variant-001/top-down-map")
+    assert first.status_code == 200
+    assert first.json()["layers"] == {
+        "lane": [{"token": "t-1", "exterior": [[0.0, 0.0], [1.0, 1.0]], "holes": []}]
+    }
+    etag = first.headers["ETag"]
+    assert first.headers["Cache-Control"] == "private, max-age=3600"
+
+    revalidated = client.get(
+        "/api/workspace/scenarios/synthetic-variant-001/top-down-map",
+        headers={"If-None-Match": etag},
+    )
+    assert revalidated.status_code == 304
+
+
+def test_top_down_state_can_omit_the_static_map(tmp_path, monkeypatch) -> None:
+    """``include_map=false`` must drop the geometry but keep the playhead state."""
+    _stub_ground(monkeypatch)
+    client = _client(tmp_path)
+
+    combined = client.get(
+        "/api/workspace/scenarios/synthetic-variant-001/top-down-state",
+        params={"time_s": 0.5},
+    ).json()
+    slim = client.get(
+        "/api/workspace/scenarios/synthetic-variant-001/top-down-state",
+        params={"time_s": 0.5, "include_map": "false"},
+    ).json()
+
+    # full_layers records geometry as a list of rings; the preview draws the
+    # outer one, so records must expose `exterior`.
+    expected = {"lane": [{"token": "t-1", "exterior": [[0.0, 0.0], [1.0, 1.0]], "holes": []}]}
+    assert slim["map_layers"] == {}
+    # Dropping the map must not disturb anything time-dependent.
+    assert slim["actors"] == combined["actors"]
+    assert slim["recorded_annotations"] == combined["recorded_annotations"]
+    assert slim["map_name"] == combined["map_name"]
+
+
+def test_devkit_metadata_is_shared_across_call_sites(tmp_path, monkeypatch) -> None:
+    """Only one nuScenes metadata object may exist per dataset per process.
+
+    Measured 2026-10-17: one ``NuScenes(v1.0-trainval)`` load holds ~7.74GB. The
+    adapter, the artifact catalog's map-name lookup and the devkit helper each
+    built their own, so the api process could hold ~23GB and the kernel
+    OOM-killed the worker. All three must share a single cached instance.
+    """
+    from nuscenes.nuscenes import NuScenes
+
+    from r2s_web import nuscenes_adapter
+
+    created: list[str] = []
+
+    def fake_init(self, version: str, dataroot: str, verbose: bool = False) -> None:
+        created.append(dataroot)
+        self.version = version
+        self.dataroot = dataroot
+        self.scene = []
+        self.sample = {}
+
+    monkeypatch.setattr(NuScenes, "__init__", fake_init)
+    nuscenes_adapter._SHARED_NUSC.clear()
+
+    adapter = nuscenes_adapter.NuScenesDatasetAdapter(tmp_path, "v1.0-trainval")
+    # Three independent consumers reach for the metadata.
+    adapter.nusc  # noqa: B018 - property access is the point
+    nuscenes_adapter.shared_nuscenes(tmp_path, "v1.0-trainval")
+    nuscenes_adapter.shared_nuscenes(tmp_path, "v1.0-trainval")
+
+    assert len(created) == 1, f"expected one metadata load, got {len(created)}"
+    assert nuscenes_adapter.shared_nuscenes_cache_size() == 1
