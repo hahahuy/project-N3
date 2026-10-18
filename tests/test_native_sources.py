@@ -356,3 +356,9 @@ def test_prediction_advisory_reports_zero_error_for_a_perfect_prediction() -> No
 
     assert result["min_ade_m"] == 0.0
     assert result["min_fde_m"] == 0.0
+
+
+def test_prediction_advisory_averages_euclidean_displacement() -> None:
+    result = evaluate_prediction_advisory([[(3.0, 4.0), (0.0, 0.0)]], [(0.0, 0.0), (0.0, 0.0)])
+
+    assert result["min_ade_m"] == pytest.approx(2.5)
