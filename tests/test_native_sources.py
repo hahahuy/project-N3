@@ -147,3 +147,11 @@ def test_road_ahead_marks_available_results_local_private() -> None:
 
     assert result["artifact_visibility"] == "local_private"
     assert result["version"] == NATIVE_MAP_VERSION
+
+
+def test_road_ahead_copies_the_devkit_records_into_a_new_list() -> None:
+    devkit_records = ["road-1"]
+
+    result = road_ahead_query(QueryMapApi(next_roads=devkit_records), 0.0, 0.0)
+
+    assert result["records"] is not devkit_records
