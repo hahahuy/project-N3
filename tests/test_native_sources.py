@@ -313,3 +313,8 @@ def test_lidar_contract_requires_a_calibration_token() -> None:
 def test_lidar_contract_rejects_an_unknown_version() -> None:
     with pytest.raises(ValueError, match="Invalid private LiDAR payload contract"):
         LidarPayloadContract("lidar-v0", "LIDAR_TOP", 1, "a.bin", "ego_vehicle", "c", 8)
+
+
+def test_lidar_contract_rejects_a_non_top_channel() -> None:
+    with pytest.raises(ValueError, match="Invalid private LiDAR payload contract"):
+        LidarPayloadContract(LIDAR_CONTRACT_VERSION, "RADAR_FRONT", 1, "a.bin", "ego_vehicle", "c", 8)
