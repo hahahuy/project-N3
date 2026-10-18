@@ -88,3 +88,11 @@ def test_map_records_never_reorder_the_api_list() -> None:
     native_map_records(api, "traffic_light")
 
     assert [record["token"] for record in layer] == ["b", "a"]
+
+
+def test_map_records_sort_missing_tokens_first() -> None:
+    api = FakeMapApi(ped_crossing=[{"token": "a"}, {"name": "untokened"}])
+
+    records = native_map_records(api, "ped_crossing")
+
+    assert records[0] == {"name": "untokened"}
