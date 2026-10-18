@@ -216,3 +216,11 @@ def test_map_patch_queries_every_layer_by_default() -> None:
 
     assert api.calls == [("patch", [0.0, 0.0, 1.0, 1.0], list(MAP_LAYERS))]
     assert list(result["layers"]) == list(MAP_LAYERS)
+
+
+def test_map_patch_passes_only_the_requested_layers_to_the_devkit() -> None:
+    api = QueryMapApi(patch_records={})
+
+    native_map_patch(api, (0.0, 0.0, 1.0, 1.0), layers=("stop_line",))
+
+    assert api.calls == [("patch", [0.0, 0.0, 1.0, 1.0], ["stop_line"])]
