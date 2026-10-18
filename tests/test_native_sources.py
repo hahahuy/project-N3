@@ -332,3 +332,8 @@ def test_lidar_contract_is_immutable() -> None:
 
     with pytest.raises(FrozenInstanceError):
         contract.decimation = 2  # type: ignore[misc]
+
+
+def test_prediction_advisory_rejects_no_predicted_paths() -> None:
+    with pytest.raises(ValueError, match="non-empty and equal"):
+        evaluate_prediction_advisory([], [(0.0, 0.0)])
