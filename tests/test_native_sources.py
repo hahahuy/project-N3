@@ -308,3 +308,8 @@ def test_lidar_contract_requires_a_sample_timestamp() -> None:
 def test_lidar_contract_requires_a_calibration_token() -> None:
     with pytest.raises(KeyError, match="token"):
         lidar_payload_contract(_sample_data(), {})
+
+
+def test_lidar_contract_rejects_an_unknown_version() -> None:
+    with pytest.raises(ValueError, match="Invalid private LiDAR payload contract"):
+        LidarPayloadContract("lidar-v0", "LIDAR_TOP", 1, "a.bin", "ego_vehicle", "c", 8)
