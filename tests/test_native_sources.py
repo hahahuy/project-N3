@@ -207,3 +207,12 @@ def test_map_patch_reports_unavailable_without_the_devkit_query() -> None:
         "patch": [0.0, 0.0, 1.0, 1.0],
         "layers": {},
     }
+
+
+def test_map_patch_queries_every_layer_by_default() -> None:
+    api = QueryMapApi(patch_records={})
+
+    result = native_map_patch(api, (0.0, 0.0, 1.0, 1.0))
+
+    assert api.calls == [("patch", [0.0, 0.0, 1.0, 1.0], list(MAP_LAYERS))]
+    assert list(result["layers"]) == list(MAP_LAYERS)
