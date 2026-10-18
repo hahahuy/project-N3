@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import hashlib
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -210,6 +211,14 @@ def _fullmap_wasm_pair(
     return selected, template, pair_root, _FULLMAP_MAP_WARNING
 
 
+@asynccontextmanager
+async def _app_lifespan(app: FastAPI):
+    try:
+        yield
+    finally:
+        app.state.batches.shutdown()
+
+
 def create_app(settings: WebSettings | None = None) -> FastAPI:
     resolved_settings = settings or WebSettings.from_environment()
     adapter = ArtifactAdapter(resolved_settings)
@@ -223,7 +232,7 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
     previews = PreviewService(resolved_settings, adapter)
     esmini = EsminiBackend(resolved_settings, adapter)
     live_sessions = LiveSessionService(resolved_settings.project_root, resolved_settings.esmini_lib)
-    app = FastAPI(title="Real2Scenario Local Demo", version="0.1.0")
+    app = FastAPI(title="Real2Scenario Local Demo", version="0.1.0", lifespan=_app_lifespan)
     app.state.settings = resolved_settings
     app.state.adapter = adapter
     app.state.batches = batches
@@ -559,6 +568,7 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
             )
             adapter = ArtifactAdapter(resolved_settings)
             source_scenes = SourceSceneAdapter(resolved_settings)
+            batches.shutdown()
             batches = BatchService(resolved_settings, adapter)
             previews = PreviewService(resolved_settings, adapter)
             esmini = EsminiBackend(resolved_settings, adapter)
@@ -1217,7 +1227,10 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
 
     @app.post("/api/batches", response_model=JobStatus, status_code=202)
     def create_batch(request: BatchRequest) -> JobStatus:
-        return batches.create(request)
+        try:
+            return batches.create(request)
+        except RuntimeError as error:
+            raise HTTPException(status_code=429, detail=str(error)) from error
 
     @app.get("/api/batches/{job_id}", response_model=JobStatus)
     def get_batch(job_id: str) -> JobStatus:
@@ -1284,6 +1297,8 @@ def _settings_view(settings: WebSettings, source_scenes: SourceSceneAdapter) -> 
         dataset_root_exists=settings.dataset_root is not None
         and (settings.dataset_root / settings.dataset_version).is_dir(),
         source_scene_count=len(source_scenes.discover()),
+        batch_max_workers=settings.batch_max_workers,
+        batch_max_pending=settings.batch_max_pending,
     )
 
 

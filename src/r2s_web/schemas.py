@@ -427,6 +427,8 @@ class SettingsView(BaseModel):
     artifact_root_exists: bool
     dataset_root_exists: bool
     source_scene_count: int
+    batch_max_workers: int
+    batch_max_pending: int
 
 
 class CP1ReviewItem(BaseModel):

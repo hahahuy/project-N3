@@ -150,6 +150,45 @@ def test_settings_fails_closed_when_dataset_directory_has_no_scene_metadata(tmp_
 
     assert response.status_code == 200
     assert response.json()["source_scene_count"] == 0
+    assert response.json()["batch_max_workers"] == 1
+    assert response.json()["batch_max_pending"] == 1
+
+
+def test_batch_admission_is_bounded_and_rejects_excess_work(tmp_path: Path, monkeypatch) -> None:
+    artifact_root = tmp_path / "scenarios"
+    artifact_root.mkdir()
+    shutil.copy(FIXTURE, artifact_root / "baseline.json")
+    settings = WebSettings(
+        project_root=tmp_path,
+        artifact_root=artifact_root,
+        output_root=tmp_path / "reports",
+        dataset_root=None,
+        esmini_bin=None,
+        esmini_dat2csv=None,
+        batch_max_workers=1,
+        batch_max_pending=0,
+        batch_accept_grace_s=0.0,
+    )
+    entered = __import__("threading").Event()
+    release = __import__("threading").Event()
+    original = __import__("r2s_web.jobs", fromlist=["BatchService"]).BatchService._run
+
+    def blocked(self, record, request):
+        entered.set()
+        release.wait(timeout=2)
+        return original(self, record, request)
+
+    monkeypatch.setattr("r2s_web.jobs.BatchService._run", blocked)
+    client = TestClient(create_app(settings))
+    body = {"scenario_id": "synthetic-variant-001", "speed_multipliers": [1.0], "initial_gap_deltas_m": [0.0], "timing_offsets_s": [0.0]}
+    first = client.post("/api/batches", json=body)
+    assert first.status_code == 202
+    assert entered.wait(timeout=2)
+    second = client.post("/api/batches", json=body)
+    assert second.status_code == 429
+    assert second.json()["detail"] == "batch_limit_reached"
+    release.set()
+    assert client.get(f"/api/batches/{first.json()['job_id']}").json()["status"] in {"running", "completed"}
 
 
 def test_cp1_review_dashboard_is_read_only_and_preserves_baseline(tmp_path: Path) -> None:
@@ -786,29 +825,29 @@ def test_ground_layers_serve_local_frame_polygons_or_unavailable(tmp_path: Path)
         esmini_dat2csv=None,
         dataset_version=version,
     )
-    client = TestClient(create_app(settings))
-    scenes = client.get("/api/source-scenes")
-    imported = client.post(f"/api/source-scenes/{scenes.json()[0]['scene_token']}/import", json={})
-    ground = client.get(f"/api/workspace/scenarios/{imported.json()['scenario_id']}/ground-layers")
-    assert ground.status_code == 200
-    payload = ground.json()
-    assert payload["contract_version"] == "ground-layers-v1"
-    assert payload["frame"] == "local_road_aligned"
-    assert sum(len(layer["polygons"]) for layer in payload["layers"]) > 0
+    with TestClient(create_app(settings)) as client:
+        scenes = client.get("/api/source-scenes")
+        imported = client.post(f"/api/source-scenes/{scenes.json()[0]['scene_token']}/import", json={})
+        ground = client.get(f"/api/workspace/scenarios/{imported.json()['scenario_id']}/ground-layers")
+        assert ground.status_code == 200
+        payload = ground.json()
+        assert payload["contract_version"] == "ground-layers-v1"
+        assert payload["frame"] == "local_road_aligned"
+        assert sum(len(layer["polygons"]) for layer in payload["layers"]) > 0
     # Correspondence: patch vertices are rebased onto the patch center before
     # the trajectory transform, so the actor bbox must sit inside drivable.
     # (Catches patch-relative vs map-global confusion — silently wrong coords.)
-    scenario = client.get(f"/api/workspace/scenarios/{imported.json()['scenario_id']}").json()
-    actor_xs = [s["x_m"] for p in scenario["paths"] for s in p["states"]]
-    actor_ys = [s["y_m"] for p in scenario["paths"] for s in p["states"]]
-    drivable = next(layer for layer in payload["layers"] if layer["name"] == "drivable_area")
-    ground_xs = [x for poly in drivable["polygons"] for x, _ in poly["exterior"]]
-    ground_ys = [y for poly in drivable["polygons"] for _, y in poly["exterior"]]
-    assert min(ground_xs) <= min(actor_xs) and max(ground_xs) >= max(actor_xs)
-    assert min(ground_ys) <= min(actor_ys) and max(ground_ys) >= max(actor_ys)
-    missing = client.get("/api/workspace/scenarios/does-not-exist/ground-layers")
-    assert missing.status_code == 200
-    assert missing.json()["status"] == "unavailable"
+        scenario = client.get(f"/api/workspace/scenarios/{imported.json()['scenario_id']}").json()
+        actor_xs = [s["x_m"] for p in scenario["paths"] for s in p["states"]]
+        actor_ys = [s["y_m"] for p in scenario["paths"] for s in p["states"]]
+        drivable = next(layer for layer in payload["layers"] if layer["name"] == "drivable_area")
+        ground_xs = [x for poly in drivable["polygons"] for x, _ in poly["exterior"]]
+        ground_ys = [y for poly in drivable["polygons"] for _, y in poly["exterior"]]
+        assert min(ground_xs) <= min(actor_xs) and max(ground_xs) >= max(actor_xs)
+        assert min(ground_ys) <= min(actor_ys) and max(ground_ys) >= max(actor_ys)
+        missing = client.get("/api/workspace/scenarios/does-not-exist/ground-layers")
+        assert missing.status_code == 200
+        assert missing.json()["status"] == "unavailable"
 
 
 def test_lidar_sweeps_span_play_range_or_unavailable(tmp_path: Path) -> None:
@@ -859,36 +898,39 @@ def test_completed_batch_exposes_domain_aggregate_for_benchmark_aggregation(tmp_
     )
     service = BatchService(settings, ArtifactAdapter(settings))
 
-    status = service.create(
-        BatchRequest(
-            scenario_id="synthetic-variant-001",
-            speed_multipliers=[1.0],
-            initial_gap_deltas_m=[0.0],
-            timing_offsets_s=[0.0, 0.5],
+    try:
+        status = service.create(
+            BatchRequest(
+                scenario_id="synthetic-variant-001",
+                speed_multipliers=[1.0],
+                initial_gap_deltas_m=[0.0],
+                timing_offsets_s=[0.0, 0.5],
+            )
         )
-    )
-    record = service.get(status.job_id)
+        record = service.get(status.job_id)
 
-    assert status.status == "completed"
-    assert record.aggregate is not None
-    assert record.aggregate.parent_scenario_id == "synthetic-variant-001"
-    assert record.aggregate.generated == record.counts["generated"] == 2
-    assert record.aggregate.generated == (
-        record.aggregate.valid + record.aggregate.invalid + record.aggregate.simulator_failed
-    )
-    aggregate = aggregate_benchmark_runs(
-        (
-            BenchmarkRun(
-                run_id=status.job_id,
-                scene_id="scene-synthetic",
-                evidence_class="synthetic",
-                simulator="none",
-                report=record.aggregate,
-            ),
+        assert status.status == "completed"
+        assert record.aggregate is not None
+        assert record.aggregate.parent_scenario_id == "synthetic-variant-001"
+        assert record.aggregate.generated == record.counts["generated"] == 2
+        assert record.aggregate.generated == (
+            record.aggregate.valid + record.aggregate.invalid + record.aggregate.simulator_failed
         )
-    )
-    assert aggregate.status_counts["generated"] == 2
-    assert aggregate.scientific_status == "PROVISIONAL"
+        aggregate = aggregate_benchmark_runs(
+            (
+                BenchmarkRun(
+                    run_id=status.job_id,
+                    scene_id="scene-synthetic",
+                    evidence_class="synthetic",
+                    simulator="none",
+                    report=record.aggregate,
+                ),
+            )
+        )
+        assert aggregate.status_counts["generated"] == 2
+        assert aggregate.scientific_status == "PROVISIONAL"
+    finally:
+        service.shutdown()
 
 
 def _lane_match_evidence(

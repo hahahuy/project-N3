@@ -166,7 +166,9 @@ failure mode the protocol exists to catch.
 - Unavailable must be shown as unavailable, never as a placeholder that reads as
   success.
 - Raw nuScenes data and derived artifacts stay local/private. Everything under
-  `docs/reports/` is gitignored by repository policy.
+  generated runtime artifacts under the root `/reports/` path are gitignored by
+  repository policy; committed evidence under `docs/reports/` is intentionally
+  tracked.
 - Every number above is `PROVISIONAL` and carries its scope limit. None of it
   establishes map accuracy, safety/TTC evidence, or a scientific fidelity claim.
 

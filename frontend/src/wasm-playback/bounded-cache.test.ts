@@ -14,6 +14,13 @@ describe("ByteBoundedLru", () => {
     cache.set("x", first).set("x", second); expect(cache.bytes).toBe(8); cache.set("too-large", tooLarge); expect(cache.has("too-large")).toBe(false); cache.clear();
     expect(dispose).toHaveBeenCalledWith(first, "x"); expect(dispose).toHaveBeenCalledWith(tooLarge, "too-large"); expect(cache.size).toBe(0); expect(cache.bytes).toBe(0);
   });
+  it("peeks without changing eviction order", () => {
+    const cache = new ByteBoundedLru<string, string>({ maxBytes: 3, byteSize: (value) => value.length });
+    cache.set("a", "a").set("b", "b");
+    expect(cache.peek("a")).toBe("a");
+    cache.set("c", "cc");
+    expect(cache.keys()).toEqual(["b", "c"]);
+  });
 });
 
 describe("selectSweepWindow", () => {

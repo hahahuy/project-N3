@@ -67,7 +67,8 @@ MVP đầu tiên dùng esmini để thực thi OpenSCENARIO ở chế độ head
 Read the current context before changing code. The current MVP is nuScenes
 `v1.0-trainval` -> a scene-local `scene-0061` corridor -> OpenDRIVE/
 OpenSCENARIO -> esmini replay/evaluation -> metrics and diagnostic gates ->
-dynamic object variation -> an internal kinematic preview -> the full 2D/3D
+dynamic object variation -> an internal kinematic preview (including the
+engineering-only native C++20 Tier 1 port) -> the full 2D/3D
 authoring workspace -> optional recorded LiDAR evidence. CARLA is post-MVP and
 same-XOSC CARLA execution is not current MVP evidence.
 
@@ -118,7 +119,9 @@ The active implementation sequence is:
 1. nuScenes-devkit backend makeover Phase 2 source-state integration.
 2. Native devkit map/query capabilities and private LiDAR contracts.
 3. Advisory prediction evaluation with separate metric provenance.
-4. Tier 1 `kinematic-open-loop-v1` internal simulator integration.
+4. Tier 1 `kinematic-open-loop-v1` internal simulator integration; the native
+   C++20 port is engineering parity only, with Tier 1 `dt=0.05` versus native
+   esmini `dt=0.01`.
 5. Resume CP1/CP3/CP4/CP5 closure tracks.
 6. Full 2D/3D authoring workspace and frame-aware timeline.
 7. CP6 paper evidence.

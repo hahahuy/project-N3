@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import threading
 import uuid
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
@@ -82,17 +84,78 @@ class BatchService:
         self.settings = settings
         self.adapter = adapter
         self.jobs: dict[str, JobRecord] = {}
+        self._executor: ThreadPoolExecutor | None = None
+        self._state_lock = threading.Lock()
+        self._inflight = 0
+        self._closed = False
+        self._admission = threading.BoundedSemaphore(
+            settings.batch_max_workers + settings.batch_max_pending
+        )
+        self._accept_grace_s = settings.batch_accept_grace_s
+
+    def _executor_for_submission(self) -> ThreadPoolExecutor:
+        with self._state_lock:
+            if self._closed:
+                raise RuntimeError("batch_service_closed")
+            if self._executor is None:
+                self._executor = ThreadPoolExecutor(
+                    max_workers=self.settings.batch_max_workers,
+                    thread_name_prefix="batch",
+                )
+            self._inflight += 1
+            return self._executor
+
+    def _job_finished(self) -> None:
+        executor = None
+        with self._state_lock:
+            self._inflight -= 1
+            if self._inflight == 0 and not self._closed:
+                executor = self._executor
+                self._executor = None
+        if executor is not None:
+            executor.shutdown(wait=False)
+
+    def shutdown(self, *, wait: bool = True, cancel_futures: bool = False) -> None:
+        """Stop accepting work and release executor threads."""
+        with self._state_lock:
+            self._closed = True
+            executor = self._executor
+            self._executor = None
+        if executor is not None:
+            executor.shutdown(wait=wait, cancel_futures=cancel_futures)
 
     def create(self, request: BatchRequest) -> JobStatus:
         job_id = f"job-{uuid.uuid4().hex[:12]}"
         status = JobStatus(job_id=job_id, status="running", scenario_id=request.scenario_id)
         record = JobRecord(status=status)
-        self.jobs[job_id] = record
+        if not self._admission.acquire(blocking=False):
+            raise RuntimeError("batch_limit_reached")
+        reserved = False
+        try:
+            executor = self._executor_for_submission()
+            reserved = True
+            future = executor.submit(self._run_job, record, request)
+            self.jobs[job_id] = record
+        except BaseException:
+            self._admission.release()
+            if reserved:
+                self._job_finished()
+            raise
+        try:
+            future.result(timeout=self._accept_grace_s)
+        except TimeoutError:
+            pass
+        return record.status
+
+    def _run_job(self, record: JobRecord, request: BatchRequest) -> None:
+        record.status = record.status.model_copy(update={"status": "running"})
         try:
             self._run(record, request)
-        except (OSError, ValueError, KeyError) as error:
-            record.status = status.model_copy(update={"status": "failed", "error": str(error)})
-        return record.status
+        except Exception as error:
+            record.status = record.status.model_copy(update={"status": "failed", "error": str(error)})
+        finally:
+            self._admission.release()
+            self._job_finished()
 
     def get(self, job_id: str) -> JobRecord:
         try:

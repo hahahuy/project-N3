@@ -20,6 +20,9 @@ class WebSettings:
     esmini_lib: str | None = None
     dataset_version: str = "v1.0-trainval"
     esmini_capture_images: bool = False
+    batch_max_workers: int = 1
+    batch_max_pending: int = 1
+    batch_accept_grace_s: float = 0.05
 
     def __post_init__(self) -> None:
         if self.dataset_root is not None and self.dataset_version == "v1.0-trainval":
@@ -48,6 +51,9 @@ class WebSettings:
             esmini_dat2csv=os.environ.get("ESMINI_DAT2CSV"),
             esmini_lib=os.environ.get("ESMINILIB_PATH"),
             esmini_capture_images=os.environ.get("ESMINI_CAPTURE_IMAGES", "0") == "1",
+            batch_max_workers=_positive_int(os.environ.get("R2S_BATCH_MAX_WORKERS", "1"), "R2S_BATCH_MAX_WORKERS"),
+            batch_max_pending=_non_negative_int(os.environ.get("R2S_BATCH_MAX_PENDING", "1"), "R2S_BATCH_MAX_PENDING"),
+            batch_accept_grace_s=_non_negative_float(os.environ.get("R2S_BATCH_ACCEPT_GRACE_S", "0.05"), "R2S_BATCH_ACCEPT_GRACE_S"),
         dataset_version=os.environ.get(
             "NUSCENES_VERSION",
             _default_dataset_version(dataset_root),
@@ -157,3 +163,24 @@ def _default_dataset_version(dataset_root: Path | None) -> str:
     if dataset_root is not None and (dataset_root / "v1.0-mini").is_dir():
         return "v1.0-mini"
     return "v1.0-trainval"
+
+
+def _positive_int(value: str, name: str) -> int:
+    parsed = int(value)
+    if parsed < 1:
+        raise ValueError(f"{name} must be at least 1")
+    return parsed
+
+
+def _non_negative_int(value: str, name: str) -> int:
+    parsed = int(value)
+    if parsed < 0:
+        raise ValueError(f"{name} must be non-negative")
+    return parsed
+
+
+def _non_negative_float(value: str, name: str) -> float:
+    parsed = float(value)
+    if parsed < 0:
+        raise ValueError(f"{name} must be non-negative")
+    return parsed

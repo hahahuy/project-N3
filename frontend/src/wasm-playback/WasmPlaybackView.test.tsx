@@ -76,6 +76,24 @@ describe("WasmPlaybackView Worker protocol", () => {
     await waitFor(() => expect(worker.messages).toContainEqual({ type: "seek", time_s: 1.25 }));
   });
 
+  it("coalesces rapid playhead changes before sending a seek", async () => {
+    vi.stubGlobal("Worker", FakeWorker);
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response("<scenario />", { status: 200 }));
+    const view = render(<WasmPlaybackView playhead={1} />);
+    const worker = await waitFor(() => {
+      const instance = FakeWorker.instances[0];
+      if (!instance) throw new Error("worker_not_created");
+      return instance;
+    });
+    vi.useFakeTimers();
+    worker.onmessage?.({ data: { type: "ready", road: { lane_surfaces: [], road_marks: [] }, frame: { simulation_time: 0, object_states: [] } } } as MessageEvent);
+    view.rerender(<WasmPlaybackView playhead={2} />);
+    view.rerender(<WasmPlaybackView playhead={3} />);
+    await vi.advanceTimersByTimeAsync(75);
+    expect(worker.messages.filter((message) => (message as { type?: string }).type === "seek")).toEqual([{ type: "seek", time_s: 3 }]);
+    vi.useRealTimers();
+  });
+
   it("loads the pedestrian fixture and shared road when requested", async () => {
     vi.stubGlobal("Worker", FakeWorker);
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response("<scenario />", { status: 200 }));

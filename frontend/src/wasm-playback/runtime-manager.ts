@@ -15,7 +15,8 @@ export class WasmScenarioRuntime {
   private requestId = 0;
   private snapshot: WasmRuntimeSnapshot = { status: "loading", road: EMPTY_ROAD, frame: EMPTY_FRAME, error: null, generation: 0 };
 
-  constructor(private readonly source: WasmRuntimeSource) {}
+  readonly sourceFingerprint: string;
+  constructor(private readonly source: WasmRuntimeSource) { this.sourceFingerprint = sourceFingerprint(source); }
 
   getSnapshot = (): WasmRuntimeSnapshot => this.snapshot;
   subscribe = (listener: Listener): (() => void) => { this.listeners.add(listener); return () => this.listeners.delete(listener); };
@@ -41,9 +42,14 @@ export class WasmScenarioRuntime {
 const runtimes = new Map<WasmRuntimeKey, WasmScenarioRuntime>();
 export function acquireWasmRuntime(key: WasmRuntimeKey, source: WasmRuntimeSource): WasmScenarioRuntime {
   let runtime = runtimes.get(key);
+  if (runtime && runtime.sourceFingerprint !== sourceFingerprint(source)) throw new Error("wasm_runtime_source_mismatch");
   if (!runtime) { runtime = new WasmScenarioRuntime(source); runtimes.set(key, runtime); }
   runtime.acquire();
   return runtime;
+}
+
+function sourceFingerprint(source: WasmRuntimeSource): string {
+  return `${source.xosc.length}:${source.xosc}:${source.xodr.length}:${source.xodr}`;
 }
 
 export function releaseWasmRuntime(key: WasmRuntimeKey, runtime: WasmScenarioRuntime): void {

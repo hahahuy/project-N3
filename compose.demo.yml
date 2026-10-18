@@ -51,6 +51,8 @@ services:
       NUSCENES_VERSION: v1.0-trainval
       ESMINI_BIN: ${ESMINI_BIN:-/opt/esmini/bin/esmini}
       ESMINI_DAT2CSV: ${ESMINI_DAT2CSV:-/opt/esmini/bin/dat2csv}
+      ESMINILIB_PATH: ${ESMINILIB_PATH:-/opt/esmini/bin/libesminiLib.so}
+      ESMINILIB_VERSION: ${ESMINILIB_VERSION:-configured-esminiLib}
     volumes:
       # Deliberately no `.:/app`. The repository is baked into the image, so
       # the product serves the committed tree and cannot pick up an uncommitted

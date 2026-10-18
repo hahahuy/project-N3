@@ -32,4 +32,11 @@ describe("WasmScenarioRuntime", () => {
     releaseWasmRuntime("scenario:frame", first);
     releaseWasmRuntime("scenario:frame", second);
   });
+
+  it("rejects a changed source under an existing scenario key", () => {
+    vi.stubGlobal("Worker", FakeWorker);
+    const first = acquireWasmRuntime("scenario:source", { xosc: "x", xodr: "r" });
+    expect(() => acquireWasmRuntime("scenario:source", { xosc: "x-tail-different", xodr: "r" })).toThrow("wasm_runtime_source_mismatch");
+    releaseWasmRuntime("scenario:source", first);
+  });
 });

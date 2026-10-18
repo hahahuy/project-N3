@@ -344,6 +344,12 @@ scenario, zero silent clamps, no restricted artifacts and no new heavy runtime
 dependency. Agreement with esmini is an engineering cross-check, not CP2
 same-XOSC evidence.
 
+The native C++20 Tier 1 port is available for engineering parity only. It uses
+`dt=0.05`, while native esmini uses `dt=0.01`. The C++ WASM `/cpp-wasm` surface
+is preview-only. WebGPU is limited to a capability probe and is not
+implemented. DEC-018 remains binding: native esmini is the only sanctioned
+source of ADE/FDE.
+
 Tier 2 is not part of current MVP acceptance. If added later, it must declare a
 separate replay/behavior mode, versioned parameters, capability status and
 diagnostic metrics. It must not feed final ADE/FDE claims or silently fall back

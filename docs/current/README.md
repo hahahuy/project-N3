@@ -35,7 +35,9 @@ relevant page under [`../subsystems/`](../subsystems/README.md).
 - `metric-benchmark-execution-plan.md`: approved near-future CP3 work. Note the
   open blocker: the current baseline is a pooled actor-track micro aggregate and
   scene-macro is still missing, which blocks any threshold proposal.
-- `demo-hardening-backlog.md`: public-exposure hardening. S-6 batch cap and
+- `demo-hardening-backlog.md`: public-exposure hardening. S-6 batch cap is
+  implemented provisionally, with host non-interference and retention evidence
+  still pending, and
   S-5 pagination remain open.
 - `mission-batch-concurrency-benchmark.md`: the S-6 record. Load-bearing — the
   production guide cites it for the open batch-cap risk.
@@ -45,6 +47,10 @@ relevant page under [`../subsystems/`](../subsystems/README.md).
   `FIXED_DT=0.01` per DEC-020 and holds the scientific boundary: browser/WASM
   stays preview-only and must not feed native replay, `replay.csv`, ADE/FDE,
   gates or reports. Contains the deployment and memory-cap work.
+- Native C++20 Tier 1 is available for engineering parity only and uses
+  `dt=0.05` versus native esmini `dt=0.01`. C++ WASM `/cpp-wasm` is
+  preview-only; WebGPU is capability-probe-only/not implemented. DEC-018
+  remains binding.
 
 ## Frontend
 

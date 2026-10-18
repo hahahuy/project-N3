@@ -22,6 +22,8 @@ export class ByteBoundedLru<K, V> {
   get bytes(): number { return this.totalBytes; }
   has(key: K): boolean { return this.entries.has(key); }
   touch(key: K): boolean { return this.get(key) !== undefined; }
+  /** Read without changing eviction order; safe for render-time inspection. */
+  peek(key: K): V | undefined { return this.entries.get(key)?.value; }
   get(key: K): V | undefined {
     const entry = this.entries.get(key);
     if (!entry) return undefined;

@@ -112,6 +112,7 @@ async function drainSeeks(): Promise<void> {
 
 function seek(timeS: number): void {
   if (!Number.isFinite(timeS) || timeS < 0) throw new Error("wasm_invalid_seek_time");
+  seekGeneration += 1;
   pendingSeekTime = timeS;
   void drainSeeks().catch((error) => self.postMessage({ type: "error", message: errorMessage(error) } satisfies WasmWorkerResponse));
 }

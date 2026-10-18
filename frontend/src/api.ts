@@ -331,15 +331,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const fetchScenarios = () => request<ScenarioSummary[]>("/scenarios");
 export const fetchScenario = (id: string) => request<ScenarioSummary>(`/scenarios/${encodeURIComponent(id)}`);
 export const fetchWorkspaceDocument = (id: string) => request<WorkspaceDocument>(`/workspace/documents/${encodeURIComponent(id)}`);
-export const fetchWorkspaceScenario = (id: string) => request<WorkspaceScenario>(`/workspace/scenarios/${encodeURIComponent(id)}`);
+export const fetchWorkspaceScenario = (id: string, signal?: AbortSignal) => request<WorkspaceScenario>(`/workspace/scenarios/${encodeURIComponent(id)}`, { signal });
 export const fetchActorTimeline = (id: string) => request<ActorTimeline>(`/workspace/scenarios/${encodeURIComponent(id)}/timeline`);
 export const fetchGateTimeline = (id: string) => request<GateTimeline>(`/workspace/scenarios/${encodeURIComponent(id)}/gate-timeline`);
 export const fetchPOVFrame = (id: string, mode: "third-person" | "in-car", timeS: number) => request<POVFrame>(`/workspace/scenarios/${encodeURIComponent(id)}/frames/${mode}?time_s=${encodeURIComponent(timeS)}`);
 export const fetchPOVImageFrame = (id: string, mode: "third-person" | "in-car", timeS: number) => request<POVImageFrame>(`/workspace/scenarios/${encodeURIComponent(id)}/image-frames/${mode}?time_s=${encodeURIComponent(timeS)}`);
 export const fetchVariantSensorStatus = (id: string) => request<VariantSensorStatus>(`/workspace/scenarios/${encodeURIComponent(id)}/sensor-status`);
 export const fetchScenarioArtifacts = (id: string) => request<{ scenario_id: string; artifacts: ArtifactLink[] }>(`/scenarios/${encodeURIComponent(id)}/artifacts`);
-export const createWasmScenarioPair = (id: string) => request<WasmScenarioPair>(`/workspace/scenarios/${encodeURIComponent(id)}/wasm-pair`, { method: "POST" });
-export const fetchGroundLayers = (id: string) => request<unknown>(`/workspace/scenarios/${encodeURIComponent(id)}/ground-layers`);
+export const createWasmScenarioPair = (id: string, signal?: AbortSignal) => request<WasmScenarioPair>(`/workspace/scenarios/${encodeURIComponent(id)}/wasm-pair`, { method: "POST", signal });
+export const fetchGroundLayers = (id: string, signal?: AbortSignal) => request<unknown>(`/workspace/scenarios/${encodeURIComponent(id)}/ground-layers`, { signal });
 export type TopDownMap = { contract_version: string; frame: string; map_name: string; layers: Record<string, unknown>; artifact_visibility?: string };
 export type TopDownState = { contract_version: string; scenario_id: string; requested_time_s: number; resolved_time_s: number; coordinate_frame: string; map_name: string; map_layers: Record<string, unknown>; actors: Array<Record<string, unknown>>; recorded_annotations?: { requested_time_s: number; resolved_time_s: number; timestamp_us: number; boxes: Array<Record<string, unknown>> }; provenance: Record<string, string> };
 /**
@@ -356,7 +356,7 @@ export type CameraEvidenceFrame = { contract_version: string; scenario_id: strin
 export const fetchCameraEvidence = (id: string, channel: string, timeS: number) => request<CameraEvidenceFrame>(`/workspace/scenarios/${encodeURIComponent(id)}/camera-evidence?channel=${encodeURIComponent(channel)}&time_s=${encodeURIComponent(String(timeS))}`);
 export type RecordedAnnotationTrack = { instance_id: string; category: string; states: Array<{ time_s: number; source_timestamp_us: number; source_record_token: string; center_local?: number[]; yaw_local_rad?: number; size_m: number[] }> };
 export type RecordedAnnotationTimeline = { contract_version: string; scenario_id: string; coordinate_frame: string; display_only: true; native_replay_included: false; tracks: RecordedAnnotationTrack[]; status?: string; unavailable_reason?: string; provenance: Record<string, string> };
-export const fetchRecordedAnnotations = (id: string) => request<RecordedAnnotationTimeline>(`/workspace/scenarios/${encodeURIComponent(id)}/recorded-annotations`);
+export const fetchRecordedAnnotations = (id: string, signal?: AbortSignal) => request<RecordedAnnotationTimeline>(`/workspace/scenarios/${encodeURIComponent(id)}/recorded-annotations`, { signal });
 export const fetchTrajectory = (id: string) => request<TrajectoryResponse>(`/scenarios/${encodeURIComponent(id)}/trajectory`);
 export const previewVariant = (scenarioId: string, body: PreviewRequest) => request<PreviewResponse>(`/scenarios/${encodeURIComponent(scenarioId)}/variants/preview`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 export const createBatch = (body: object) => request<{ job_id: string }>("/batches", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -380,7 +380,7 @@ export const fetchLidarCapability = () => request<Availability & { channel?: str
 export const lidarPayloadUrl = (token: string, decimation = 8) => apiUrl(`/workspace/lidar/${encodeURIComponent(token)}?decimation=${decimation}`);
 export const fetchLidarDescriptor = (id: string) => request<LidarDescriptor>(`/workspace/scenarios/${encodeURIComponent(id)}/lidar`);
 export type LidarSweepsResponse = { contract_version: string; channel?: string; status?: string; unavailable_reason?: string | null; sweeps: Array<{ sample_data_token: string; timestamp_us: number; time_s: number; payload_url: string }> };
-export const fetchLidarSweeps = (id: string) => request<LidarSweepsResponse>(`/workspace/scenarios/${encodeURIComponent(id)}/lidar-sweeps`);
+export const fetchLidarSweeps = (id: string, signal?: AbortSignal) => request<LidarSweepsResponse>(`/workspace/scenarios/${encodeURIComponent(id)}/lidar-sweeps`, { signal });
 export const fetchSensorEvidence = (id: string, nsweeps = 5) => request<SensorEvidence>(`/workspace/scenarios/${encodeURIComponent(id)}/sensor-evidence?nsweeps=${nsweeps}`);
 export const topDownImageUrl = (id: string, source: "lidar" | "radar", nsweeps = 5) => apiUrl(`/workspace/scenarios/${encodeURIComponent(id)}/top-down?source=${source}&nsweeps=${nsweeps}`);
 

@@ -18,10 +18,10 @@ const FIXTURE_FILES = {
  *  corruption. Multi-MB responses (full-map OpenDRIVE) have been observed
  *  truncated mid-attribute by the dev proxy; without this gate the engine
  *  dies with an opaque C++ `{excPtr}` and zero objects. */
-async function fetchArtifactText(url: string, label: string): Promise<string> {
+async function fetchArtifactText(url: string, label: string, signal?: AbortSignal): Promise<string> {
   let lastError: unknown = null;
   for (let attempt = 1; attempt <= 2; attempt++) {
-    const text = await fetch(url).then((response) => {
+    const text = await fetch(url, { signal }).then((response) => {
       if (!response.ok) throw new Error(`wasm_${label}_http_${response.status}`);
       return response.text();
     });
@@ -55,8 +55,9 @@ async function loadRecordedOverlays(
     sweeps: WasmLidarSweep[] | null,
     frame: { originX: number; originY: number; heading: number } | null,
   ) => void,
+  signal?: AbortSignal,
 ): Promise<void> {
-  const workspace = await fetchWorkspaceScenario(scenarioId);
+  const workspace = await fetchWorkspaceScenario(scenarioId, signal);
   setPaths((workspace.paths ?? []).map((path) => ({
     actor_id: path.actor_id,
     actor_type: path.actor_type,
@@ -72,7 +73,7 @@ async function loadRecordedOverlays(
     setSweeps(null, null);
     return;
   }
-  const listing = await fetchLidarSweeps(scenarioId);
+  const listing = await fetchLidarSweeps(scenarioId, signal);
   const sweeps = Array.isArray(listing.sweeps) ? listing.sweeps : [];
   setSweeps(sweeps.length > 0 ? selectSweepStride(sweeps) : null, sweeps.length > 0 ? frame : null);
 }
@@ -146,6 +147,7 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
   useEffect(() => {
     if (scenarioId) return;
     let cancelled = false;
+    const controller = new AbortController();
     const worker = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
     workerRef.current = worker;
     worker.onmessage = (event: MessageEvent<WasmWorkerResponse>) => {
@@ -164,8 +166,8 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
       setLidarCached(0);
       if (!scenarioId) {
         const [xosc, xodr] = await Promise.all([
-          fetchArtifactText(new URL(`../wasm-smoke/${FIXTURE_FILES[fixture]}`, import.meta.url).toString(), "xosc"),
-          fetchArtifactText(new URL("../wasm-smoke/smoke.xodr", import.meta.url).toString(), "xodr"),
+          fetchArtifactText(new URL(`../wasm-smoke/${FIXTURE_FILES[fixture]}`, import.meta.url).toString(), "xosc", controller.signal),
+          fetchArtifactText(new URL("../wasm-smoke/smoke.xodr", import.meta.url).toString(), "xodr", controller.signal),
         ]);
         worker.postMessage({ type: "init", xosc, xodr });
         if (cancelled) return;
@@ -173,16 +175,16 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
         setStatus("ready");
         return;
       }
-      const pair = await createWasmScenarioPair(scenarioId);
+       const pair = await createWasmScenarioPair(scenarioId, controller.signal);
       const [xosc, xodr] = await Promise.all([
-        fetchArtifactText(pair.openscenario, "xosc"),
-        fetchArtifactText(pair.opendrive, "xodr"),
+        fetchArtifactText(pair.openscenario, "xosc", controller.signal),
+        fetchArtifactText(pair.opendrive, "xodr", controller.signal),
       ]);
       worker.postMessage({ type: "init", xosc, xodr });
       if (cancelled) return;
       setAttrs(parseXoscAttributes(xosc));
       // Best-effort context: a missing ground must never break playback.
-      fetchGroundLayers(scenarioId)
+      fetchGroundLayers(scenarioId, controller.signal)
         .then((json) => { if (cancelled) return; return setGround(
           json !== null && typeof json === "object" && Array.isArray((json as WasmGround).layers)
             ? (json as WasmGround)
@@ -196,22 +198,24 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
         scenarioId,
         (paths) => { if (!cancelled) setPaths(paths); },
         (sweeps, frame) => { if (!cancelled) { setLidarSweeps(sweeps); setLidarFrame(frame); } },
+        controller.signal,
       ).catch(() => { if (!cancelled) { setPaths(null); setLidarSweeps(null); setLidarFrame(null); } });
     };
     load().catch((error) => { if (!cancelled) setStatus(`error: ${error instanceof Error ? error.message : String(error)}`); });
-    return () => { cancelled = true; worker.postMessage({ type: "dispose" }); worker.terminate(); workerRef.current = null; };
+    return () => { cancelled = true; controller.abort(); worker.postMessage({ type: "dispose" }); worker.terminate(); workerRef.current = null; };
   }, [scenarioId, fixture]);
 
   useEffect(() => {
     if (!scenarioId) return;
     let cancelled = false;
+    const controller = new AbortController();
     let key: `scenario:${string}` = `scenario:${scenarioId}`;
     let runtime: WasmScenarioRuntime | null = null;
     const load = async () => {
-      const pair = await createWasmScenarioPair(scenarioId);
+      const pair = await createWasmScenarioPair(scenarioId, controller.signal);
       const [xosc, xodr] = await Promise.all([
-        fetchArtifactText(pair.openscenario, "xosc"),
-        fetchArtifactText(pair.opendrive, "xodr"),
+        fetchArtifactText(pair.openscenario, "xosc", controller.signal),
+        fetchArtifactText(pair.opendrive, "xodr", controller.signal),
       ]);
       if (cancelled) return;
       runtime = acquireWasmRuntime(key, { xosc, xodr });
@@ -219,14 +223,14 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
       setRuntimeSnapshot(runtime.getSnapshot());
       const unsubscribe = runtime.subscribe(() => { if (!cancelled) setRuntimeSnapshot(runtime?.getSnapshot() ?? null); });
       setAttrs(parseXoscAttributes(xosc));
-      loadRecordedOverlays(scenarioId, (paths) => { if (!cancelled) setPaths(paths); }, (sweeps, frame) => { if (!cancelled) { setLidarSweeps(sweeps); setLidarFrame(frame); } }).catch(() => { if (!cancelled) { setPaths(null); setLidarSweeps(null); setLidarFrame(null); } });
-      fetchRecordedAnnotations(scenarioId).then((payload) => { if (!cancelled && payload.status !== "unavailable") setRecordedTracks(payload.tracks); }).catch(() => { if (!cancelled) setRecordedTracks([]); });
-      fetchGroundLayers(scenarioId).then((json) => { if (!cancelled) setGround(json !== null && typeof json === "object" && Array.isArray((json as WasmGround).layers) ? (json as WasmGround) : null); }).catch(() => { if (!cancelled) setGround(null); });
+      loadRecordedOverlays(scenarioId, (paths) => { if (!cancelled) setPaths(paths); }, (sweeps, frame) => { if (!cancelled) { setLidarSweeps(sweeps); setLidarFrame(frame); } }, controller.signal).catch(() => { if (!cancelled) { setPaths(null); setLidarSweeps(null); setLidarFrame(null); } });
+      fetchRecordedAnnotations(scenarioId, controller.signal).then((payload) => { if (!cancelled && payload.status !== "unavailable") setRecordedTracks(payload.tracks); }).catch(() => { if (!cancelled) setRecordedTracks([]); });
+      fetchGroundLayers(scenarioId, controller.signal).then((json) => { if (!cancelled) setGround(json !== null && typeof json === "object" && Array.isArray((json as WasmGround).layers) ? (json as WasmGround) : null); }).catch(() => { if (!cancelled) setGround(null); });
       return unsubscribe;
     };
     let unsubscribe: (() => void) | undefined;
     load().then((cleanup) => { unsubscribe = cleanup; }).catch((error) => { if (!cancelled) setStatus(`error: ${error instanceof Error ? error.message : String(error)}`); });
-    return () => { cancelled = true; unsubscribe?.(); if (runtime) releaseWasmRuntime(key, runtime); runtimeRef.current = null; setRuntimeSnapshot(null); };
+    return () => { cancelled = true; controller.abort(); unsubscribe?.(); if (runtime) releaseWasmRuntime(key, runtime); runtimeRef.current = null; setRuntimeSnapshot(null); };
   }, [scenarioId]);
 
   useEffect(() => {
@@ -237,8 +241,11 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
   useEffect(() => {
     const ready = scenarioId ? runtimeSnapshot?.status === "ready" : status === "ready";
     if (playhead === undefined || !ready) return;
-    if (scenarioId) runtimeRef.current?.send("seek", { time_s: playhead });
-    else workerRef.current?.postMessage({ type: "seek", time_s: playhead });
+    const timer = window.setTimeout(() => {
+      if (scenarioId) runtimeRef.current?.send("seek", { time_s: playhead });
+      else workerRef.current?.postMessage({ type: "seek", time_s: playhead });
+    }, 75);
+    return () => window.clearTimeout(timer);
   }, [playhead, status, scenarioId, runtimeSnapshot?.status]);
 
   // Background prefetch: full-density sweeps arrive oldest-first while the
@@ -274,7 +281,7 @@ export default function WasmPlaybackView({ scenarioId, fixture = "vehicle", mode
   const displayRoad = scenarioId ? (runtimeSnapshot?.road ?? road) : road;
   const displayStatus = scenarioId ? (runtimeSnapshot?.status ?? "loading") : status;
   const activeSweep = lidarSweeps ? nearestSweepAtOrBefore(lidarSweeps, displayFrame.simulation_time) : null;
-  const activeCloud = activeToggles.lidar && mode !== "third-person" && activeSweep ? sweepCacheRef.current.get(activeSweep.sample_data_token) ?? null : null;
+  const activeCloud = activeToggles.lidar && mode !== "third-person" && activeSweep ? sweepCacheRef.current.peek(activeSweep.sample_data_token) ?? null : null;
   const lidarDelta = activeCloud ? displayFrame.simulation_time - activeCloud.time_s : null;
 
   useEffect(() => {
