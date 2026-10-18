@@ -118,3 +118,11 @@ def test_road_ahead_reports_unavailable_without_the_devkit_query() -> None:
         "reason": "devkit_query_missing",
         "records": [],
     }
+
+
+def test_road_ahead_passes_the_query_position_to_the_devkit() -> None:
+    api = QueryMapApi(next_roads=[])
+
+    road_ahead_query(api, 12.5, -3.25)
+
+    assert api.calls == [("next", 12.5, -3.25)]
