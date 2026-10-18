@@ -347,3 +347,12 @@ def test_prediction_advisory_rejects_an_empty_reference() -> None:
 def test_prediction_advisory_rejects_a_path_with_a_different_horizon() -> None:
     with pytest.raises(ValueError, match="non-empty and equal"):
         evaluate_prediction_advisory([[(0.0, 0.0)], [(0.0, 0.0), (1.0, 0.0)]], [(0.0, 0.0)])
+
+
+def test_prediction_advisory_reports_zero_error_for_a_perfect_prediction() -> None:
+    actual = [(0.0, 0.0), (1.0, 1.0), (2.0, 2.0)]
+
+    result = evaluate_prediction_advisory([list(actual)], actual)
+
+    assert result["min_ade_m"] == 0.0
+    assert result["min_fde_m"] == 0.0
