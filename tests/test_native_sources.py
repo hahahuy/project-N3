@@ -133,3 +133,10 @@ def test_road_ahead_returns_devkit_records_as_available() -> None:
 
     assert result["status"] == "available"
     assert result["records"] == ["road-1", "road-2"]
+
+
+def test_road_ahead_treats_a_none_devkit_result_as_no_records() -> None:
+    result = road_ahead_query(QueryMapApi(next_roads=None), 0.0, 0.0)
+
+    assert result["status"] == "available"
+    assert result["records"] == []
