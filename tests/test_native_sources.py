@@ -262,3 +262,17 @@ def test_map_patch_marks_available_results_local_private_with_the_patch() -> Non
     assert result["status"] == "available"
     assert result["patch"] == [-1.0, -2.0, 3.0, 4.0]
     assert result["artifact_visibility"] == "local_private"
+
+
+def test_lidar_contract_describes_the_sample_without_point_bytes() -> None:
+    contract = lidar_payload_contract(_sample_data(), _calibration())
+
+    assert contract == LidarPayloadContract(
+        LIDAR_CONTRACT_VERSION,
+        "LIDAR_TOP",
+        1_532_402_927_647_951,
+        "samples/LIDAR_TOP/a.pcd.bin",
+        "ego_vehicle",
+        "calib-top",
+        8,
+    )
