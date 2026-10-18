@@ -17,6 +17,16 @@ SHELL := /bin/bash
 
 COMPOSE_DEV  := docker compose -f compose.dev.yml
 COMPOSE_PROD := docker compose -f compose.demo.yml
+
+# Build provenance passed into the product image and reported by /api/health.
+# Without it the image records nothing about which commit it came from, so the
+# running product cannot be traced back to a commit without diffing source out
+# of the container. Overridable so a deploy from a different tree is explicit
+# rather than silently mislabelled.
+PROJECT_N3_BUILD_COMMIT ?= $(shell git rev-parse HEAD 2>/dev/null || echo unknown)
+PROJECT_N3_BUILD_COMMIT_TIME ?= $(shell git log -1 --format=%cI 2>/dev/null || echo unknown)
+PROJECT_N3_BUILD_DIRTY ?= $(shell test -n "$$(git status --porcelain -- src frontend Dockerfile.prod pyproject.toml README.md 2>/dev/null)" && echo true || echo false)
+MAKE_ENV := PROJECT_N3_BUILD_COMMIT=$(PROJECT_N3_BUILD_COMMIT) PROJECT_N3_BUILD_COMMIT_TIME=$(PROJECT_N3_BUILD_COMMIT_TIME) PROJECT_N3_BUILD_DIRTY=$(PROJECT_N3_BUILD_DIRTY)
 COMPOSE_PROD_RUN := $(COMPOSE_PROD) $(MAKE_ENV)
 
 # Match the container user to the host user so bind-mounted files stay writable.

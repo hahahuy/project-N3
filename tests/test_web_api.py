@@ -54,6 +54,13 @@ def test_empty_artifact_root_is_a_valid_health_state(tmp_path: Path) -> None:
     assert response.status_code == 200
     assert response.json() == {
         "status": "ok",
+        # Provenance is null in tests and in dev, which have no build-time tree.
+        "build": {
+            "commit": None,
+            "commit_time": None,
+            "dirty": None,
+            "source": "bind-mounted",
+        },
         "artifact_root_configured": False,
         "scenario_count": 0,
         "dataset_configured": False,
@@ -1542,3 +1549,49 @@ def test_devkit_metadata_is_shared_across_call_sites(tmp_path, monkeypatch) -> N
 
     assert len(created) == 1, f"expected one metadata load, got {len(created)}"
     assert nuscenes_adapter.shared_nuscenes_cache_size() == 1
+
+
+def test_health_reports_build_provenance(tmp_path, monkeypatch) -> None:
+    """`/api/health` must identify the build, or the product cannot be traced.
+
+    The product image bakes the repository in and carries no git metadata, so
+    without build args there is no way to tell which commit the judges are
+    being served.
+    """
+    monkeypatch.setenv("PROJECT_N3_BUILD_COMMIT", "3f216bd0123456789abcdef")
+    monkeypatch.setenv("PROJECT_N3_BUILD_COMMIT_TIME", "2026-10-18T11:38:12+07:00")
+    monkeypatch.setenv("PROJECT_N3_BUILD_DIRTY", "false")
+
+    payload = _client(tmp_path).get("/api/health").json()
+
+    assert payload["build"]["commit"] == "3f216bd0123456789abcdef"
+    assert payload["build"]["commit_time"] == "2026-10-18T11:38:12+07:00"
+    assert payload["build"]["dirty"] is False
+    assert payload["build"]["source"] == "baked"
+
+
+def test_health_reports_dirty_build(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("PROJECT_N3_BUILD_COMMIT", "deadbeef")
+    monkeypatch.setenv("PROJECT_N3_BUILD_DIRTY", "true")
+
+    build = _client(tmp_path).get("/api/health").json()["build"]
+
+    assert build["dirty"] is True
+    assert build["commit"] == "deadbeef"
+
+
+def test_health_build_is_null_for_a_bind_mounted_dev_process(tmp_path, monkeypatch) -> None:
+    """Dev has no build-time tree, so provenance must degrade to nulls.
+
+    Reporting a stale or invented commit for the bind-mounted dev process would
+    be worse than reporting none.
+    """
+    for name in ("PROJECT_N3_BUILD_COMMIT", "PROJECT_N3_BUILD_COMMIT_TIME", "PROJECT_N3_BUILD_DIRTY"):
+        monkeypatch.delenv(name, raising=False)
+
+    build = _client(tmp_path).get("/api/health").json()["build"]
+
+    assert build["commit"] is None
+    assert build["commit_time"] is None
+    assert build["dirty"] is None
+    assert build["source"] == "bind-mounted"

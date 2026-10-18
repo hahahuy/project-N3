@@ -33,6 +33,17 @@ ENV PYTHONUNBUFFERED=1 \
     PROJECT_N3_METADATA_CACHE=/var/cache/real2scenario \
     MPLCONFIGDIR=/tmp/matplotlib
 
+# Build provenance. Without this the image carries no record of which commit it
+# came from, so "what is the product running?" can only be answered by diffing
+# source out of the container by hand. compose.demo.yml supplies the values from
+# git; /api/health reports them.
+ARG PROJECT_N3_BUILD_COMMIT=unknown
+ARG PROJECT_N3_BUILD_COMMIT_TIME=unknown
+ARG PROJECT_N3_BUILD_DIRTY=false
+ENV PROJECT_N3_BUILD_COMMIT=${PROJECT_N3_BUILD_COMMIT} \
+    PROJECT_N3_BUILD_COMMIT_TIME=${PROJECT_N3_BUILD_COMMIT_TIME} \
+    PROJECT_N3_BUILD_DIRTY=${PROJECT_N3_BUILD_DIRTY}
+
 WORKDIR /app
 COPY pyproject.toml README.md ./
 COPY src/ ./src/

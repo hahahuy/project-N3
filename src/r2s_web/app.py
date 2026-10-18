@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from real2scenario import state_to_dict
 
 from .adapter import ArtifactAdapter, ArtifactRecord
+from .build_info import build_identity
 from .config import WebSettings
 from .jobs import BatchService, PreviewService, to_results
 from .esmini import EsminiBackend, ReplayJob
@@ -293,6 +294,7 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
         )
         return {
             "status": "ok",
+            "build": build_identity(),
             "artifact_root_configured": resolved_settings.artifact_root.is_dir(),
             "scenario_count": len(adapter.discover()),
             "dataset_configured": dataset_path is not None,
