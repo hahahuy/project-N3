@@ -240,3 +240,9 @@ def test_map_patch_fills_layers_missing_from_the_devkit_result_with_empty_lists(
     result = native_map_patch(api, (0.0, 0.0, 1.0, 1.0), layers=("walkway", "stop_line"))
 
     assert result["layers"] == {"walkway": ["w1"], "stop_line": []}
+
+
+def test_map_patch_treats_a_none_devkit_result_as_empty_layers() -> None:
+    result = native_map_patch(QueryMapApi(patch_records=None), (0.0, 0.0, 1.0, 1.0), layers=("walkway",))
+
+    assert result["layers"] == {"walkway": []}
