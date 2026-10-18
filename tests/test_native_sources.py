@@ -337,3 +337,8 @@ def test_lidar_contract_is_immutable() -> None:
 def test_prediction_advisory_rejects_no_predicted_paths() -> None:
     with pytest.raises(ValueError, match="non-empty and equal"):
         evaluate_prediction_advisory([], [(0.0, 0.0)])
+
+
+def test_prediction_advisory_rejects_an_empty_reference() -> None:
+    with pytest.raises(ValueError, match="non-empty and equal"):
+        evaluate_prediction_advisory([[]], [])
