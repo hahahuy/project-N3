@@ -165,3 +165,8 @@ def test_map_patch_rejects_a_patch_without_four_values() -> None:
 def test_map_patch_rejects_inverted_x_bounds() -> None:
     with pytest.raises(ValueError, match="positive area"):
         native_map_patch(QueryMapApi(), (5.0, 0.0, 1.0, 1.0))
+
+
+def test_map_patch_rejects_inverted_y_bounds() -> None:
+    with pytest.raises(ValueError, match="positive area"):
+        native_map_patch(QueryMapApi(), (0.0, 5.0, 1.0, 1.0))
