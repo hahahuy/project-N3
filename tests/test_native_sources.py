@@ -276,3 +276,7 @@ def test_lidar_contract_describes_the_sample_without_point_bytes() -> None:
         "calib-top",
         8,
     )
+
+
+def test_lidar_contract_defaults_to_local_private_visibility() -> None:
+    assert lidar_payload_contract(_sample_data(), _calibration()).artifact_visibility == "local_private"
