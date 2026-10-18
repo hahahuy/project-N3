@@ -150,12 +150,12 @@ export function validateKeyframes(keyframes: CanvasKeyframe[], origin: CanvasKey
     const previous = keyframes[index - 1];
     const current = keyframes[index];
     const dt = current.time_s - previous.time_s;
-    if (dt < MOTION_GUARDRAILS.minimumKeyframeIntervalS) errors.push(`Keyframe ${index + 1} is too close in time.`);
+    if (dt < MOTION_GUARDRAILS.minimumKeyframeIntervalS) errors.push(`Keyframe ${index + 1} is too close in time; the gap is ${dt.toFixed(4)}s but the minimum is ${MOTION_GUARDRAILS.minimumKeyframeIntervalS.toFixed(2)}s.`);
     const acceleration = (current.speed_mps - previous.speed_mps) / Math.max(dt, 1e-6);
-    if (acceleration > MOTION_GUARDRAILS.maximumAccelerationMps2) errors.push("Acceleration exceeds the 5.0 m/s2 guardrail.");
-    if (-acceleration > MOTION_GUARDRAILS.maximumBrakingMps2) errors.push("Braking exceeds the 8.0 m/s2 guardrail.");
-    if (Math.abs(physicalYawDelta(current.yaw_rad, previous.yaw_rad)) / Math.max(dt, 1e-6) > MOTION_GUARDRAILS.maximumYawRateRps) errors.push("Yaw rate exceeds the 2.5 rad/s guardrail.");
-    if (index + 1 < keyframes.length && Math.abs(physicalYawDelta(keyframes[index + 1].yaw_rad, previous.yaw_rad)) > MOTION_GUARDRAILS.maximumTurnAngleRad) errors.push("Turn angle exceeds the 2.00 rad guardrail.");
+    if (acceleration > MOTION_GUARDRAILS.maximumAccelerationMps2) errors.push(`Acceleration exceeds the ${MOTION_GUARDRAILS.maximumAccelerationMps2.toFixed(1)} m/s2 guardrail.`);
+    if (-acceleration > MOTION_GUARDRAILS.maximumBrakingMps2) errors.push(`Braking exceeds the ${MOTION_GUARDRAILS.maximumBrakingMps2.toFixed(1)} m/s2 guardrail.`);
+    if (Math.abs(physicalYawDelta(current.yaw_rad, previous.yaw_rad)) / Math.max(dt, 1e-6) > MOTION_GUARDRAILS.maximumYawRateRps) errors.push(`Yaw rate exceeds the ${MOTION_GUARDRAILS.maximumYawRateRps.toFixed(2)} rad/s guardrail.`);
+    if (index + 1 < keyframes.length && Math.abs(physicalYawDelta(keyframes[index + 1].yaw_rad, previous.yaw_rad)) > MOTION_GUARDRAILS.maximumTurnAngleRad) errors.push(`Turn angle exceeds the ${MOTION_GUARDRAILS.maximumTurnAngleRad.toFixed(2)} rad guardrail.`);
   }
   return [...new Set(errors)];
 }
@@ -185,33 +185,36 @@ type Props = {
 export function traceToKeyframes(trace: TrajectoryState[], actorId: string, durationS: number): CanvasKeyframe[] {
   if (trace.length === 0) return [];
   const step = Math.max(MOTION_GUARDRAILS.minimumKeyframeIntervalS, 0.05);
+  const lastTraceTime = trace[trace.length - 1]!.time_s;
+
+  // Anchor a uniform grid on both ends: it must start at 0 and finish exactly
+  // on the origin duration, with every interval at or above the minimum.
+  //
+  // A fixed grid that ran 0, 0.25, 0.50, ... and then force-appended the final
+  // sample always produced a short final interval whenever the duration was not
+  // a whole multiple of the step, which is the normal case for nuScenes:
+  // 19.4995698928833 s became 79 keyframes whose last gap was 0.2496 s, and the
+  // authoring guard rejected the whole commit with "Keyframe 79 is too close in
+  // time". Choosing the count first makes the spacing the safe quantity.
+  const span = Math.max(step, Math.max(durationS, lastTraceTime));
+  let count = Math.floor(span / step) + 1;
+  while (count > 2 && span / (count - 1) < step) count -= 1;
+  const spacing = span / Math.max(1, count - 1);
+
   const points: CanvasKeyframe[] = [];
-  let nextAt = -Infinity;
-  for (const state of trace) {
-    const time = Math.min(state.time_s, durationS);
-    if (state.time_s + 1e-9 < nextAt) continue;
-    if (points.length > 0 && time <= points[points.length - 1]!.time_s) continue;
+  for (let index = 0; index < count; index += 1) {
+    const time = index === count - 1 ? span : index * spacing;
+    const state = sampleTraceAt(trace, time);
     points.push({
-      keyframe_id: `physics-kf-${points.length + 1}`,
+      keyframe_id: `physics-kf-${index + 1}`,
       time_s: time,
       x_m: state.x_m,
       y_m: state.y_m,
       yaw_rad: state.yaw_rad,
       speed_mps: state.speed_mps,
     });
-    nextAt = state.time_s + step;
   }
-  const last = trace[trace.length - 1]!;
-  if (points.length === 0 || points[points.length - 1]!.time_s < Math.min(last.time_s, durationS) - 1e-9) {
-    points.push({
-      keyframe_id: `physics-kf-${points.length + 1}`,
-      time_s: Math.min(last.time_s, durationS),
-      x_m: last.x_m,
-      y_m: last.y_m,
-      yaw_rad: last.yaw_rad,
-      speed_mps: last.speed_mps,
-    });
-  }
+
   // The decimated polyline is coarser than the 0.05 s solver trace, so the yaw
   // carried over from the trace no longer matches the direction of travel across
   // the polyline we actually export. Re-derive every interior heading from the
@@ -233,6 +236,31 @@ export function traceToKeyframes(trace: TrajectoryState[], actorId: string, dura
   });
   void actorId;
   return points;
+}
+
+/** Linear interpolation of the trace at an arbitrary time, clamped to its span. */
+function sampleTraceAt(trace: TrajectoryState[], time: number): TrajectoryState {
+  const first = trace[0]!;
+  const last = trace[trace.length - 1]!;
+  if (time <= first.time_s) return first;
+  if (time >= last.time_s) return last;
+  let low = 0;
+  let high = trace.length - 1;
+  while (high - low > 1) {
+    const mid = (low + high) >> 1;
+    if (trace[mid]!.time_s <= time) low = mid;
+    else high = mid;
+  }
+  const left = trace[low]!;
+  const right = trace[high]!;
+  const fraction = (time - left.time_s) / Math.max(1e-9, right.time_s - left.time_s);
+  return {
+    time_s: time,
+    x_m: left.x_m + (right.x_m - left.x_m) * fraction,
+    y_m: left.y_m + (right.y_m - left.y_m) * fraction,
+    yaw_rad: left.yaw_rad + physicalYawDelta(right.yaw_rad, left.yaw_rad) * fraction,
+    speed_mps: left.speed_mps + (right.speed_mps - left.speed_mps) * fraction,
+  };
 }
 
 function unitVector(dx: number, dy: number): { x: number; y: number } | null {

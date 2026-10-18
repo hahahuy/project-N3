@@ -39,7 +39,7 @@ describe("motion editor contracts", () => {
     expect(validateKeyframes(edited, keyframes(), 1)).toEqual(expect.arrayContaining([
       "The first keyframe must remain at the origin pose.",
       "Speed must stay at or below 20.0 m/s.",
-      "Keyframe 2 is too close in time.",
+      "Keyframe 2 is too close in time; the gap is 0.1000s but the minimum is 0.25s.",
     ]));
   });
 });
@@ -135,6 +135,37 @@ describe("traceToKeyframes", () => {
     for (let i = 1; i < result.length; i += 1) {
       const jump = Math.abs(result[i]!.yaw_rad - result[i - 1]!.yaw_rad);
       expect(jump).toBeLessThan(Math.PI);
+    }
+  });
+
+  it("never emits a short interval when the duration is not a multiple of the step", () => {
+    // Regression: a real nuScenes duration. The fixed grid plus a force-appended
+    // final sample produced 79 keyframes whose last gap was 0.2496 s, which the
+    // authoring guard rejected with "Keyframe 79 is too close in time".
+    const durationS = 19.4995698928833;
+    const trace = Array.from({ length: 391 }, (_, i) => ({
+      time_s: Math.min(durationS, i * 0.05), x_m: i * 0.4, y_m: 0, yaw_rad: 0, speed_mps: 8,
+    }));
+    const result = traceToKeyframes(trace, "ego", durationS);
+    for (let i = 1; i < result.length; i += 1) {
+      expect(result[i]!.time_s - result[i - 1]!.time_s)
+        .toBeGreaterThanOrEqual(MOTION_GUARDRAILS.minimumKeyframeIntervalS - 1e-12);
+    }
+    expect(result[result.length - 1]!.time_s).toBeCloseTo(durationS, 9);
+  });
+
+  it("holds the intervals for every awkward duration, not just one", () => {
+    for (const durationS of [19.4995698928833, 19.500185, 19.250217, 0.31, 1.0, 7.77]) {
+      const steps = Math.ceil(durationS / 0.05) + 1;
+      const trace = Array.from({ length: steps }, (_, i) => ({
+        time_s: Math.min(durationS, i * 0.05), x_m: i * 0.3, y_m: 0, yaw_rad: 0, speed_mps: 6,
+      }));
+      const result = traceToKeyframes(trace, "ego", durationS);
+      expect(result.length).toBeGreaterThanOrEqual(2);
+      for (let i = 1; i < result.length; i += 1) {
+        expect(result[i]!.time_s - result[i - 1]!.time_s)
+          .toBeGreaterThanOrEqual(MOTION_GUARDRAILS.minimumKeyframeIntervalS - 1e-12);
+      }
     }
   });
 

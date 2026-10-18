@@ -33,6 +33,13 @@ def recalculate_path(keyframes: Sequence[object], *, obstacles: Sequence[dict[st
 # exported truck and an exported car are steered by identical geometry.
 MAX_YAW_RATE_RADPS = 2.5
 
+# Longitudinal ceilings mirrored from the authoring guardrails the frontend
+# validates committed keyframes against (MOTION_GUARDRAILS in motion-editor.tsx).
+# The trace is decimated into the committed keyframes, so the solver has to stay
+# inside the same envelope the authoring guard rejects.
+MAX_ACCELERATION_MPS2 = 5.0
+MAX_DECELERATION_MPS2 = 8.0
+
 
 def _follow_path(reference: Sequence[State], timestep_s: float) -> tuple[State, ...]:
     position = reference[0]
@@ -58,6 +65,24 @@ def _follow_path(reference: Sequence[State], timestep_s: float) -> tuple[State, 
         else:
             yaw = position.yaw_rad + max(-max_heading_step, min(max_heading_step, heading_error))
             speed = min(target.speed_mps, distance / max(timestep_s, 1e-6))
+        # Rate-limit speed instead of letting it jump. The raw command above is
+        # min(target speed, distance to aim / dt), so when the aim point swings
+        # behind the vehicle the follower commands 0 for one step and the full
+        # target speed on the next. That stop-go sawtooth produced traces whose
+        # speed changed by several m/s inside a single step, and because the
+        # committed branch is decimated from this trace, the exported keyframes
+        # tripped the acceleration guardrail (measured spikes of 5.9 to 33.7
+        # m/s2 on real nuScenes actors). Bounding the change per step makes the
+        # trace respect the authoring guardrails by construction. The 0.98 factor
+        # keeps a step just inside the limit rather than exactly on it.
+        speed = max(
+            0.0,
+            min(
+                speed,
+                position.speed_mps + 0.98 * MAX_ACCELERATION_MPS2 * timestep_s,
+            ),
+        )
+        speed = max(speed, position.speed_mps - 0.98 * MAX_DECELERATION_MPS2 * timestep_s)
         x = position.x_m + math.cos(yaw) * speed * timestep_s
         y = position.y_m + math.sin(yaw) * speed * timestep_s
         position = State(time_s, x, y, yaw, speed)
