@@ -246,3 +246,11 @@ def test_map_patch_treats_a_none_devkit_result_as_empty_layers() -> None:
     result = native_map_patch(QueryMapApi(patch_records=None), (0.0, 0.0, 1.0, 1.0), layers=("walkway",))
 
     assert result["layers"] == {"walkway": []}
+
+
+def test_map_patch_drops_devkit_layers_that_were_not_requested() -> None:
+    api = QueryMapApi(patch_records={"walkway": ["w1"], "stop_line": ["s1"]})
+
+    result = native_map_patch(api, (0.0, 0.0, 1.0, 1.0), layers=("walkway",))
+
+    assert list(result["layers"]) == ["walkway"]
