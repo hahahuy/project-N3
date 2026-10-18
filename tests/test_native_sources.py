@@ -368,3 +368,14 @@ def test_prediction_advisory_measures_final_displacement_on_the_last_step() -> N
     result = evaluate_prediction_advisory([[(9.0, 9.0), (6.0, 8.0)]], [(0.0, 0.0), (0.0, 0.0)])
 
     assert result["min_fde_m"] == pytest.approx(10.0)
+
+
+def test_prediction_advisory_takes_ade_and_fde_minima_independently() -> None:
+    actual = [(0.0, 0.0), (0.0, 0.0)]
+    close_start = [(0.0, 0.0), (2.0, 0.0)]
+    close_end = [(3.0, 0.0), (1.0, 0.0)]
+
+    result = evaluate_prediction_advisory([close_start, close_end], actual)
+
+    assert result["min_ade_m"] == pytest.approx(1.0)
+    assert result["min_fde_m"] == pytest.approx(1.0)
