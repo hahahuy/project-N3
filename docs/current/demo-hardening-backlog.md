@@ -1,6 +1,6 @@
 # Public Demo Hardening Backlog
 
-Status: `OPEN — PAGINATION AND BATCH LIMITS REMAIN`
+Status: `IMPLEMENTED LOCALLY — PRODUCTION RUNTIME EVIDENCE REMAINS`
 Scope: the three items that must be completed before the web application is
 reachable by anyone outside the local network.
 
@@ -29,7 +29,7 @@ items. The guides describe the design; this file describes the state.
 
 ## 2. D-3 / S-5 — Paginate scene discovery
 
-Status: `OPEN`
+Status: `IMPLEMENTED / TESTED`
 Priority: **highest remaining value**
 
 ### Problem
@@ -81,11 +81,16 @@ a different selection.
   every scene, verified against a full unpaginated read.
 - Frontend tests and `npm run build` pass.
 
+Implementation note: the unparameterized endpoint retains its legacy list shape;
+parameterized requests return `{items, total, limit, offset, query}`. Discovery
+uses the same source-order metadata records and only materializes the requested
+page, while per-scene actor/sample detail remains byte-compatible.
+
 ---
 
 ## 3. S-6 — Cap concurrent batch jobs
 
-Status: `OPEN`
+Status: `IMPLEMENTED / TESTED`
 Priority: **launch blocker for public exposure**
 
 ### Problem
@@ -155,6 +160,13 @@ was hit, in the same vocabulary as existing availability blocks.
 - Disk growth is bounded; a documented quota or rotation exists for
   `reports/` and `scenarios/`.
 - Full test suite passes.
+
+Implementation note: batch admission remains bounded, output retention removes
+the oldest `job-*` directory before the configured job count is exceeded, and a
+byte quota rejects new work with `batch_output_quota_reached`. Native replay
+calls from batch and standalone replay share one process-level semaphore, so the
+configured replay concurrency is a global limit rather than one limit per API
+surface.
 
 ---
 

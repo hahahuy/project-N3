@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
@@ -65,6 +66,7 @@ from .schemas import (
     PreviewResponse,
     GateResultView,
 )
+from .resource_budget import ReplayResourceBudget
 
 
 @dataclass(slots=True)
@@ -80,7 +82,7 @@ class JobRecord:
 
 
 class BatchService:
-    def __init__(self, settings: WebSettings, adapter: ArtifactAdapter):
+    def __init__(self, settings: WebSettings, adapter: ArtifactAdapter, *, replay_budget: ReplayResourceBudget | None = None):
         self.settings = settings
         self.adapter = adapter
         self.jobs: dict[str, JobRecord] = {}
@@ -92,6 +94,7 @@ class BatchService:
             settings.batch_max_workers + settings.batch_max_pending
         )
         self._accept_grace_s = settings.batch_accept_grace_s
+        self._replay_budget = replay_budget or ReplayResourceBudget(1)
 
     def _executor_for_submission(self) -> ThreadPoolExecutor:
         with self._state_lock:
@@ -125,6 +128,7 @@ class BatchService:
             executor.shutdown(wait=wait, cancel_futures=cancel_futures)
 
     def create(self, request: BatchRequest) -> JobStatus:
+        self._prepare_output_root()
         job_id = f"job-{uuid.uuid4().hex[:12]}"
         status = JobStatus(job_id=job_id, status="running", scenario_id=request.scenario_id)
         record = JobRecord(status=status)
@@ -146,6 +150,19 @@ class BatchService:
         except TimeoutError:
             pass
         return record.status
+
+    def _prepare_output_root(self) -> None:
+        """Apply bounded batch retention before admitting another job."""
+        root = self.settings.output_root
+        root.mkdir(parents=True, exist_ok=True)
+        batch_dirs = sorted(
+            (path for path in root.glob("job-*") if path.is_dir()),
+            key=lambda path: path.stat().st_mtime,
+        )
+        while len(batch_dirs) >= self.settings.batch_retention_jobs:
+            shutil.rmtree(batch_dirs.pop(0), ignore_errors=False)
+        if _directory_size(root) >= self.settings.output_quota_bytes:
+            raise RuntimeError("batch_output_quota_reached")
 
     def _run_job(self, record: JobRecord, request: BatchRequest) -> None:
         record.status = record.status.model_copy(update={"status": "running"})
@@ -318,14 +335,15 @@ class BatchService:
                 xosc_path = write_openscenario(selected, template, variant_root / "scenario.xosc")
                 xosc_relative = _relative(self.settings.project_root, xosc_path)
                 replay_path = variant_root / "replay.csv"
-                replay = run_esmini(
-                    xosc_path,
-                    replay_path,
-                    EsminiConfig(
-                        executable=self.settings.esmini_bin,
-                        trace_converter=self.settings.esmini_dat2csv,
-                    ),
-                )
+                with self._replay_budget.acquire():
+                    replay = run_esmini(
+                        xosc_path,
+                        replay_path,
+                        EsminiConfig(
+                            executable=self.settings.esmini_bin,
+                            trace_converter=self.settings.esmini_dat2csv,
+                        ),
+                    )
                 if not replay.completed or replay.trace is None:
                     status = "simulator-failed"
                     simulator_error = _replay_error(replay)
@@ -530,6 +548,10 @@ def _preview_config(edits, seed):
         return VariantConfig(seed=seed)
     edit = edits[0]
     return VariantConfig(edit.speed_multiplier, edit.initial_gap_delta_m, edit.timing_offset_s, seed)
+
+
+def _directory_size(root: Path) -> int:
+    return sum(path.stat().st_size for path in root.rglob("*") if path.is_file())
 
 
 def to_results(record: JobRecord) -> BatchResults:

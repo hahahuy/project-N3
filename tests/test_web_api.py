@@ -766,6 +766,80 @@ def test_settings_and_source_scene_import_can_use_configured_local_dataset(tmp_p
     assert any(item["scenario_id"] == imported.json()["scenario_id"] for item in catalog.json())
 
 
+def test_source_scene_page_contract_preserves_order_and_supports_search(tmp_path: Path) -> None:
+    dataset_root = Path(__file__).parents[1] / "data" / "v1.0-mini"
+    if not dataset_root.is_dir():
+        pytest.skip("local nuScenes v1.0-mini metadata is not available in this checkout")
+    settings = WebSettings(
+        project_root=tmp_path,
+        artifact_root=tmp_path / "scenarios",
+        output_root=tmp_path / "reports",
+        dataset_root=dataset_root,
+        esmini_bin=None,
+        esmini_dat2csv=None,
+    )
+    client = TestClient(create_app(settings))
+    first = client.get("/api/source-scenes?limit=3&offset=0")
+    second = client.get("/api/source-scenes?limit=3&offset=3")
+    searched = client.get("/api/source-scenes?limit=20&q=scene-0001")
+
+    assert first.status_code == second.status_code == searched.status_code == 200
+    assert first.json()["total"] == 10
+    assert len(first.json()["items"]) == 3
+    assert [item["scene_token"] for item in first.json()["items"] + second.json()["items"]] == [
+        item["scene_token"] for item in client.get("/api/source-scenes").json()[:6]
+    ]
+    assert searched.json()["total"] == 1
+    assert searched.json()["items"][0]["name"] == "scene-0001"
+
+
+def test_batch_output_retention_and_quota_are_enforced(tmp_path: Path) -> None:
+    artifact_root = tmp_path / "scenarios"
+    artifact_root.mkdir()
+    shutil.copy(FIXTURE, artifact_root / "baseline.json")
+    settings = WebSettings(
+        project_root=tmp_path,
+        artifact_root=artifact_root,
+        output_root=tmp_path / "reports",
+        dataset_root=None,
+        esmini_bin=None,
+        esmini_dat2csv=None,
+        batch_retention_jobs=1,
+        output_quota_bytes=10_000_000,
+    )
+    service = BatchService(settings, ArtifactAdapter(settings))
+    try:
+        request = BatchRequest(
+            scenario_id="synthetic-variant-001",
+            speed_multipliers=[1.0],
+            initial_gap_deltas_m=[0.0],
+            timing_offsets_s=[0.0],
+        )
+        first = service.create(request)
+        first_root = settings.output_root / first.job_id
+        assert first_root.is_dir()
+        second = service.create(request)
+        assert second.job_id != first.job_id
+        assert not first_root.exists()
+    finally:
+        service.shutdown()
+
+
+def test_replay_budget_is_shared_by_batch_and_standalone_services(tmp_path: Path) -> None:
+    settings = WebSettings(
+        project_root=tmp_path,
+        artifact_root=tmp_path / "scenarios",
+        output_root=tmp_path / "reports",
+        dataset_root=None,
+        esmini_bin=None,
+        esmini_dat2csv=None,
+        replay_max_concurrent=2,
+    )
+    app = create_app(settings)
+    assert app.state.batches._replay_budget is app.state.esmini._replay_budget
+    assert app.state.batches._replay_budget.max_concurrent == 2
+
+
 def _dataset_with_expansions() -> Path | None:
     """Return a local dataset root with map expansions, if any is present.
 

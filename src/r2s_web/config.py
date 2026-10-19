@@ -23,6 +23,9 @@ class WebSettings:
     batch_max_workers: int = 1
     batch_max_pending: int = 1
     batch_accept_grace_s: float = 0.05
+    replay_max_concurrent: int = 1
+    batch_retention_jobs: int = 20
+    output_quota_bytes: int = 2 * 1024 * 1024 * 1024
 
     def __post_init__(self) -> None:
         if self.dataset_root is not None and self.dataset_version == "v1.0-trainval":
@@ -54,6 +57,9 @@ class WebSettings:
             batch_max_workers=_positive_int(os.environ.get("R2S_BATCH_MAX_WORKERS", "1"), "R2S_BATCH_MAX_WORKERS"),
             batch_max_pending=_non_negative_int(os.environ.get("R2S_BATCH_MAX_PENDING", "1"), "R2S_BATCH_MAX_PENDING"),
             batch_accept_grace_s=_non_negative_float(os.environ.get("R2S_BATCH_ACCEPT_GRACE_S", "0.05"), "R2S_BATCH_ACCEPT_GRACE_S"),
+            replay_max_concurrent=_positive_int(os.environ.get("R2S_REPLAY_MAX_CONCURRENT", "1"), "R2S_REPLAY_MAX_CONCURRENT"),
+            batch_retention_jobs=_positive_int(os.environ.get("R2S_BATCH_RETENTION_JOBS", "20"), "R2S_BATCH_RETENTION_JOBS"),
+            output_quota_bytes=_positive_int(os.environ.get("R2S_OUTPUT_QUOTA_BYTES", str(2 * 1024 * 1024 * 1024)), "R2S_OUTPUT_QUOTA_BYTES"),
         dataset_version=os.environ.get(
             "NUSCENES_VERSION",
             _default_dataset_version(dataset_root),
@@ -101,6 +107,12 @@ class WebSettings:
             esmini_lib=self.esmini_lib,
             dataset_version=dataset_version or self.dataset_version,
             esmini_capture_images=self.esmini_capture_images,
+            replay_max_concurrent=self.replay_max_concurrent,
+            batch_max_workers=self.batch_max_workers,
+            batch_max_pending=self.batch_max_pending,
+            batch_accept_grace_s=self.batch_accept_grace_s,
+            batch_retention_jobs=self.batch_retention_jobs,
+            output_quota_bytes=self.output_quota_bytes,
         )
 
 

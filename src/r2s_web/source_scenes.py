@@ -86,10 +86,26 @@ class SourceSceneAdapter:
         self.settings = settings
 
     def discover(self) -> tuple[SourceScene, ...]:
+        return self.discover_page()[0]
+
+    def discover_page(
+        self, *, limit: int | None = None, offset: int = 0, query: str | None = None
+    ) -> tuple[tuple[SourceScene, ...], int]:
         if self._metadata_path() is None:
-            return ()
+            return (), 0
         index = shared_metadata_index(self.settings)
-        return tuple(_source_scene(index, record) for record in index.scene_records())
+        records = index.scene_records()
+        normalized = query.strip().lower() if query else ""
+        if normalized:
+            records = tuple(
+                record for record in records
+                if normalized in str(record.get("name", "")).lower()
+                or normalized in str(record.get("description", "")).lower()
+                or normalized in str(record.get("token", "")).lower()
+            )
+        total = len(records)
+        selected = records[offset:] if limit is None else records[offset : offset + limit]
+        return tuple(_source_scene(index, record) for record in selected), total
 
     def import_scene(
         self,

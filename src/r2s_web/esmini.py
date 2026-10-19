@@ -24,6 +24,7 @@ from real2scenario.visualization import save_replay_overlay
 
 from .adapter import ArtifactAdapter
 from .config import WebSettings
+from .resource_budget import ReplayResourceBudget
 
 
 @dataclass(slots=True)
@@ -48,12 +49,13 @@ class ReplayJob:
 class EsminiBackend:
     """Run one selected scenario through the local esmini toolchain."""
 
-    def __init__(self, settings: WebSettings, adapter: ArtifactAdapter):
+    def __init__(self, settings: WebSettings, adapter: ArtifactAdapter, *, replay_budget: ReplayResourceBudget | None = None):
         self.settings = settings
         self.adapter = adapter
         self.jobs: dict[str, ReplayJob] = {}
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="esmini")
         self._lock = threading.Lock()
+        self._replay_budget = replay_budget or ReplayResourceBudget(1)
 
     def capability(self) -> dict[str, object]:
         executable = self.settings.esmini_bin
@@ -172,15 +174,16 @@ class EsminiBackend:
             trace_path = job_root / "replay.csv"
             (job_root / "stdout.log").touch()
             (job_root / "stderr.log").touch()
-            report = run_esmini(
-                xosc_path,
-                trace_path,
-                EsminiConfig(
-                    executable=self.settings.esmini_bin,
-                    trace_converter=self.settings.esmini_dat2csv,
-                    capture_images=self.settings.esmini_capture_images,
-                ),
-            )
+            with self._replay_budget.acquire():
+                report = run_esmini(
+                    xosc_path,
+                    trace_path,
+                    EsminiConfig(
+                        executable=self.settings.esmini_bin,
+                        trace_converter=self.settings.esmini_dat2csv,
+                        capture_images=self.settings.esmini_capture_images,
+                    ),
+                )
             job.tool_version = report.tool_version
             job.failure_code = report.failure_code
             job.failure_message = report.failure_message
@@ -237,16 +240,17 @@ class EsminiBackend:
         try:
             selected, template = select_opendrive_template(scenario, topology=STRAIGHT_ROAD_TOPOLOGY)
             xosc_path = write_openscenario(selected, template, mode_root / "scenario.xosc")
-            report = run_esmini(
-                xosc_path,
-                mode_root / "replay.csv",
-                EsminiConfig(
-                    executable=self.settings.esmini_bin,
-                    trace_converter=self.settings.esmini_dat2csv,
-                    capture_images=True,
-                    camera_mode="driver",
-                ),
-            )
+            with self._replay_budget.acquire():
+                report = run_esmini(
+                    xosc_path,
+                    mode_root / "replay.csv",
+                    EsminiConfig(
+                        executable=self.settings.esmini_bin,
+                        trace_converter=self.settings.esmini_dat2csv,
+                        capture_images=True,
+                        camera_mode="driver",
+                    ),
+                )
             if report.completed and report.trace is not None:
                 _write_image_manifest(
                     self.settings.project_root, mode_root, scenario, report.trace, mode=mode

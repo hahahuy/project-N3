@@ -395,6 +395,14 @@ class SourceScene(BaseModel):
     pedestrian_candidate_count: int = 0
 
 
+class SourceScenePage(BaseModel):
+    items: list[SourceScene]
+    total: int
+    limit: int
+    offset: int
+    query: str | None = None
+
+
 class SourceSceneImportRequest(BaseModel):
     start_sample_token: str | None = None
     end_sample_token: str | None = None
@@ -429,6 +437,9 @@ class SettingsView(BaseModel):
     source_scene_count: int
     batch_max_workers: int
     batch_max_pending: int
+    replay_max_concurrent: int = 1
+    batch_retention_jobs: int = 20
+    output_quota_bytes: int = 2 * 1024 * 1024 * 1024
 
 
 class CP1ReviewItem(BaseModel):

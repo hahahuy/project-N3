@@ -25,6 +25,7 @@ from .schemas import (
     SettingsView,
     SourceSceneImportRequest,
     SourceSceneImportResponse,
+    SourceScenePage,
     TrajectoryResponse,
     VariantResult,
     ExportResponse,
@@ -76,6 +77,7 @@ from .preview_time import resolve_preview_time
 from .nuscenes_adapter import NuScenesDatasetAdapter
 from .frames import capability as frame_capability, frame as render_frame, _state_at as _state_at_preview
 from .live_session import LiveSessionService
+from .resource_budget import ReplayResourceBudget
 from real2scenario import (
     MAP_BUILDER_VERSION,
     STRAIGHT_ROAD_TOPOLOGY,
@@ -228,9 +230,10 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
     lidar = LidarService(resolved_settings)
     camera = CameraEvidenceService(resolve_preview_time)
     recipes = RecipeStore()
-    batches = BatchService(resolved_settings, adapter)
+    replay_budget = ReplayResourceBudget(resolved_settings.replay_max_concurrent)
+    batches = BatchService(resolved_settings, adapter, replay_budget=replay_budget)
     previews = PreviewService(resolved_settings, adapter)
-    esmini = EsminiBackend(resolved_settings, adapter)
+    esmini = EsminiBackend(resolved_settings, adapter, replay_budget=replay_budget)
     live_sessions = LiveSessionService(resolved_settings.project_root, resolved_settings.esmini_lib)
     app = FastAPI(title="Real2Scenario Local Demo", version="0.1.0", lifespan=_app_lifespan)
     app.state.settings = resolved_settings
@@ -569,9 +572,10 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
             adapter = ArtifactAdapter(resolved_settings)
             source_scenes = SourceSceneAdapter(resolved_settings)
             batches.shutdown()
-            batches = BatchService(resolved_settings, adapter)
+            replay_budget = ReplayResourceBudget(resolved_settings.replay_max_concurrent)
+            batches = BatchService(resolved_settings, adapter, replay_budget=replay_budget)
             previews = PreviewService(resolved_settings, adapter)
-            esmini = EsminiBackend(resolved_settings, adapter)
+            esmini = EsminiBackend(resolved_settings, adapter, replay_budget=replay_budget)
             native_maps = NativeMapService(resolved_settings)
             lidar = LidarService(resolved_settings)
             app.state.settings = resolved_settings
@@ -589,9 +593,18 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
         return _settings_view(resolved_settings, source_scenes)
 
     @app.get("/api/source-scenes")
-    def list_source_scenes():
+    def list_source_scenes(limit: int | None = None, offset: int = 0, q: str | None = None):
+        if limit is not None and not 1 <= limit <= 200:
+            raise HTTPException(status_code=422, detail="limit must be between 1 and 200")
+        if offset < 0:
+            raise HTTPException(status_code=422, detail="offset must be non-negative")
         try:
-            return list(source_scenes.discover())
+            items, total = source_scenes.discover_page(limit=limit, offset=offset, query=q)
+            if limit is None and offset == 0 and not q:
+                return list(items)
+            return SourceScenePage(
+                items=list(items), total=total, limit=limit or total, offset=offset, query=q
+            )
         except (OSError, ValueError) as error:
             raise HTTPException(status_code=400, detail=str(error)) from error
 
@@ -1296,9 +1309,12 @@ def _settings_view(settings: WebSettings, source_scenes: SourceSceneAdapter) -> 
         artifact_root_exists=settings.artifact_root.is_dir(),
         dataset_root_exists=settings.dataset_root is not None
         and (settings.dataset_root / settings.dataset_version).is_dir(),
-        source_scene_count=len(source_scenes.discover()),
+        source_scene_count=source_scenes.discover_page(limit=1)[1],
         batch_max_workers=settings.batch_max_workers,
         batch_max_pending=settings.batch_max_pending,
+        replay_max_concurrent=settings.replay_max_concurrent,
+        batch_retention_jobs=settings.batch_retention_jobs,
+        output_quota_bytes=settings.output_quota_bytes,
     )
 
 
