@@ -226,3 +226,13 @@ clean-volumes: ## DANGER: delete product artifacts and the shared metadata index
 	@read -p "Type 'yes' to continue: " ok; [ "$$ok" = "yes" ] || exit 1
 	-$(COMPOSE_PROD_RUN) down -v
 	-docker volume rm r2s-metadata-cache
+.PHONY: tailscale-up tailscale-down tailscale-logs
+
+tailscale-up:
+	PROJECT_N3_BUILD_COMMIT=$$(git rev-parse HEAD) PROJECT_N3_BUILD_COMMIT_TIME=$$(git show -s --format=%cI HEAD) PROJECT_N3_BUILD_DIRTY=$$(test -n "$$(git status --porcelain)" && printf true || printf false) docker compose -f compose.tailscale.yml up -d --build
+
+tailscale-down:
+	docker compose -f compose.tailscale.yml down
+
+tailscale-logs:
+	docker compose -f compose.tailscale.yml logs -f --tail=100 api

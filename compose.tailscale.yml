@@ -1,0 +1,87 @@
+# Private branch preview for the Tailscale network.
+#
+# This stack is intentionally separate from both compose.dev.yml and
+# compose.demo.yml. The API serves the baked frontend bundle directly, so only
+# one host port is published and no Vite/dev server is exposed.
+
+name: project-n3-tailscale
+
+services:
+  api-permissions:
+    image: alpine:3.22
+    user: "0:0"
+    command:
+      - sh
+      - -c
+      - chown -R 1000:1000 /reports /scenarios /metadata-cache && chmod -R u+rwX /reports /scenarios /metadata-cache
+    volumes:
+      - project-n3-tailscale-reports:/reports
+      - project-n3-tailscale-scenarios:/scenarios
+      - project-n3-tailscale-metadata-cache:/metadata-cache
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+      args:
+        PROJECT_N3_BUILD_COMMIT: ${PROJECT_N3_BUILD_COMMIT:-working-tree}
+        PROJECT_N3_BUILD_COMMIT_TIME: ${PROJECT_N3_BUILD_COMMIT_TIME:-unknown}
+        PROJECT_N3_BUILD_DIRTY: ${PROJECT_N3_BUILD_DIRTY:-true}
+    user: "1000:1000"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    depends_on:
+      api-permissions:
+        condition: service_completed_successfully
+    environment:
+      PROJECT_N3_ROOT: /app
+      PROJECT_N3_ARTIFACT_ROOT: scenarios
+      PROJECT_N3_OUTPUT_ROOT: reports
+      PROJECT_N3_METADATA_CACHE: /var/cache/real2scenario
+      PROJECT_N3_EXTRA_DATA_ROOTS: /mnt/backup/nuscenes
+      NUSCENES_ROOT: /mnt/backup/nuscenes
+      NUSCENES_VERSION: v1.0-trainval
+      ESMINI_BIN: /opt/esmini/bin/esmini
+      ESMINI_DAT2CSV: /opt/esmini/bin/dat2csv
+      ESMINILIB_PATH: /opt/esmini/bin/libesminiLib.so
+      ESMINILIB_VERSION: tailscale-preview
+      R2S_BATCH_MAX_WORKERS: "1"
+      R2S_BATCH_MAX_PENDING: "1"
+      R2S_BATCH_ACCEPT_GRACE_S: "0.05"
+      R2S_BATCH_RETENTION_JOBS: "10"
+      R2S_OUTPUT_QUOTA_BYTES: "4294967296"
+      R2S_REPLAY_MAX_CONCURRENT: "1"
+      MPLCONFIGDIR: /tmp/matplotlib
+    volumes:
+      - project-n3-tailscale-reports:/app/reports
+      - project-n3-tailscale-scenarios:/app/scenarios
+      - project-n3-tailscale-metadata-cache:/var/cache/real2scenario
+      - /mnt/backup/nuscenes:/mnt/backup/nuscenes:ro
+      - ${HOME}/esmini:/opt/esmini:ro
+    ports:
+      - "100.114.248.93:18443:8000"
+    # Hard host-protection limits. The container may be OOM-killed, but it
+    # cannot consume the host memory or PID space needed by production.
+    cpus: 2.0
+    mem_limit: 6g
+    memswap_limit: 6g
+    mem_swappiness: 0
+    pids_limit: 512
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+volumes:
+  project-n3-tailscale-reports:
+    name: project-n3-tailscale-reports
+  project-n3-tailscale-scenarios:
+    name: project-n3-tailscale-scenarios
+  project-n3-tailscale-metadata-cache:
+    name: project-n3-tailscale-metadata-cache
