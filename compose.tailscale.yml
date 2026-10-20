@@ -22,7 +22,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile.prod
+      dockerfile: Dockerfile.tailscale
       args:
         PROJECT_N3_BUILD_COMMIT: ${PROJECT_N3_BUILD_COMMIT:-working-tree}
         PROJECT_N3_BUILD_COMMIT_TIME: ${PROJECT_N3_BUILD_COMMIT_TIME:-unknown}
@@ -57,7 +57,7 @@ services:
       - project-n3-tailscale-scenarios:/app/scenarios
       - project-n3-tailscale-metadata-cache:/var/cache/real2scenario
       - /mnt/backup/nuscenes:/mnt/backup/nuscenes:ro
-      - ${HOME}/esmini:/opt/esmini:ro
+      - ${HOME}/github/esmini-runtimes/esmini-3.10:/opt/esmini:ro
     ports:
       - "100.114.248.93:18443:8000"
     # Hard host-protection limits. The container may be OOM-killed, but it

@@ -1,0 +1,64 @@
+# Private Tailscale preview image.
+# Fedora is intentional: the packaged esmini 3.10 runtime was built against
+# glibc 2.43 and cannot load in Debian Bookworm's glibc 2.36 image.
+
+FROM node:22-bookworm-slim AS web
+
+WORKDIR /web
+COPY frontend/package.json frontend/package-lock.json ./frontend/
+RUN cd frontend && npm ci --no-audit --no-fund
+COPY frontend/ ./frontend/
+RUN cd frontend && npm run build
+
+# Build the Python 3.11 environment where the pinned nuScenes dependency set
+# has wheels. Fedora 44 supplies the newer glibc runtime in the final image.
+FROM python:3.11-slim-bookworm AS python
+
+WORKDIR /build
+COPY pyproject.toml README.md ./
+COPY src/ ./src/
+RUN python -m venv --copies /opt/venv \
+    && /opt/venv/bin/pip install --no-cache-dir --upgrade pip \
+    && /opt/venv/bin/pip install --no-cache-dir ".[web,devkit]"
+
+FROM fedora:44
+
+ENV PATH=/opt/venv/bin:/usr/local/bin:$PATH \
+    LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PROJECT_N3_ROOT=/app \
+    PROJECT_N3_ARTIFACT_ROOT=scenarios \
+    PROJECT_N3_OUTPUT_ROOT=reports \
+    PROJECT_N3_METADATA_CACHE=/var/cache/real2scenario \
+    MPLCONFIGDIR=/tmp/matplotlib
+
+ARG PROJECT_N3_BUILD_COMMIT=unknown
+ARG PROJECT_N3_BUILD_COMMIT_TIME=unknown
+ARG PROJECT_N3_BUILD_DIRTY=true
+ENV PROJECT_N3_BUILD_COMMIT=${PROJECT_N3_BUILD_COMMIT} \
+    PROJECT_N3_BUILD_COMMIT_TIME=${PROJECT_N3_BUILD_COMMIT_TIME} \
+    PROJECT_N3_BUILD_DIRTY=${PROJECT_N3_BUILD_DIRTY}
+
+RUN dnf install -y --setopt=install_weak_deps=False \
+      libglvnd-glx glib2 libX11 libXext libXi libXinerama libXrandr \
+      libXrender libXxf86vm fontconfig \
+    && dnf clean all
+
+WORKDIR /app
+COPY src/ ./src/
+COPY --from=web /web/frontend/dist ./frontend/dist
+COPY --from=python /usr/local/bin/python3.11 /usr/local/bin/python3.11
+COPY --from=python /usr/local/lib/libpython3.11.so.1.0 /usr/local/lib/libpython3.11.so.1.0
+COPY --from=python /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=python /opt/venv /opt/venv
+
+RUN useradd --create-home --uid 10001 appuser \
+    && mkdir -p /var/cache/real2scenario /app/scenarios /app/reports \
+    && chmod 0777 /var/cache/real2scenario /app/scenarios /app/reports \
+    && chown -R appuser:appuser /app
+
+USER appuser
+EXPOSE 8000
+CMD ["uvicorn", "r2s_web.app:app", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8000"]
