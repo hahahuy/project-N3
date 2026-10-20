@@ -228,7 +228,7 @@ describe("WasmPlaybackView Worker protocol", () => {
     expect(parseXoscAttributes("<OpenSCENARIO/>").road).toBeNull();
   });
 
-  it("expands ledger rows with declared XOSC attributes", async () => {
+  it("renders the playback surface without an actor ledger or attribute dump", async () => {
     vi.stubGlobal("Worker", FakeWorker);
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input: unknown) => {
       const url = String(input);
@@ -263,10 +263,13 @@ describe("WasmPlaybackView Worker protocol", () => {
       },
     } as MessageEvent);
 
-    await screen.findByText("actor-0");
-    // Shown twice by design: once in the scenario attributes panel, once in
-    // the matching ledger row.
-    expect(screen.getAllByText("source_actor_type=vehicle.car")).toHaveLength(2);
+    await waitFor(() => expect(document.querySelector(".wasm-playback-view")?.getAttribute("aria-busy")).toBe("false"));
+    // The ledger and the XOSC-vs-road attribute dump were removed from this
+    // view, so declared properties are no longer surfaced here. Parsing itself
+    // stays covered by the parseXoscAttributes unit assertions above.
+    expect(screen.queryByLabelText("Actor lifecycle ledger")).toBeNull();
+    expect(screen.queryByText(/Scenario attributes/)).toBeNull();
+    expect(screen.queryByText("source_actor_type=vehicle.car")).toBeNull();
   });
 
   it("tracks actor lifecycle without inventing presence", () => {

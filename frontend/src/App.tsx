@@ -2,19 +2,18 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import {
   ActorTimeline,
   ActorTrack,
-  addRecipeStep,
   addRollbackMarker,
   apiUrl,
+  API_BASE,
+  INTERNAL_PHYSICS_MODE,
   ArtifactLink,
   ChannelAvailability,
   ComparePayload,
   EsminiCapability,
   EvidenceLayer,
-  EvidenceLayers,
   fetchActorTimeline,
   fetchCompare,
   fetchEsminiCapability,
-  fetchEvidenceLayers,
   fetchGateTimeline,
   fetchLidarDescriptor,
   fetchSensorEvidence,
@@ -45,11 +44,8 @@ import {
   POVImageFrame,
   LiveCapability,
   LiveState,
-  PreviewResponse,
-  previewVariant,
   RecipeDocument,
   RecipeStep,
-  RecipeStepRequest,
   redoRecipe,
   removeRecipeStep,
   restoreRollbackMarker,
@@ -67,12 +63,15 @@ import { getViewDescriptor, MAIN_VIEW, MAX_VIEWS, VIEW_REGISTRY, ViewType } from
 import { createPlayheadRequest } from "./evidence-request";
 import WasmPlaybackView from "./wasm-playback/WasmPlaybackView";
 import type { WasmOrbitState, WasmOverlayToggles } from "./wasm-playback/types";
+import type { WasmTransportHandle } from "./wasm-playback/transport";
+import { MOTION_GUARDRAILS } from "./motion-editor";
+import VariantMotionEditor from "./motion-editor";
 
 type View = { id: number; type: ViewType };
 type CameraPov = "CAM_FRONT_RIGHT" | "CAM_FRONT" | "CAM_FRONT_LEFT" | "CAM_BACK_RIGHT" | "CAM_BACK_LEFT" | "CAM_BACK";
 const CAMERA_POVS: CameraPov[] = ["CAM_FRONT_RIGHT", "CAM_FRONT", "CAM_FRONT_LEFT", "CAM_BACK_RIGHT", "CAM_BACK_LEFT", "CAM_BACK"];
-type Panel = "recipe" | "catalog" | "layers" | "comments";
-type Flyout = "metrics" | "gates" | "provenance" | "artifacts";
+type Panel = "versions" | "catalog" | "comments";
+type Flyout = "metrics" | "provenance" | "guardrails";
 type Tool = { icon: IconName; label: string; shortcut?: string; disabled?: boolean; badge?: string; note?: string; onClick?: () => void; menu?: React.ReactNode };
 type StatusLine = { label: string; available: boolean; note?: string };
 type Command = { label: string; group: string; icon: IconName; shortcut?: string; disabled?: boolean; run: () => void };
@@ -90,6 +89,7 @@ const LIDAR_SYNC_TOLERANCE_S = 0.25;
 const CHANNELS = ["position", "heading", "speed", "acceleration", "braking"] as const;
 const CHANNEL_LABELS: Record<(typeof CHANNELS)[number], string> = { position: "Position", heading: "Heading", speed: "Speed", acceleration: "Acceleration", braking: "Braking" };
 const MISSING = "n/a";
+const SELECTED_TOOL_NOTE = "You have selected this buttons";
 
 type ChannelName = (typeof CHANNELS)[number];
 
@@ -187,6 +187,52 @@ function measureSummary(measurement: Measurement | null): string {
   return `${measurement.distance_m.toFixed(2)} m ${measurement.fromActorId} -> ${measurement.toActorId} at ${measurement.from.time_s.toFixed(2)} s`;
 }
 
+
+/** ADE/FDE between two actor trajectories, aligned by nearest sample time.
+ *
+ *  There is no replay trace in this workspace, so `replay_metrics` is empty and
+ *  a baseline has nothing to be measured against. The meaningful comparison is
+ *  a committed branch against the scenario it branched from: the parent is the
+ *  reference and the child is the prediction. Recorded annotated actors come
+ *  along for free because both sides carry the same actor set. */
+type AdFdeRow = {
+  actorId: string;
+  actorType: string;
+  samples: number | null;
+  adeM: number | null;
+  fdeM: number | null;
+  unavailableReason: string | null;
+};
+
+function nearestByTime(samples: TimelineSample[], timeS: number): TimelineSample | undefined {
+  let best: TimelineSample | undefined;
+  let bestDelta = Number.POSITIVE_INFINITY;
+  for (const sample of samples) {
+    const delta = Math.abs(sample.time_s - timeS);
+    if (delta < bestDelta) { bestDelta = delta; best = sample; }
+  }
+  return best;
+}
+
+function computeAdFde(reference: TimelineSample[] | undefined, edited: TimelineSample[] | undefined, actorId: string, actorType: string): AdFdeRow {
+  if (!reference || reference.length === 0) return { actorId, actorType, samples: null, adeM: null, fdeM: null, unavailableReason: "no parent trajectory for this actor" };
+  if (!edited || edited.length === 0) return { actorId, actorType, samples: null, adeM: null, fdeM: null, unavailableReason: "actor is absent from the selected version" };
+  const distances: number[] = [];
+  for (const sample of edited) {
+    const against = nearestByTime(reference, sample.time_s);
+    if (against) distances.push(Math.hypot(sample.x_m - against.x_m, sample.y_m - against.y_m));
+  }
+  if (distances.length === 0) return { actorId, actorType, samples: null, adeM: null, fdeM: null, unavailableReason: "no overlapping sample times" };
+  return {
+    actorId,
+    actorType,
+    samples: distances.length,
+    adeM: distances.reduce((total, value) => total + value, 0) / distances.length,
+    fdeM: distances[distances.length - 1]!,
+    unavailableReason: null,
+  };
+}
+
 function App() {
   const [scenarios, setScenarios] = useState<ScenarioSummary[]>([]);
   const [selected, setSelected] = useState<ScenarioSummary | null>(null);
@@ -229,16 +275,12 @@ function App() {
   const [commandOpen, setCommandOpen] = useState(false);
   const [commandQuery, setCommandQuery] = useState("");
   const [artifacts, setArtifacts] = useState<ArtifactLink[] | null>(null);
-  const [maneuver, setManeuver] = useState({ actor_id: "ego", steering_angle_rad: 0, acceleration_mps2: 0, braking_mps2: 0, target_speed_mps: null as number | null, start_time_s: 0, end_time_s: null as number | null });
-  const [stepName, setStepName] = useState("Constrained maneuver");
   const [recipe, setRecipe] = useState<RecipeDocument | null>(null);
   const [markerName, setMarkerName] = useState("Checkpoint");
   const [lineage, setLineage] = useState<VariantLineage | null>(null);
-  const [evidence, setEvidence] = useState<EvidenceLayers | null>(null);
   const [compareAgainst, setCompareAgainst] = useState<string>("");
   const [compare, setCompare] = useState<ComparePayload | null>(null);
   const [compareError, setCompareError] = useState<string | null>(null);
-  const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [povFrames, setPovFrames] = useState<Record<string, POVFrame | null>>({});
   const [povImages, setPovImages] = useState<Record<string, POVImageFrame | null>>({});
   const [liveCapability, setLiveCapability] = useState<LiveCapability | null>(null);
@@ -250,16 +292,49 @@ function App() {
   const [lidarDecimation, setLidarDecimation] = useState(8);
   const [cameraPovs, setCameraPovs] = useState<Record<number, CameraPov>>({});
   const [wasmOrbit, setWasmOrbit] = useState<WasmOrbitState>({ position: [20, 22, 26], target: [0, 0, 0] });
-  const [wasmToggles, setWasmToggles] = useState<WasmOverlayToggles>({ cuboids: false, paths: false, lidar: true });
+  // One shared default now that Scenario studio and Variant studio drive the same
+  // preview state: exact cuboids on (the spec asks for bounding boxes to be
+  // visible in Variant studio), recorded paths and the costly LiDAR cloud off.
+  const [wasmToggles, setWasmToggles] = useState<WasmOverlayToggles>({ cuboids: true, paths: false, lidar: false });
   const [actorTimeline, setActorTimeline] = useState<ActorTimeline | null>(null);
   const [gateTimeline, setGateTimeline] = useState<GateTimeline | null>(null);
   const [selectedActor, setSelectedActor] = useState<string | null>(null);
+  const [wasmTransport, setWasmTransport] = useState<WasmTransportHandle | null>(null);
+  const [guardrailViolations, setGuardrailViolations] = useState<string[]>([]);
+  const [adFdeRows, setAdFdeRows] = useState<AdFdeRow[]>([]);
+  const [adFdeReason, setAdFdeReason] = useState<string | null>(null);
   const [timelineError, setTimelineError] = useState<string | null>(null);
+
+  // ADE/FDE needs a parent to measure against. A baseline has none, so the
+  // table reports that plainly instead of showing empty numbers.
+  useEffect(() => {
+    let cancelled = false;
+    if (!selected) { setAdFdeRows([]); setAdFdeReason(null); return; }
+    const parentId = selected.parent_scenario_id;
+    if (!parentId) {
+      setAdFdeRows([]);
+      setAdFdeReason("This is a root scenario: there is no parent trajectory to measure ADE/FDE against.");
+      return;
+    }
+    setAdFdeReason(null);
+    Promise.all([fetchActorTimeline(selected.scenario_id), fetchActorTimeline(parentId)])
+      .then(([edited, reference]) => {
+        if (cancelled) return;
+        const ids = new Set([...edited.tracks.map((t) => t.actor_id), ...reference.tracks.map((t) => t.actor_id)]);
+        setAdFdeRows(Array.from(ids).sort().map((id) => {
+          const editedTrack = edited.tracks.find((t) => t.actor_id === id);
+          const referenceTrack = reference.tracks.find((t) => t.actor_id === id);
+          return computeAdFde(referenceTrack?.samples, editedTrack?.samples, id, editedTrack?.actor_type ?? referenceTrack?.actor_type ?? MISSING);
+        }));
+      })
+      .catch((e: Error) => { if (!cancelled) { setAdFdeRows([]); setAdFdeReason(e.message); } });
+    return () => { cancelled = true; };
+  }, [selected?.scenario_id, selected?.parent_scenario_id]);
 
   const toolbarGroups: { label: string; tools: Tool[] }[] = [
     { label: "History", tools: [{ icon: "undo", label: "Undo", shortcut: "Ctrl+Z", disabled: !recipe?.history.undoable, onClick: () => runRecipe(undoRecipe) }, { icon: "redo", label: "Redo", shortcut: "Ctrl+Shift+Z", disabled: !recipe?.history.redoable, onClick: () => runRecipe(redoRecipe) }] },
     { label: "Import", tools: [{ icon: "import", label: "Import scene", shortcut: "I", disabled: true, onClick: () => openPanel("catalog") }, { icon: "export", label: "Export", onClick: exportSelected, disabled: !selected }] },
-    { label: "Edit", tools: [{ icon: "cursor", label: "Select actors", shortcut: "S", onClick: () => setMode("select") }, { icon: "edit", label: "Edit motion", shortcut: "E", onClick: () => setMode("edit"), disabled: !selected }, { icon: "behavior", label: "Behavior mode", disabled: true }] },
+    { label: "Edit", tools: [{ icon: "cursor", label: "Select actors", shortcut: "S", note: activeTab === "Scenario studio" ? SELECTED_TOOL_NOTE : undefined, disabled: activeTab === "Scenario studio", onClick: selectActors }, { icon: "edit", label: "Edit motion", shortcut: "E", onClick: openMotionEditor, disabled: !selected || !selectedActor }, { icon: "behavior", label: "Behavior mode", disabled: true }] },
     { label: "Check / Run", tools: [{ icon: "validate", label: "Validate", shortcut: "V", disabled: true }, { icon: "replay", label: "Replay", disabled: true }] },
     { label: "Inspect", tools: [{ icon: "measure", label: "Measure", shortcut: "M", onClick: () => setMode("measure") }] },
      { label: "View", tools: [{ icon: "add-view", label: "Add view", shortcut: "Shift+V", disabled: views.length >= MAX_VIEWS, onClick: () => setAddViewOpen(!addViewOpen), menu: addViewOpen && views.length < MAX_VIEWS ? <AddViewMenu viewCount={views.length} onAdd={selectAddedView} /> : undefined }] },
@@ -365,10 +440,9 @@ function App() {
     return () => { cancelled = true; };
   }, [selected?.scenario_id]);
   useEffect(() => {
-    if (!selected) { setRecipe(null); setLineage(null); setEvidence(null); return; }
+    if (!selected) { setRecipe(null); setLineage(null); return; }
     fetchRecipe(selected.scenario_id).then(setRecipe).catch(() => setRecipe(null));
     fetchVariantLineage(selected.scenario_id).then(setLineage).catch(() => setLineage(null));
-    fetchEvidenceLayers(selected.scenario_id).then(setEvidence).catch(() => setEvidence(null));
   }, [selected?.scenario_id]);
   useEffect(() => {
     if (scenarios.length === 0 || !selected) return;
@@ -455,32 +529,19 @@ function App() {
       .then((state) => { setLiveSessionId(state.session_id); setLiveState(state); setError(null); })
       .catch((e: Error) => setError(e.message));
   }
-  const recipeSteps = recipe?.steps ?? [];
   function runRecipe(action: (scenarioId: string) => Promise<RecipeDocument>) {
     if (!selected) return;
     action(selected.scenario_id).then(setRecipe).catch((e: Error) => setError(e.message));
   }
-  function applyManeuver() {
-    if (!selected) return;
-    const request: RecipeStepRequest = {
-      step_id: `step-${recipeSteps.length + 1}-${Math.round(maneuver.start_time_s * 1000)}`,
-      name: stepName.trim() || `Maneuver ${recipeSteps.length + 1}`,
-      kind: "constrained-maneuver",
-      actor_edit: { speed_multiplier: 1, heading_offset_rad: 0, timing_offset_s: 0, initial_gap_delta_m: 0, ...maneuver },
-      active: true,
-    };
-    addRecipeStep(selected.scenario_id, request)
-      .then((document) => {
-        setRecipe(document);
-        return previewVariant(selected.scenario_id, {
-          actor_edits: document.steps.filter((step) => step.active).map((step) => step.parameters),
-          recipe_steps: document.steps.map((step) => ({ step_id: step.step_id, name: step.name, kind: step.kind, actor_edit: step.parameters, active: step.active })),
-          behavior: "parameterized",
-          seed: 0,
-        });
-      })
-      .then(setPreview)
-      .catch((e: Error) => setError(e.message));
+  function selectActors() {
+    setMode("select");
+    setActiveTab("Scenario studio");
+  }
+
+  function openMotionEditor() {
+    if (!selected || !selectedActor) return;
+    setActiveTab("Variant studio");
+    setError(null);
   }
 
   function startResize(event: React.PointerEvent<HTMLDivElement>) {
@@ -561,11 +622,26 @@ function App() {
 
   const bodyClass = `workspace-body${leftOpen ? "" : " left-collapsed"}${timelineOpen ? "" : " timeline-collapsed"}`;
   const bodyStyle = { "--panel-width": `${leftOpen ? panelWidth : 0}px`, "--timeline-height": `${timelineOpen ? timelineHeight : 0}px` } as React.CSSProperties;
-  const esminiAvailable = capability?.available === true;
+  const esminiLibAvailable = liveCapability?.available === true;
   const datasetAvailable = settings?.dataset_root_exists === true;
   const simulatorLines: StatusLine[] = [
-    { label: "esmini", available: esminiAvailable, note: capability?.version ?? undefined },
-    { label: "CARLA", available: false },
+    // esminiLib is the library the native live sessions actually load; the
+    // esmini CLI capability is a separate probe and can pass while the
+    // library is missing, so report the library and say which one answered.
+    {
+      label: "esminiLib",
+      available: esminiLibAvailable,
+      // When it is up, show what loaded. When it is down, show why — a bare
+      // library path next to "unavailable" reads like a version string.
+      note: esminiLibAvailable
+        ? liveCapability?.version ?? liveCapability?.library ?? capability?.version ?? undefined
+        : liveCapability?.unavailable_reason ?? capability?.diagnostic ?? liveCapability?.library ?? undefined,
+    },
+    // The in-repo single-track follower. It is pure Python with no external
+    // simulator and no CARLA client, so it is available whenever the api is —
+    // but it stays a diagnostic, never replay evidence.
+    { label: "internal single-track physics", available: true, note: INTERNAL_PHYSICS_MODE },
+    { label: "CARLA", available: false, note: "not used; no client, no wheel mount" },
   ];
   const datasetLines: StatusLine[] = [{ label: "nuScenes", available: datasetAvailable, note: settings?.dataset_version ?? undefined }];
   const simulationTone = simulatorLines.every((line) => line.available) ? "all" : simulatorLines.some((line) => line.available) ? "some" : "off";
@@ -611,8 +687,8 @@ function App() {
       if (target && (target.isContentEditable || /^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName))) return;
       if (event.shiftKey && event.key.toLowerCase() === "v") { event.preventDefault(); setAddViewOpen(true); return; }
       const shortcut = event.key.toLowerCase();
-      if (shortcut === "s") { event.preventDefault(); setMode("select"); return; }
-      if (shortcut === "e") { if (selected) { event.preventDefault(); setMode("edit"); } return; }
+      if (shortcut === "s") { event.preventDefault(); selectActors(); return; }
+      if (shortcut === "e") { if (selected && selectedActor) { event.preventDefault(); openMotionEditor(); } return; }
       if (shortcut === "m") { event.preventDefault(); setMode("measure"); return; }
       if (shortcut === "v") { event.preventDefault(); openPanel("catalog"); return; }
       if (event.key === "Escape" && selectedActor !== null) { setSelectedActor(null); }
@@ -641,13 +717,12 @@ function App() {
     </nav>
     <div className={bodyClass} style={bodyStyle}>
       <aside className="left-rail" aria-label="Workspace navigation">
-        <IconButton icon="recipe" label="Recipe" active={leftOpen && panel === "recipe"} onClick={() => selectPanel("recipe")} />
+        <IconButton icon="provenance" label="Versions" active={leftOpen && panel === "versions"} onClick={() => selectPanel("versions")} />
         <IconButton icon="catalog" label="Catalog" active={leftOpen && panel === "catalog"} onClick={() => selectPanel("catalog")} />
-        <IconButton icon="layers" label="Map layers" active={leftOpen && panel === "layers"} onClick={() => selectPanel("layers")} />
         <IconButton icon="comments" label="Comments" active={leftOpen && panel === "comments"} onClick={() => selectPanel("comments")} />
-      </aside>
+        </aside>
       <aside className="left-panel" aria-label={`${panel} panel`}>
-         {panel === "catalog" && <Catalog scenarios={scenarios} selected={selected} loading={loading} filter={catalogFilter} onFilter={setCatalogFilter} onSelect={setSelected} onRefresh={refreshScenarios} />}{panel === "recipe" && <RecipePanel recipe={recipe} preview={preview} markerName={markerName} onMarkerName={setMarkerName} onAddMarker={(name) => runRecipe((id) => addRollbackMarker(id, name))} onRestore={(markerId) => runRecipe((id) => restoreRollbackMarker(id, markerId))} onToggleStep={(stepId, active) => runRecipe((id) => setRecipeStepActive(id, stepId, active))} onRemoveStep={(stepId) => runRecipe((id) => removeRecipeStep(id, stepId))} onMoveStep={(stepId, direction) => runRecipe((id) => moveRecipeStep(id, stepId, direction))} onUndo={() => runRecipe(undoRecipe)} onRedo={() => runRecipe(redoRecipe)} />}{panel === "layers" && <EvidenceLayerPanel evidence={evidence} workspace={workspace} />}{panel === "comments" && <EmptyPanel title="Comments" copy="No comments in this document." />}
+         {panel === "catalog" && <Catalog scenarios={scenarios} selected={selected} loading={loading} filter={catalogFilter} onFilter={setCatalogFilter} onSelect={setSelected} onRefresh={refreshScenarios} />}{panel === "versions" && <VersionTree scenarios={scenarios} selected={selected} onSelect={setSelected} />}{panel === "comments" && <EmptyPanel title="Comments" copy="No comments in this document." />}
       </aside>
        <div className={`split-handle left${resizing ? " dragging" : ""}`} role="separator" aria-orientation="vertical" aria-label="Resize side panel" aria-valuetext={leftOpen ? `${Math.round(panelWidth)} pixels` : "collapsed"} aria-valuenow={leftOpen ? panelWidth : 0} aria-valuemin={PANEL_MIN_WIDTH} aria-valuemax={PANEL_MAX_WIDTH} tabIndex={0} title="Drag to resize. Double-click to reset. Use Home/End for preset sizes." onPointerDown={startResize} onDoubleClick={resetPanelSize} onKeyDown={resizeByKeyboard} />
       <section className="view-manager" aria-label="View manager">
@@ -656,11 +731,15 @@ function App() {
           ? <CompareSurface payload={compare} error={compareError} selected={selected} scenarios={scenarios} against={compareAgainst} onAgainst={setCompareAgainst} playhead={playhead} />
             : activeTab === "Scenario studio"
             ? <div className={`view-grid count-${views.length}`}>
-                   {views.map((view, index) => <ViewPane key={view.id} view={view} dragging={draggingViewId === view.id} dropTarget={dropTargetViewId === view.id} onDragStart={(event) => startViewDrag(view.id, event)} onDragEnd={endViewDrag} onDragOver={(event) => dragOverView(view.id, event)} onDrop={(event) => dropView(view.id, event)} common={{ trajectory: preview?.paths.length ? { ...trajectory!, paths: preview.paths } : trajectory, timeline: playhead, hiddenKinds, onToggleKind: toggleKind, layersOpen: layersOpen === view.id, onToggleLayers: () => setLayersOpen(layersOpen === view.id ? null : view.id), onClose: () => closeView(view.id), wasmOrbit, onWasmOrbitChange: setWasmOrbit, wasmToggles, onWasmTogglesChange: setWasmToggles }} content={view.type === "top-down" ? { type: view.type, selected, activeTracks, selectedActor, measurement, mode, onSelectActor: focusActor } : view.type === "sensor-evidence" ? { type: view.type, evidence: sensorEvidence, onSensorSweeps: setSensorSweeps, decimation: lidarDecimation, onDecimation: setLidarDecimation } : view.type === "lidar" ? { type: view.type, descriptor: lidar, decimation: lidarDecimation, onDecimation: setLidarDecimation } : view.type === "real-camera" ? { type: view.type, pov: cameraPovs[view.id] ?? "CAM_FRONT", onPov: (pov) => setCameraPovs((current) => ({ ...current, [view.id]: pov })) } : { type: view.type as "third-person" | "in-car", frame: povFrames[view.type], imageFrame: povImages[view.type], liveState, liveCapability, workspace, onStartNativeSession: startNativeSession, isMainView: index === 0, focusActorId: selectedActor }} />)}
+                   {views.map((view, index) => <ViewPane key={view.id} view={view} dragging={draggingViewId === view.id} dropTarget={dropTargetViewId === view.id} onDragStart={(event) => startViewDrag(view.id, event)} onDragEnd={endViewDrag} onDragOver={(event) => dragOverView(view.id, event)} onDrop={(event) => dropView(view.id, event)}             common={{ trajectory, scenarioLoading: Boolean(selected) && !trajectory, timeline: playhead, hiddenKinds, onToggleKind: toggleKind, layersOpen: layersOpen === view.id, onToggleLayers: () => setLayersOpen(layersOpen === view.id ? null : view.id), onClose: () => closeView(view.id), wasmOrbit, onWasmOrbitChange: setWasmOrbit, wasmToggles, onWasmTogglesChange: setWasmToggles, onTransportChange: setWasmTransport, onActorPick: (actorId) => {
+        if (!actorId) { setSelectedActor(null); return; }
+        const match = actorTimeline?.tracks.find((track) => track.actor_id.toLowerCase() === actorId.toLowerCase());
+        if (match) setSelectedActor(match.actor_id);
+      } }} content={view.type === "top-down" ? { type: view.type, selected, activeTracks, selectedActor, measurement, mode, onSelectActor: focusActor } : view.type === "sensor-evidence" ? { type: view.type, evidence: sensorEvidence, onSensorSweeps: setSensorSweeps, decimation: lidarDecimation, onDecimation: setLidarDecimation } : view.type === "lidar" ? { type: view.type, descriptor: lidar, decimation: lidarDecimation, onDecimation: setLidarDecimation } : view.type === "real-camera" ? { type: view.type, pov: cameraPovs[view.id] ?? "CAM_FRONT", onPov: (pov) => setCameraPovs((current) => ({ ...current, [view.id]: pov })) } : { type: view.type as "third-person" | "in-car", frame: povFrames[view.type], imageFrame: povImages[view.type], liveState, liveCapability, workspace, onStartNativeSession: startNativeSession, isMainView: index === 0, focusActorId: selectedActor }} />)}
              {views.length === 0 && <div className="empty-view"><strong>No views open.</strong><span>Add a view.</span><button onClick={() => addView("top-down")}>Add a Top-down view</button></div>}
           </div>
           : activeTab === "Variant studio"
-          ? <VariantStudio selected={selected} lineage={lineage} evidence={evidence} workspace={workspace} />
+           ? <VariantMotionEditor scenarioId={selected?.scenario_id ?? null} actorId={selectedActor ?? selected?.actors[0]?.actor_id ?? null} wasmToggles={wasmToggles} onWasmTogglesChange={setWasmToggles} playhead={playhead} onPlayheadChange={(value) => setTimeline(Math.min(Math.max(value, 0), durationS || 0))} onTransportChange={setWasmTransport} onGuardrailsChange={setGuardrailViolations} onBranchCommitted={() => refreshScenarios()} />
           : <div className="view-grid count-1"><div className="empty-view"><strong>{activeTab}</strong><span>Not available in this build.</span><button onClick={() => setActiveTab("Scenario studio")}>Back to Scenario studio</button></div></div>}
          <div className={`split-handle top${timelineResizing ? " dragging" : ""}`} role="separator" aria-orientation="horizontal" aria-label="Resize timeline" aria-valuetext={timelineOpen ? `${Math.round(timelineHeight)} pixels` : "collapsed"} aria-valuenow={timelineOpen ? timelineHeight : 0} aria-valuemin={TIMELINE_MIN_HEIGHT} aria-valuemax={TIMELINE_MAX_HEIGHT} tabIndex={0} title="Drag to resize. Double-click to reset. Use Home/End for preset sizes." onPointerDown={startTimelineResize} onDoubleClick={resetTimelineSize} onKeyDown={resizeTimelineByKeyboard} />
   <TimelineSurface
@@ -677,22 +756,27 @@ function App() {
            onStep={(delta) => setTimeline(Math.min(Math.max(playhead + delta, 0), durationS || 0))}
            wasmToggles={wasmToggles}
            onWasmTogglesChange={setWasmToggles}
+           transport={wasmTransport}
         />
       </section>
        <aside className="right-rail" aria-label="Inspection navigation">
         <IconButton icon="metrics" label="Metrics" badge="0" active={flyout === "metrics"} onClick={() => openFlyout("metrics")} />
-        <IconButton icon="gates" label="Gates" badge={String(gateTimeline?.gates.length ?? 0)} active={flyout === "gates"} onClick={() => openFlyout("gates")} />
         <IconButton icon="provenance" label="Provenance" active={flyout === "provenance"} onClick={() => openFlyout("provenance")} />
-        <IconButton icon="artifacts" label="Artifacts" active={flyout === "artifacts"} onClick={() => openFlyout("artifacts")} />
-        {flyout && <div className="flyout"><span className="section-kicker">{flyout}</span><p className="flyout-time">playhead {playhead.toFixed(2)} s of {durationS.toFixed(2)} s / frame {activeTracks.find((entry) => entry.track.role === "ego")?.sample?.time_s === undefined ? MISSING : formatTimestamp(activeTracks.find((entry) => entry.track.role === "ego")?.sample?.time_s)} s</p>{flyout === "metrics" && <><h2>Replay metrics</h2>{trajectory?.replay_metrics && Object.keys(trajectory.replay_metrics).length > 0 ? <div className="flyout-list">{Object.entries(trajectory.replay_metrics).map(([actor, metrics]) => <div className="flyout-row" key={actor}><strong>{actor}</strong><span>RMSE {metrics.position_rmse_m?.toFixed(3) ?? "n/a"} m</span><span>final {metrics.final_displacement_m?.toFixed(3) ?? "n/a"} m</span><span>{metrics.coverage_status ?? "recorded"}</span></div>)}</div> : <><p>No replay metrics for this scenario.</p><StatusBadge status="n/a" /></>}</>}
-          {flyout === "gates" && <><h2>G1-G7 gates</h2>{gateTimeline ? <div className="flyout-list">{(gateTimeline.gates).map((gate) => <div className="flyout-row" key={gate.gate_id}><strong>{gate.gate_id}</strong><StatusBadge status={gate.status} />{gate.scientific_status === "PROVISIONAL" && <StatusBadge status="PROVISIONAL" />}<span>{gate.start_s.toFixed(2)}-{gate.end_s.toFixed(2)} s</span><span>{gate.reasons.join(", ") || "no reasons"}</span></div>)}</div> : <><p>No gate timeline for this scenario.</p><StatusBadge status="n/a" /></>}</>}
+        <IconButton icon="validate" label="Guardrails" active={flyout === "guardrails"} alert={guardrailViolations.length > 0} badge={guardrailViolations.length > 0 ? String(guardrailViolations.length) : undefined} onClick={() => openFlyout("guardrails")} />
+        {flyout && <div className="flyout"><span className="section-kicker">{flyout}</span><p className="flyout-time">playhead {playhead.toFixed(2)} s of {durationS.toFixed(2)} s / frame {activeTracks.find((entry) => entry.track.role === "ego")?.sample?.time_s === undefined ? MISSING : formatTimestamp(activeTracks.find((entry) => entry.track.role === "ego")?.sample?.time_s)} s</p>{flyout === "metrics" && <><h2>ADE / FDE per actor</h2><p className="flyout-note">Parent scenario is the reference; the selected version is the prediction. Recorded annotated actors are included.</p>{adFdeReason && <p className="flyout-alert" role="note">{adFdeReason}</p>}{adFdeRows.length > 0 && <table className="flyout-table" aria-label="ADE and FDE per actor"><thead><tr><th scope="col">actor</th><th scope="col">samples</th><th scope="col">ADE</th><th scope="col">FDE</th></tr></thead><tbody>{adFdeRows.map((row) => <tr key={row.actorId} data-unavailable={row.unavailableReason !== null}><th scope="row" title={row.actorId}>{row.actorId}</th><td>{row.samples ?? MISSING}</td><td>{row.adeM === null ? MISSING : `${row.adeM.toFixed(3)} m`}</td><td>{row.fdeM === null ? MISSING : `${row.fdeM.toFixed(3)} m`}</td></tr>)}</tbody></table>}{adFdeRows.some((row) => row.unavailableReason) && <ul className="flyout-list flyout-metric-notes">{adFdeRows.filter((row) => row.unavailableReason).map((row) => <li key={row.actorId}>{row.actorId}: {row.unavailableReason}</li>)}</ul>}</>}
+          {flyout === "guardrails" && <><h2>CAD motion guardrails</h2>{guardrailViolations.length > 0 && <p className="flyout-alert" role="alert">{guardrailViolations.length} guardrail {guardrailViolations.length === 1 ? "violation" : "violations"} in the current draft</p>}<div className="flyout-list">{[
+            ["minimum keyframe interval", `${MOTION_GUARDRAILS.minimumKeyframeIntervalS.toFixed(2)} s`],
+            ["maximum speed", `${MOTION_GUARDRAILS.maximumSpeedMps.toFixed(1)} m/s`],
+            ["maximum acceleration", `${MOTION_GUARDRAILS.maximumAccelerationMps2.toFixed(1)} m/s2`],
+            ["maximum braking", `${MOTION_GUARDRAILS.maximumBrakingMps2.toFixed(1)} m/s2`],
+            ["maximum yaw rate", `${MOTION_GUARDRAILS.maximumYawRateRps.toFixed(1)} rad/s`],
+            ["maximum turn angle", `${MOTION_GUARDRAILS.maximumTurnAngleRad.toFixed(2)} rad`],
+          ].map(([label, value]) => <div className="flyout-row" key={label}><strong>{label}</strong><span>{value}</span></div>)}</div>{guardrailViolations.length > 0 && <ul className="flyout-list flyout-violations">{guardrailViolations.map((violation) => <li key={violation}>{violation}</li>)}</ul>}<p>The backend is authoritative and re-checks every limit on commit.</p></>}
           {flyout === "provenance" && <><h2>Provenance</h2>{selected ? (Object.keys(selected.provenance ?? {}).length > 0 ? <div className="flyout-list">{Object.entries(selected.provenance).map(([key, value]) => <div className="flyout-row" key={key}><strong>{key}</strong><span>{value}</span></div>)}</div> : <p>This scenario records no provenance fields.</p>) : <p>Select an imported scenario first.</p>}</>}
-          {flyout === "artifacts" && <><h2>Artifacts</h2>{selected ? (artifacts && artifacts.length > 0 ? <div className="flyout-list">{artifacts.map((artifact) => <a className="flyout-row link" key={artifact.path} href={apiUrl(`/artifacts/${artifact.path}`)} target="_blank" rel="noreferrer"><strong>{artifact.kind}</strong><span>{artifact.path}</span></a>)}</div> : <p>No artifacts reported for this scenario.</p>) : <p>Select an imported scenario first.</p>}</>}
         </div>}
        </aside>
-        {mode === "edit" && <section className="maneuver-dock" aria-label="Constrained maneuver editor"><span className="section-kicker">MANEUVER STEP</span><h2>Constrained edit</h2><p>Tier 1: kinematic-open-loop-v1. Displacement and per-axis velocity are rejected, never rewritten.</p><label>Step name <input value={stepName} onChange={(e) => setStepName(e.target.value)} /></label><label>Actor<select value={maneuver.actor_id} onChange={(e) => setManeuver({ ...maneuver, actor_id: e.target.value })}>{workspace?.actors.map((actor) => <option key={actor.actor_id}>{actor.actor_id}</option>)}</select></label><label>Steering / heading <input type="number" step="0.01" value={maneuver.steering_angle_rad} onChange={(e) => setManeuver({ ...maneuver, steering_angle_rad: Number(e.target.value) })} /></label><label>Acceleration <input type="number" step="0.1" value={maneuver.acceleration_mps2} onChange={(e) => setManeuver({ ...maneuver, acceleration_mps2: Number(e.target.value) })} /></label><label>Braking <input type="number" step="0.1" min="0" value={maneuver.braking_mps2} onChange={(e) => setManeuver({ ...maneuver, braking_mps2: Number(e.target.value) })} /></label><label>Target speed <input type="number" step="0.1" min="0" value={maneuver.target_speed_mps ?? ""} onChange={(e) => setManeuver({ ...maneuver, target_speed_mps: e.target.value === "" ? null : Number(e.target.value) })} /></label><label>Time range start <input type="number" step="0.05" min="0" value={maneuver.start_time_s} onChange={(e) => setManeuver({ ...maneuver, start_time_s: Number(e.target.value) })} /></label><label>Time range end <input type="number" step="0.05" min="0" value={maneuver.end_time_s ?? ""} onChange={(e) => setManeuver({ ...maneuver, end_time_s: e.target.value === "" ? null : Number(e.target.value) })} /></label><button onClick={applyManeuver}>Add step and preview Tier 1</button>{preview && <><StatusBadge status={preview.status} /><small>Limits: {String(preview.limits?.max_acceleration_mps2)} m/s2 accel, {String(preview.limits?.max_deceleration_mps2)} m/s2 brake. Violations: {preview.violations.length}. Parent immutable.</small></>}</section>}
     </div>
-     <footer className="document-footer"><div className="document-tabs">{DOCUMENT_TABS.map((tab) => <button className={activeTab === tab ? "active" : ""} key={tab} onClick={() => setActiveTab(tab)}>{tab}</button>)}</div><div className="status-bar"><span>artifacts: {artifacts?.length ?? 0}</span><span>branch: {lineage?.branch?.branch_id ? displayBranchId(lineage.branch.branch_id) : MISSING}</span><span>config hash: {lineage?.fields?.config_hash ? String(lineage.fields.config_hash).slice(0, 12) : MISSING}</span><span>rollback: {recipe ? recipe.active_marker_id ?? "none" : MISSING}</span><span>recipe: {recipe ? `${recipe.active_step_count}/${recipe.step_count} steps` : MISSING}</span><span>time: {playhead.toFixed(2)} s / {durationS.toFixed(2)} s</span><span>PROVISIONAL: {gateTimeline?.provisional_count ?? "n/a"}</span><span>POV: {povFrames["in-car"]?.simulator ?? povFrames["third-person"]?.simulator ?? MISSING}</span><span>frame: {selected?.coordinate_frame ?? MISSING}</span></div></footer>
+     <footer className="document-footer"><div className="document-tabs">{DOCUMENT_TABS.map((tab) => <button className={activeTab === tab ? "active" : ""} key={tab} onClick={() => setActiveTab(tab)}>{tab}</button>)}</div><div className="status-bar"><span>api: {API_BASE}</span><span>scenarios: {scenarios.length}</span><span>source scenes: {settings?.source_scene_count ?? MISSING}</span><span>artifacts: {artifacts?.length ?? 0}</span><span>branch: {lineage?.branch?.branch_id ? displayBranchId(lineage.branch.branch_id) : MISSING}</span><span>config hash: {lineage?.fields?.config_hash ? String(lineage.fields.config_hash).slice(0, 12) : MISSING}</span><span>rollback: {recipe ? recipe.active_marker_id ?? "none" : MISSING}</span><span>recipe: {recipe ? `${recipe.active_step_count}/${recipe.step_count} steps` : MISSING}</span><span>time: {playhead.toFixed(2)} s / {durationS.toFixed(2)} s</span><span>PROVISIONAL: {gateTimeline?.provisional_count ?? "n/a"}</span><span>POV: {povFrames["in-car"]?.simulator ?? povFrames["third-person"]?.simulator ?? MISSING}</span><span>frame: {selected?.coordinate_frame ?? MISSING}</span></div></footer>
     {commandOpen && <CommandPalette commands={visibleCommands} query={commandQuery} onQuery={setCommandQuery} onClose={() => { setCommandOpen(false); setCommandQuery(""); }} />}
   </main>;
 }
@@ -715,139 +799,65 @@ function StatusChip({ label, tone, lines, openDelay = 500 }: { label: string; to
 function HeaderToggle({ open, onToggle }: { open: boolean; onToggle: () => void }) { return <button className={`toolbar-toggle${open ? " active" : ""}`} aria-label={open ? "Minimize header" : "Restore header"} aria-expanded={open} title={open ? "Minimize header" : "Restore header"} onClick={onToggle}><Icon name={open ? "chevron-up" : "chevron-down"} /></button>; }
 function ToolbarGroup({ children }: { children: React.ReactNode }) { return <div className="toolbar-group"><div>{children}</div></div>; }
 function ToolButton({ icon, label, shortcut, disabled, badge, note, onClick, menu }: Tool) { return <div className="add-view-control"><button className={`tool-button${badge ? " badged" : ""}`} data-tool={label} disabled={disabled} title={`${label}${shortcut ? ` (${shortcut})` : ""}${note ? ` - ${note}` : disabled ? " - unavailable in this build" : ""}`} onClick={onClick}><Icon name={icon} />{label}{badge && <b className={`tool-badge${disabled ? " locked" : ""}`} aria-hidden="true">{badge}</b>}</button>{menu}</div>; }
-function IconButton({ label, icon, badge, active, onClick }: { label: string; icon: IconName; badge?: string; active?: boolean; onClick: () => void }) { return <button className={`icon-button ${active ? "active" : ""}`} aria-label={label} title={label} aria-pressed={active} onClick={onClick}><Icon name={icon} />{badge && <b>{badge}</b>}</button>; }
+function IconButton({ label, icon, badge, active, alert, onClick }: { label: string; icon: IconName; badge?: string; active?: boolean; alert?: boolean; onClick: () => void }) { return <button className={`icon-button ${active ? "active" : ""}${alert ? " alert" : ""}`} aria-label={label} title={label} aria-pressed={active} onClick={onClick}><Icon name={icon} />{badge && <b>{badge}</b>}</button>; }
 function StatusBadge({ status }: { status: string }) { return <span className={`status-badge ${status}`}>{status}</span>; }
 function EmptyPanel({ title, copy }: { title: string; copy: string }) { return <div className="panel-content"><span className="section-kicker">LEFT PANEL</span><h2>{title}</h2><p>{copy}</p></div>; }
-function stepParameterSummary(step: RecipeStep): string {
-  const edit = step.parameters;
-  const parts = [
-    `steer ${edit.steering_angle_rad ?? 0} rad`,
-    `accel ${edit.acceleration_mps2 ?? "n/a"} m/s2`,
-    `brake ${edit.braking_mps2 ?? "n/a"} m/s2`,
-    `target ${edit.target_speed_mps ?? "n/a"} m/s`,
-    `speed x${edit.speed_multiplier}`,
-    `t=${edit.start_time_s ?? 0}-${edit.end_time_s ?? "end"} s`,
-  ];
-  return parts.join(" / ");
-}
+/** Branch tree for the scenario currently open in Scenario studio.
+ *
+ *  Scoped to the selected scenario rather than the whole catalog: the selected
+ *  scene is the single root, and every version committed from it (a canvas
+ *  motion edit) is a child, nested under the version it branched from. Editing
+ *  the path and committing therefore links a new node directly below the one
+ *  the user was looking at. Nothing is listed that is not reachable from the
+ *  selection, so the panel answers "what did I make from this scene". */
+function VersionTree({ scenarios, selected, onSelect }: { scenarios: ScenarioSummary[]; selected: ScenarioSummary | null; onSelect: (scenario: ScenarioSummary) => void }) {
+  const byId = useMemo(() => new Map(scenarios.map((item) => [item.scenario_id, item])), [scenarios]);
+  const childrenOf = useMemo(() => {
+    const map = new Map<string, ScenarioSummary[]>();
+    for (const item of scenarios) {
+      if (!item.parent_scenario_id) continue;
+      map.set(item.parent_scenario_id, [...(map.get(item.parent_scenario_id) ?? []), item]);
+    }
+    return map;
+  }, [scenarios]);
+  const [open, setOpen] = useState<string[]>([]);
+  // A freshly committed branch must be visible without an extra click.
+  useEffect(() => { if (selected) setOpen((current) => current.includes(selected.scenario_id) ? current : [...current, selected.scenario_id]); }, [selected?.scenario_id]);
 
-function RecipePanel({ recipe, preview, markerName, onMarkerName, onAddMarker, onRestore, onToggleStep, onRemoveStep, onMoveStep, onUndo, onRedo }: {
-  recipe: RecipeDocument | null;
-  preview: PreviewResponse | null;
-  markerName: string;
-  onMarkerName: (value: string) => void;
-  onAddMarker: (name: string) => void;
-  onRestore: (markerId: string) => void;
-  onToggleStep: (stepId: string, active: boolean) => void;
-  onRemoveStep: (stepId: string) => void;
-  onMoveStep: (stepId: string, direction: "up" | "down") => void;
-  onUndo: () => void;
-  onRedo: () => void;
-}) {
-  const steps = recipe?.steps ?? [];
-  return <div className="panel-content recipe-panel">
-    <span className="section-kicker">RECIPE</span>
-    <h2>Named steps</h2>
-    {recipe && <p className="recipe-history" aria-label="Recipe history">
-      <span>revision {recipe.history.revision}</span>
-      <button type="button" onClick={onUndo} disabled={!recipe.history.undoable} title={recipe.history.undoable ? "Undo the last recipe change" : recipe.history.undo_unavailable_reason ?? "Nothing to undo"}>Undo</button>
-      <button type="button" onClick={onRedo} disabled={!recipe.history.redoable} title={recipe.history.redoable ? "Redo the last undone change" : recipe.history.redo_unavailable_reason ?? "Nothing to redo"}>Redo</button>
-      <small>non-destructive / {recipe.mutation}</small>
-    </p>}
-    {recipe && !recipe.persistence.available && <p className="recipe-persistence" role="note"><StatusBadge status="unavailable" />{recipe.persistence.unavailable_reason}</p>}
-    {steps.length === 0
-      ? <p>Import a scene and add a constrained maneuver step.</p>
-      : <ol className="recipe-list" aria-label="Ordered recipe steps">{steps.map((step) => <li className={`recipe-row ${step.active ? "" : "inactive"}`} key={step.step_id}>
-        <strong>{step.index + 1}. {step.name}</strong>
-        <StatusBadge status={step.status} />
-        {step.active ? <StatusBadge status="active" /> : <StatusBadge status="inactive" />}
-        <small>{step.parameters.actor_id} / {stepParameterSummary(step)}</small>
-        {!step.active && step.inactive_reason && <small>inactive because {step.inactive_reason}</small>}
-        {step.error && <small role="alert">API error: {step.error}</small>}
-        {step.artifact ? <a className="recipe-artifact" href={step.artifact.url}>{step.artifact.kind}: {step.artifact.path}</a> : step.artifact_unavailable_reason && <small>artifact: {step.artifact_unavailable_reason}</small>}
-        {step.violations.map((violation) => <small key={violation.code} role="alert">{violation.code}: observed {violation.observed} against limit {violation.limit} ({violation.provenance})</small>)}
-        <span className="recipe-row-actions">
-          <button type="button" aria-label={`Move ${step.name} up`} disabled={step.index === 0} onClick={() => onMoveStep(step.step_id, "up")}>up</button>
-          <button type="button" aria-label={`Move ${step.name} down`} disabled={step.index === steps.length - 1} onClick={() => onMoveStep(step.step_id, "down")}>down</button>
-          <button type="button" aria-pressed={step.active} onClick={() => onToggleStep(step.step_id, !step.active)}>{step.active ? "deactivate" : "activate"}</button>
-          <button type="button" aria-label={`Remove ${step.name}`} onClick={() => onRemoveStep(step.step_id)}>remove</button>
-        </span>
-      </li>)}</ol>}
-    <h3>Rollback markers</h3>
-    {recipe && recipe.rollback_markers.length > 0 ? <ul className="marker-list" aria-label="Rollback markers">{recipe.rollback_markers.map((marker) => <li key={marker.marker_id}>
-      <strong>{marker.name}</strong>
-      <small>after {marker.step_count} steps / revision {marker.revision}{recipe.active_marker_id === marker.marker_id ? " / active" : ""}</small>
-      <button type="button" aria-label={`Restore ${marker.name}`} onClick={() => onRestore(marker.marker_id)}>roll back</button>
-    </li>)}</ul> : <p>No rollback markers. Add one before a risky step.</p>}
-    <label>Marker name <input value={markerName} onChange={(event) => onMarkerName(event.target.value)} /></label>
-    <button type="button" disabled={!recipe} onClick={() => onAddMarker(markerName)}>Add rollback marker</button>
-    {preview && <><h3>Last preview</h3><small>Tier 1 {String(preview.provenance.simulator_version ?? "")}; rollback marker: {preview.rollback_marker ? "available" : "n/a"}</small></>}
-  </div>;
-}
+  const toggle = (id: string) => setOpen((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
 
-function EvidenceLayerList({ evidence, title }: { evidence: EvidenceLayers | null; title: string }) {
-  return <div className="evidence-panel">
-    <h3>{title}</h3>
-    {!evidence && <p><StatusBadge status="unavailable" />evidence layers were not returned by the API</p>}
-    {evidence && <ul className="evidence-list" aria-label="Evidence layers">{evidence.layers.map((layer) => <EvidenceLayerRow key={layer.layer} layer={layer} />)}</ul>}
-  </div>;
-}
-
-function EvidenceLayerRow({ layer }: { layer: EvidenceLayer }) {
-  const fallback = layer.parent_fallback;
-  return <li className={`evidence-row ${layer.layer} ${layer.status}`}>
-    <strong>{layer.layer}</strong>
-    <StatusBadge status={layer.status} />
-    <small>{layer.source}</small>
-    {!layer.unavailable_reason ? null : <small>reason: {layer.unavailable_reason}</small>}
-    {layer.coverage === null ? null : <small>coverage {(layer.coverage * 100).toFixed(0)}%</small>}
-    {fallback ? <small>parent sweep fallback: {String(fallback.available) === "true" ? "available" : `unavailable (${String(fallback.unavailable_reason)})`} - {String(fallback.note)}</small> : null}
-  </li>;
-}
-
-function EvidenceLayerPanel({ evidence, workspace }: { evidence: EvidenceLayers | null; workspace: WorkspaceScenario | null }) {
-  const metricProvenance = workspace?.metrics;
-  return <div className="panel-content">
-    <span className="section-kicker">MAP LAYERS</span>
-    <h2>Evidence layers</h2>
-    <EvidenceLayerList evidence={evidence ?? workspace?.evidence_layers ?? null} title="Trajectory and sensor layers" />
-    {workspace?.sensor_status && <div className="evidence-metrics" aria-label="Variant sensor status">
-      <h3>Variant sensor status</h3>
-      <StatusBadge status={workspace.sensor_status.status} />
-      <small>{workspace.sensor_status.unavailable_reason ?? "post-edit sensor frames available"}</small>
-      <small>parent sweep: {workspace.sensor_status.parent_sweep.available ? "available" : `unavailable (${workspace.sensor_status.parent_sweep.unavailable_reason})`}</small>
-    </div>}
-    {metricProvenance && <div className="evidence-metrics">
-      <h3>Metric provenance</h3>
-      <StatusBadge status={metricProvenance.available ? "available" : "unavailable"} />
-      <StatusBadge status={metricProvenance.scientific_status} />
-      <small>{metricProvenance.available ? `source ${metricProvenance.source}` : metricProvenance.unavailable_reason}</small>
-      {Object.entries(metricProvenance.provenance).map(([key, value]) => <small key={key}>{key}: {value}</small>)}
-    </div>}
-  </div>;
-}
-
-function VariantStudio({ selected, lineage, evidence, workspace }: { selected: ScenarioSummary | null; lineage: VariantLineage | null; evidence: EvidenceLayers | null; workspace: WorkspaceScenario | null }) {
-  if (!selected) return <div className="view-grid count-1"><div className="empty-view"><strong>Variant studio</strong><span>Select an imported scenario to see its lineage.</span></div></div>;
-  const field = (name: string) => {
-    const value = lineage?.fields?.[name];
-    const reason = lineage?.unavailable_reasons?.[name];
-    return <div className="flyout-row" key={name}><strong>{name}</strong><span>{value === null || value === undefined ? MISSING : typeof value === "object" ? JSON.stringify(value) : String(value)}</span>{reason ? <span>{reason}</span> : null}</div>;
+  const node = (scenario: ScenarioSummary, depth: number): React.ReactNode => {
+    const children = (childrenOf.get(scenario.scenario_id) ?? []).slice().sort((a, b) => a.scenario_id.localeCompare(b.scenario_id));
+    const isOpen = open.includes(scenario.scenario_id);
+    const isSelected = selected?.scenario_id === scenario.scenario_id;
+    return <li key={scenario.scenario_id} role="treeitem" aria-selected={isSelected} aria-level={depth + 1}>
+      <div className={`version-node${isSelected ? " selected" : ""}`}>
+        {children.length > 0
+          ? <button className="version-twisty" aria-label={`${isOpen ? "Collapse" : "Expand"} versions of ${scenario.scenario_id}`} aria-expanded={isOpen} onClick={() => toggle(scenario.scenario_id)}>{isOpen ? "\u25be" : "\u25b8"}</button>
+          : <span className="version-twisty leaf" aria-hidden="true" />}
+        <button className="version-label" aria-label={scenario.scenario_id} aria-pressed={isSelected} onClick={() => onSelect(scenario)} title={scenario.scenario_id}>
+          <strong>{displayScenarioId(scenario.scenario_id)}</strong>
+          <StatusBadge status={scenario.artifact_type} />
+          <small>{scenario.duration_s.toFixed(1)} s{children.length > 0 ? ` \u00b7 ${children.length} version${children.length === 1 ? "" : "s"}` : ""}</small>
+        </button>
+      </div>
+      {children.length > 0 && isOpen && <ul role="group">{children.map((child) => node(child, depth + 1))}</ul>}
+    </li>;
   };
-  return <div className="variant-studio" role="region" aria-label="Variant studio">
-    <div className="variant-lineage">
-      <span className="section-kicker">LINEAGE</span>
-      {lineage ? <>
-        <p>branch {lineage.branch.branch_id} / root {displayScenarioId(lineage.branch.root_scenario_id)} / depth {lineage.lineage_depth}</p>
-        <ol aria-label="Variant lineage path">{lineage.lineage_path.map((node) => <li key={node.scenario_id} title={node.scenario_id}>{displayScenarioId(node.scenario_id)} <StatusBadge status={node.present ? "available" : "unavailable"} />{node.unavailable_reason ? <small>{node.unavailable_reason}</small> : null}</li>)}</ol>
-        {["branch_name", "parent_scenario_id", "seed", "config_hash", "run_id", "variant_configuration", "dataset_version", "generator_version", "transform_version", "source_scene_token"].map(field)}
-        {lineage.child_scenario_ids.length > 0 && <p>children: {lineage.child_scenario_ids.map(displayScenarioId).join(", ")}</p>}
-      </> : <p><StatusBadge status="unavailable" />lineage was not returned by the API</p>}
-    </div>
-    <div className="variant-layers">
-      <EvidenceLayerList evidence={evidence ?? workspace?.evidence_layers ?? null} title="Evidence layers" />
-    </div>
+
+  const branchCount = selected ? countDescendants(selected.scenario_id, childrenOf) : 0;
+  return <div className="panel-content version-tree-panel">
+    <div className="panel-title"><span className="count">{selected ? branchCount : 0}</span><span className="section-kicker">Committed versions</span></div>
+    {!selected
+      ? <div className="panel-empty">Select a scenario in Scenario studio to see its version tree.</div>
+      : <ul className="version-tree" role="tree" aria-label="Committed scenario versions">{node(byId.get(selected.scenario_id) ?? selected, 0)}</ul>}
+    {selected && <small>Edit the motion in Variant studio and commit: each committed version is linked below the one it came from.</small>}
   </div>;
+}
+
+function countDescendants(id: string, childrenOf: Map<string, ScenarioSummary[]>): number {
+  const children = childrenOf.get(id) ?? [];
+  return children.length + children.reduce((total, child) => total + countDescendants(child.scenario_id, childrenOf), 0);
 }
 
 function CompareSide({ side, label, playhead }: { side: ComparePayload["sides"][number]; label: string; playhead: number }) {
@@ -916,7 +926,7 @@ function AddViewMenu({ viewCount, onAdd }: { viewCount: number; onAdd: (type: Vi
    return <div className="add-view-menu" role="menu">{VIEW_REGISTRY.descriptors.filter((descriptor) => descriptor.type !== "lidar" && descriptor.type !== "in-car").map((descriptor) => <button key={descriptor.type} disabled={atLimit} onClick={() => onAdd(descriptor.type)}><strong>{descriptor.label}</strong><small title={descriptor.menuDescription}>{atLimit ? `maximum ${MAX_VIEWS} views reached` : descriptor.menuDescription}</small></button>)}</div>;
 }
 
-type ViewCommonProps = { trajectory: TrajectoryResponse | null; timeline: number; hiddenKinds: string[]; onToggleKind: (kind: string) => void; layersOpen: boolean; onToggleLayers: () => void; onClose: () => void; wasmOrbit: WasmOrbitState; onWasmOrbitChange: (orbit: WasmOrbitState) => void; wasmToggles: WasmOverlayToggles; onWasmTogglesChange: (toggles: WasmOverlayToggles) => void };
+type ViewCommonProps = { trajectory: TrajectoryResponse | null; scenarioLoading: boolean; timeline: number; hiddenKinds: string[]; onToggleKind: (kind: string) => void; layersOpen: boolean; onToggleLayers: () => void; onClose: () => void; wasmOrbit: WasmOrbitState; onWasmOrbitChange: (orbit: WasmOrbitState) => void; wasmToggles: WasmOverlayToggles; onWasmTogglesChange: (toggles: WasmOverlayToggles) => void; onTransportChange: (handle: WasmTransportHandle | null) => void; onActorPick: (actorId: string | null) => void };
 type ViewContent =
   | { type: "top-down"; selected: ScenarioSummary | null; activeTracks: ActiveTrack[]; selectedActor: string | null; measurement: Measurement | null; mode: string; onSelectActor: (actorId: string) => void }
   | { type: "sensor-evidence"; evidence: SensorEvidence | null; onSensorSweeps: (value: number) => void; decimation: number; onDecimation: (value: number) => void }
@@ -933,20 +943,24 @@ function ViewPane({ view, dragging, dropTarget, onDragStart, onDragEnd, onDragOv
        {content.type === "real-camera" ? <CameraPovMenu pov={content.pov} onPov={content.onPov} /> : <div className="layers-control"><button className={`view-action${common.layersOpen ? " active" : ""}`} aria-expanded={common.layersOpen} onClick={common.onToggleLayers}>Layers</button>{common.layersOpen && <div className="layers-menu" role="menu">{kinds.length === 0 ? <p>No trajectory layers loaded.</p> : kinds.map((kind) => <button key={kind} role="menuitemcheckbox" aria-checked={!common.hiddenKinds.includes(kind)} onClick={() => common.onToggleKind(kind)}><span className={`status-dot ${common.hiddenKinds.includes(kind) ? "off" : "on"}`} />{kind}</button>)}</div>}</div>}
        <button className="close-view" aria-label={`Close view: ${descriptor.label}`} title={`Close view: ${descriptor.label}`} onClick={common.onClose}>x</button>
     </header>
-    {renderViewContent(content, common)}
+    {renderViewContent(content, common, common.onTransportChange, common.onActorPick)}
   </article>;
 }
 
-function renderViewContent(content: ViewContent, common: ViewCommonProps) {
+function renderViewContent(content: ViewContent, common: ViewCommonProps, onTransport?: (handle: WasmTransportHandle | null) => void, onActorPick?: (actorId: string | null) => void) {
   const renderer = getViewDescriptor(content.type).renderer;
   if (renderer === "top-down" && content.type === "top-down") return <TopDownView selected={content.selected} trajectory={common.trajectory} timeline={common.timeline} activeTracks={content.activeTracks} selectedActor={content.selectedActor} measurement={content.measurement} mode={content.mode} onSelectActor={content.onSelectActor} hiddenKinds={common.hiddenKinds} />;
   if (renderer === "sensor-evidence" && content.type === "sensor-evidence") return typeof Worker !== "undefined" && selectedScenarioId(common) ? <WasmPlaybackView scenarioId={selectedScenarioId(common) ?? undefined} mode="sensor-evidence" playhead={common.timeline} toggles={common.wasmToggles} onTogglesChange={common.onWasmTogglesChange} orbit={common.wasmOrbit} onOrbitChange={common.onWasmOrbitChange} /> : <SensorEvidenceView evidence={content.evidence} decimation={content.decimation} onDecimation={content.onDecimation} onSweeps={content.onSensorSweeps} playhead={common.timeline} trajectory={common.trajectory} />;
   if (renderer === "lidar" && content.type === "lidar") return <LidarView descriptor={content.descriptor} decimation={content.decimation} onDecimation={content.onDecimation} playhead={common.timeline} />;
   if (renderer === "real-camera" && content.type === "real-camera") return <RealCameraView pov={content.pov} scenarioId={selectedScenarioId(common)} playhead={common.timeline} toggles={common.wasmToggles} />;
   const povContent = content as Extract<ViewContent, { type: "third-person" | "in-car" }>;
-  if (povContent.type === "third-person" && typeof Worker !== "undefined" && selectedScenarioId(common)) return <WasmPlaybackView scenarioId={selectedScenarioId(common) ?? undefined} mode="third-person" playhead={common.timeline} toggles={common.wasmToggles} onTogglesChange={common.onWasmTogglesChange} orbit={common.wasmOrbit} onOrbitChange={common.onWasmOrbitChange} isMainView={povContent.isMainView} focusActorId={povContent.focusActorId} />;
+  if (povContent.type === "third-person" && typeof Worker !== "undefined" && selectedScenarioId(common)) return <WasmPlaybackView scenarioId={selectedScenarioId(common) ?? undefined} mode="third-person" playhead={common.timeline} toggles={common.wasmToggles} onTogglesChange={common.onWasmTogglesChange} orbit={common.wasmOrbit} onOrbitChange={common.onWasmOrbitChange} isMainView={povContent.isMainView} focusActorId={povContent.focusActorId} onTransport={onTransport} onActorPick={onActorPick} />;
   if (povContent.liveState?.status === "running" || povContent.liveState?.status === "paused" || povContent.liveState?.status === "reset") return <LivePOVView state={povContent.liveState} playhead={common.timeline} />;
   if (povContent.frame) return <POVView frame={povContent.frame} imageFrame={povContent.imageFrame} playhead={common.timeline} />;
+  // A selected scenario whose trajectory has not arrived yet is still loading,
+  // not unavailable. Rendering the esmini "unavailable" fallback in that window
+  // reported a missing simulator for a scene that was merely slow to load.
+  if (common.scenarioLoading) return <div className="unavailable-view"><StatusBadge status="loading" /><strong>{viewLabels[povContent.type]} loading</strong><p>Resolving the selected scenario. The workspace payload for a recorded nuScenes scene can take several seconds.</p></div>;
   const layer = povContent.workspace?.layers[povContent.type === "in-car" ? "in_car" : "third_person"];
   return <div className="unavailable-view"><StatusBadge status={layer?.available ? "loading" : "unavailable"} /><strong>{viewLabels[povContent.type]} {layer?.available ? "loading" : "unavailable"}</strong><p>{povContent.liveCapability?.unavailable_reason ?? layer?.unavailable_reason ?? "Select an imported scenario to query capability."}</p></div>;
 }
@@ -1119,7 +1133,7 @@ function TopDownView({ selected, trajectory, timeline, activeTracks, selectedAct
   </div>;
 }
 
-function TimelineSurface({ timeline, gates, error, playhead, durationS, activeTracks, selectedActor, measurement, onSelectActor, onPlayhead, onStep, wasmToggles, onWasmTogglesChange }: { timeline: ActorTimeline | null; gates: GateTimeline | null; error: string | null; playhead: number; durationS: number; activeTracks: ActiveTrack[]; selectedActor: string | null; measurement: Measurement | null; onSelectActor: (actorId: string) => void; onPlayhead: (value: number) => void; onStep: (delta: number) => void; wasmToggles: WasmOverlayToggles; onWasmTogglesChange: (toggles: WasmOverlayToggles) => void }) {
+function TimelineSurface({ timeline, gates, error, playhead, durationS, activeTracks, selectedActor, measurement, onSelectActor, onPlayhead, onStep, wasmToggles, onWasmTogglesChange, transport }: { timeline: ActorTimeline | null; gates: GateTimeline | null; error: string | null; playhead: number; durationS: number; activeTracks: ActiveTrack[]; selectedActor: string | null; measurement: Measurement | null; onSelectActor: (actorId: string) => void; onPlayhead: (value: number) => void; onStep: (delta: number) => void; wasmToggles: WasmOverlayToggles; onWasmTogglesChange: (toggles: WasmOverlayToggles) => void; transport: WasmTransportHandle | null }) {
   const [playing, setPlaying] = useState(false);
   const domainStart = gates?.time_domain.start_s ?? timeline?.time_domain.start_s ?? 0;
   const domainEnd = gates?.time_domain.end_s ?? timeline?.time_domain.end_s ?? durationS;
@@ -1152,6 +1166,12 @@ function TimelineSurface({ timeline, gates, error, playhead, durationS, activeTr
   return <section className="timeline-surface" aria-label="Time-indexed actor timeline and gate lane">
     <div className="timeline-controls">
       <div className="timeline-playback">
+        {transport ? <>
+          <button className="playhead-play" aria-label={transport.playing ? "Pause 3D playback" : "Play 3D playback"} onClick={transport.toggle} disabled={!transport.ready}>{transport.playing ? "pause 3d" : "play 3d"}</button>
+          <button className="playhead-step" aria-label="Step 3D playback one frame" onClick={transport.step} disabled={!transport.ready}>step 3d</button>
+          <button className="playhead-step" aria-label="Reset 3D playback" onClick={transport.reset} disabled={!transport.ready}>reset 3d</button>
+          <span className="timeline-transport-status" aria-label="3D playback status">3D {transport.status} / t={transport.timeS.toFixed(2)} s / objects={transport.objectCount}</span>
+        </> : <span className="timeline-transport-status">no 3D preview mounted</span>}
         <button className="playhead-play" aria-label={playing ? "Pause playback" : "Play frames"} onClick={() => setPlaying((value) => !value)} disabled={durationS === 0}>{playing ? "pause" : "play"}</button>
         <button className="playhead-step" aria-label="Step playhead back" onClick={() => onStep(-PLAYHEAD_STEP_S)} disabled={durationS === 0}>&lt;</button>
         <button className="playhead-step" aria-label="Step playhead forward" onClick={() => onStep(PLAYHEAD_STEP_S)} disabled={durationS === 0}>&gt;</button>

@@ -5,6 +5,10 @@ from __future__ import annotations
 import json
 import hashlib
 from contextlib import asynccontextmanager
+import os
+import subprocess
+import sys
+import threading
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -12,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from real2scenario import state_to_dict
 
 from .adapter import ArtifactAdapter, ArtifactRecord
+from .build_info import build_identity
 from .config import WebSettings
 from .jobs import BatchService, PreviewService, to_results
 from .esmini import EsminiBackend, ReplayJob
@@ -60,6 +65,12 @@ from .schemas import (
     LiveSessionCommandRequest,
     LiveScenarioPairRequest,
     WasmScenarioPairView,
+    ArtifactLink,
+    CanvasBranchRequest,
+    CanvasBranchResponse,
+    TestingPhysicsResponse,
+    ValidationView,
+    ValidationReasonView,
 )
 from .actor_timeline import actor_timeline
 from .compare import compare_payload
@@ -91,6 +102,11 @@ from real2scenario import (
     select_opendrive_template,
     transform_opendrive_to_local,
     write_openscenario,
+    CanvasKeyframe,
+    VariantConfig,
+    build_canvas_keyframe_branch,
+    variant_artifact_to_dict,
+    validate_feasibility,
 )
 
 from pathlib import Path
@@ -223,6 +239,8 @@ async def _app_lifespan(app: FastAPI):
 
 def create_app(settings: WebSettings | None = None) -> FastAPI:
     resolved_settings = settings or WebSettings.from_environment()
+    testing_physics_lock = threading.Lock()
+    wasm_pair_lock = threading.Lock()
     adapter = ArtifactAdapter(resolved_settings)
     source_scenes = SourceSceneAdapter(resolved_settings)
     native_maps = NativeMapService(resolved_settings)
@@ -305,11 +323,29 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
         )
         return {
             "status": "ok",
+            "build": build_identity(),
             "artifact_root_configured": resolved_settings.artifact_root.is_dir(),
             "scenario_count": len(adapter.discover()),
             "dataset_configured": dataset_path is not None,
             "dataset_version": resolved_settings.dataset_version,
             "dataset_metadata_available": bool(dataset_path and dataset_path.is_dir()),
+            # Which stack answered, and which roots it is actually reading.
+            # Several stacks can run on one host with different artifact roots,
+            # so "the catalog looks empty" is otherwise indistinguishable from
+            # "this api serves a different directory". Every root is reported
+            # with its real path and whether it exists on disk.
+            "configuration": {
+                "project_root": resolved_settings.project_root.as_posix(),
+                "artifact_root": resolved_settings.artifact_root.as_posix(),
+                "output_root": resolved_settings.output_root.as_posix(),
+                "dataset_root": None if dataset_root is None else dataset_root.as_posix(),
+                "roots_present": {
+                    "project_root": resolved_settings.project_root.is_dir(),
+                    "artifact_root": resolved_settings.artifact_root.is_dir(),
+                    "output_root": resolved_settings.output_root.is_dir(),
+                    "dataset_root": None if dataset_root is None else dataset_root.is_dir(),
+                },
+            },
         }
 
     @app.get("/api/settings", response_model=SettingsView)
@@ -363,6 +399,8 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
     @app.post("/api/workspace/scenarios/{scenario_id}/wasm-pair", response_model=WasmScenarioPairView)
     def create_wasm_scenario_pair(scenario_id: str) -> WasmScenarioPairView:
         """Materialize a private XOSC/XODR pair for browser WASM preview only."""
+        if not wasm_pair_lock.acquire(blocking=False):
+            raise HTTPException(status_code=409, detail="wasm_pair_busy_retry")
         try:
             record = adapter.get(scenario_id)
             try:
@@ -392,6 +430,8 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail=str(error)) from error
         except (OSError, RuntimeError, ValueError) as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
+        finally:
+            wasm_pair_lock.release()
 
     @app.get("/api/esmini/live/sessions/{session_id}")
     def get_live_session(session_id: str) -> dict[str, object]:
@@ -1229,6 +1269,131 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail=str(error)) from error
         except ValueError as error:
             raise HTTPException(status_code=400, detail=str(error)) from error
+
+    @app.post(
+        "/api/workspace/scenarios/{scenario_id}/branches",
+        response_model=CanvasBranchResponse,
+    )
+    def create_canvas_branch(
+        scenario_id: str, request: CanvasBranchRequest
+    ) -> CanvasBranchResponse:
+        """Commit one free-motion canvas draft for this process lifetime."""
+        parent = record_for(scenario_id)
+        if request.coordinate_frame != parent.scenario.coordinate_frame:
+            raise HTTPException(status_code=422, detail="canvas_coordinate_frame_mismatch")
+        try:
+            branch = build_canvas_keyframe_branch(
+                parent.scenario,
+                request.actor_id,
+                tuple(CanvasKeyframe(**item.model_dump()) for item in request.keyframes),
+                branch_name=request.branch_name,
+                seed=request.seed,
+                include_origin_reference=request.include_origin_reference,
+            )
+            validation = validate_feasibility(branch.scenario)
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        if not validation.valid:
+            return CanvasBranchResponse(
+                parent_scenario_id=scenario_id,
+                scenario=adapter.summary(parent),
+                validation=ValidationView(
+                    valid=False,
+                    validation_version=validation.validation_version,
+                    reasons=[ValidationReasonView(
+                        code=reason.code, category=reason.category, actor_id=reason.actor_id,
+                        state_index=reason.state_index, observed=reason.observed,
+                        limit=reason.limit, message=reason.message,
+                    ) for reason in validation.reasons],
+                ),
+                artifacts=[],
+                sensor_status={"status": "not_created", "reason": "canvas_branch_invalid"},
+            )
+
+        config = VariantConfig(seed=request.seed)
+        branch_root = resolved_settings.output_root / "canvas-branches" / branch.scenario.scenario_id
+        branch_root.mkdir(parents=True, exist_ok=True)
+        scenario_path = branch_root / "scenario.json"
+        scenario_path.write_text(
+            json.dumps(
+                variant_artifact_to_dict(branch.scenario, scenario_id, config),
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            encoding="utf-8",
+        )
+        branch_record = ArtifactRecord(
+            scenario=branch.scenario,
+            path=scenario_path,
+            relative_path=adapter.relative_path(scenario_path),
+            artifact_type="variant",
+            parent_scenario_id=scenario_id,
+            variant_config=config,
+        )
+        adapter.register_ephemeral(branch_record)
+        artifacts = [ArtifactLink(
+            kind="canonical-json",
+            path=branch_record.relative_path,
+            url=f"/api/artifacts/{branch_record.relative_path}",
+        )]
+        return CanvasBranchResponse(
+            parent_scenario_id=scenario_id,
+            scenario=adapter.summary(branch_record),
+            validation=ValidationView(
+                valid=True,
+                validation_version=validation.validation_version,
+                reasons=[],
+            ),
+            artifacts=artifacts,
+            wasm_pair=None,
+            sensor_status={
+                "status": "unsupported",
+                "reason": "post_edit_sensor_frames_are_not_generated_for_a_variant",
+            },
+        )
+
+    @app.post(
+        "/api/testing/scenarios/{scenario_id}/carla-recalculate",
+        response_model=TestingPhysicsResponse,
+    )
+    def testing_carla_recalculate(
+        scenario_id: str, request: CanvasBranchRequest
+    ) -> TestingPhysicsResponse:
+        """Testing-only internal physics recalculation; never a replay claim."""
+        record_for(scenario_id)
+        if not testing_physics_lock.acquire(blocking=False):
+            raise HTTPException(status_code=409, detail="testing_physics_busy_retry")
+        try:
+            worker_env = dict(os.environ)
+            worker_env["PYTHONPATH"] = str(resolved_settings.project_root / "src") + os.pathsep + worker_env.get("PYTHONPATH", "")
+            completed = subprocess.run(
+                (sys.executable, "-m", "r2s_web.testing_physics_worker"),
+                input=json.dumps({
+                    "keyframes": [item.model_dump() for item in request.keyframes],
+                    "obstacles": [
+                        {"x_m": actor.trajectory[0].x_m, "y_m": actor.trajectory[0].y_m, "z_m": (actor.height_m or 1.0) / 2.0}
+                        for actor in record_for(scenario_id).scenario.actors
+                        if actor.actor_type == "movable_object.barrier"
+                    ],
+                }),
+                text=True,
+                capture_output=True,
+                timeout=90,
+                cwd=resolved_settings.project_root,
+                env=worker_env,
+                check=False,
+            )
+            if completed.returncode != 0:
+                detail = completed.stderr.strip() or "testing_physics_worker_failed"
+                raise RuntimeError(detail[-2000:])
+            payload = json.loads(completed.stdout)
+        except subprocess.TimeoutExpired as error:
+            raise HTTPException(status_code=409, detail="testing_physics_timeout") from error
+        except (RuntimeError, ValueError, json.JSONDecodeError) as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        finally:
+            testing_physics_lock.release()
+        return TestingPhysicsResponse(**payload)
 
     @app.get("/api/artifacts/{artifact_path:path}")
     def download_artifact(artifact_path: str):

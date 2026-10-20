@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Real2Scenario Architecture</title>
+<style>
+:root {
+  --bg: #f7f7f5; --panel: #ffffff; --ink: #1d1d1b; --muted: #62625d; --line: #d6d6d0;
+  --fe: #2f6fdb; --fe-bg: #eaf1fd;
+  --web: #7a4cc2; --web-bg: #f2ecfb;
+  --dom: #1f8a5b; --dom-bg: #e7f5ee;
+  --ad: #b5671b; --ad-bg: #fbf0e4;
+  --ext: #5b5b56; --ext-bg: #efefec;
+  --warn: #b3261e;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161615; --panel: #1f1f1d; --ink: #ecece8; --muted: #a3a39c; --line: #3a3a36;
+    --fe: #7aa7f5; --fe-bg: #1b2738; --web: #b592ec; --web-bg: #2a2236;
+    --dom: #5cc795; --dom-bg: #18302a; --ad: #e5a160; --ad-bg: #33261a;
+    --ext: #b5b5ae; --ext-bg: #2a2a27; --warn: #f2948d;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161615; --panel: #1f1f1d; --ink: #ecece8; --muted: #a3a39c; --line: #3a3a36;
+  --fe: #7aa7f5; --fe-bg: #1b2738; --web: #b592ec; --web-bg: #2a2236;
+  --dom: #5cc795; --dom-bg: #18302a; --ad: #e5a160; --ad-bg: #33261a;
+  --ext: #b5b5ae; --ext-bg: #2a2a27; --warn: #f2948d;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 28px; margin: 0 0 4px; }
+h2 { font-size: 20px; margin: 48px 0 6px; }
+p.lead, p.note { color: var(--muted); margin: 0 0 16px; }
+code { font: 13px ui-monospace, "Cascadia Code", Consolas, monospace; }
+nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; }
+nav a { color: var(--ink); text-decoration: none; border: 1px solid var(--line);
+  background: var(--panel); padding: 4px 12px; border-radius: 999px; font-size: 14px; }
+
+/* layered diagram */
+.layer { border: 1.5px solid var(--c); background: var(--cbg); border-radius: 10px;
+  padding: 12px 14px 14px; }
+.layer > header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px;
+  margin-bottom: 10px; }
+.layer > header b { color: var(--c); font-size: 16px; }
+.layer > header span { color: var(--muted); font-size: 13px; }
+.grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 10px; font-size: 13.5px; }
+.box b { display: block; font-size: 13.5px; }
+.box code { font-size: 12px; color: var(--muted); }
+.box small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.dashed { border-style: dashed; }
+.tag { display: inline-block; font-size: 11px; padding: 0 6px; border-radius: 4px;
+  border: 1px solid currentColor; margin-left: 4px; vertical-align: 1px; }
+.tag.warn { color: var(--warn); }
+.fe { --c: var(--fe); --cbg: var(--fe-bg); }
+.web { --c: var(--web); --cbg: var(--web-bg); }
+.dom { --c: var(--dom); --cbg: var(--dom-bg); }
+.ad { --c: var(--ad); --cbg: var(--ad-bg); }
+.ext { --c: var(--ext); --cbg: var(--ext-bg); }
+.link { text-align: center; color: var(--muted); font-size: 13px; padding: 4px 0; }
+.link::before { content: "▼ "; color: var(--ink); }
+.branches { display: grid; gap: 6px; }
+.branch { margin: 4px 0 0; font-size: 13px; font-weight: 600; color: var(--muted); }
+
+/* pipeline */
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; }
+.step { flex: 1 1 150px; border: 1.5px solid var(--c); background: var(--cbg);
+  border-radius: 8px; padding: 8px 10px; font-size: 13.5px; }
+.step b { display: block; color: var(--c); }
+.step code { font-size: 12px; color: var(--muted); }
+.arrow { align-self: center; color: var(--muted); font-size: 18px; }
+.funnel { display: grid; gap: 4px; margin-top: 12px; }
+.gate { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px;
+  font-size: 13.5px; }
+.gate b { color: var(--dom); }
+.gate em { font-style: normal; font-size: 12px; color: var(--muted); }
+.gate em.warn { color: var(--warn); }
+
+/* tiers */
+table { width: 100%; border-collapse: collapse; background: var(--panel); font-size: 14px; }
+th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+th { background: var(--ext-bg); }
+.scroll { overflow-x: auto; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--muted);
+  margin: 12px 0 16px; }
+.legend i { display: inline-block; width: 22px; height: 12px; border: 1.5px solid var(--muted);
+  border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+.legend i.d { border-style: dashed; }
+footer { margin-top: 48px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Real2Scenario: sơ đồ kiến trúc</h1>
+  <p class="lead">Pipeline có thể kiểm chứng, chuyển tương tác lái xe ghi thật (nuScenes) thành kịch bản
+    OpenSCENARIO phát lại được, vết mô phỏng đo được và biến thể có kiểm soát.
+    Phạm vi MVP: nuScenes <code>v1.0-trainval</code>, Singapore One-North, esmini + bộ preview động học nội bộ.
+    CARLA là post-MVP (DEC-011).</p>
+  <nav>
+    <a href="#layers">1. Phân lớp &amp; thành phần</a>
+    <a href="#pipeline">2. Luồng dữ liệu</a>
+    <a href="#tiers">3. Tầng runtime mô phỏng</a>
+    <a href="#deploy">4. Triển khai</a>
+  </nav>
+
+  <!-- 1 -->
+  <h2 id="layers">1. Phân lớp và thành phần</h2>
+  <p class="note">Phụ thuộc chỉ đi một chiều: <code>frontend → r2s_web → real2scenario ← adapters</code>.
+    Lớp domain không import FastAPI hay React.</p>
+  <div class="legend">
+    <span><i></i>Thuộc MVP, đã triển khai</span>
+    <span><i class="d"></i>Diagnostic / post-MVP / tùy chọn</span>
+  </div>
+
+  <section class="layer ext">
+    <header><b>Người dùng</b><span>Nhà nghiên cứu, kỹ sư kiểm thử mô phỏng, giám khảo xem demo</span></header>
+  </section>
+  <div class="link">HTTPS (qua gateway khi public)</div>
+
+  <section class="layer fe">
+    <header><b>Frontend workspace</b><span><code>frontend/src/</code> · React 19 · Vite · TypeScript · Three.js</span></header>
+    <div class="grid">
+      <div class="box"><b>Catalog</b><small>Tìm và chọn kịch bản, import cảnh nuScenes</small></div>
+      <div class="box"><b>Workspace views (≤ 3 pane)</b><small>Top-down, Sensor Evidence, 3rd-person POV, In-car POV, LiDAR 3D</small></div>
+      <div class="box"><b>Timeline</b><small>Kênh actor, gate lane, playhead, Measure</small></div>
+      <div class="box"><b>Recipe editor</b><small>Bước manoeuvre có ràng buộc, undo/redo, rollback</small></div>
+      <div class="box"><b>Compare</b><small>So sánh đồng bộ cha/biến thể, provenance metric</small></div>
+      <div class="box"><b>Live state</b><small>Trạng thái esmini native khi có capability</small></div>
+      <div class="box"><b>api.ts</b><small>Helper request có kiểu, không đọc file trực tiếp</small></div>
+      <div class="box dashed"><b>/wasm-smoke</b><span class="tag warn">diagnostic</span><small>esminiJS trong Web Worker, dt = 0.01, chỉ preview, không phải nguồn metric (DEC-020)</small></div>
+    </div>
+  </section>
+  <div class="link">REST JSON <code>/api/*</code> + luồng trạng thái kiểu WebSocket</div>
+
+  <section class="layer web">
+    <header><b>Web backend</b><span><code>src/r2s_web/</code> · FastAPI · Pydantic · uvicorn</span></header>
+    <div class="grid">
+      <div class="box"><b>app.py</b><small>Route, middleware, mount SPA tĩnh</small></div>
+      <div class="box"><b>schemas.py</b><small>Hợp đồng request/response</small></div>
+      <div class="box"><b>adapter.py</b><small><code>ArtifactAdapter</code>: biên đọc artifact, chặn path traversal</small></div>
+      <div class="box"><b>jobs.py</b><small>Batch sinh biến thể, preview</small></div>
+      <div class="box"><b>recipe.py</b><small><code>RecipeStore</code> in-process, không sửa artifact gốc</small></div>
+      <div class="box"><b>esmini.py</b><small>Replay subprocess bất đồng bộ, tra ảnh</small></div>
+      <div class="box"><b>live_session.py</b><small><code>esmini-live-session-v1</code>, tuần tự hóa phiên native</small></div>
+      <div class="box"><b>source_scenes · lidar · native_map</b><small>Khám phá cảnh, LiDAR riêng tư, truy vấn map chỉ đọc</small></div>
+      <div class="box"><b>frames · timelines · compare · lineage · evidence_layers</b><small>Phép chiếu dữ liệu cho workspace</small></div>
+      <div class="box"><b>camera · ground · topdown · preview_time</b><small>Bằng chứng camera, lớp mặt đất, trạng thái top-down chỉ để hiển thị</small></div>
+    </div>
+  </section>
+  <div class="link">Gọi hàm Python (domain dùng được độc lập từ test/CLI)</div>
+
+  <section class="layer dom">
+    <header><b>Scenario core (domain)</b><span><code>src/real2scenario/</code> · không phụ thuộc simulator hay web</span></header>
+    <div class="grid">
+      <div class="box"><b>models · serialization</b><small><code>State</code>, <code>Actor</code>, <code>Scenario</code>, <code>VariantConfig</code>; artifact JSON có version + provenance</small></div>
+      <div class="box"><b>ingestion · coordinates</b><small>nuScenes → Scenario toàn cục → khung cục bộ theo đường</small></div>
+      <div class="box"><b>mapbuilder · road_match</b><small>Corridor OpenDRIVE quanh <code>scene-0061</code>, tỷ lệ khớp làn</small></div>
+      <div class="box"><b>generation</b><small>Biến thể grid/random tất định, preview chỉnh sửa</small></div>
+      <div class="box"><b>validation · kinematic</b><small>Tier 1 <code>kinematic-open-loop-v1</code>, báo vi phạm, không clamp ngầm</small></div>
+      <div class="box"><b>gates · ranking</b><small>G1–G7 fail-closed, xếp hạng rủi ro/mới lạ</small></div>
+      <div class="box"><b>exporter · xosc_subset · templates</b><small>Xuất <code>.xosc</code> + template <code>.xodr</code></small></div>
+      <div class="box"><b>simulation · metrics</b><small>Gọi esmini, chuẩn hóa trace, ADE/FDE</small></div>
+      <div class="box"><b>reporting · benchmark · packaging</b><small>Báo cáo, aggregate đa cảnh, gói phát hành</small></div>
+    </div>
+  </section>
+  <div class="link">Adapter cô lập ngữ nghĩa bên ngoài</div>
+
+  <section class="layer ad">
+    <header><b>Adapters</b><span>Lazy-load, báo rõ lý do unavailable, giữ timestamp/token/khung tọa độ</span></header>
+    <div class="grid">
+      <div class="box"><b>nuScenes devkit</b><small><code>nuscenes_backend</code>, <code>nuscenes_adapter</code>: LiDAR multisweep, box, map, CAN</small></div>
+      <div class="box"><b>MetadataIndex</b><small>Cache bảng metadata theo cảnh cho truy vấn lớn</small></div>
+      <div class="box"><b>esmini subprocess</b><small><code>esmini</code> + <code>dat2csv</code>: nguồn ADE/FDE duy nhất được công nhận</small></div>
+      <div class="box"><b>esminiLib native</b><small>Phiên live có giới hạn, control ABI chưa có</small></div>
+      <div class="box dashed"><b>CARLA</b><span class="tag">post-MVP</span><small>Same-XOSC (DEC-002), CP2-A đã có planner</small></div>
+    </div>
+  </section>
+  <div class="link">Hệ thống tệp cục bộ</div>
+
+  <section class="layer ext">
+    <header><b>Dữ liệu &amp; công cụ ngoài</b><span>Dữ liệu thô và artifact dẫn xuất luôn ở local/private (DEC-005)</span></header>
+    <div class="grid">
+      <div class="box"><b>nuScenes v1.0-trainval</b><small><code>$NUSCENES_ROOT</code>, map expansion, CAN bus</small></div>
+      <div class="box"><b>esmini v3.9 / v3.10</b><small><code>ESMINI_BIN</code>, <code>ESMINILIB_PATH</code></small></div>
+      <div class="box"><b>artifact_root</b><small><code>.xosc</code>, <code>.xodr</code>, trace, report: không commit vào git</small></div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <h2 id="pipeline">2. Luồng dữ liệu chính</h2>
+  <p class="note">Từ cảnh ghi thật đến thư viện kịch bản hợp lệ. Màu theo lớp sở hữu ở sơ đồ 1.</p>
+  <div class="flow">
+    <div class="step ext"><b>nuScenes</b>annotation 2 Hz, ego pose, map<br><code>scene/sample token</code></div>
+    <span class="arrow">→</span>
+    <div class="step ad"><b>Source adapter</b><code>MetadataIndex</code>, devkit</div>
+    <span class="arrow">→</span>
+    <div class="step dom"><b>Ingestion</b><code>extract_scenario()</code><br>Scenario toàn cục</div>
+    <span class="arrow">→</span>
+    <div class="step dom"><b>Biến đổi tọa độ</b>khung cục bộ theo đường, giữ provenance</div>
+    <span class="arrow">→</span>
+    <div class="step dom"><b>Baseline artifact</b>JSON có version</div>
+  </div>
+  <div class="link">nhánh replay (Tier 0) và nhánh biến thể chạy song song</div>
+  <div class="branches">
+    <p class="branch">A. Nhánh replay (Tier 0)</p><div class="flow">
+      <div class="step dom"><b>Exporter</b><code>.xosc</code> + <code>.xodr</code></div>
+      <span class="arrow">→</span>
+      <div class="step ad"><b>esmini</b><code>--fixed_timestep 0.01</code></div>
+      <span class="arrow">→</span>
+      <div class="step dom"><b>Trace chuẩn hóa</b><code>normalized-replay-trace-v2</code></div>
+      <span class="arrow">→</span>
+      <div class="step dom"><b>Metrics</b>ADE/FDE so với keyframe gốc</div>
+    </div>
+    <p class="branch">B. Nhánh biến thể</p><div class="flow">
+      <div class="step dom"><b>Generation</b>tốc độ × , gap, timing, recipe</div>
+      <span class="arrow">→</span>
+      <div class="step dom"><b>Tier 1 preview</b>kiểm tra khả thi, vi phạm</div>
+      <span class="arrow">→</span>
+      <div class="step dom"><b>Replay Tier 0</b>biến thể phải đo qua esmini</div>
+      <span class="arrow">→</span>
+      <div class="step dom"><b>Gates G1–G7</b>phễu hợp lệ</div>
+    </div>
+  </div>
+  <div class="link">report + ranking</div>
+  <div class="flow">
+    <div class="step web"><b>Web API</b>availability, provenance, lỗi rõ ràng</div>
+    <span class="arrow">→</span>
+    <div class="step fe"><b>Workspace</b>xem, so sánh, chỉnh, tải <code>.xosc/.xodr</code></div>
+  </div>
+
+  <div class="funnel" aria-label="Phễu gate G1 đến G7">
+    <div class="gate"><b>G1</b><span>File <code>.xosc</code> hợp lệ theo subset OpenSCENARIO được hỗ trợ</span><em><code>parse_xosc_subset</code></em></div>
+    <div class="gate"><b>G2</b>esmini nạp và chạy hết kịch bản<em>esmini</em></div>
+    <div class="gate"><b>G3</b>Actor nằm trên đường (road-match ≥ 0.95)<em class="warn">0/60 đạt, chưa có claim về map</em></div>
+    <div class="gate"><b>G4</b>Gia tốc, jerk, tốc độ trong giới hạn vật lý<em>Tier 1</em></div>
+    <div class="gate"><b>G5</b>Không va chạm ngoài ý muốn trước sự kiện chính<em>sự kiện do operator khai báo</em></div>
+    <div class="gate"><b>G6</b>Đủ hiếm: TTC / khoảng cách tối thiểu dưới ngưỡng<em class="warn">PROVISIONAL, luôn fail do cài đặt</em></div>
+    <div class="gate"><b>G7</b>Đa dạng: loại bản trùng gần nhau<em class="warn">PROVISIONAL</em></div>
+  </div>
+
+  <!-- 3 -->
+  <h2 id="tiers">3. Tầng runtime mô phỏng (DEC-014)</h2>
+  <p class="note">Mô hình dùng để tạo/lọc biến thể không bao giờ được dùng để chấm điểm chính nó.</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Tầng</th><th>Thành phần</th><th>Vai trò</th><th>Trạng thái</th></tr></thead>
+    <tbody>
+      <tr><td>Tier 0</td><td>esmini subprocess, open-loop</td><td>Công cụ đo ADE/FDE duy nhất</td><td>MVP. Baseline 850 cảnh: ADE mean 0.0411 m <code>PROVISIONAL</code></td></tr>
+      <tr><td>Tier 1</td><td><code>kinematic-open-loop-v1</code>, dt = 0.05 s</td><td>Preview authoring, G4/G5, kiểm tra va chạm sơ bộ</td><td>MVP</td></tr>
+      <tr><td>Live</td><td>esminiLib native session</td><td>Trạng thái live cho POV trên trình duyệt</td><td>Tùy chọn, control chưa có ABI</td></tr>
+      <tr><td>WASM</td><td>esminiJS trong Worker</td><td>Dự kiến thay runner hiện tại</td><td>Diagnostic tại <code>/wasm-smoke</code>, không phải nguồn metric</td></tr>
+      <tr><td>Tier 2</td><td>Controller / bicycle model</td><td>Thử nghiệm gần động lực học</td><td>Post-MVP, chỉ diagnostic</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <!-- 4 -->
+  <h2 id="deploy">4. Triển khai (môi trường demo)</h2>
+  <p class="note"><code>compose.demo.yml</code>, chạy bằng <code>make prod</code>. Chỉ gateway được publish; FastAPI phục vụ cả <code>/api/*</code> và SPA đã build.</p>
+  <section class="layer ext">
+    <header><b>Internet</b><span>Giám khảo truy cập <code>https://project-n3.hahuy.cloud</code></span></header>
+  </section>
+  <div class="link">Cloudflare Tunnel</div>
+  <section class="layer ad">
+    <header><b>Docker Compose: project-n3-prod</b><span>mạng nội bộ <code>demo</code></span></header>
+    <div class="grid">
+      <div class="box"><b>cloudflared</b><small><code>cloudflare/cloudflared</code>, token trong <code>ops/demo/.env</code></small></div>
+      <div class="box"><b>gateway</b><small><code>nginx:1.27-alpine</code>, TLS, basic-auth bằng htpasswd, cổng 8443→443</small></div>
+      <div class="box"><b>api</b><small>uvicorn <code>r2s_web.app:app</code> :8000, không <code>--reload</code>, có healthcheck</small></div>
+      <div class="box"><b>api-permissions</b><small>Job một lần: chown volume reports</small></div>
+    </div>
+    <div class="grid" style="margin-top:8px">
+      <div class="box dashed"><b>Volume</b><small><code>metadata-cache</code>, <code>prod-scenarios</code>, <code>prod-reports</code>, <code>prod-logs</code></small></div>
+      <div class="box dashed"><b>Bind mount</b><small>Repo <code>.:/app</code> (gồm frontend đã build), nuScenes <code>:ro</code>, <code>~/esmini → /opt/esmini:ro</code></small></div>
+    </div>
+  </section>
+  <p class="note" style="margin-top:12px">Môi trường dev (<code>compose.dev.yml</code>): <code>api</code> với <code>--reload</code> + <code>frontend</code> Vite dev server.</p>
+
+  <footer>Nguồn: <code>docs/architecture/system-overview.md</code>, <code>boundary-map.md</code>,
+    <code>docs/subsystems/*</code>, <code>docs/current/decisions.md</code>, <code>compose.demo.yml</code>.
+    Cập nhật 2026-10-17.</footer>
+</main>
+</body>
+</html>

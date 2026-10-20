@@ -17,12 +17,27 @@ SHELL := /bin/bash
 
 COMPOSE_DEV  := docker compose -f compose.dev.yml
 COMPOSE_PROD := docker compose -f compose.demo.yml
+
+# Build provenance passed into the product image and reported by /api/health.
+# Without it the image records nothing about which commit it came from, so the
+# running product cannot be traced back to a commit without diffing source out
+# of the container. Overridable so a deploy from a different tree is explicit
+# rather than silently mislabelled.
+PROJECT_N3_BUILD_COMMIT ?= $(shell git rev-parse HEAD 2>/dev/null || echo unknown)
+PROJECT_N3_BUILD_COMMIT_TIME ?= $(shell git log -1 --format=%cI 2>/dev/null || echo unknown)
+PROJECT_N3_BUILD_DIRTY ?= $(shell test -n "$$(git status --porcelain -- src frontend Dockerfile.prod pyproject.toml README.md 2>/dev/null)" && echo true || echo false)
+MAKE_ENV := PROJECT_N3_BUILD_COMMIT=$(PROJECT_N3_BUILD_COMMIT) PROJECT_N3_BUILD_COMMIT_TIME=$(PROJECT_N3_BUILD_COMMIT_TIME) PROJECT_N3_BUILD_DIRTY=$(PROJECT_N3_BUILD_DIRTY)
 COMPOSE_PROD_RUN := $(COMPOSE_PROD) $(MAKE_ENV)
+# Ports are asserted before any `up`; see ops/scripts/check-ports.sh for why an
+# unset PROJECT_N3_WEB_API_PORT makes the api try to bind two ports at once.
+COMPOSE_TESTING := docker compose -f compose.dev.yml -f compose.testing.yml
+PORT_CHECK := ./ops/scripts/check-ports.sh
 
 # Match the container user to the host user so bind-mounted files stay writable.
 MAKE_ENV := R2S_UID=$(shell id -u) R2S_GID=$(shell id -g)
 
 .PHONY: help dev dev-build dev-logs dev-down \
+        testing testing-preflight testing-verify testing-logs testing-down testing-restart \
         prod prod-build-only prod-logs prod-down prod-rebuild \
         key status stop clean-volumes test \
         promote revert rollback-check
@@ -50,6 +65,50 @@ dev-logs: ## Tail dev logs
 dev-down: ## Stop the dev environment
 	$(COMPOSE_DEV) down
 
+## ---------------------------------------------------------------- motion editor
+
+# This stack is separate from `make dev` on purpose: it uses its own artifact
+# root and host ports, so the two can run side by side. Always start it from
+# these targets rather than calling docker compose by hand, so the port check
+# and the compose file pair stay together.
+testing: ## Start the motion-editor testing stack (UI on 5174, API on 8002)
+	@$(MAKE) --no-print-directory testing-preflight
+	$(COMPOSE_TESTING) up -d
+	@$(MAKE) --no-print-directory testing-verify
+
+testing-preflight: ## Fail fast if this stack's host ports are taken by another process
+	@if [ -n "$$($(COMPOSE_TESTING) ps -q --status running api 2>/dev/null)" ]; then \
+	  echo "==> Stack already running; reusing it (up -d is idempotent)"; \
+	else \
+	  $(PORT_CHECK) 8002:PROJECT_N3_WEB_API_PORT 5174:PROJECT_N3_WEB_FRONTEND_PORT; \
+	fi
+
+testing-verify: ## Show which roots the running api is actually serving
+	@echo "  UI   http://localhost:5174"
+	@echo "  API  http://localhost:8002/api/health"
+	@echo
+	@docker compose -f compose.dev.yml -f compose.testing.yml exec -T api \
+		python -c "import json,urllib.request; c=json.load(urllib.request.urlopen('http://127.0.0.1:8000/api/health'))['configuration']; [print('  %-14s %-46s present=%s' % (k, v, c['roots_present'][k])) for k, v in c.items() if k.endswith('_root')]" \
+		2>/dev/null || echo "  (api not ready yet; check 'make testing-logs')"
+	@echo
+	@echo "  The catalog lists whatever lives under artifact_root. If a scenario"
+	@echo "  you imported is missing here, this stack is reading a different"
+	@echo "  directory than the one you imported it into."
+	@echo
+	@echo "  Note: this stack runs uvicorn WITHOUT --reload. After editing Python,"
+	@echo "  run 'docker compose -f compose.dev.yml -f compose.testing.yml restart api'"
+	@echo "  or 'make testing-restart'. Frontend edits hot-reload via Vite."
+
+testing-logs: ## Tail motion-editor testing stack logs
+	$(COMPOSE_TESTING) logs -f
+
+testing-down: ## Stop the motion-editor testing stack
+	$(COMPOSE_TESTING) down
+
+testing-restart: ## Restart the api so Python edits take effect (no --reload here)
+	$(COMPOSE_TESTING) restart api
+	@$(MAKE) --no-print-directory testing-verify
+
 ## ---------------------------------------------------------------- product
 
 prod: ## Build the frontend bundle, then start the product environment
@@ -68,7 +127,7 @@ prod: ## Build the frontend bundle, then start the product environment
 # half-finished working tree: an uncommitted edit in the product stack is
 # invisible in git and cannot be reproduced or rolled back.
 prod-check-clean:
-	@dirty=$$(git status --porcelain -- . ':!log.txt' ':!frontend/wasm-esmini/a4_probe.mjs'); \
+	@dirty=$$(git status --porcelain -- . ':!log.txt' ':!frontend/wasm-esmini/a4_probe.mjs' ':!cpp-wasm-network.txt'); \
 	if [ -n "$$dirty" ]; then \
 		echo "==> Refusing to publish product from a dirty working tree:"; \
 		echo "$$dirty" | sed 's/^/    /'; \

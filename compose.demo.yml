@@ -36,6 +36,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prod
+      # Provenance baked into the image and reported by /api/health. The image
+      # has no git metadata, so without this there is no way to tell which
+      # commit the product serves. prod-check-clean guarantees the tree is
+      # clean, so DIRTY is normally false.
+      args:
+        PROJECT_N3_BUILD_COMMIT: ${PROJECT_N3_BUILD_COMMIT:-unknown}
+        PROJECT_N3_BUILD_COMMIT_TIME: ${PROJECT_N3_BUILD_COMMIT_TIME:-unknown}
+        PROJECT_N3_BUILD_DIRTY: ${PROJECT_N3_BUILD_DIRTY:-false}
     user: "${PROJECT_N3_UID:-1000}:${PROJECT_N3_GID:-1000}"
     restart: unless-stopped
     depends_on:

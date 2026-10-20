@@ -1,0 +1,11 @@
+39. [GET] http://0.0.0.0:5187/api/scenarios => [200] OK
+40. [GET] http://0.0.0.0:5187/api/esmini => [200] OK
+41. [GET] http://0.0.0.0:5187/api/esmini/live/capability => [200] OK
+42. [GET] http://0.0.0.0:5187/api/settings => [200] OK
+43. [GET] http://0.0.0.0:5187/api/scenarios => [200] OK
+44. [GET] http://0.0.0.0:5187/api/esmini => [200] OK
+45. [GET] http://0.0.0.0:5187/api/esmini/live/capability => [200] OK
+46. [GET] http://0.0.0.0:5187/api/settings => [200] OK
+48. [GET] https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1792301880612 => [200] 
+
+Note: 41 static requests not shown, run with "static" option to see them.
